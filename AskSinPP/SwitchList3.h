@@ -5,7 +5,7 @@
 #include "ChannelList.h"
 #include "cm.h"
 
-class SwitchCtrlData {
+class SwitchPeerData {
 public:
   uint8_t  ctDlyOn           :4;     // 0x02, s:0, e:4
   uint8_t  ctDlyOff          :4;     // 0x02, s:4, e:8
@@ -19,7 +19,7 @@ public:
   uint8_t  offTime;                  // 0x09, s:0, e:0
   uint8_t  actionType        :4;     // 0x0a, s:0, e:4
   uint8_t                    :1;     //
-  uint8_t  multiExec         :1;     // 0x8a, s:5, e:6
+  uint8_t  multiExec         :1;     // 0x0a, s:5, e:6
   uint8_t  offTimeMode       :1;     // 0x0a, s:6, e:7
   uint8_t  onTimeMode        :1;     // 0x0a, s:7, e:8
   uint8_t  jtOn              :4;     // 0x0b, s:0, e:4
@@ -28,7 +28,7 @@ public:
   uint8_t  jtDlyOff          :4;     // 0x0c, s:4, e:8
 
   static uint8_t getRegister (uint8_t off) {
-    if( off < sizeof(SwitchCtrlData) ) {
+    if( off < sizeof(SwitchPeerData) ) {
       return off + 2;
     }
     return 0xff;
@@ -42,24 +42,24 @@ public:
   }
 };
 
-class SwitchStateData {
+class SwitchList3Data {
 public:
-  SwitchCtrlData sh;
-  SwitchCtrlData lg;
+  SwitchPeerData sh;
+  SwitchPeerData lg;
 
   static uint8_t getRegister (uint8_t off) {
-    if( off < sizeof(SwitchCtrlData) ) {
-      return SwitchCtrlData::getRegister(off);
+    if( off < sizeof(SwitchPeerData) ) {
+      return SwitchPeerData::getRegister(off);
     }
-    else if( off < sizeof(SwitchStateData)) {
-      return 0x80 + SwitchCtrlData::getRegister(off - sizeof(SwitchCtrlData));
+    else if( off < sizeof(SwitchList3Data)) {
+      return 0x80 + SwitchPeerData::getRegister(off - sizeof(SwitchPeerData));
     }
     return 0xff;
   }
 
   static uint8_t getOffset (uint8_t reg) {
-    uint8_t off = ((reg & 0x80) == 0x80) ? sizeof(SwitchCtrlData) : 0;
-    uint8_t result = SwitchCtrlData::getOffset(reg & ~0x80);
+    uint8_t off = ((reg & 0x80) == 0x80) ? sizeof(SwitchPeerData) : 0;
+    uint8_t result = SwitchPeerData::getOffset(reg & ~0x80);
     if( result != 0xff ) {
       result += off;
     }
@@ -68,10 +68,10 @@ public:
 
 };
 
-class SwitchCtrlList : public ChannelList {
+class SwitchPeerList : public ChannelList {
 public:
-  SwitchCtrlList(uint16_t a) : ChannelList(a) {}
-  virtual ~SwitchCtrlList() {}
+  SwitchPeerList(uint16_t a) : ChannelList(a) {}
+  virtual ~SwitchPeerList() {}
 
   uint8_t ctDlyOn () const { return getByte(0,0x0f,0); }
   bool ctDlyOn (uint8_t value) const { return setByte(0,value,0x0f,0); }
@@ -116,19 +116,19 @@ public:
   uint8_t jtDlyOff() const { return getByte(10,0xf0,4); }
   bool jtDlyOff (uint8_t value) const { return setByte(10,value,0xf0,4); }
 
-  virtual uint8_t getOffset (uint8_t reg) const { return SwitchCtrlData::getOffset(reg); }
+  virtual uint8_t getOffset (uint8_t reg) const { return SwitchPeerData::getOffset(reg); }
 };
 
-class SwitchStateList : public ChannelList {
+class SwitchList3 : public ChannelList {
 protected:
 public:
-  SwitchStateList(uint16_t a) : ChannelList(a) {}
-  virtual ~SwitchStateList() {}
+  SwitchList3(uint16_t a) : ChannelList(a) {}
+  virtual ~SwitchList3() {}
 
-  const SwitchCtrlList sh() const { return SwitchCtrlList(address()); }
-  const SwitchCtrlList lg() const { return SwitchCtrlList(address() + sizeof(SwitchCtrlData)); }
+  const SwitchPeerList sh() const { return SwitchPeerList(address()); }
+  const SwitchPeerList lg() const { return SwitchPeerList(address() + sizeof(SwitchPeerData)); }
 
-  virtual uint8_t getOffset (uint8_t reg) const { return SwitchStateData::getOffset(reg); }
+  virtual uint8_t getOffset (uint8_t reg) const { return SwitchList3Data::getOffset(reg); }
 
   void defaults ();
   void odd ();
@@ -136,7 +136,7 @@ public:
   void single ();
 
   static uint8_t size () {
-    return sizeof(SwitchStateData);
+    return sizeof(SwitchList3Data);
   }
 };
 

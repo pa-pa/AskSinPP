@@ -38,7 +38,7 @@
     if( b<0x10 ) Serial.print(F("000")); 
     else if( b<0x100 ) Serial.print(F("00"));
     else if( b<0x1000 ) Serial.print(F("0"));
-    Serial.print(b,HEX); 
+    Serial.print(b,HEX);
   }
   inline void DHEXLN(uint16_t b) { DHEX(b); DPRINT(F("\n")); }
 

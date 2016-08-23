@@ -5,8 +5,13 @@
 #include "AlarmClock.h"
 #include "Peer.h"
 #include "EEProm.h"
-#include "SwitchDevice.h"
+#include "MultiChannelDevice.h"
+#include "Channel.h"
+#include "SwitchList1.h"
+#include "SwitchList3.h"
+#include "SwitchStateMachine.h"
 
+// ping every second
 class Ping : public Alarm {
 public:
   Ping(uint16_t t) : Alarm(t) {}
@@ -18,8 +23,36 @@ public:
   };
 };
 
+class SwitchChannel : public Channel<SwitchList1,SwitchList3,4>, public SwitchStateMachine {
 
-SwitchDevice sdev(0x20);
+public:
+  SwitchChannel () : Channel() {
+
+  }
+  virtual ~SwitchChannel() {}
+
+  virtual void switchState(uint8_t oldstate,uint8_t newstate,uint8_t dly) {
+    DPRINT(F("Channel: "));
+    DHEX(number());
+    DPRINT(F(" - Switch State: "));
+    DHEX(newstate);
+    DPRINT(F(" ["));
+    DHEX(dly);
+    DPRINT(F("] - "));
+    if( newstate == AS_CM_JT_ON ) {
+      DPRINTLN(F("ON"));
+    }
+    else if( newstate == AS_CM_JT_OFF ) {
+      DPRINTLN(F("OFF"));
+    }
+    else {
+      DPRINTLN(F("..."));
+    }
+  }
+
+};
+
+MultiChannelDevice<SwitchChannel,4> sdev(0x20);
 
 Ping ping(10);
 
@@ -34,24 +67,38 @@ void setup () {
     sdev.firstinit();
   }
   aclock.init();
-  
-
+  // add the "ping"
   aclock.add(ping);
 
-  SwitchChannel& sw1 = (SwitchChannel&)sdev.channel(0);
-  SwitchChannelList sd(sw1.listAddress(1));
-  sd.defaults();
+  SwitchChannel& c0 = sdev.channel(0);
+  SwitchList1 sd = c0.getList1();
   eeprom.dump(sd.address(),sd.size());
 
+  DPRINTLN(F("2 Peers"));
+  Peer odd(1,2,3,1);
+  Peer even(1,2,3,2);
+  SwitchChannel c1 = sdev.channel(1);
+  if( sdev.addPeer(1,odd,even) == true ) {
+    SwitchList3 ssl = c1.getList3(odd);
+    eeprom.dump(ssl.address(),ssl.size());
+    ssl = c1.getList3(even);
+    eeprom.dump(ssl.address(),ssl.size());
+
+    c1.jumpToTarget(c1.getList3(even).sh());
+    c1.jumpToTarget(c1.getList3(odd).sh());
+  }
+
+  DPRINTLN(F("\n\n1 Peer"));
   Peer p(1,2,3,0);
   sdev.addPeer(0,p);
-  SwitchStateList ssl(sdev.channel(0).listAddress(3,p));
+  SwitchList3 ssl = c0.getList3(p);
   eeprom.dump(ssl.address(),ssl.size());
-
+  DPRINTLN(F("Change Delays"));
   ssl.sh().onTime(0x20 + 5);
   ssl.sh().offTime(0x20 + 2);
   eeprom.dump(ssl.address(),ssl.size());
-  sw1.jumpToTarget(ssl.sh());
+  c0.jumpToTarget(ssl.sh());
+
 }
 
 void loop() {

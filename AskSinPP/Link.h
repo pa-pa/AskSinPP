@@ -15,8 +15,8 @@ public:
   Link* select () const {
     Link* result = 0;
     ATOMIC_BLOCK( ATOMIC_RESTORESTATE ) {
-	  result = link;
-	}
+	    result = link;
+	  }
     return result;
   }
 
@@ -38,7 +38,7 @@ public:
   // return tail item
   Link* ending () const {
 	Link* item=0;
-    ATOMIC_BLOCK( ATOMIC_RESTORESTATE ){
+    ATOMIC_BLOCK( ATOMIC_RESTORESTATE ) {
       item=(Link*)this;
       while( item->select() != 0 ) {
         item = item->select();
@@ -50,7 +50,7 @@ public:
   // remove and return successor
   Link* unlink () {
     Link* item=0;
-    ATOMIC_BLOCK( ATOMIC_RESTORESTATE ){
+    ATOMIC_BLOCK( ATOMIC_RESTORESTATE ) {
       item=select();
       if( item!=0 ) {
         detach();
@@ -62,7 +62,7 @@ public:
   // remove all, return successor
   Link* remove () {
 	Link* item=0;
-    ATOMIC_BLOCK( ATOMIC_RESTORESTATE ){
+    ATOMIC_BLOCK( ATOMIC_RESTORESTATE ) {
       item=select();
       select(0);
     }
@@ -71,13 +71,13 @@ public:
 
   // remove successor
   void detach () {
-    ATOMIC_BLOCK( ATOMIC_RESTORESTATE ){
+    ATOMIC_BLOCK( ATOMIC_RESTORESTATE ) {
       select(select()->select());
     }
   }
 
   // Link* search (const Link*) const;     // return container instance
-  // void   remove (const Link&);           // remove item from chain
+  // void   remove (const Link&);           // remove item
 };
 
 #endif

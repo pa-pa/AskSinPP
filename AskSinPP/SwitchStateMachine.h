@@ -3,17 +3,17 @@
 #define __SWITCHSTATEMACHINE_H__
 
 #include "cm.h"
-#include "SwitchStateData.h"
+#include "SwitchList3.h"
 #include "AlarmClock.h"
 
 class SwitchStateMachine {
 
   class StateAlarm : public Alarm {
     SwitchStateMachine& sm;
-    SwitchCtrlList      lst;
+    SwitchPeerList      lst;
   public:
     StateAlarm(SwitchStateMachine& m) : Alarm(0), sm(m), lst(0) {}
-    void list(SwitchCtrlList l) {lst=l;}
+    void list(SwitchPeerList l) {lst=l;}
     virtual void trigger (AlarmClock& clock) {
       sm.jumpToTarget(lst);
     }
@@ -31,9 +31,10 @@ public:
 
   virtual void switchState(uint8_t oldstate,uint8_t newstate,uint8_t dly);
 
-  void jumpToTarget(SwitchCtrlList lst);
+  void jumpToTarget(SwitchPeerList lst);
 
-  uint8_t getDelayForState(uint8_t s,SwitchCtrlList lst);
+  uint8_t getDelayForState(uint8_t s,SwitchPeerList lst);
+  uint8_t getNextState(uint8_t s,SwitchPeerList lst);
 
   // get timer count in 1/10s
   uint32_t byteTimeCvt(uint8_t tTime) {

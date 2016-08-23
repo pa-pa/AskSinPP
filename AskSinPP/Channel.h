@@ -7,19 +7,18 @@
 
 class Device;
 
+template<class List1Type,class List3Type,int NumPeers>
 class Channel {
   Device*   dev;
   uint8_t   num          : 3;  // max 7 channels per device
   uint16_t  addr         : 13; // max address 8191
-  uint8_t   numpeers     : 3;  // max 7 peers
-  uint8_t   list1size    : 5;  // max 31 byte
-  uint8_t   list3size;         // max 255 byte
+
+public:
+  typedef List1Type List1;
+  typedef List3Type List3;
 
   public:
-  Channel (uint8_t l1size, uint8_t l3size) : dev(0), num(0), addr(0), numpeers(0) {
-    list1size = l1size;
-    list3size = l3size;
-  }
+  Channel () : dev(0), num(0), addr(0) {}
 
   Device& device () { return *dev; }
 
@@ -27,20 +26,19 @@ class Channel {
 
   uint16_t address () const { return addr; }
 
-  uint8_t peers () const { return numpeers; }
+  uint8_t peers () const { return NumPeers; }
 
-  void setup(Device* dev,uint8_t number,uint16_t addr,uint8_t peers) {
+  void setup(Device* dev,uint8_t number,uint16_t addr) {
     this->dev = dev;
     this->num = number;
     this->addr = addr;
-    this->numpeers = peers;
   }
 
   uint16_t size () const {
     uint16_t size = sizeof(Peer);
-    size += list3size;
-    size *= numpeers;
-    size += list1size;
+    size += List3::size();
+    size *= NumPeers;
+    size += List1::size();
     return size;
   }
 
@@ -54,19 +52,75 @@ class Channel {
   }
 
 
-  bool peer (uint8_t idx,const Peer& p) const{
+  bool peer (uint8_t idx,const Peer& p) const {
     return eeprom.setData(peerAddress(idx),p);
   }
 
-  uint8_t findpeer () const;
+  uint8_t findpeer () const {
+    for( int i=0; i<peers(); ++i ) {
+      if( peer(i).valid()==false ) {
+        return i;
+      }
+    }
+    return 0xff;
+  }
 
-  bool deletepeer (const Peer& p);
+  bool deletepeer (const Peer& p) {
+    for( uint8_t i=0; i<peers(); ++i ) {
+      if( peer(i) == p ) {
+        peer(i,Peer());
+      }
+    }
+    return true;
+  }
 
-  uint16_t peerAddress (uint8_t idx) const;
+  void firstinit () {
+    List1Type cl = getList1();
+    cl.defaults();
+    for( uint8_t i=0; i<peers(); ++i ) {
+      eeprom.clearData(peerAddress(i),Peer::size());
+      List3Type list = getList3(i);
+      eeprom.clearData(list.address(),List3Type::size());
+    }
+  }
 
-  uint16_t listAddress (uint8_t list,const Peer& p) const;
+  List1Type getList1 () const {
+    // we start always with list1
+    return List1Type(address());
+  }
 
-  uint16_t listAddress (uint8_t list, uint8_t peer=0) const;
+  List3Type getList3 (const Peer& p) const {
+    uint16_t liststart = 0x00;
+    for( uint8_t i=0; i<peers(); ++i ) {
+      if( peer(i) == p ) {
+        liststart = peerAddress(i) + sizeof(Peer);
+        break;
+      }
+    }
+    return List3Type(liststart);
+  }
+
+  List3Type getList3 (uint8_t p) const {
+    uint16_t liststart = 0x00;
+    if( p < peers() ) {
+      liststart = peerAddress(p) + sizeof(Peer);
+    }
+    return List3Type(liststart);
+  }
+
+
+  protected:
+  uint16_t peerAddress (uint8_t idx) const {
+    if( idx < NumPeers ) {
+      uint16_t offset = sizeof(Peer);
+      offset += List3::size();
+      offset *= idx;
+      offset += List1::size();
+      return addr + offset;
+    }
+    return 0x00;
+  }
+
 
 };
 

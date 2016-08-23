@@ -42,11 +42,6 @@ public:
     return serial;
   }
 
-  virtual Channel& channel (uint8_t idx) = 0;
-  virtual bool addPeer (uint8_t channel,const Peer& p) = 0 ;
-  virtual bool addPeer (uint8_t channel,const Peer& odd, const Peer& even) = 0;
-
-
 };
 
 #endif

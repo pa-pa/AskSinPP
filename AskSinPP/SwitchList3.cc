@@ -1,8 +1,8 @@
 
-#include "SwitchStateData.h"
+#include "SwitchList3.h"
 
-  void SwitchStateList::defaults () {
-    SwitchCtrlList ssl = sh();
+  void SwitchList3::defaults () {
+    SwitchPeerList ssl = sh();
     ssl.ctDlyOn(0);
     ssl.ctDlyOff(0);
     ssl.ctOn(0);
@@ -34,9 +34,9 @@
     ssl.onTimeMode(false);
   }
 
-  void SwitchStateList::odd () {
+  void SwitchList3::odd () {
     defaults();
-    SwitchCtrlList ssl = sh();
+    SwitchPeerList ssl = sh();
     ssl.jtOn(AS_CM_JT_OFFDELAY);
     ssl.jtOff(AS_CM_JT_OFF);
     ssl.jtDlyOn(AS_CM_JT_OFF);
@@ -48,9 +48,9 @@
     ssl.jtDlyOff(AS_CM_JT_OFF);
   }
 
-  void SwitchStateList::even () {
+  void SwitchList3::even () {
     defaults();
-    SwitchCtrlList ssl = sh();
+    SwitchPeerList ssl = sh();
     ssl.jtOn(AS_CM_JT_ON);
     ssl.jtOff(AS_CM_JT_ONDELAY);
     ssl.jtDlyOn(AS_CM_JT_ON);
@@ -62,9 +62,9 @@
     ssl.jtDlyOff(AS_CM_JT_ON);
   }
 
-  void SwitchStateList::single () {
+  void SwitchList3::single () {
     defaults();
-    SwitchCtrlList ssl = sh();
+    SwitchPeerList ssl = sh();
     ssl.jtOn(AS_CM_JT_OFFDELAY);
     ssl.jtOff(AS_CM_JT_ONDELAY);
     ssl.jtDlyOn(AS_CM_JT_ON);

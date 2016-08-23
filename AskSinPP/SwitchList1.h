@@ -3,7 +3,7 @@
 
 #include "ChannelList.h"
 
-class SwitchChannelData {
+class SwitchList1Data {
 public:
   uint8_t sign             :1;     // 0x08, s:0, e:1
   uint8_t                  :7;     //
@@ -36,10 +36,10 @@ public:
   }
 };
 
-class SwitchChannelList : public ChannelList {
+class SwitchList1 : public ChannelList {
 public:
-  SwitchChannelList(uint16_t a) : ChannelList(a) {}
-  virtual ~SwitchChannelList() {}
+  SwitchList1(uint16_t a) : ChannelList(a) {}
+  virtual ~SwitchList1() {}
 
   bool sign () const { return isBitSet(0,0x01); }
   bool sign (bool s) const { return setBit(0,0x01,s); }
@@ -55,7 +55,7 @@ public:
   uint8_t statusInfoRandom () const { return getByte(3) >> 5; }
   bool statusInfoRandom (uint8_t value) { return setByte(3,value,0xe0,5); }
 
-  virtual uint8_t getOffset (uint8_t reg) const { return SwitchChannelData::getOffset(reg); }
+  virtual uint8_t getOffset (uint8_t reg) const { return SwitchList1Data::getOffset(reg); }
 
   void defaults () {
     setByte(0,0);
@@ -67,7 +67,7 @@ public:
   }
 
   static uint8_t size () {
-    return sizeof(SwitchChannelData);
+    return sizeof(SwitchList1Data);
   }
 };
 

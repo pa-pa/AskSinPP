@@ -29,7 +29,7 @@ public:
 
   void add(Alarm& item);
 
-  uint16_t get(Alarm& item) const;
+  uint32_t get(Alarm& item) const;
 
 };
 

@@ -39,13 +39,15 @@ void AlarmClock::cancel(Alarm& item) {
 }
 
 AlarmClock& AlarmClock::operator --() {
-  Alarm* alarm = (Alarm*) select();
-  if (alarm != 0) {
-    --alarm->tick;
-    while ((alarm != 0) && (alarm->tick == 0)) {
-      unlink(); // remove expired alarm
-      ready.append(*alarm);
-      alarm = (Alarm*) select();
+  ATOMIC_BLOCK( ATOMIC_RESTORESTATE ) {
+    Alarm* alarm = (Alarm*) select();
+    if (alarm != 0) {
+      --alarm->tick;
+      while ((alarm != 0) && (alarm->tick == 0)) {
+        unlink(); // remove expired alarm
+        ready.append(*alarm);
+        alarm = (Alarm*) select();
+      }
     }
   }
   return *this;
@@ -72,8 +74,8 @@ void AlarmClock::add(Alarm& item) {
   }
 }
 
-uint16_t AlarmClock::get(Alarm& item) const {
-  uint16_t aux = 0;
+uint32_t AlarmClock::get(Alarm& item) const {
+  uint32_t aux = 0;
   Alarm* tmp = (Alarm*) select();
   while (tmp != 0) {
     aux += tmp->tick;

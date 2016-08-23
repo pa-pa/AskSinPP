@@ -9,29 +9,24 @@
     DPRINTLN(F("]"));
   }
 
-  void SwitchStateMachine::jumpToTarget(SwitchCtrlList lst) {
-    uint8_t next = AS_CM_JT_NONE;
-    switch( state ) {
-      case AS_CM_JT_ONDELAY:  next = lst.jtDlyOn();  break;
-      case AS_CM_JT_ON:       next = lst.jtOn();     break;
-      case AS_CM_JT_OFFDELAY: next = lst.jtDlyOff(); break;
-      case AS_CM_JT_OFF:      next = lst.jtOff();    break;
-      default: break;
-    }
+  void SwitchStateMachine::jumpToTarget(SwitchPeerList lst) {
+    uint8_t next = getNextState(state,lst);
     if( next != AS_CM_JT_NONE ) {
       // first cancel possible running alarm
       aclock.cancel(alarm);
       // get delay
       uint8_t dly = getDelayForState(next,lst);
-      // signal state change
-      switchState(state,next,dly);
-      state = next;
+      // signal state change, if any
+      if( state != next ) {
+        switchState(state,next,dly);
+        state = next;
+      }
       if( dly == 0 ) {
         // switch immediately to next state
         jumpToTarget(lst);
       }
       else if( dly != 0xff ) {
-        // setup alarm to switch after delay
+        // setup alarm to process after delay
         alarm.list(lst);
         alarm.set(byteTimeCvt(dly));
         aclock.add(alarm);
@@ -39,15 +34,24 @@
     }
   }
 
-  uint8_t SwitchStateMachine::getDelayForState(uint8_t s,SwitchCtrlList lst) {
-    uint8_t dly = 0;
-    switch( s ) {
-      case AS_CM_JT_ONDELAY:  dly = lst.onDly();   break;
-      case AS_CM_JT_ON:       dly = lst.onTime();  break;
-      case AS_CM_JT_OFFDELAY: dly = lst.offDly();  break;
-      case AS_CM_JT_OFF:      dly = lst.offTime(); break;
+  uint8_t SwitchStateMachine::getNextState(uint8_t state,SwitchPeerList lst) {
+    switch( state ) {
+      case AS_CM_JT_ONDELAY:  return lst.jtDlyOn();
+      case AS_CM_JT_ON:       return lst.jtOn();
+      case AS_CM_JT_OFFDELAY: return lst.jtDlyOff();
+      case AS_CM_JT_OFF:      return lst.jtOff();
+    }
+    return AS_CM_JT_NONE;
+  }
+
+  uint8_t SwitchStateMachine::getDelayForState(uint8_t state,SwitchPeerList lst) {
+    switch( state ) {
+      case AS_CM_JT_ONDELAY:  return lst.onDly();
+      case AS_CM_JT_ON:       return lst.onTime();
+      case AS_CM_JT_OFFDELAY: return lst.offDly();
+      case AS_CM_JT_OFF:      return lst.offTime();
       default: break;
     }
-    return dly;
+    return 0;
   }
 
