@@ -45,15 +45,15 @@
 	<variableList>
 		<variable>
 			<name>ArduinoHardwareLibPath</name>
-			<value>file:/C:/Users/holger/Documents/private/arduino/arduino-1.6.5-r5/hardware/arduino/avr/libraries</value>
+			<value>file:/C:/Users/holger/Desktop/arduino-1.6.5-r5/hardware/arduino/avr/libraries</value>
 		</variable>
 		<variable>
 			<name>ArduinoPinPath</name>
-			<value>file:/C:/Users/holger/Documents/private/arduino/arduino-1.6.5-r5/hardware/arduino/avr/variants</value>
+			<value>file:/C:/Users/holger/Desktop/arduino-1.6.5-r5/hardware/arduino/avr/variants</value>
 		</variable>
 		<variable>
 			<name>ArduinoPlatformPath</name>
-			<value>file:/C:/Users/holger/Documents/private/arduino/arduino-1.6.5-r5/hardware/arduino/avr/cores</value>
+			<value>file:/C:/Users/holger/Desktop/arduino-1.6.5-r5/hardware/arduino/avr/cores</value>
 		</variable>
 	</variableList>
 </projectDescription>

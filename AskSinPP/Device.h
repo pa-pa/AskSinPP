@@ -10,10 +10,34 @@ class Device {
   HMID  master;
   char serial[11];
 
+  uint8_t firmversion;
+  uint8_t model[2];
+  uint8_t subtype;
+  uint8_t devinfo[3];
+
 protected:
   ~Device () {}
 
 public:
+
+  void setFirmwareVersion (uint8_t v) {
+    firmversion = v;
+  }
+
+  void setModel (uint8_t m1, uint8_t m2) {
+    model[0] = m1;
+    model[1] = m1;
+  }
+
+  void setSubType (uint8_t st) {
+    subtype = st;
+  }
+
+  void setInfo (uint8_t i1, uint8_t i2, uint8_t i3) {
+    devinfo[0] = i1;
+    devinfo[1] = i2;
+    devinfo[2] = i3;
+  }
 
   void setMasterID (const HMID& id) {
     master = id;

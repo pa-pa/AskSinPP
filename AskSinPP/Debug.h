@@ -17,6 +17,7 @@
   template <class T>
   inline void DPRINTLN(T str) {  }
   inline void DHEX(uint8_t b) {  }
+  inline void DHEX(uint8_t* b,uint8_t l) {  }
   inline void DHEXLN(uint8_t b) {  }
   inline void DHEX(uint16_t b) {  }
   inline void DHEXLN(uint16_t b) {  }
@@ -32,6 +33,12 @@
   inline void DHEX(uint8_t b) {
     if( b<0x10 ) Serial.print('0');
     Serial.print(b,HEX);
+  }
+  inline void DHEX(uint8_t* b,uint8_t l) {
+    for( int i=0; i<l; i++, b++) {
+      DHEX(*b); DPRINT(F(" "));
+    }
+    DPRINT(F("\n"));
   }
   inline void DHEXLN(uint8_t b) { DHEX(b); DPRINT(F("\n")); }
   inline void DHEX(uint16_t b) { 

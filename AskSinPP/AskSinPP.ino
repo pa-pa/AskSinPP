@@ -11,6 +11,9 @@
 #include "SwitchList3.h"
 #include "SwitchStateMachine.h"
 
+#include "CC1101.h"
+#include "Message.h"
+
 // ping every second
 class Ping : public Alarm {
 public:
@@ -52,8 +55,28 @@ public:
 
 };
 
-MultiChannelDevice<SwitchChannel,4> sdev(0x20);
+CC radio;
+#define enableIRQ_GDO0()          ::attachInterrupt(0, radioISR, FALLING);
+#define disableIRQ_GDO0()         ::detachInterrupt(0);
+Message msg;
+void radioISR(void)
+{
+  // Disable interrupt
+  disableIRQ_GDO0();
 
+  uint8_t num = radio.rcvData(msg.buffer());
+  if( num > 0 ) {
+    msg.decode();
+    DPRINT(F("-> "));
+    msg.dump();
+  }
+
+  // Enable interrupt
+  enableIRQ_GDO0();
+}
+
+
+MultiChannelDevice<SwitchChannel,4> sdev(0x20);
 Ping ping(10);
 
 void setup () {
@@ -61,14 +84,22 @@ void setup () {
   Serial.begin(57600);
 #endif
 
+  radio.init();
+  enableIRQ_GDO0();
+
   sdev.setDeviceID(HMID(0x12,0x34,0x56));
   sdev.setSerial("papa000000");
+  sdev.setFirmwareVersion(0x16);
+  sdev.setModel(0x00,0x03);
+  sdev.setSubType(0x00);
+  sdev.setInfo(0x41,0x01,0x00);
+
   if( eeprom.setup() == true ) {
     sdev.firstinit();
   }
   aclock.init();
   // add the "ping"
-  aclock.add(ping);
+  // aclock.add(ping);
 
   SwitchChannel& c0 = sdev.channel(0);
   SwitchList1 sd = c0.getList1();
@@ -97,7 +128,7 @@ void setup () {
   ssl.sh().onTime(0x20 + 5);
   ssl.sh().offTime(0x20 + 2);
   eeprom.dump(ssl.address(),ssl.size());
-  c0.jumpToTarget(ssl.sh());
+//  c0.jumpToTarget(ssl.sh());
 
 }
 
