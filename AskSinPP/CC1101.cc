@@ -14,91 +14,15 @@
 
 #include "Debug.h"
 #include "CC1101.h"
+#include "Atomic.h"
 
-#define pinOutput(PORT,PIN)  ((PORT) |=  _BV(PIN))              // pin functions
-#define pinInput(PORT,PIN)   ((PORT) &= ~_BV(PIN))
-#define setPinHigh(PORT,PIN) ((PORT) |=  _BV(PIN))
-#define setPinLow(PORT,PIN)  ((PORT) &= ~_BV(PIN))
-#define setPinCng(PORT,PIN)  ((PORT) ^= _BV(PIN))
-#define getPin(PORT,PIN)     ((PORT) &  _BV(PIN))
-
-#define _pgmB(x) pgm_read_byte(&x)                      // short hand for PROGMEM read
-#define _pgmW(x) pgm_read_word(&x)
-
-    #define CC_CS_DDR              DDRB                   // SPI chip select definition
-    #define CC_CS_PORT             PORTB
-    #define CC_CS_PIN              PORTB2
-
-    #define CC_GDO0_DDR            DDRD                   // GDO0 pin, signals received data
-    #define CC_GDO0_PIN            PORTB2
-
-    #define CC_GDO0_PCICR          PCICR                  // GDO0 interrupt register
-    #define CC_GDO0_PCIE           PCIE2
-    #define CC_GDO0_PCMSK          PCMSK2                 // GDO0 interrupt mask
-    #define CC_GDO0_INT            PCINT18                  // pin interrupt
-
-
-//- atmega328 cc1100 hardware definitions ---------------------------------------------------------------------------------------------
-#define SPI_PORT                PORTB                     // SPI port definition
-#define SPI_DDR                 DDRB
-#define SPI_MISO                PORTB4
-#define SPI_MOSI                PORTB3
-#define SPI_SCLK                PORTB5
-
-
-//- cc1100 hardware functions ---------------------------------------------------------------------------------------------
-void    ccInitHw(void) {
-  pinOutput( CC_CS_DDR, CC_CS_PIN );                      // set chip select as output
-  pinOutput( SPI_DDR, SPI_MOSI );                       // set MOSI as output
-  pinInput ( SPI_DDR, SPI_MISO );                       // set MISO as input
-  pinOutput( SPI_DDR, SPI_SCLK );                       // set SCK as output
-  pinInput ( CC_GDO0_DDR, CC_GDO0_PIN );                    // set GDO0 as input
-
-  SPCR = _BV(SPE) | _BV(MSTR);                        // SPI enable, master, speed = CLK/4
-
-  CC_GDO0_PCICR |= _BV(CC_GDO0_PCIE);                     // set interrupt in mask active
-}
-uint8_t ccSendByte(uint8_t data) {
-  SPDR = data;                                // send byte
-  while (!(SPSR & _BV(SPIF)));                        // wait until transfer finished
-  return SPDR;
-}
-/*
-uint8_t ccGetGDO0() {
-  uint8_t x = chkPCINT(CC_GDO0_PCIE, CC_GDO0_INT, 0);             // check PCINT without debouncing
-  //if (x>1) dbg << "x:" << x << '\n';
-
-  if (x == 2 ) return 1;                            // falling edge detected
-  else return 0;
-}
-
-void    enableGDO0Int(void) {
-  //dbg << "enable int\n";
-  CC_GDO0_PCMSK |=  _BV(CC_GDO0_INT);
-}
-void    disableGDO0Int(void) {
-  //dbg << "disable int\n";
-  CC_GDO0_PCMSK &= ~_BV(CC_GDO0_INT);
-}
-*/
-
-void    waitMiso(void) {
-  while(SPI_PORT &   _BV(SPI_MISO));
-}
-void    ccSelect(void) {
-  setPinLow( CC_CS_PORT, CC_CS_PIN);
-}
-void    ccDeselect(void) {
-  setPinHigh( CC_CS_PORT, CC_CS_PIN);
-}
-//- -----------------------------------------------------------------------------------------------------------------------
-
-
+// this is the global radio object
+CC1101 radio;
 
 // private:		//---------------------------------------------------------------------------------------------------------
-CC::CC() : crc_ok(0), rssi(0), lqi(0) {}
+CC1101::CC1101() : crc_ok(0), rssi(0), lqi(0) {}
 
-void    CC::init(void) {																// initialize CC1101
+void CC1101::init(void) {																// initialize CC1101
   DPRINT(F("CC init"));
 
 	ccInitHw();																			// init the hardware to get access to the RF modul
@@ -156,7 +80,7 @@ void    CC::init(void) {																// initialize CC1101
 		CC1101_PATABLE, 0xC3,
 	};
 	for (uint8_t i=0; i<sizeof(initVal); i+=2) {										// write init value to TRX868
-		writeReg(_pgmB(initVal[i]), _pgmB(initVal[i+1]));
+		writeReg(pgm_read_byte(&initVal[i]), pgm_read_byte(&initVal[i+1]));
 	}
 
 	DPRINT(F("2"));
@@ -176,7 +100,7 @@ void    CC::init(void) {																// initialize CC1101
   DPRINTLN(F(" - ready"));
 }
 
-uint8_t CC::sndData(uint8_t *buf, uint8_t burst) {										// send data packet via RF
+uint8_t CC1101::sndData(uint8_t *buf, uint8_t size, uint8_t burst) {										// send data packet via RF
 
 	// Going from RX to TX does not work if there was a reception less than 0.5
 	// sec ago. Due to CCA? Using IDLE helps to shorten this period(?)
@@ -194,7 +118,8 @@ uint8_t CC::sndData(uint8_t *buf, uint8_t burst) {										// send data packet 
 		_delay_ms(1);																	// wait a short time to set TX mode
 	}
 
-	writeBurst(CC1101_TXFIFO, buf, buf[0]+1);											// write in TX FIFO
+	writeReg(CC1101_TXFIFO, size);
+	writeBurst(CC1101_TXFIFO, buf, size);						// write in TX FIFO
 
 	strobe(CC1101_SFRX);																// flush the RX buffer
 	strobe(CC1101_STX);																	// send a burst
@@ -208,56 +133,49 @@ uint8_t CC::sndData(uint8_t *buf, uint8_t burst) {										// send data packet 
 		_delay_us(10);
 	}
 
-//  DPRINT("<- ");
-//  DHEX(buf,buf[0]);
-
   return true;
 }
 
-uint8_t CC::rcvData(uint8_t *buf) {														// read data packet from RX FIFO
+uint8_t CC1101::rcvData(uint8_t *buf,uint8_t size) {														// read data packet from RX FIFO
 	uint8_t rxBytes = readReg(CC1101_RXBYTES, CC1101_STATUS);							// how many bytes are in the buffer
 	//dbg << rxBytes << ' ';
 
 	if ((rxBytes & 0x7F) && !(rxBytes & 0x80)) {										// any byte waiting to be read and no overflow?
-		buf[0] = readReg(CC1101_RXFIFO, CC1101_CONFIG);									// read data length
-		
-		if (buf[0] > CC1101_DATA_LEN) {													// if packet is too long
-			buf[0] = 0;																	// discard packet
-			
-		} else {
-			readBurst(&buf[1], CC1101_RXFIFO, buf[0]);									// read data packet
-			
+		rxBytes = readReg(CC1101_RXFIFO, CC1101_CONFIG);									// read data length
+		if (rxBytes > size) {													// if packet is too long
+			rxBytes = 0;																	// discard packet
+		}
+		else {
+			readBurst(buf, CC1101_RXFIFO, rxBytes);									// read data packet
 			rssi = readReg(CC1101_RXFIFO, CC1101_CONFIG);								// read RSSI
-			
 			if (rssi >= 128) rssi = 255 - rssi;
 			rssi /= 2; rssi += 72;
-			
 			uint8_t val = readReg(CC1101_RXFIFO, CC1101_CONFIG);						// read LQI and CRC_OK
 			lqi = val & 0x7F;
 			crc_ok = bitRead(val, 7);
-	
 		}
-
-	} else buf[0] = 0;																	// nothing to do, or overflow
-
+	}
+	else {
+	  rxBytes = 0;																	// nothing to do, or overflow
+	}
 	strobe(CC1101_SFRX);																// flush Rx FIFO
 	strobe(CC1101_SIDLE);																// enter IDLE state
 	strobe(CC1101_SRX);																	// back to RX state
 	strobe(CC1101_SWORRST);																// reset real time clock
 	//	trx868.rfState = RFSTATE_RX;													// declare to be in Rx state
-
 //  DPRINT("-> ");
 //	DHEX(buf,buf[0]);
-
-	return buf[0];																		// return the data buffer
+	return rxBytes;	// return number of byte in buffer
 }
-void    CC::setIdle() {																	// put CC1101 into power-down state
+
+void    CC1101::setIdle() {																	// put CC1101 into power-down state
 	strobe(CC1101_SIDLE);																// coming from RX state, we need to enter the IDLE state first
 	strobe(CC1101_SFRX);
 	strobe(CC1101_SPWD);																// enter power down state
 	//dbg << "pd\n";
 }
-uint8_t CC::detectBurst(void) {		
+
+uint8_t CC1101::detectBurst(void) {
 	// 10 7/10 5 in front of the received string; 33 after received string
 	// 10 - 00001010 - sync word found
 	// 7  - 00000111 - GDO0 = 1, GDO2 = 1
@@ -299,13 +217,14 @@ uint8_t CC::detectBurst(void) {
 	return (bTmp & 0x40)?1:0;															// return carrier sense bit
 }
 
-void    CC::strobe(uint8_t cmd) {														// send command strobe to the CC1101 IC via SPI
+void CC1101::strobe(uint8_t cmd) {														// send command strobe to the CC1101 IC via SPI
 	ccSelect();																			// select CC1101
 	waitMiso();																			// wait until MISO goes low
 	ccSendByte(cmd);																	// send strobe command
 	ccDeselect();																		// deselect CC1101
 }
-void    CC::readBurst(uint8_t *buf, uint8_t regAddr, uint8_t len) {						// read burst data from CC1101 via SPI
+
+void CC1101::readBurst(uint8_t *buf, uint8_t regAddr, uint8_t len) {						// read burst data from CC1101 via SPI
 	ccSelect();																			// select CC1101
 	waitMiso();																			// wait until MISO goes low
 	ccSendByte(regAddr | READ_BURST);													// send register address
@@ -315,14 +234,16 @@ void    CC::readBurst(uint8_t *buf, uint8_t regAddr, uint8_t len) {						// read
 	}
 	ccDeselect();																		// deselect CC1101
 }
-void    CC::writeBurst(uint8_t regAddr, uint8_t *buf, uint8_t len) {					// write multiple registers into the CC1101 IC via SPI
+
+void CC1101::writeBurst(uint8_t regAddr, uint8_t *buf, uint8_t len) {					// write multiple registers into the CC1101 IC via SPI
 	ccSelect();																			// select CC1101
 	waitMiso();																			// wait until MISO goes low
 	ccSendByte(regAddr | WRITE_BURST);													// send register address
 	for(uint8_t i=0 ; i<len ; i++) ccSendByte(buf[i]);									// send value
 	ccDeselect();																		// deselect CC1101
 }
-uint8_t CC::readReg(uint8_t regAddr, uint8_t regType) {									// read CC1101 register via SPI
+
+uint8_t CC1101::readReg(uint8_t regAddr, uint8_t regType) {									// read CC1101 register via SPI
 	ccSelect();																			// select CC1101
 	waitMiso();																			// wait until MISO goes low
 	ccSendByte(regAddr | regType);														// send register address
@@ -330,10 +251,51 @@ uint8_t CC::readReg(uint8_t regAddr, uint8_t regType) {									// read CC1101 r
 	ccDeselect();																		// deselect CC1101
 	return val;
 }
-void    CC::writeReg(uint8_t regAddr, uint8_t val) {									// write single register into the CC1101 IC via SPI
+
+void CC1101::writeReg(uint8_t regAddr, uint8_t val) {									// write single register into the CC1101 IC via SPI
 	ccSelect();																			// select CC1101
 	waitMiso();																			// wait until MISO goes low
 	ccSendByte(regAddr);																// send register address
 	ccSendByte(val);																	// send value
 	ccDeselect();																		// deselect CC1101
+}
+
+void CC1101::handleGDO0Int() {
+  // Disable interrupt
+  disableGDO0Int();
+  uint8_t num = rcvData(buffer.buffer(),buffer.buffersize());
+  buffer.length(num);
+  if( num > 0 ) {
+    buffer.decode();
+    DPRINT(F("-> "));
+    buffer.dump();
+  }
+  // Enable interrupt
+  enableGDO0Int();
+}
+
+uint8_t CC1101::read (Message& msg) {
+  ATOMIC_BLOCK( ATOMIC_RESTORESTATE ) {
+    uint8_t len = buffer.length();
+    if( len > 0 ) {
+      // copy buffer to message
+      memcpy(msg.buffer(),buffer.buffer(),len);
+    }
+    msg.length(len);
+    // reset buffer
+    buffer.clear();
+  }
+  return msg.length();
+}
+
+uint8_t CC1101::read (Message& msg, uint32_t timeout) {
+  return 0;
+}
+
+bool CC1101::write (Message& msg) {
+  return false;
+}
+
+bool CC1101::write (Message& msg, uint8_t maxretry, uint32_t timeout) {
+  return false;
 }

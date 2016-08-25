@@ -37,6 +37,9 @@ public:
   bool valid() const {
     return id[0]!=0 || id[1]!=0 || id[2]!=0;
   }
+  uint8_t id0 () const { return id[0]; };
+  uint8_t id1 () const { return id[1]; };
+  uint8_t id2 () const { return id[2]; };
 };
 
 #endif

@@ -10,17 +10,19 @@
 #define _CC_H
 
 #include <util/delay.h>
+#include "Message.h"
 
-class CC {
+class CC1101 {
   
   public:		//---------------------------------------------------------------------------------------------------------
   protected:	//---------------------------------------------------------------------------------------------------------
   private:		//---------------------------------------------------------------------------------------------------------
 
-	#define CC1101_DATA_LEN          60														// maximum length of received bytes
+//	#define CC1101_DATA_LEN          60														// maximum length of received bytes
 	uint8_t crc_ok;																			// CRC OK for received message
 	uint8_t rssi;																			// signal strength
 	uint8_t lqi;																			// link quality
+	Message buffer;
 
 	// CC1101 config register													// Reset  Description
 	#define CC1101_IOCFG2           0x00										// (0x29) GDO2 Output Pin Configuration
@@ -150,23 +152,47 @@ class CC {
 	#define PA_MaxPower			     0xC0
 
 
-  public:		//---------------------------------------------------------------------------------------------------------
+public:		//---------------------------------------------------------------------------------------------------------
 	void    setIdle(void);																	// put CC1101 into power-down state
 	uint8_t detectBurst(void);																// detect burst signal, sleep while no signal, otherwise stay awake
 
-	CC();
+	CC1101();
 
 	void    init();																			// initialize CC1101
-	uint8_t sndData(uint8_t *buf, uint8_t burst);											// send data packet via RF
-	uint8_t rcvData(uint8_t *buf);															// read data packet from RX FIFO
-	
-	void    strobe(uint8_t cmd);															// send command strobe to the CC1101 IC via SPI
-	void    readBurst(uint8_t * buf, uint8_t regAddr, uint8_t len);							// read burst data from CC1101 via SPI
-	void    writeBurst(uint8_t regAddr, uint8_t* buf, uint8_t len);							// write multiple registers into the CC1101 IC via SPI
-	uint8_t readReg(uint8_t regAddr, uint8_t regType);										// read CC1101 register via SPI
-	void    writeReg(uint8_t regAddr, uint8_t val);											// write single register into the CC1101 IC via SPI
-	
+
+  void handleGDO0Int ();
+
+  // here start Hardware / OS depend methods
+  void    enableGDO0Int(void);
+	void    disableGDO0Int(void);
+
+	// read the message form the internal buffer, if any
+	uint8_t read (Message& msg);
+	// try to read a message - not longer than timeout millis
+  uint8_t read (Message& msg, uint32_t timeout);
+	// simple send the message
+	bool write (Message& msg);
+	// send message and wait for an ACK
+  bool write (Message& msg, uint8_t maxretry, uint32_t timeout);
+
+protected:
+  uint8_t sndData(uint8_t *buf, uint8_t size, uint8_t burst);                     // send data packet via RF
+  uint8_t rcvData(uint8_t *buf, uint8_t size);                              // read data packet from RX FIFO
+
+	void    strobe(uint8_t cmd);                              // send command strobe to the CC1101 IC via SPI
+  void    readBurst(uint8_t * buf, uint8_t regAddr, uint8_t len);             // read burst data from CC1101 via SPI
+  void    writeBurst(uint8_t regAddr, uint8_t* buf, uint8_t len);             // write multiple registers into the CC1101 IC via SPI
+  uint8_t readReg(uint8_t regAddr, uint8_t regType);                    // read CC1101 register via SPI
+  void    writeReg(uint8_t regAddr, uint8_t val);                     // write single register into the CC1101 IC via SPI
+
+	void ccInitHw();
+	uint8_t ccSendByte(uint8_t data);
+	void waitMiso(void);
+	void ccSelect(void);
+	void ccDeselect(void);
 };
 
+// our global definition
+extern CC1101 radio;
 
 #endif

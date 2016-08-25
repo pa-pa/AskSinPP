@@ -3,44 +3,63 @@
 #define __Message_h__
 
 #include "HMID.h"
+#include "Debug.h"
 
-#define MaxDataLen   60						// maximum length of received bytes
-
-struct MsgFlags {
-  bool WKUP     :1;					// 0x01: send initially to keep the device awake
-	bool WKMEUP   :1;					// 0x02: awake - hurry up to send messages
-	bool CFG      :1;					// 0x04: Device in Config mode
-	bool          :1;
-	bool BURST    :1;					// 0x10: set if burst is required by device
-	bool BIDI     :1;					// 0x20: response is expected
-	bool RPTED    :1;					// 0x40: repeated (repeater operation)
-	bool RPTEN    :1;					// 0x80: set in every message. Meaning?
-};
+//#define MaxDataLen   60						// maximum length of received bytes
+#define MaxDataLen   16
 
 class Message {
+public:
+
+  enum Flags {
+    WKUP = 0x01,   // send initially to keep the device awake
+    WKMEUP = 0x02, // awake - hurry up to send messages
+    CFG = 0x04,    // Device in Config mode
+    BURST = 0x10,  // set if burst is required by device
+    BIDI = 0x20,   // response is expected
+    RPTED = 0x40,  // repeated (repeater operation)
+    RPTEN = 0x80,  // set in every message. Meaning?
+  };
+
+private:
   uint8_t         len;					  // message length
 	uint8_t         cnt;					  // counter, if it is an answer counter has to reflect the answered message, otherwise own counter has to be used
-	MsgFlags        flags;				  // see structure of message flags
+	uint8_t         flags;				  // see structure of message flags
 	uint8_t         typ;					  // type of message
 	HMID            fromID;				  // sender ID
-	HMID            toID;	                  // receiver id, broadcast for 0
+	HMID            toID;	          // receiver id, broadcast for 0
 	uint8_t         comm;					  // type of message
 	uint8_t         subcom;				  // type of message
-	uint8_t         pload[MaxDataLen-12]; // payload
+	uint8_t         pload[MaxDataLen]; // payload
 
 public:
-	uint8_t* buffer () {
-	  return &len;
+	Message () : len(0), cnt(0), flags(0), typ(0), comm(0), subcom(0) {}
+
+	void clear () {
+	  len = 0;
 	}
 
-	uint8_t* payload () {
+	uint8_t* buffer () {
+	  return &cnt;
+	}
+
+	uint8_t buffersize () {
+	  return sizeof(Message)-1;
+	}
+
+	uint8_t* data () {
 	  return pload;
 	}
 
+	uint8_t datasize () {
+	  return len >= 11 ? len - 11 : 0;
+	}
+
   void init(uint8_t cnt, uint8_t typ, uint8_t comm, uint8_t sub) {
-    this->len = 12;
+    this->len = 11;
     this->cnt = cnt;
     this->typ = typ;
+    this->flags = 0;
     this->comm = comm;
     this->subcom = sub;
   }
@@ -90,44 +109,65 @@ public:
   }
 
   void decode () {
-    decode(buffer());
+    decode(buffer(),length());
   }
 
+  void decode(uint8_t *buf, uint8_t len) {
+    uint8_t prev = buf[0];
+    buf[0] = (~buf[0]) ^ 0x89;
+    uint8_t i, t;
+    for (i=1; i<len-1; i++) {
+      t = buf[i];
+      buf[i] = (prev + 0xdc) ^ buf[i];
+      prev = t;
+    }
+    buf[i] ^= buf[1];
+  }
+/*
   void decode(uint8_t *buf) {
     uint8_t prev = buf[1];
     buf[1] = (~buf[1]) ^ 0x89;
-
     uint8_t i, t;
     for (i=2; i<buf[0]; i++) {
       t = buf[i];
       buf[i] = (prev + 0xdc) ^ buf[i];
       prev = t;
     }
-
     buf[i] ^= buf[2];
   }
-
+*/
   void encode () {
-    encode(buffer());
+    encode(buffer(),length());
   }
 
+  void encode(uint8_t *buf,uint8_t len) {
+    buf[0] = (~buf[0]) ^ 0x89;
+    uint8_t buf2 = buf[1];
+    uint8_t prev = buf[0];
+    uint8_t i;
+    for (i=1; i<len-1; i++) {
+      prev = (prev + 0xdc) ^ buf[i];
+      buf[i] = prev;
+    }
+    buf[i] ^= buf2;
+  }
+/*
   void encode(uint8_t *buf) {
-
     buf[1] = (~buf[1]) ^ 0x89;
     uint8_t buf2 = buf[2];
     uint8_t prev = buf[1];
-
     uint8_t i;
     for (i=2; i<buf[0]; i++) {
       prev = (prev + 0xdc) ^ buf[i];
       buf[i] = prev;
     }
-
     buf[i] ^= buf2;
   }
-
+*/
   void dump () {
-    DHEX(buffer(),len);
+    DHEX(length());
+    DPRINT(F(" "));
+    DHEX(buffer(),length());
   }
 };
 

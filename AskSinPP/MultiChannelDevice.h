@@ -3,15 +3,17 @@
 #define __MULTICHANNELDEVICE_H__
 
 #include "Device.h"
-
+#include "List0.h"
 
 template <class ChannelType,int ChannelNumber>
 class MultiChannelDevice : public Device {
 
+  List0       list0;
   ChannelType devchannels[ChannelNumber];
 
 public:
-  MultiChannelDevice (uint16_t addr) {
+  MultiChannelDevice (uint16_t addr) : list0(addr) {
+    addr += list0.size();
     for( uint8_t i=0; i<channels(); ++i ) {
       devchannels[i].setup(this,i,addr);
       addr += devchannels[i].size();
@@ -23,7 +25,15 @@ public:
     return ChannelNumber;
   }
 
+  void init (const HMID& id,const char* serial) {
+    // read master id from flash
+    setMasterID(list0.masterid());
+    setDeviceID(id);
+    setSerial(serial);
+  }
+
   void firstinit () {
+    list0.defaults();
     for( uint8_t i=0; i<channels(); ++i ) {
       devchannels[i].firstinit();
     }
