@@ -6,7 +6,7 @@
 #include "Debug.h"
 
 //#define MaxDataLen   60						// maximum length of received bytes
-#define MaxDataLen   16
+#define MaxDataLen   25
 
 class Message {
 public:
@@ -55,11 +55,38 @@ public:
 	  return len >= 11 ? len - 11 : 0;
 	}
 
-  void init(uint8_t cnt, uint8_t typ, uint8_t comm, uint8_t sub) {
+	void append (uint8_t data) {
+	  *(buffer() + len) = data;
+	  len++;
+	}
+
+  void append (uint8_t* data,uint8_t l) {
+    memcpy(buffer()+len,data,l);
+    len += l;
+  }
+
+  void append (uint8_t d1, uint8_t d2, uint8_t d3) {
+    uint8_t* ptr = buffer() + len;
+    *ptr = d1;
+    *(ptr+1) = d2;
+    *(ptr+2) = d3;
+    len += 3;
+  }
+
+  void append (uint8_t d1, uint8_t d2, uint8_t d3, uint8_t d4) {
+    uint8_t* ptr = buffer() + len;
+    *ptr = d1;
+    *(ptr+1) = d2;
+    *(ptr+2) = d3;
+    *(ptr+3) = d4;
+    len += 4;
+  }
+
+  void init(uint8_t cnt, uint8_t typ, uint8_t flags, uint8_t comm, uint8_t sub) {
     this->len = 11;
     this->cnt = cnt;
     this->typ = typ;
-    this->flags = 0;
+    this->flags = flags;
     this->comm = comm;
     this->subcom = sub;
   }
@@ -168,6 +195,10 @@ public:
     DHEX(length());
     DPRINT(F(" "));
     DHEX(buffer(),length());
+  }
+
+  bool isPairSerial () {
+    return typ==0x01 && subcom==0x0a;
   }
 };
 

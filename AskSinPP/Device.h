@@ -18,6 +18,7 @@ class Device {
   uint8_t devinfo[3];
 
   CC1101* radio;
+  uint8_t msgcount;
 
 protected:
   Message msg;
@@ -26,6 +27,7 @@ public:
   virtual ~Device () {}
 
   void setRadio(CC1101& r) {
+    msgcount=0;
     radio = &r;
   }
 
@@ -39,7 +41,7 @@ public:
 
   void setModel (uint8_t m1, uint8_t m2) {
     model[0] = m1;
-    model[1] = m1;
+    model[1] = m2;
   }
 
   void setSubType (uint8_t st) {
@@ -82,15 +84,57 @@ public:
   void pollRadio () {
     uint8_t num = getRadio().read(msg);
     if( num > 0 ) {
-      DPRINT(F("-> "));
-      msg.dump();
       process(msg);
     }
   }
 
-  virtual void process(Message& msg) {
-
+  void send(Message& msg,const HMID& to) {
+    msg.to(to);
+    msg.from(devid);
+    DPRINT(F("<- "));
+    msg.dump();
+    radio->write(msg,0);
   }
+
+  virtual void process(Message& msg) {
+    static HMID boardcastAdr(0,0,0);
+    if( msg.to() == devid || (msg.to() == boardcastAdr && isBoardcastMsg(msg))) {
+      DPRINT(F("-> "));
+      msg.dump();
+      // if we get a PairSerial message we send the device info
+      if( msg.isPairSerial() == true ) {
+        sendDeviceInfo();
+      }
+    }
+    else {
+      DPRINT(F("ignore "));
+      msg.dump();
+    }
+  }
+
+  bool isBoardcastMsg(Message msg) {
+    return msg.isPairSerial();
+  }
+
+  void sendDeviceInfo () {
+    uint8_t count = 0;
+    HMID to;
+    if( msg.isPairSerial() == true ) {
+      count = msg.count();
+      to = msg.from();
+    }
+    else {
+      count = msgcount++;
+    }
+    msg.init(count,0x00, to.valid() ? Message::BIDI : 0x00,0x00,0x00);
+    msg.append(firmversion);
+    msg.append(model,sizeof(model));
+    msg.append((uint8_t*)serial,10);
+    msg.append(subtype);
+    msg.append(devinfo,sizeof(devinfo));
+    send(msg,to);
+  }
+
 };
 
 #endif
