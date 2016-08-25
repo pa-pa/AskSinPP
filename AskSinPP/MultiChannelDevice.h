@@ -25,11 +25,12 @@ public:
     return ChannelNumber;
   }
 
-  void init (const HMID& id,const char* serial) {
+  void init (CC1101& r,const HMID& id,const char* serial) {
     // read master id from flash
     setMasterID(list0.masterid());
     setDeviceID(id);
     setSerial(serial);
+    setRadio(r);
   }
 
   void firstinit () {

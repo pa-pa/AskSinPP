@@ -4,6 +4,7 @@
 
 #include "EEProm.h"
 
+template<class DataType>
 class ChannelList {
 protected:
   uint16_t  addr;
@@ -45,15 +46,34 @@ public:
     return eeprom.clearBits(addr + offset, bit);
   }
 
-  virtual uint8_t getOffset (uint8_t reg) const = 0;
+  uint8_t getOffset (uint8_t reg) const {
+    return DataType::getOffset(reg);
+  }
 
-  bool setRegister (uint8_t reg, uint8_t value) const {
+  uint8_t getRegister (uint8_t offset) const {
+    return DataType::getRegister(offset);
+  }
+
+  bool writeRegister (uint8_t reg, uint8_t value) const {
     bool result = false;
     uint8_t offset = getOffset(reg);
     if( offset != 0xff ) {
-      result = eeprom.setByte(addr + offset,value);
+      result = setByte(offset,value);
     }
     return result;
+  }
+
+  uint8_t readRegister (uint8_t reg) {
+    uint8_t value = 0;
+    uint8_t offset = getOffset(reg);
+    if( offset != 0xff ) {
+      value = getByte(offset);
+    }
+    return value;
+  }
+
+  static uint8_t size () {
+    return sizeof(DataType);
   }
 };
 

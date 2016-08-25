@@ -34,10 +34,9 @@ public:
   }
 };
 
-class List0 : public ChannelList {
+class List0 : public ChannelList<List0Data> {
 public:
   List0(uint16_t a) : ChannelList(a) {}
-  virtual ~List0() {}
 
   HMID masterid () { return HMID(getByte(1),getByte(2),getByte(3)); }
   void masterid (const HMID& mid) {
@@ -46,8 +45,6 @@ public:
     setByte(3,mid.id2());
   };
 
-  virtual uint8_t getOffset (uint8_t reg) const { return List0Data::getOffset(reg); }
-
   void defaults () {
     setByte(0,0x01);
     setByte(1,0x00);
@@ -55,9 +52,6 @@ public:
     setByte(3,0x00);
   }
 
-  static uint8_t size () {
-    return sizeof(List0Data);
-  }
 };
 
 #endif

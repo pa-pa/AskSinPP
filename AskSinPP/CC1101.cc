@@ -265,11 +265,6 @@ void CC1101::handleGDO0Int() {
   disableGDO0Int();
   uint8_t num = rcvData(buffer.buffer(),buffer.buffersize());
   buffer.length(num);
-  if( num > 0 ) {
-    buffer.decode();
-    DPRINT(F("-> "));
-    buffer.dump();
-  }
   // Enable interrupt
   enableGDO0Int();
 }
@@ -278,6 +273,8 @@ uint8_t CC1101::read (Message& msg) {
   ATOMIC_BLOCK( ATOMIC_RESTORESTATE ) {
     uint8_t len = buffer.length();
     if( len > 0 ) {
+      // decode the message
+      buffer.decode();
       // copy buffer to message
       memcpy(msg.buffer(),buffer.buffer(),len);
     }
@@ -292,10 +289,11 @@ uint8_t CC1101::read (Message& msg, uint32_t timeout) {
   return 0;
 }
 
-bool CC1101::write (Message& msg) {
-  return false;
+bool CC1101::write (Message& msg, uint8_t burst) {
+  msg.encode();
+  return radio.sndData(msg.buffer(),msg.length(),burst);
 }
 
-bool CC1101::write (Message& msg, uint8_t maxretry, uint32_t timeout) {
+bool CC1101::write (Message& msg, uint8_t burst, uint8_t maxretry, uint32_t timeout) {
   return false;
 }

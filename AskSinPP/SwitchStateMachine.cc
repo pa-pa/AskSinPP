@@ -1,13 +1,7 @@
 
 #include "SwitchStateMachine.h"
 
-  void SwitchStateMachine::switchState(uint8_t oldstate,uint8_t newstate,uint8_t dly) {
-    DPRINT(F("Switch State: "));
-    DHEX(newstate);
-    DPRINT(F(" ["));
-    DHEX(dly);
-    DPRINTLN(F("]"));
-  }
+  void SwitchStateMachine::switchState(uint8_t oldstate,uint8_t newstate,uint8_t dly) {}
 
   void SwitchStateMachine::jumpToTarget(SwitchPeerList lst) {
     uint8_t next = getNextState(state,lst);

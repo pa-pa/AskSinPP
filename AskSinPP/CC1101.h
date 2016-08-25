@@ -171,9 +171,9 @@ public:		//---------------------------------------------------------------------
 	// try to read a message - not longer than timeout millis
   uint8_t read (Message& msg, uint32_t timeout);
 	// simple send the message
-	bool write (Message& msg);
+	bool write (Message& msg, uint8_t burst);
 	// send message and wait for an ACK
-  bool write (Message& msg, uint8_t maxretry, uint32_t timeout);
+  bool write (Message& msg, uint8_t burst, uint8_t maxretry, uint32_t timeout);
 
 protected:
   uint8_t sndData(uint8_t *buf, uint8_t size, uint8_t burst);                     // send data packet via RF

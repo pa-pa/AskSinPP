@@ -100,21 +100,21 @@ public:
     return List3Type(liststart);
   }
 
-  List3Type getList3 (uint8_t p) const {
+  List3Type getList3 (uint8_t pidx) const {
     uint16_t liststart = 0x00;
-    if( p < peers() ) {
-      liststart = peerAddress(p) + sizeof(Peer);
+    if( pidx < peers() ) {
+      liststart = peerAddress(pidx) + sizeof(Peer);
     }
     return List3Type(liststart);
   }
 
 
   protected:
-  uint16_t peerAddress (uint8_t idx) const {
-    if( idx < NumPeers ) {
+  uint16_t peerAddress (uint8_t pidx) const {
+    if( pidx < NumPeers ) {
       uint16_t offset = sizeof(Peer);
       offset += List3::size();
-      offset *= idx;
+      offset *= pidx;
       offset += List1::size();
       return addr + offset;
     }

@@ -4,6 +4,8 @@
 
 #include "HMID.h"
 #include "Channel.h"
+#include "Message.h"
+#include "CC1101.h"
 
 class Device {
   HMID  devid;
@@ -15,10 +17,21 @@ class Device {
   uint8_t subtype;
   uint8_t devinfo[3];
 
+  CC1101* radio;
+
 protected:
-  ~Device () {}
+  Message msg;
 
 public:
+  virtual ~Device () {}
+
+  void setRadio(CC1101& r) {
+    radio = &r;
+  }
+
+  CC1101& getRadio () {
+    return *radio;
+  }
 
   void setFirmwareVersion (uint8_t v) {
     firmversion = v;
@@ -66,6 +79,18 @@ public:
     return serial;
   }
 
+  void pollRadio () {
+    uint8_t num = getRadio().read(msg);
+    if( num > 0 ) {
+      DPRINT(F("-> "));
+      msg.dump();
+      process(msg);
+    }
+  }
+
+  virtual void process(Message& msg) {
+
+  }
 };
 
 #endif

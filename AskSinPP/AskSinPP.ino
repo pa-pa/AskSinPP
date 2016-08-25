@@ -1,5 +1,4 @@
 
-
 #include "Debug.h"
 
 #include "AlarmClock.h"
@@ -10,76 +9,80 @@
 #include "SwitchList1.h"
 #include "SwitchList3.h"
 #include "SwitchStateMachine.h"
+#include "StatusLed.h"
 
 #include "CC1101.h"
 #include "Message.h"
 
-// ping every second
-class Ping : public Alarm {
-public:
-  Ping(uint16_t t) : Alarm(t) {}
-  virtual ~Ping (){}
-  virtual void trigger (AlarmClock& clock) {
-    tick = 10;
-    clock.add(*this);
-    DPRINTLN(F("Ping"));
-  };
-};
 
 class SwitchChannel : public Channel<SwitchList1,SwitchList3,4>, public SwitchStateMachine {
 
 public:
-  SwitchChannel () : Channel() {
-
-  }
+  SwitchChannel () : Channel() {}
   virtual ~SwitchChannel() {}
 
+  uint8_t pin () {
+    if( number() < 3 ) {
+      return 5+number();
+    }
+    return 3;
+  }
+
+  void setup(Device* dev,uint8_t number,uint16_t addr) {
+    Channel::setup(dev,number,addr);
+    uint8_t p=pin();
+    pinMode(p,OUTPUT);
+    digitalWrite(p,LOW);
+  }
+
   virtual void switchState(uint8_t oldstate,uint8_t newstate,uint8_t dly) {
-    DPRINT(F("Channel: "));
-    DHEX(number());
-    DPRINT(F(" - Switch State: "));
-    DHEX(newstate);
-    DPRINT(F(" ["));
-    DHEX(dly);
-    DPRINT(F("] - "));
     if( newstate == AS_CM_JT_ON ) {
-      DPRINTLN(F("ON"));
+      digitalWrite(pin(),HIGH);
     }
-    else if( newstate == AS_CM_JT_OFF ) {
-      DPRINTLN(F("OFF"));
-    }
-    else {
-      DPRINTLN(F("..."));
+    else if ( newstate == AS_CM_JT_OFF ) {
+      digitalWrite(pin(),LOW);
     }
   }
 
 };
 
 
+StatusLed led(4);
 MultiChannelDevice<SwitchChannel,4> sdev(0x20);
-Ping ping(10);
+
+#include "PinChangeInt.h"
+
+void intPin() {
+  led.set(StatusLed::key_long);
+}
 
 void setup () {
 #ifdef ARDUINO
   Serial.begin(57600);
 #endif
+  // B0 == PIN 8 on Pro Mini
+  pinMode(8, INPUT_PULLUP);
+  attachPinChangeInterrupt(8, intPin, CHANGE);
+
+  radio.init();
 
   if( eeprom.setup() == true ) {
     sdev.firstinit();
   }
 
-  sdev.init(HMID(0x12,0x34,0x56),"papa000000");
+  sdev.init(radio,HMID(0x12,0x34,0x56),"papa000000");
   sdev.setFirmwareVersion(0x16);
   sdev.setModel(0x00,0x03);
   sdev.setSubType(0x00);
   sdev.setInfo(0x41,0x01,0x00);
 
-  radio.init();
   radio.enableGDO0Int();
 
   aclock.init();
   // add the "ping"
   // aclock.add(ping);
+
+  led.set(StatusLed::welcome);
 
   SwitchChannel& c0 = sdev.channel(0);
   SwitchList1 sd = c0.getList1();
@@ -96,6 +99,7 @@ void setup () {
     eeprom.dump(ssl.address(),ssl.size());
 
     c1.jumpToTarget(c1.getList3(even).sh());
+    delay(1000);
     c1.jumpToTarget(c1.getList3(odd).sh());
   }
 
@@ -108,13 +112,14 @@ void setup () {
   ssl.sh().onTime(0x20 + 5);
   ssl.sh().offTime(0x20 + 2);
   eeprom.dump(ssl.address(),ssl.size());
-//  c0.jumpToTarget(ssl.sh());
+  c0.jumpToTarget(ssl.sh());
 
 }
 
 void loop() {
 
   aclock.runready();
+  sdev.pollRadio();
 
 #ifndef ARDUINO
   // simulate timer

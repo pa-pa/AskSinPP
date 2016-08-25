@@ -36,10 +36,9 @@ public:
   }
 };
 
-class SwitchList1 : public ChannelList {
+class SwitchList1 : public ChannelList<SwitchList1Data> {
 public:
   SwitchList1(uint16_t a) : ChannelList(a) {}
-  virtual ~SwitchList1() {}
 
   bool sign () const { return isBitSet(0,0x01); }
   bool sign (bool s) const { return setBit(0,0x01,s); }
@@ -55,8 +54,6 @@ public:
   uint8_t statusInfoRandom () const { return getByte(3) >> 5; }
   bool statusInfoRandom (uint8_t value) { return setByte(3,value,0xe0,5); }
 
-  virtual uint8_t getOffset (uint8_t reg) const { return SwitchList1Data::getOffset(reg); }
-
   void defaults () {
     setByte(0,0);
     sign(false);
@@ -66,9 +63,6 @@ public:
     statusInfoRandom(0);
   }
 
-  static uint8_t size () {
-    return sizeof(SwitchList1Data);
-  }
 };
 
 #endif

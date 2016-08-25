@@ -27,6 +27,11 @@
 	</natures>
 	<linkedResources>
 		<link>
+			<name>Libraries/PinChangeInt</name>
+			<type>2</type>
+			<locationURI>ArduinoPrivateLibPath/PinChangeInt</locationURI>
+		</link>
+		<link>
 			<name>Libraries/TimerOne</name>
 			<type>2</type>
 			<locationURI>ArduinoPrivateLibPath/TimerOne</locationURI>

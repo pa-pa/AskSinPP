@@ -68,10 +68,9 @@ public:
 
 };
 
-class SwitchPeerList : public ChannelList {
+class SwitchPeerList : public ChannelList<SwitchPeerData> {
 public:
   SwitchPeerList(uint16_t a) : ChannelList(a) {}
-  virtual ~SwitchPeerList() {}
 
   uint8_t ctDlyOn () const { return getByte(0,0x0f,0); }
   bool ctDlyOn (uint8_t value) const { return setByte(0,value,0x0f,0); }
@@ -115,29 +114,20 @@ public:
   bool jtDlyOn (uint8_t value) const { return setByte(10,value,0x0f,0); }
   uint8_t jtDlyOff() const { return getByte(10,0xf0,4); }
   bool jtDlyOff (uint8_t value) const { return setByte(10,value,0xf0,4); }
-
-  virtual uint8_t getOffset (uint8_t reg) const { return SwitchPeerData::getOffset(reg); }
 };
 
-class SwitchList3 : public ChannelList {
+class SwitchList3 : public ChannelList<SwitchList3Data> {
 protected:
 public:
   SwitchList3(uint16_t a) : ChannelList(a) {}
-  virtual ~SwitchList3() {}
 
   const SwitchPeerList sh() const { return SwitchPeerList(address()); }
   const SwitchPeerList lg() const { return SwitchPeerList(address() + sizeof(SwitchPeerData)); }
-
-  virtual uint8_t getOffset (uint8_t reg) const { return SwitchList3Data::getOffset(reg); }
 
   void defaults ();
   void odd ();
   void even ();
   void single ();
-
-  static uint8_t size () {
-    return sizeof(SwitchList3Data);
-  }
 };
 
 #endif

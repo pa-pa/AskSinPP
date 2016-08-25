@@ -22,6 +22,7 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/AskSinPP/arduino/core}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/AskSinPP/arduino/variant}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/AskSinPP/Libraries/TimerOne}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/AskSinPP/Libraries/PinChangeInt}&quot;"/>
 								</option>
 								<inputType id="it.baeyens.arduino.compiler.cpp.sketch.input.1729792468" name="CPP source files" superClass="it.baeyens.arduino.compiler.cpp.sketch.input"/>
 							</tool>
@@ -30,6 +31,7 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/AskSinPP/arduino/core}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/AskSinPP/arduino/variant}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/AskSinPP/Libraries/TimerOne}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/AskSinPP/Libraries/PinChangeInt}&quot;"/>
 								</option>
 								<inputType id="it.baeyens.arduino.compiler.c.sketch.input.952489305" name="C Source Files" superClass="it.baeyens.arduino.compiler.c.sketch.input"/>
 							</tool>
