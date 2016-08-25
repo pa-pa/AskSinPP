@@ -79,8 +79,6 @@ void setup () {
   radio.enableGDO0Int();
 
   aclock.init();
-  // add the "ping"
-  // aclock.add(ping);
 
   led.set(StatusLed::welcome);
 
