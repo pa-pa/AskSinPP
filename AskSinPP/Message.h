@@ -43,6 +43,10 @@ public:
 	  return &cnt;
 	}
 
+  const uint8_t* buffer () const {
+    return &cnt;
+  }
+
 	uint8_t buffersize () {
 	  return sizeof(Message)-1;
 	}
@@ -218,7 +222,7 @@ public:
     buf[i] ^= buf2;
   }
 */
-  void dump () {
+  void dump () const {
     DHEX(length());
     DPRINT(F(" "));
     DHEX(buffer(),length());

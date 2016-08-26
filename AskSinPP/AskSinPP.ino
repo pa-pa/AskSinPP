@@ -72,7 +72,7 @@ void setup () {
 
   sdev.init(radio,HMID(0x12,0x34,0x56),"papa000000");
   sdev.setFirmwareVersion(0x16);
-  sdev.setModel(0x00,0x03);
+  sdev.setModel(0x00,0x02);
   sdev.setSubType(0x00);
   sdev.setInfo(0x41,0x01,0x00);
 

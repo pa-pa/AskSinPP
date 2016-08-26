@@ -23,6 +23,7 @@ class CC1101 {
 	uint8_t rss;																			// signal strength
 	uint8_t lqi;																			// link quality
 	Message buffer;
+  Message sbuffer;
 
 	// CC1101 config register													// Reset  Description
 	#define CC1101_IOCFG2           0x00										// (0x29) GDO2 Output Pin Configuration
@@ -171,9 +172,9 @@ public:		//---------------------------------------------------------------------
 	// try to read a message - not longer than timeout millis
   uint8_t read (Message& msg, uint32_t timeout);
 	// simple send the message
-	bool write (Message& msg, uint8_t burst);
+	bool write (const Message& msg, uint8_t burst);
 	// send message and wait for an ACK
-  bool write (Message& msg, uint8_t burst, uint8_t maxretry, uint32_t timeout);
+  bool write (const Message& msg, uint8_t burst, uint8_t maxretry, uint32_t timeout);
 
   bool readAck (const Message& msg);
 

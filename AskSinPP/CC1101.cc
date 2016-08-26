@@ -291,9 +291,9 @@ bool CC1101::readAck (const Message& msg) {
       // decode the message
       buffer.decode();
       return buffer.isAck() &&
-             buffer.from() == msg.to() &&
-             buffer.to() == msg.from() &&
-             buffer.count() == msg.count();
+            (buffer.from() == msg.to()) &&
+            (buffer.to() == msg.from()) &&
+            (buffer.count() == msg.count());
     }
     // reset buffer
     buffer.clear();
@@ -315,11 +315,13 @@ uint8_t CC1101::read (Message& msg, uint32_t timeout) {
   return num;
 }
 
-bool CC1101::write (Message& msg, uint8_t burst) {
-  msg.encode();
-  return radio.sndData(msg.buffer(),msg.length(),burst);
+bool CC1101::write (const Message& msg, uint8_t burst) {
+  memcpy(sbuffer.buffer(),msg.buffer(),msg.length());
+  sbuffer.length(msg.length());
+  sbuffer.encode();
+  return radio.sndData(sbuffer.buffer(),sbuffer.length(),burst);
 }
 
-bool CC1101::write (Message& msg, uint8_t burst, uint8_t maxretry, uint32_t timeout) {
+bool CC1101::write (const Message& msg, uint8_t burst, uint8_t maxretry, uint32_t timeout) {
   return false;
 }

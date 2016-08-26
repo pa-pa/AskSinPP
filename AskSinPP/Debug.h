@@ -34,7 +34,7 @@
     if( b<0x10 ) Serial.print('0');
     Serial.print(b,HEX);
   }
-  inline void DHEX(uint8_t* b,uint8_t l) {
+  inline void DHEX(const uint8_t* b,uint8_t l) {
     for( int i=0; i<l; i++, b++) {
       DHEX(*b); DPRINT(F(" "));
     }

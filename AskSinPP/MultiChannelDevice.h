@@ -21,6 +21,11 @@ public:
   }
   virtual ~MultiChannelDevice () {}
 
+  virtual uint8_t channelStatus (uint8_t ch) {
+    return channel(ch-1).status();
+  }
+
+
   uint8_t channels () const {
     return ChannelNumber;
   }

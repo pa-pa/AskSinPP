@@ -42,7 +42,9 @@ public:
     return (uint16_t)(tTime & 0x1F) * c[tTime >> 5];
   }
 
-
+  uint8_t status () const {
+    return state == AS_CM_JT_OFF ? 0 : 200;
+  }
 };
 
 #endif
