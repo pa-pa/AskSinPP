@@ -20,7 +20,7 @@ class CC1101 {
 
 //	#define CC1101_DATA_LEN          60														// maximum length of received bytes
 	uint8_t crc_ok;																			// CRC OK for received message
-	uint8_t rssi;																			// signal strength
+	uint8_t rss;																			// signal strength
 	uint8_t lqi;																			// link quality
 	Message buffer;
 
@@ -174,6 +174,12 @@ public:		//---------------------------------------------------------------------
 	bool write (Message& msg, uint8_t burst);
 	// send message and wait for an ACK
   bool write (Message& msg, uint8_t burst, uint8_t maxretry, uint32_t timeout);
+
+  bool readAck (const Message& msg);
+
+  uint8_t rssi () const {
+    return rss;
+  }
 
 protected:
   uint8_t sndData(uint8_t *buf, uint8_t size, uint8_t burst);                     // send data packet via RF

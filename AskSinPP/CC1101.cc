@@ -20,7 +20,7 @@
 CC1101 radio;
 
 // private:		//---------------------------------------------------------------------------------------------------------
-CC1101::CC1101() : crc_ok(0), rssi(0), lqi(0) {}
+CC1101::CC1101() : crc_ok(0), rss(0), lqi(0) {}
 
 void CC1101::init(void) {																// initialize CC1101
   DPRINT(F("CC init"));
@@ -147,9 +147,9 @@ uint8_t CC1101::rcvData(uint8_t *buf,uint8_t size) {														// read data p
 		}
 		else {
 			readBurst(buf, CC1101_RXFIFO, rxBytes);									// read data packet
-			rssi = readReg(CC1101_RXFIFO, CC1101_CONFIG);								// read RSSI
-			if (rssi >= 128) rssi = 255 - rssi;
-			rssi /= 2; rssi += 72;
+			rss = readReg(CC1101_RXFIFO, CC1101_CONFIG);								// read RSSI
+			if (rss >= 128) rss = 255 - rss;
+			rss /= 2; rss += 72;
 			uint8_t val = readReg(CC1101_RXFIFO, CC1101_CONFIG);						// read LQI and CRC_OK
 			lqi = val & 0x7F;
 			crc_ok = bitRead(val, 7);
@@ -285,8 +285,34 @@ uint8_t CC1101::read (Message& msg) {
   return msg.length();
 }
 
+bool CC1101::readAck (const Message& msg) {
+  ATOMIC_BLOCK( ATOMIC_RESTORESTATE ) {
+    if( buffer.length() > 0 ) {
+      // decode the message
+      buffer.decode();
+      return buffer.isAck() &&
+             buffer.from() == msg.to() &&
+             buffer.to() == msg.from() &&
+             buffer.count() == msg.count();
+    }
+    // reset buffer
+    buffer.clear();
+  }
+  return false;
+}
+
 uint8_t CC1101::read (Message& msg, uint32_t timeout) {
-  return 0;
+  uint8_t num = 0;
+  uint32_t time=0;
+  do {
+    num = read(msg);
+    if( num == 0 ) {
+      delay(50); // wait 50ms
+      time += 50;
+    }
+  }
+  while( num == 0 && time < timeout );
+  return num;
 }
 
 bool CC1101::write (Message& msg, uint8_t burst) {

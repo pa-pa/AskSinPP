@@ -40,6 +40,8 @@ public:
   uint8_t id0 () const { return id[0]; };
   uint8_t id1 () const { return id[1]; };
   uint8_t id2 () const { return id[2]; };
+
+  static HMID boardcast;
 };
 
 #endif

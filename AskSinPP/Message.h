@@ -24,7 +24,7 @@ public:
 private:
   uint8_t         len;					  // message length
 	uint8_t         cnt;					  // counter, if it is an answer counter has to reflect the answered message, otherwise own counter has to be used
-	uint8_t         flags;				  // see structure of message flags
+	uint8_t         flag;				  // see structure of message flags
 	uint8_t         typ;					  // type of message
 	HMID            fromID;				  // sender ID
 	HMID            toID;	          // receiver id, broadcast for 0
@@ -33,7 +33,7 @@ private:
 	uint8_t         pload[MaxDataLen]; // payload
 
 public:
-	Message () : len(0), cnt(0), flags(0), typ(0), comm(0), subcom(0) {}
+	Message () : len(0), cnt(0), flag(0), typ(0), comm(0), subcom(0) {}
 
 	void clear () {
 	  len = 0;
@@ -60,7 +60,7 @@ public:
 	  len++;
 	}
 
-  void append (uint8_t* data,uint8_t l) {
+  void append (void* data,uint8_t l) {
     memcpy(buffer()+len,data,l);
     len += l;
   }
@@ -82,11 +82,18 @@ public:
     len += 4;
   }
 
-  void init(uint8_t cnt, uint8_t typ, uint8_t flags, uint8_t comm, uint8_t sub) {
-    this->len = 11;
+  void initWithCount(uint8_t length, uint8_t typ, uint8_t flags, uint8_t comm) {
+    this->len = length;
+    this->typ = typ;
+    this->flag = flags;
+    this->comm = comm;
+  }
+
+  void init(uint8_t l, uint8_t cnt, uint8_t typ, uint8_t flags, uint8_t comm, uint8_t sub) {
+    this->len = l;
     this->cnt = cnt;
     this->typ = typ;
-    this->flags = flags;
+    this->flag = flags;
     this->comm = comm;
     this->subcom = sub;
   }
@@ -119,16 +126,36 @@ public:
     toID = hmid;
   }
 
-  const HMID& to () {
+  const HMID& to () const {
     return toID;
+  }
+
+  void type (uint8_t t) {
+    typ=t;
   }
 
   uint8_t type () const {
     return typ;
   }
 
+  void flags (uint8_t f) {
+    flag = f;
+  }
+
+  uint8_t flags () const {
+    return flag;
+  }
+
+  void command (uint8_t c) {
+    comm = c;
+  }
+
   uint8_t command () const {
     return comm;
+  }
+
+  void subcommand (uint8_t c) {
+    subcom = c;
   }
 
   uint8_t subcommand () const {
@@ -197,8 +224,24 @@ public:
     DHEX(buffer(),length());
   }
 
-  bool isPairSerial () {
+  bool ackRequired () const {
+    return (flag & BIDI) == BIDI;
+  }
+
+  bool burstRequired () const {
+    return (flag & BURST) == BURST;
+  }
+
+  bool isPairSerial () const {
     return typ==0x01 && subcom==0x0a;
+  }
+
+  bool isAck () const {
+    return typ==0x02 && (comm & 0x80) == 0;
+  }
+
+  bool isNack () const {
+    return typ==0x02 && (comm & 0x80) == 0x80;
   }
 };
 
