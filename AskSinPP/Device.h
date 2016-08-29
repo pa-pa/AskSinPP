@@ -132,7 +132,7 @@ public:
   }
 
   template <class ListType>
-  void sendInfoParamResponsePairs(const HMID& to,uint8_t count,const ListType& list) {
+  void sendInfoParamResponsePairs(HMID to,uint8_t count,const ListType& list) {
     uint8_t  current=0;
     uint8_t* buf=msg.data()-1;
     for( int i=0; i<list.size(); ++i ) {
@@ -144,20 +144,49 @@ public:
         msg.count(count);
         // reset to zero
         current=0;
+        buf=msg.data()-1;
         if( send(msg,to) == false ) {
           // exit loop in case of error
           break;
         }
       }
     }
-    if( current > 0) {
-      *buf++ = 0;
-      *buf++ = 0;
-      current++;
-      msg.initWithCount(0x0b-1+(current*2),0x10,Message::BIDI,0x02);
-      msg.count(count);
-      send(msg,to);
+    *buf++ = 0;
+    *buf++ = 0;
+    current++;
+    msg.initWithCount(0x0b-1+(current*2),0x10,Message::BIDI,0x02);
+    msg.count(count);
+    send(msg,to);
+  }
+
+  template <class ChannelType>
+  void sendInfoPeerList (HMID to,uint8_t count,const ChannelType& channel) {
+    uint8_t  current=0;
+    uint8_t* buf=msg.data()-1;
+    for( uint8_t i=0; i<channel.peers(); ++i ) {
+      Peer p = channel.peer(i);
+      if( p.valid() == true ) {
+        memcpy(buf,&p,sizeof(Peer));
+        buf+=sizeof(Peer);
+        current++;
+        if( current == 4 ) {
+          msg.initWithCount(0x0b-1+(4*sizeof(Peer)),0x10,Message::BIDI,0x01);
+          msg.count(count);
+          // reset to zero
+          current=0;
+          buf=msg.data()-1;
+          if( send(msg,to) == false ) {
+            // exit loop in case of error
+            break;
+          }
+        }
+      }
     }
+    memset(buf,0,sizeof(Peer));
+    current++;
+    msg.initWithCount(0x0b-1+(current*sizeof(Peer)),0x10,Message::BIDI,0x01);
+    msg.count(count);
+    send(msg,to);
   }
 };
 

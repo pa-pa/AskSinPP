@@ -87,7 +87,17 @@ public:
        if( msg.type() == AS_MESSAGE_CONFIG ) {
          // PAIR_SERIAL
          if( msg.subcommand() == AS_CONFIG_PAIR_SERIAL && memcmp(msg.data(),getSerial(),10)==0 ) {
-           sendDeviceInfo(msg.from(),msg.count());
+           list0.masterid(msg.from());
+           setMasterID(list0.masterid());
+           sendDeviceInfo(getMasterID(),msg.count());
+         }
+         // CONFIG_PEER_LIST_REQ
+         else if( msg.subcommand() == AS_CONFIG_PEER_LIST_REQ ) {
+           uint8_t ch = msg.command();
+           if( ch > 0 && ch <= channels() ) {
+             ChannelType& c = channel(ch);
+             sendInfoPeerList(msg.from(),msg.count(),c);
+           }
          }
          // CONFIG_PARAM_REQ
          else if (msg.subcommand() == AS_CONFIG_PARAM_REQ ) {
@@ -97,7 +107,7 @@ public:
              sendInfoParamResponsePairs(msg.from(),msg.count(),list0);
            }
            else if ( ch <= channels() ) { // TODO hasChannel
-             uint8_t numlist = *msg.data()+4;
+             uint8_t numlist = *(msg.data()+4);
              ChannelType& c = channel(ch);
              if( numlist == 1 ) {
                sendInfoParamResponsePairs(msg.from(),msg.count(),c.getList1());
