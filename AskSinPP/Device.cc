@@ -3,6 +3,7 @@
 
 
 void Device::process(Message& msg) {
+  /*
   if( msg.to() == devid || (msg.to() == HMID::boardcast && isBoardcastMsg(msg))) {
     DPRINT(F("-> "));
     msg.dump();
@@ -22,6 +23,7 @@ void Device::process(Message& msg) {
     DPRINT(F("ignore "));
     msg.dump();
   }
+  */
 }
 
 bool Device::send(Message& msg,const HMID& to) {
@@ -80,9 +82,9 @@ void Device::sendDeviceInfo (const HMID& to,uint8_t count) {
   send(msg,to);
 }
 
-void Device::sendInfoActuatorStatus (const HMID& to,uint8_t count,uint8_t channel) {
-  msg.init(0x0e,count,0x10,Message::BIDI,0x06,channel);
-  *msg.data() = channelStatus(channel);
+void Device::sendInfoActuatorStatus (const HMID& to,uint8_t count,uint8_t ch,uint8_t status) {
+  msg.init(0x0b+3,count,0x10,Message::BIDI,0x06,ch);
+  *msg.data() = status;
   *(msg.data()+1) = 0x00;
   *(msg.data()+2) = radio->rssi();
   send(msg,to);

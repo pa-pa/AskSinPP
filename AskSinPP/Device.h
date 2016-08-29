@@ -87,7 +87,6 @@ public:
   }
 
   virtual void process(Message& msg);
-  virtual uint8_t channelStatus (uint8_t ch) = 0;
 
   bool isBoardcastMsg(Message msg) {
     return msg.isPairSerial();
@@ -103,7 +102,8 @@ public:
     sendDeviceInfo(HMID::boardcast,++msgcount);
   }
   void sendDeviceInfo (const HMID& to,uint8_t count);
-  void sendInfoActuatorStatus (const HMID& to,uint8_t count,uint8_t channel);
+  void sendInfoActuatorStatus (const HMID& to,uint8_t count,uint8_t channel,uint8_t status);
+
 };
 
 #endif

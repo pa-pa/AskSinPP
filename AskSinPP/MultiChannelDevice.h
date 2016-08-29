@@ -15,15 +15,11 @@ public:
   MultiChannelDevice (uint16_t addr) : list0(addr) {
     addr += list0.size();
     for( uint8_t i=0; i<channels(); ++i ) {
-      devchannels[i].setup(this,i,addr);
+      devchannels[i].setup(this,i+1,addr);
       addr += devchannels[i].size();
     }
   }
   virtual ~MultiChannelDevice () {}
-
-  virtual uint8_t channelStatus (uint8_t ch) {
-    return channel(ch-1).status();
-  }
 
 
   uint8_t channels () const {
@@ -45,12 +41,12 @@ public:
     }
   }
 
-  ChannelType& channel(uint8_t idx) {
-    return devchannels[idx];
+  ChannelType& channel(uint8_t ch) {
+    return devchannels[ch-1];
   }
 
-  bool addPeer (uint8_t channel,const Peer& p) {
-     ChannelType& sc = devchannels[channel];
+  bool addPeer (uint8_t ch,const Peer& p) {
+     ChannelType& sc = channel(ch);
      sc.deletepeer(p);
      uint8_t pidx = sc.findpeer();
      if( pidx != 0xff ) {
@@ -61,8 +57,8 @@ public:
      return false;
    }
 
-   bool addPeer(uint8_t channel,const Peer& odd, const Peer& even) {
-     ChannelType& sc = devchannels[channel];
+   bool addPeer(uint8_t ch,const Peer& odd, const Peer& even) {
+     ChannelType& sc = channel(ch);
      sc.deletepeer(odd);
      sc.deletepeer(even);
      uint8_t pidx1 = sc.findpeer();
@@ -81,6 +77,32 @@ public:
        }
      }
      return false;
+   }
+
+   void process(Message& msg) {
+     if( msg.to() == getDeviceID() || (msg.to() == HMID::boardcast && isBoardcastMsg(msg))) {
+       DPRINT(F("-> "));
+       msg.dump();
+       if( msg.type() == 0x01 ) { // CONFIG_
+         // PAIR_SERIAL
+         if( msg.subcommand() == 0x0a && memcmp(msg.data(),getSerial(),10)==0 ) {
+           sendDeviceInfo(msg.from(),msg.count());
+         }
+         // CONFIG_PARAM_REQ
+         else if (msg.subcommand() == 0x04 ) {
+
+         }
+         // CONFIG_STATUS_REQUEST
+         else if (msg.subcommand() == 0x0e ) {
+           uint8_t ch = msg.command();
+           sendInfoActuatorStatus(msg.from(),msg.count(),ch,channel(ch).status());
+         }
+       }
+     }
+     else {
+       DPRINT(F("ignore "));
+       msg.dump();
+     }
    }
 
 };

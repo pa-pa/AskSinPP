@@ -22,8 +22,8 @@ public:
   virtual ~SwitchChannel() {}
 
   uint8_t pin () {
-    if( number() < 3 ) {
-      return 5+number();
+    if( number() < 4 ) {
+      return 4+number();
     }
     return 3;
   }
@@ -82,35 +82,35 @@ void setup () {
 
   led.set(StatusLed::welcome);
 
-  SwitchChannel& c0 = sdev.channel(0);
-  SwitchList1 sd = c0.getList1();
+  SwitchChannel& ch1 = sdev.channel(1);
+  SwitchList1 sd = ch1.getList1();
   eeprom.dump(sd.address(),sd.size());
 
   DPRINTLN(F("2 Peers"));
   Peer odd(1,2,3,1);
   Peer even(1,2,3,2);
-  SwitchChannel c1 = sdev.channel(1);
-  if( sdev.addPeer(1,odd,even) == true ) {
-    SwitchList3 ssl = c1.getList3(odd);
+  SwitchChannel ch2 = sdev.channel(2);
+  if( sdev.addPeer(2,odd,even) == true ) {
+    SwitchList3 ssl = ch2.getList3(odd);
     eeprom.dump(ssl.address(),ssl.size());
-    ssl = c1.getList3(even);
+    ssl = ch2.getList3(even);
     eeprom.dump(ssl.address(),ssl.size());
 
-    c1.jumpToTarget(c1.getList3(even).sh());
+    ch2.jumpToTarget(ch2.getList3(even).sh());
     delay(1000);
-    c1.jumpToTarget(c1.getList3(odd).sh());
+    ch2.jumpToTarget(ch2.getList3(odd).sh());
   }
 
   DPRINTLN(F("\n\n1 Peer"));
   Peer p(1,2,3,0);
-  sdev.addPeer(0,p);
-  SwitchList3 ssl = c0.getList3(p);
+  sdev.addPeer(1,p);
+  SwitchList3 ssl = ch1.getList3(p);
   eeprom.dump(ssl.address(),ssl.size());
   DPRINTLN(F("Change Delays"));
   ssl.sh().onTime(0x20 + 5);
   ssl.sh().offTime(0x20 + 2);
   eeprom.dump(ssl.address(),ssl.size());
-  c0.jumpToTarget(ssl.sh());
+  ch1.jumpToTarget(ssl.sh());
 
 }
 
