@@ -93,17 +93,72 @@ public:
   }
 
   bool send(Message& msg,const HMID& to);
+
   bool waitForAck(Message& msg,uint8_t timeout);
 
-  void sendAck (Message& msg);
-  void sendAck (Message& msg,uint8_t channel,uint8_t state,uint8_t action);
-  void sendNack (Message& msg);
+  void sendAck (Message& msg) {
+    msg.initWithCount(0x0a,0x02,0x00,0x00);
+    send(msg,msg.from());
+  }
+
+  void sendNack (Message& msg) {
+    msg.initWithCount(0x0a,0x02,0x00,0x80);
+    send(msg,msg.from());
+  }
+
+  template <class ChannelType>
+  void sendAck (Message& msg,const ChannelType& ch) {
+    msg.initWithCount(0x0e,0x02,0x00,0x01);
+    msg.subcommand(ch.number());
+    *msg.data() = ch.state();
+    *(msg.data()+1) = 0; // TODO battery status
+    *(msg.data()+2) = radio->rssi();
+    send(msg,msg.from());
+  }
+
   void sendDeviceInfo () {
     sendDeviceInfo(HMID::boardcast,++msgcount);
   }
-  void sendDeviceInfo (const HMID& to,uint8_t count);
-  void sendInfoActuatorStatus (const HMID& to,uint8_t count,uint8_t channel,uint8_t status);
 
+  void sendDeviceInfo (const HMID& to,uint8_t count);
+
+  template <class ChannelType>
+  void sendInfoActuatorStatus (const HMID& to,uint8_t count,const ChannelType& ch) {
+    msg.init(0x0b+3,count,0x10,Message::BIDI,0x06,ch.number());
+    *msg.data() = ch.status();
+    *(msg.data()+1) = 0x00;
+    *(msg.data()+2) = radio->rssi();
+    send(msg,to);
+  }
+
+  template <class ListType>
+  void sendInfoParamResponsePairs(const HMID& to,uint8_t count,const ListType& list) {
+    uint8_t  current=0;
+    uint8_t* buf=msg.data()-1;
+    for( int i=0; i<list.size(); ++i ) {
+      *buf++ = list.getRegister(i);
+      *buf++ = list.getByte(i);
+      current++;
+      if( current == 8 ) {
+        msg.initWithCount(0x0b-1+(8*2),0x10,Message::BIDI,0x02);
+        msg.count(count);
+        // reset to zero
+        current=0;
+        if( send(msg,to) == false ) {
+          // exit loop in case of error
+          break;
+        }
+      }
+    }
+    if( current > 0) {
+      *buf++ = 0;
+      *buf++ = 0;
+      current++;
+      msg.initWithCount(0x0b-1+(current*2),0x10,Message::BIDI,0x02);
+      msg.count(count);
+      send(msg,to);
+    }
+  }
 };
 
 #endif

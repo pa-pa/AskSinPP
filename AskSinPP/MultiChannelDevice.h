@@ -3,6 +3,7 @@
 #define __MULTICHANNELDEVICE_H__
 
 #include "Device.h"
+#include "Defines.h"
 #include "List0.h"
 
 template <class ChannelType,int ChannelNumber>
@@ -83,19 +84,36 @@ public:
      if( msg.to() == getDeviceID() || (msg.to() == HMID::boardcast && isBoardcastMsg(msg))) {
        DPRINT(F("-> "));
        msg.dump();
-       if( msg.type() == 0x01 ) { // CONFIG_
+       if( msg.type() == AS_MESSAGE_CONFIG ) {
          // PAIR_SERIAL
-         if( msg.subcommand() == 0x0a && memcmp(msg.data(),getSerial(),10)==0 ) {
+         if( msg.subcommand() == AS_CONFIG_PAIR_SERIAL && memcmp(msg.data(),getSerial(),10)==0 ) {
            sendDeviceInfo(msg.from(),msg.count());
          }
          // CONFIG_PARAM_REQ
-         else if (msg.subcommand() == 0x04 ) {
-
+         else if (msg.subcommand() == AS_CONFIG_PARAM_REQ ) {
+           uint8_t ch = msg.command();
+           if( ch == 0 ) {
+             // channel 0 only has list0
+             sendInfoParamResponsePairs(msg.from(),msg.count(),list0);
+           }
+           else if ( ch <= channels() ) { // TODO hasChannel
+             uint8_t numlist = *msg.data()+4;
+             ChannelType& c = channel(ch);
+             if( numlist == 1 ) {
+               sendInfoParamResponsePairs(msg.from(),msg.count(),c.getList1());
+             }
+             else if( numlist == 3 ) {
+               Peer* p = (Peer*)msg.data();
+               typename ChannelType::List3 l3 = c.getList3(*p);
+               if( l3.valid() == true ) {
+                 sendInfoParamResponsePairs(msg.from(),msg.count(),l3);
+               }
+             }
+           }
          }
          // CONFIG_STATUS_REQUEST
-         else if (msg.subcommand() == 0x0e ) {
-           uint8_t ch = msg.command();
-           sendInfoActuatorStatus(msg.from(),msg.count(),ch,channel(ch).status());
+         else if (msg.subcommand() == AS_CONFIG_STATUS_REQUEST ) {
+           sendInfoActuatorStatus(msg.from(),msg.count(),channel(msg.command()));
          }
        }
      }
