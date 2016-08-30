@@ -7,11 +7,11 @@
 #include "List0.h"
 #include "cm.h"
 
-template <class ChannelType,int ChannelNumber>
+template <class ChannelType,int ChannelCount>
 class MultiChannelDevice : public Device {
 
   List0       list0;
-  ChannelType devchannels[ChannelNumber];
+  ChannelType devchannels[ChannelCount];
 
 public:
   MultiChannelDevice (uint16_t addr) : list0(addr) {
@@ -25,7 +25,7 @@ public:
 
 
   uint8_t channels () const {
-    return ChannelNumber;
+    return ChannelCount;
   }
 
   void init (CC1101& r,const HMID& id,const char* serial) {

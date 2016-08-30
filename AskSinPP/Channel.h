@@ -7,7 +7,7 @@
 
 class Device;
 
-template<class List1Type,class List3Type,int NumPeers>
+template<class List1Type,class List3Type,int PeerCount>
 class Channel {
   Device*   dev;
   bool      change       : 1;  // the status is changed, we may need to send a status
@@ -27,7 +27,7 @@ public:
 
   uint16_t address () const { return addr; }
 
-  uint8_t peers () const { return NumPeers; }
+  uint8_t peers () const { return PeerCount; }
 
   bool changed () const { return change; }
 
@@ -42,7 +42,7 @@ public:
   uint16_t size () const {
     uint16_t size = sizeof(Peer);
     size += List3::size();
-    size *= NumPeers;
+    size *= PeerCount;
     size += List1::size();
     return size;
   }
@@ -116,7 +116,7 @@ public:
 
   protected:
   uint16_t peerAddress (uint8_t pidx) const {
-    if( pidx < NumPeers ) {
+    if( pidx < PeerCount ) {
       uint16_t offset = sizeof(Peer);
       offset += List3::size();
       offset *= pidx;

@@ -99,8 +99,8 @@ public:
 
   uint8_t actionType() const { return getByte(8,0x0f,0); }
   bool actionType(uint8_t type) const { return setByte(8,type,0x0f,0); }
-  bool multiExec() const { return isBitSet(19,0x20); }
-  bool multiExec(bool s) const { return setBit(19,0x20,s); }
+  bool multiExec() const { return isBitSet(8,0x20); }
+  bool multiExec(bool s) const { return setBit(8,0x20,s); }
   bool offTimeMode() const { return isBitSet(8,0x40); }
   bool offTimeMode(bool s) const { return setBit(8,0x40,s); }
   bool onTimeMode() const { return isBitSet(8,0x80); }

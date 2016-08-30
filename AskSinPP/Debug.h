@@ -8,7 +8,7 @@
   inline const char* F(const char* c) { return c; }
 #endif
 
-//#define NDEBUG
+#define NDEBUG
 
 #ifdef NDEBUG
 
@@ -17,7 +17,7 @@
   template <class T>
   inline void DPRINTLN(T str) {  }
   inline void DHEX(uint8_t b) {  }
-  inline void DHEX(uint8_t* b,uint8_t l) {  }
+  inline void DHEX(const uint8_t* b,uint8_t l) {  }
   inline void DHEXLN(uint8_t b) {  }
   inline void DHEX(uint16_t b) {  }
   inline void DHEXLN(uint16_t b) {  }
