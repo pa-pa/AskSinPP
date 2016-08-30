@@ -5,6 +5,7 @@
 #include "Device.h"
 #include "Defines.h"
 #include "List0.h"
+#include "cm.h"
 
 template <class ChannelType,int ChannelNumber>
 class MultiChannelDevice : public Device {
@@ -44,6 +45,16 @@ public:
 
   ChannelType& channel(uint8_t ch) {
     return devchannels[ch-1];
+  }
+
+  void pollRadio () {
+    Device::pollRadio();
+    for( uint8_t i=0; i<channels(); ++i ) {
+      ChannelType& ch = channel(i);
+      if( ch.changed() == true ) {
+        sendInfoActuatorStatus(getMasterID(),nextcount(),ch);
+      }
+    }
   }
 
   bool addPeer (uint8_t ch,const Peer& p) {
@@ -124,6 +135,19 @@ public:
          // CONFIG_STATUS_REQUEST
          else if (msg.subcommand() == AS_CONFIG_STATUS_REQUEST ) {
            sendInfoActuatorStatus(msg.from(),msg.count(),channel(msg.command()));
+         }
+       }
+       else if( msg.type() == AS_MESSAGE_ACTION ) {
+         if( msg.command() == AS_ACTION_SET ) {
+           ChannelType& c = channel(msg.subcommand());
+           uint8_t value = *msg.data();
+           uint16_t delay = 0xffff;
+           if( msg.datasize() >= 5) {
+             delay = (*(msg.data()+3) << 8) + *(msg.data()+4);
+           }
+           if( delay == 0 ) delay = 0xffff;
+           c.setState( value == 0 ? AS_CM_JT_OFF : AS_CM_JT_ON, delay );
+           sendAck(msg,c);
          }
        }
      }

@@ -74,7 +74,7 @@ void AlarmClock::add(Alarm& item) {
   }
 }
 
-uint32_t AlarmClock::get(Alarm& item) const {
+uint32_t AlarmClock::get(const Alarm& item) const {
   uint32_t aux = 0;
   Alarm* tmp = (Alarm*) select();
   while (tmp != 0) {

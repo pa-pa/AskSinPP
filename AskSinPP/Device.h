@@ -86,6 +86,10 @@ public:
     }
   }
 
+  uint8_t nextcount () {
+    return ++msgcount;
+  }
+
   virtual void process(Message& msg);
 
   bool isBoardcastMsg(Message msg) {
@@ -107,28 +111,32 @@ public:
   }
 
   template <class ChannelType>
-  void sendAck (Message& msg,const ChannelType& ch) {
+  void sendAck (Message& msg,ChannelType& ch) {
     msg.initWithCount(0x0e,0x02,0x00,0x01);
     msg.subcommand(ch.number());
-    *msg.data() = ch.state();
-    *(msg.data()+1) = 0; // TODO battery status
+    *msg.data() = ch.status();
+    // TODO battery status
+    *(msg.data()+1) = ch.flags();
     *(msg.data()+2) = radio->rssi();
     send(msg,msg.from());
+    ch.changed(false);
   }
 
   void sendDeviceInfo () {
-    sendDeviceInfo(HMID::boardcast,++msgcount);
+    sendDeviceInfo(HMID::boardcast,nextcount());
   }
 
   void sendDeviceInfo (const HMID& to,uint8_t count);
 
   template <class ChannelType>
-  void sendInfoActuatorStatus (const HMID& to,uint8_t count,const ChannelType& ch) {
+  void sendInfoActuatorStatus (const HMID& to,uint8_t count,ChannelType& ch) {
     msg.init(0x0b+3,count,0x10,Message::BIDI,0x06,ch.number());
     *msg.data() = ch.status();
-    *(msg.data()+1) = 0x00;
+    // TODO battery status
+    *(msg.data()+1) = ch.flags();
     *(msg.data()+2) = radio->rssi();
     send(msg,to);
+    ch.changed(false);
   }
 
   template <class ListType>

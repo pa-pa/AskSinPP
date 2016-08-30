@@ -10,15 +10,16 @@ class Device;
 template<class List1Type,class List3Type,int NumPeers>
 class Channel {
   Device*   dev;
+  bool      change       : 1;  // the status is changed, we may need to send a status
   uint8_t   num          : 3;  // max 7 channels per device
-  uint16_t  addr         : 13; // max address 8191
+  uint16_t  addr         : 12; // max address 4095
 
 public:
   typedef List1Type List1;
   typedef List3Type List3;
 
   public:
-  Channel () : dev(0), num(0), addr(0) {}
+  Channel () : dev(0), change(false), num(0), addr(0) {}
 
   Device& device () { return *dev; }
 
@@ -27,6 +28,10 @@ public:
   uint16_t address () const { return addr; }
 
   uint8_t peers () const { return NumPeers; }
+
+  bool changed () const { return change; }
+
+  void changed (bool c) { change = c; }
 
   void setup(Device* dev,uint8_t number,uint16_t addr) {
     this->dev = dev;

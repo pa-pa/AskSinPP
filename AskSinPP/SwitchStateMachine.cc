@@ -1,7 +1,23 @@
 
 #include "SwitchStateMachine.h"
 
-  void SwitchStateMachine::switchState(uint8_t oldstate,uint8_t newstate,uint8_t dly) {}
+  void SwitchStateMachine::switchState(uint8_t oldstate,uint8_t newstate) {}
+
+  void SwitchStateMachine::setState (uint8_t next,uint16_t duration) {
+    if( next != AS_CM_JT_NONE ) {
+      // first cancel possible running alarm
+      aclock.cancel(alarm);
+      if( state != next ) {
+        switchState(state,next);
+        state = next;
+      }
+      if( duration != 0xffff ) {
+        alarm.action(AS_CM_JT_ON ? AS_CM_JT_OFF : AS_CM_JT_ON);
+        alarm.set(intTimeCvt(duration));
+        aclock.add(alarm);
+      }
+    }
+  }
 
   void SwitchStateMachine::jumpToTarget(SwitchPeerList lst) {
     uint8_t next = getNextState(state,lst);
@@ -12,7 +28,7 @@
       uint8_t dly = getDelayForState(next,lst);
       // signal state change, if any
       if( state != next ) {
-        switchState(state,next,dly);
+        switchState(state,next);
         state = next;
       }
       if( dly == 0 ) {
@@ -21,6 +37,7 @@
       }
       else if( dly != 0xff ) {
         // setup alarm to process after delay
+        alarm.action(AS_CM_JT_NONE);
         alarm.list(lst);
         alarm.set(byteTimeCvt(dly));
         aclock.add(alarm);

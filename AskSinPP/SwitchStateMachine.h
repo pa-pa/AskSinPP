@@ -11,11 +11,18 @@ class SwitchStateMachine {
   class StateAlarm : public Alarm {
     SwitchStateMachine& sm;
     SwitchPeerList      lst;
+    uint8_t             act;
   public:
-    StateAlarm(SwitchStateMachine& m) : Alarm(0), sm(m), lst(0) {}
+    StateAlarm(SwitchStateMachine& m) : Alarm(0), sm(m), lst(0), act(AS_CM_JT_NONE) {}
     void list(SwitchPeerList l) {lst=l;}
+    void action (uint8_t a) {act=a;}
     virtual void trigger (AlarmClock& clock) {
-      sm.jumpToTarget(lst);
+      if( act != AS_CM_JT_NONE ) {
+        sm.setState(act,0xffff);
+      }
+      else {
+        sm.jumpToTarget(lst);
+      }
     }
   };
 
@@ -29,12 +36,15 @@ protected:
 public:
   SwitchStateMachine() : state(AS_CM_JT_OFF), alarm(*this) {}
 
-  virtual void switchState(uint8_t oldstate,uint8_t newstate,uint8_t dly);
+  virtual void switchState(uint8_t oldstate,uint8_t newstate);
 
   void jumpToTarget(SwitchPeerList lst);
+  void setState (uint8_t state,uint16_t duration);
 
   uint8_t getDelayForState(uint8_t s,SwitchPeerList lst);
   uint8_t getNextState(uint8_t s,SwitchPeerList lst);
+
+  bool delayActive () const { return aclock.get(alarm) > 0; }
 
   // get timer count in 1/10s
   uint32_t byteTimeCvt(uint8_t tTime) {
@@ -42,8 +52,26 @@ public:
     return (uint16_t)(tTime & 0x1F) * c[tTime >> 5];
   }
 
+  // get timer count in 1/10s
+  uint32_t intTimeCvt(uint16_t iTime) {
+    if (iTime == 0) return 0;
+
+    uint8_t tByte;
+    if ((iTime & 0x1F) != 0) {
+      tByte = 2;
+      for (uint8_t i = 1; i < (iTime & 0x1F); i++) tByte *= 2;
+    } else tByte = 1;
+
+    return (uint32_t)tByte*(iTime>>5);
+  }
+
+
   uint8_t status () const {
     return state == AS_CM_JT_OFF ? 0 : 200;
+  }
+
+  uint8_t flags () const {
+    return delayActive() ? 0x40 : 0x00;
   }
 };
 

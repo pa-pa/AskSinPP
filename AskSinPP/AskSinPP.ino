@@ -35,13 +35,14 @@ public:
     digitalWrite(p,LOW);
   }
 
-  virtual void switchState(uint8_t oldstate,uint8_t newstate,uint8_t dly) {
+  virtual void switchState(uint8_t oldstate,uint8_t newstate) {
     if( newstate == AS_CM_JT_ON ) {
       digitalWrite(pin(),HIGH);
     }
     else if ( newstate == AS_CM_JT_OFF ) {
       digitalWrite(pin(),LOW);
     }
+    changed(true);
   }
 
 };
@@ -82,6 +83,7 @@ void setup () {
 
   led.set(StatusLed::welcome);
 
+#if 0
   SwitchChannel& ch1 = sdev.channel(1);
   SwitchList1 sd = ch1.getList1();
   eeprom.dump(sd.address(),sd.size());
@@ -111,7 +113,7 @@ void setup () {
   ssl.sh().offTime(0x20 + 2);
   eeprom.dump(ssl.address(),ssl.size());
   ch1.jumpToTarget(ssl.sh());
-
+#endif
 }
 
 void loop() {
