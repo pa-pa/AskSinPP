@@ -102,6 +102,37 @@ public:
            setMasterID(list0.masterid());
            sendDeviceInfo(getMasterID(),msg.count());
          }
+         // CONFIG_PEER_ADD
+         else if ( msg.subcommand() == AS_CONFIG_PEER_ADD ) {
+           bool success = false;
+           uint8_t ch = msg.command();
+           Peer* p1 = (Peer*)msg.data();
+           if( *(msg.data()+sizeof(Peer)) == 0x00 ) {
+             success = addPeer(ch,*p1);
+           }
+           else {
+             Peer p2(*p1,*(msg.data()+sizeof(Peer)));
+             if( (p2.channel() & 0x01) == 0x01 ) {
+               success = addPeer(ch,p2,*p1);
+             }
+             else {
+               success = addPeer(ch,*p1,p2);
+             }
+           }
+           success == true ? sendAck(msg) : sendNack(msg);
+         }
+         // CONFIG_PEER_REMOVE
+         else if ( msg.subcommand() == AS_CONFIG_PEER_REMOVE ) {
+           bool success = false;
+           uint8_t ch = msg.command();
+           Peer* p1 = (Peer*)msg.data();
+           success = channel(ch).deletepeer(*p1);
+           if( *(msg.data()+sizeof(Peer)) != 0x00 ) {
+             Peer p2(*p1,*(msg.data()+sizeof(Peer)));
+             success = channel(ch).deletepeer(p2);
+           }
+           success == true ? sendAck(msg) : sendNack(msg);
+         }
          // CONFIG_PEER_LIST_REQ
          else if( msg.subcommand() == AS_CONFIG_PEER_LIST_REQ ) {
            uint8_t ch = msg.command();
@@ -150,10 +181,25 @@ public:
            sendAck(msg,c);
          }
        }
+       else if (msg.type() == AS_MESSAGE_REMOTE_EVENT ) {
+         Peer p(msg.from(),msg.command() & 0x3f);
+//         p.dump();
+         for( uint8_t i=1; i<=channels(); ++i ) {
+           ChannelType& ch = channel(i);
+           typename ChannelType::List3 l3 = ch.getList3(p);
+           if( l3.valid() == true ) {
+//             DHEX(l3.address()); DPRINT(" - ");
+//             eeprom.dump(l3.sh().address(),l3.sh().size());
+             // TODO long press / l3->actiontype
+             ch.jumpToTarget(l3.sh());
+             sendAck(msg,ch);
+           }
+         }
+       }
      }
      else {
-       DPRINT(F("ignore "));
-       msg.dump();
+//       DPRINT(F("ignore "));
+//       msg.dump();
      }
    }
 

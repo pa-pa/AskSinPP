@@ -3,29 +3,37 @@
 #define __PEER_H__
 
 #include "HMID.h"
+#include "Debug.h"
 
 class Peer : public HMID {
-  uint8_t channel;
+  uint8_t chan;
 public:
-  Peer() : channel(0) {}
-  Peer (const HMID& id,uint8_t ch) : HMID(id), channel(ch) {}
-  Peer (uint8_t i1, uint8_t i2, uint8_t i3, uint8_t ch) : HMID(i1,i2,i3), channel(ch) {}
-  Peer (uint8_t* ptr) : HMID(*ptr,*(ptr+1),*(ptr+2)), channel(*(ptr+4)) {}
+  Peer() : chan(0) {}
+  Peer (const HMID& id,uint8_t ch) : HMID(id), chan(ch) {}
+  Peer (uint8_t i1, uint8_t i2, uint8_t i3, uint8_t ch) : HMID(i1,i2,i3), chan(ch) {}
+  Peer (uint8_t* ptr) : HMID(*ptr,*(ptr+1),*(ptr+2)), chan(*(ptr+4)) {}
   Peer (const Peer& other) {
     *(HMID*)this = (const HMID&)other;
-    channel = other.channel;
+    chan = other.chan;
   }
 
   Peer& operator = (const Peer& other) {
     *(HMID*)this = (const HMID&)other;
-    channel = other.channel;
+    chan = other.chan;
     return *this;
   }
   bool operator == (const Peer& other) const {
-    return channel==other.channel && *(HMID*)this == (HMID&)other;
+    return chan==other.chan && *(HMID*)this == (HMID&)other;
   }
 
   static uint8_t size() { return sizeof(Peer); }
+
+  uint8_t channel () const {
+    return chan;
+  }
+  void dump () {
+    DHEX((uint8_t*)this,sizeof(Peer));
+  }
 };
 
 #endif

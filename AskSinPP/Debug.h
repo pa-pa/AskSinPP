@@ -8,7 +8,7 @@
   inline const char* F(const char* c) { return c; }
 #endif
 
-#define NDEBUG
+//#define NDEBUG
 
 #ifdef NDEBUG
 
