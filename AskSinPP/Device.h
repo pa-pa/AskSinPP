@@ -142,27 +142,17 @@ public:
   bool waitForAck(Message& msg,uint8_t timeout);
 
   void sendAck (Message& msg) {
-    //msg.initWithCount(0x0a,0x02,0x00,0x00);
     msg.ack().init();
     send(msg,msg.from());
   }
 
   void sendNack (Message& msg) {
-    //msg.initWithCount(0x0a,0x02,0x00,0x80);
     msg.nack().init();
     send(msg,msg.from());
   }
 
   template <class ChannelType>
   void sendAck (Message& msg,ChannelType& ch) {
-    /*
-    msg.initWithCount(0x0e,0x02,0x00,0x01);
-    msg.subcommand(ch.number());
-    *msg.data() = ch.status();
-    // TODO battery status
-    *(msg.data()+1) = ch.flags();
-    *(msg.data()+2) = radio->rssi();
-    */
     msg.ackStatus().init(ch,radio->rssi());
     send(msg,msg.from());
     ch.changed(false);
@@ -176,13 +166,6 @@ public:
 
   template <class ChannelType>
   void sendInfoActuatorStatus (const HMID& to,uint8_t count,ChannelType& ch) {
-    /*
-    msg.init(0x0b+3,count,0x10,Message::BIDI,0x06,ch.number());
-    *msg.data() = ch.status();
-    // TODO battery status
-    *(msg.data()+1) = ch.flags();
-    *(msg.data()+2) = radio->rssi();
-    */
     InfoActuatorStatusMsg& pm = msg.infoActuatorStatus();
     pm.init(count,ch,radio->rssi());
     send(msg,to);
@@ -195,6 +178,7 @@ public:
     // msg.initWithCount(0x0b-1+(8*2),0x10,Message::BIDI,0x02);
     // msg.count(count);
     InfoParamResponsePairsMsg& pm = msg.infoParamResponsePairs();
+    // setup message for maximal size
     pm.init(count);
     uint8_t  current=0;
     uint8_t* buf=pm.data();
@@ -216,17 +200,13 @@ public:
     *buf++ = 0;
     current++;
     pm.entries(current);
-    // msg.initWithCount(0x0b-1+(current*2),0x10,Message::BIDI,0x02);
-    // msg.count(count);
     send(msg,to);
   }
 
   template <class ChannelType>
   void sendInfoPeerList (HMID to,uint8_t count,const ChannelType& channel) {
-    // setup message for maximal size
-    // msg.initWithCount(0x0b-1+(4*sizeof(Peer)),0x10,Message::BIDI,0x01);
-    //msg.count(count);
     InfoPeerListMsg& pm = msg.infoPeerList();
+    // setup message for maximal size
     pm.init(count);
     uint8_t  current=0;
     uint8_t* buf=pm.data();
@@ -250,9 +230,14 @@ public:
     memset(buf,0,sizeof(Peer));
     current++;
     pm.entries(current);
-    // msg.initWithCount(0x0b-1+(current*sizeof(Peer)),0x10,Message::BIDI,0x01);
-    // msg.count(count);
     send(msg,to);
+  }
+
+  template <class ListType>
+  void writeList (ListType& list,const uint8_t* data,uint8_t length) {
+    for( uint8_t i=0; i<length; i+=2, data+=2 ) {
+      list.writeRegister(*data,*(data+1));
+    }
   }
 };
 

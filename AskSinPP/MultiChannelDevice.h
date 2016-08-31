@@ -12,9 +12,12 @@ class MultiChannelDevice : public Device {
 
   List0       list0;
   ChannelType devchannels[ChannelCount];
+  uint8_t     cfgChannel;
+  Peer        cfgPeer;
+  uint8_t     cfgList;
 
 public:
-  MultiChannelDevice (uint16_t addr) : list0(addr) {
+  MultiChannelDevice (uint16_t addr) : list0(addr), cfgChannel(0xff), cfgList(0) {
     addr += list0.size();
     for( uint8_t i=0; i<channels(); ++i ) {
       devchannels[i].setup(this,i+1,addr);
@@ -76,17 +79,6 @@ public:
          else if ( msg.subcommand() == AS_CONFIG_PEER_ADD ) {
            const ConfigPeerAddMsg& pm = msg.configPeerAdd();
            bool success = false;
-           /*
-           uint8_t ch = msg.command();
-           Peer* p1 = (Peer*)msg.data();
-           if( *(msg.data()+sizeof(Peer)) == 0x00 ) {
-             success = addPeer(channel(ch),*p1);
-           }
-           else {
-             Peer p2(*p1,*(msg.data()+sizeof(Peer)));
-             success = addPeer(channel(ch),*p1,p2);
-           }
-           */
            if( hasChannel(pm.channel()) == true ) {
              ChannelType& ch = channel(pm.channel());
              if( pm.peers() == 1 ) {
@@ -109,15 +101,6 @@ public:
                success &= ch.deletepeer(pm.peer2());
              }
            }
-           /*
-           uint8_t ch = msg.command();
-           Peer* p1 = (Peer*)msg.data();
-           success = channel(ch).deletepeer(*p1);
-           if( *(msg.data()+sizeof(Peer)) != 0x00 ) {
-             Peer p2(*p1,*(msg.data()+sizeof(Peer)));
-             success = channel(ch).deletepeer(p2);
-           }
-           */
            success == true ? sendAck(msg) : sendNack(msg);
          }
          // CONFIG_PEER_LIST_REQ
@@ -147,31 +130,49 @@ public:
                }
              }
            }
-           /*
-           uint8_t ch = msg.command();
-           if( ch == 0 ) {
-             // channel 0 only has list0
-             sendInfoParamResponsePairs(msg.from(),msg.count(),list0);
-           }
-           else if ( ch <= channels() ) {
-             uint8_t numlist = *(msg.data()+4);
-             ChannelType& c = channel(ch);
-             if( numlist == 1 ) {
-               sendInfoParamResponsePairs(msg.from(),msg.count(),c.getList1());
-             }
-             else if( numlist == 3 ) {
-               Peer* p = (Peer*)msg.data();
-               typename ChannelType::List3 l3 = c.getList3(*p);
-               if( l3.valid() == true ) {
-                 sendInfoParamResponsePairs(msg.from(),msg.count(),l3);
-               }
-             }
-           }
-           */
          }
          // CONFIG_STATUS_REQUEST
          else if (msg.subcommand() == AS_CONFIG_STATUS_REQUEST ) {
            sendInfoActuatorStatus(msg.from(),msg.count(),channel(msg.command()));
+         }
+         // CONFIG_START
+         else if( msg.subcommand() == AS_CONFIG_START ) {
+           const ConfigStartMsg& pm = msg.configStart();
+           cfgChannel = pm.channel();
+           cfgPeer = pm.peer();
+           cfgList = pm.list();
+           // TODO setup alarm to disable after 2000ms
+           sendAck(msg);
+         }
+         // CONFIG_END
+         else if( msg.subcommand() == AS_CONFIG_END ) {
+           if( cfgList == 0 ) {
+             setMasterID(list0.masterid());
+           }
+           cfgChannel = 0xff;
+           // TODO cancel alarm
+           sendAck(msg);
+         }
+         else if( msg.subcommand() == AS_CONFIG_WRITE_INDEX ) {
+           const ConfigWriteIndexMsg& pm = msg.configWriteIndex();
+           if( cfgChannel == pm.channel() ) {
+             if( cfgList == 0 ) {
+               writeList(list0,pm.data(),pm.datasize());
+             }
+             else if( hasChannel(pm.channel()) == true ) {
+               ChannelType& ch = channel(pm.channel());
+               if (cfgList == 1) {
+                 typename ChannelType::List1 l1 = ch.getList1();
+                 writeList(l1,pm.data(),pm.datasize());
+               } else if (cfgList == 3) {
+                 typename ChannelType::List3 l3 = ch.getList3(cfgPeer);
+                 if (l3.valid() == true) {
+                   writeList(l3,pm.data(),pm.datasize());
+                 }
+               }
+             }
+           }
+           sendAck(msg);
          }
        }
        else if( msg.type() == AS_MESSAGE_ACTION ) {
@@ -188,6 +189,7 @@ public:
          }
        }
        else if (msg.type() == AS_MESSAGE_REMOTE_EVENT ) {
+         bool lg = (msg.command() & 0x40) == 0x40;
          Peer p(msg.from(),msg.command() & 0x3f);
 //         p.dump();
          for( uint8_t i=1; i<=channels(); ++i ) {
@@ -195,8 +197,10 @@ public:
            typename ChannelType::List3 l3 = ch.getList3(p);
            if( l3.valid() == true ) {
              // l3.dump();
-             // TODO long press / l3->actiontype
-             ch.jumpToTarget(l3.sh());
+             typename ChannelType::List3::PeerList pl = lg ? l3.lg() : l3.sh();
+             // l3->actiontype
+             // pl.dump();
+             ch.jumpToTarget(pl);
              sendAck(msg,ch);
            }
          }

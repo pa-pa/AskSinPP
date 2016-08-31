@@ -15,6 +15,9 @@ class ConfigPeerAddMsg;
 class ConfigPeerRemoveMsg;
 class ConfigPeerListReqMsg;
 class ConfigParamReqMsg;
+class ConfigStartMsg;
+class ConfigEndMsg;
+class ConfigWriteIndexMsg;
 
 class AckMsg;
 class AckStatusMsg;
@@ -77,7 +80,7 @@ public:
     return pload;
   }
 
-	uint8_t datasize () {
+	uint8_t datasize () const {
 	  return len >= 11 ? len - 11 : 0;
 	}
 
@@ -200,19 +203,7 @@ public:
     }
     buf[i] ^= buf[1];
   }
-/*
-  void decode(uint8_t *buf) {
-    uint8_t prev = buf[1];
-    buf[1] = (~buf[1]) ^ 0x89;
-    uint8_t i, t;
-    for (i=2; i<buf[0]; i++) {
-      t = buf[i];
-      buf[i] = (prev + 0xdc) ^ buf[i];
-      prev = t;
-    }
-    buf[i] ^= buf[2];
-  }
-*/
+
   void encode () {
     encode(buffer(),length());
   }
@@ -228,19 +219,7 @@ public:
     }
     buf[i] ^= buf2;
   }
-/*
-  void encode(uint8_t *buf) {
-    buf[1] = (~buf[1]) ^ 0x89;
-    uint8_t buf2 = buf[2];
-    uint8_t prev = buf[1];
-    uint8_t i;
-    for (i=2; i<buf[0]; i++) {
-      prev = (prev + 0xdc) ^ buf[i];
-      buf[i] = prev;
-    }
-    buf[i] ^= buf2;
-  }
-*/
+
   void dump () const {
     DHEX(length());
     DPRINT(F(" "));
@@ -272,6 +251,9 @@ public:
   const ConfigPeerRemoveMsg& configPeerRemove () const { return *(ConfigPeerRemoveMsg*)this; }
   const ConfigPeerListReqMsg& configPeerListReq () const { return *(ConfigPeerListReqMsg*)this; }
   const ConfigParamReqMsg& configParamReq () const { return *(ConfigParamReqMsg*)this; }
+  const ConfigStartMsg& configStart () const { return *(ConfigStartMsg*)this; }
+  const ConfigEndMsg& configEnd () const { return *(ConfigEndMsg*)this; }
+  const ConfigWriteIndexMsg& configWriteIndex () const { return *(ConfigWriteIndexMsg*)this; }
 
   // cast to write message types
   AckMsg& ack () { return *(AckMsg*)this; }
@@ -319,6 +301,22 @@ public:
   const Peer& peer () const { return *((const Peer*)data()); }
   uint8_t list () const { return *(data()+sizeof(Peer)); }
 };
+
+class ConfigStartMsg : public ConfigParamReqMsg {
+protected:
+  ConfigStartMsg () {}
+};
+
+class ConfigEndMsg : public ConfigMsg {
+protected:
+  ConfigEndMsg () {}
+};
+
+class ConfigWriteIndexMsg : public ConfigMsg {
+protected:
+  ConfigWriteIndexMsg () {}
+};
+
 
 
 class AckMsg : public Message {

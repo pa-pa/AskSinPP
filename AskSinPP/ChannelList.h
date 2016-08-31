@@ -46,11 +46,11 @@ public:
     return eeprom.clearBits(addr + offset, bit);
   }
 
-  uint8_t getOffset (uint8_t reg) const {
+  static uint8_t getOffset (uint8_t reg) {
     return DataType::getOffset(reg);
   }
 
-  uint8_t getRegister (uint8_t offset) const {
+  static uint8_t getRegister (uint8_t offset) {
     return DataType::getRegister(offset);
   }
 
@@ -63,7 +63,7 @@ public:
     return result;
   }
 
-  uint8_t readRegister (uint8_t reg) {
+  uint8_t readRegister (uint8_t reg) const {
     uint8_t value = 0;
     uint8_t offset = getOffset(reg);
     if( offset != 0xff ) {
@@ -76,7 +76,7 @@ public:
     return sizeof(DataType);
   }
 
-  void dump () {
+  void dump () const {
     DHEX(address());
     DPRINT(" - ");
     eeprom.dump(address(),size());

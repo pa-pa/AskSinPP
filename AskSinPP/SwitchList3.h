@@ -119,6 +119,8 @@ public:
 class SwitchList3 : public ChannelList<SwitchList3Data> {
 protected:
 public:
+  typedef SwitchPeerList PeerList;
+
   SwitchList3(uint16_t a) : ChannelList(a) {}
 
   const SwitchPeerList sh() const { return SwitchPeerList(address()); }
