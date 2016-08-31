@@ -31,6 +31,7 @@ bool Device::waitForAck(Message& msg,uint8_t timeout) {
 }
 
 void Device::sendDeviceInfo (const HMID& to,uint8_t count) {
+  /*
   msg.init(0x1c,count,0x00, to.valid() ? Message::BIDI : 0x00,0x00,0x00);
   uint8_t* data = msg.data()-2;
   data[0] = firmversion;
@@ -38,6 +39,10 @@ void Device::sendDeviceInfo (const HMID& to,uint8_t count) {
   memcpy(&data[3],serial,10);
   data[13] = subtype;
   memcpy(&data[14],devinfo,sizeof(devinfo));
+  */
+  DeviceInfoMsg& pm = msg.deviceInfo();
+  pm.init(to,count);
+  pm.fill(firmversion,model,serial,subtype,devinfo);
   send(msg,to);
 }
 

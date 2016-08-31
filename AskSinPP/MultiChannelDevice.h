@@ -28,6 +28,10 @@ public:
     return ChannelCount;
   }
 
+  bool hasChannel (uint8_t number) const {
+    return number != 0 && number <= ChannelCount;
+  }
+
   void init (CC1101& r,const HMID& id,const char* serial) {
     // read master id from flash
     setMasterID(list0.masterid());
@@ -57,40 +61,6 @@ public:
     }
   }
 
-  bool addPeer (uint8_t ch,const Peer& p) {
-     ChannelType& sc = channel(ch);
-     sc.deletepeer(p);
-     uint8_t pidx = sc.findpeer();
-     if( pidx != 0xff ) {
-       sc.peer(pidx,p);
-       sc.getList3(pidx).single();
-       return true;
-     }
-     return false;
-   }
-
-   bool addPeer(uint8_t ch,const Peer& odd, const Peer& even) {
-     ChannelType& sc = channel(ch);
-     sc.deletepeer(odd);
-     sc.deletepeer(even);
-     uint8_t pidx1 = sc.findpeer();
-     if( pidx1 != 0xff ) {
-       sc.peer(pidx1,odd);
-       uint8_t pidx2 = sc.findpeer();
-       if( pidx2 != 0xff ) {
-         sc.peer(pidx2,even);
-         sc.getList3(pidx1).odd();
-         sc.getList3(pidx2).even();
-         return true;
-       }
-       else {
-         // free already stored data
-         sc.peer(pidx1,Peer());
-       }
-     }
-     return false;
-   }
-
    void process(Message& msg) {
      if( msg.to() == getDeviceID() || (msg.to() == HMID::boardcast && isBoardcastMsg(msg))) {
        DPRINT(F("-> "));
@@ -104,26 +74,42 @@ public:
          }
          // CONFIG_PEER_ADD
          else if ( msg.subcommand() == AS_CONFIG_PEER_ADD ) {
+           const ConfigPeerAddMsg& pm = msg.configPeerAdd();
            bool success = false;
+           /*
            uint8_t ch = msg.command();
            Peer* p1 = (Peer*)msg.data();
            if( *(msg.data()+sizeof(Peer)) == 0x00 ) {
-             success = addPeer(ch,*p1);
+             success = addPeer(channel(ch),*p1);
            }
            else {
              Peer p2(*p1,*(msg.data()+sizeof(Peer)));
-             if( (p2.channel() & 0x01) == 0x01 ) {
-               success = addPeer(ch,p2,*p1);
+             success = addPeer(channel(ch),*p1,p2);
+           }
+           */
+           if( hasChannel(pm.channel()) == true ) {
+             ChannelType& ch = channel(pm.channel());
+             if( pm.peers() == 1 ) {
+               success = addPeer(ch,pm.peer1());
              }
              else {
-               success = addPeer(ch,*p1,p2);
+               success = addPeer(ch,pm.peer1(),pm.peer2());
              }
            }
            success == true ? sendAck(msg) : sendNack(msg);
          }
          // CONFIG_PEER_REMOVE
          else if ( msg.subcommand() == AS_CONFIG_PEER_REMOVE ) {
+           const ConfigPeerRemoveMsg& pm = msg.configPeerRemove();
            bool success = false;
+           if( hasChannel(pm.channel()) == true ) {
+             ChannelType& ch = channel(pm.channel());
+             success = ch.deletepeer(pm.peer1());
+             if( pm.peers() == 2 ) {
+               success &= ch.deletepeer(pm.peer2());
+             }
+           }
+           /*
            uint8_t ch = msg.command();
            Peer* p1 = (Peer*)msg.data();
            success = channel(ch).deletepeer(*p1);
@@ -131,24 +117,43 @@ public:
              Peer p2(*p1,*(msg.data()+sizeof(Peer)));
              success = channel(ch).deletepeer(p2);
            }
+           */
            success == true ? sendAck(msg) : sendNack(msg);
          }
          // CONFIG_PEER_LIST_REQ
          else if( msg.subcommand() == AS_CONFIG_PEER_LIST_REQ ) {
-           uint8_t ch = msg.command();
-           if( ch > 0 && ch <= channels() ) {
-             ChannelType& c = channel(ch);
-             sendInfoPeerList(msg.from(),msg.count(),c);
+           const ConfigPeerListReqMsg& pm = msg.configPeerListReq();
+           if( hasChannel(pm.channel()) == true ) {
+             sendInfoPeerList(msg.from(),msg.count(),channel(pm.channel()));
            }
          }
          // CONFIG_PARAM_REQ
          else if (msg.subcommand() == AS_CONFIG_PARAM_REQ ) {
+           const ConfigParamReqMsg& pm = msg.configParamReq();
+           if( pm.channel() == 0 ) {
+             // channel 0 only has list0
+             sendInfoParamResponsePairs(msg.from(),msg.count(),list0);
+           }
+           else if( hasChannel(pm.channel()) == true ) {
+             uint8_t numlist = pm.list();
+             ChannelType& ch = channel(pm.channel());
+             if( numlist == 1 ) {
+               sendInfoParamResponsePairs(msg.from(),msg.count(),ch.getList1());
+             }
+             else if( numlist == 3 ) {
+               typename ChannelType::List3 l3 = ch.getList3(pm.peer());
+               if( l3.valid() == true ) {
+                 sendInfoParamResponsePairs(msg.from(),msg.count(),l3);
+               }
+             }
+           }
+           /*
            uint8_t ch = msg.command();
            if( ch == 0 ) {
              // channel 0 only has list0
              sendInfoParamResponsePairs(msg.from(),msg.count(),list0);
            }
-           else if ( ch <= channels() ) { // TODO hasChannel
+           else if ( ch <= channels() ) {
              uint8_t numlist = *(msg.data()+4);
              ChannelType& c = channel(ch);
              if( numlist == 1 ) {
@@ -162,6 +167,7 @@ public:
                }
              }
            }
+           */
          }
          // CONFIG_STATUS_REQUEST
          else if (msg.subcommand() == AS_CONFIG_STATUS_REQUEST ) {

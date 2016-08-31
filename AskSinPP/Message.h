@@ -3,10 +3,28 @@
 #define __Message_h__
 
 #include "HMID.h"
+#include "Peer.h"
+#include "Defines.h"
 #include "Debug.h"
 
 //#define MaxDataLen   60						// maximum length of received bytes
 #define MaxDataLen   25
+
+// some forward declarations
+class ConfigPeerAddMsg;
+class ConfigPeerRemoveMsg;
+class ConfigPeerListReqMsg;
+class ConfigParamReqMsg;
+
+class AckMsg;
+class AckStatusMsg;
+class NackMsg;
+
+class InfoActuatorStatusMsg;
+class InfoParamResponsePairsMsg;
+class InfoPeerListMsg;
+
+class DeviceInfoMsg;
 
 class Message {
 public:
@@ -21,7 +39,7 @@ public:
     RPTEN = 0x80,  // set in every message. Meaning?
   };
 
-private:
+protected:
   uint8_t         len;					  // message length
 	uint8_t         cnt;					  // counter, if it is an answer counter has to reflect the answered message, otherwise own counter has to be used
 	uint8_t         flag;				  // see structure of message flags
@@ -54,6 +72,10 @@ public:
 	uint8_t* data () {
 	  return pload;
 	}
+
+  const uint8_t* data () const {
+    return pload;
+  }
 
 	uint8_t datasize () {
 	  return len >= 11 ? len - 11 : 0;
@@ -93,12 +115,9 @@ public:
     this->comm = comm;
   }
 
-  void init(uint8_t l, uint8_t cnt, uint8_t typ, uint8_t flags, uint8_t comm, uint8_t sub) {
-    this->len = l;
+  void init(uint8_t length, uint8_t cnt, uint8_t typ, uint8_t flags, uint8_t comm, uint8_t sub) {
+    initWithCount(length,typ,flags,comm);
     this->cnt = cnt;
-    this->typ = typ;
-    this->flag = flags;
-    this->comm = comm;
     this->subcom = sub;
   }
 
@@ -246,6 +265,133 @@ public:
 
   bool isNack () const {
     return typ==0x02 && (comm & 0x80) == 0x80;
+  }
+
+  // cast to specific read-only message types
+  const ConfigPeerAddMsg& configPeerAdd () const { return *(ConfigPeerAddMsg*)this; }
+  const ConfigPeerRemoveMsg& configPeerRemove () const { return *(ConfigPeerRemoveMsg*)this; }
+  const ConfigPeerListReqMsg& configPeerListReq () const { return *(ConfigPeerListReqMsg*)this; }
+  const ConfigParamReqMsg& configParamReq () const { return *(ConfigParamReqMsg*)this; }
+
+  // cast to write message types
+  AckMsg& ack () { return *(AckMsg*)this; }
+  AckStatusMsg& ackStatus () { return *(AckStatusMsg*)this; }
+  NackMsg& nack () { return *(NackMsg*)this; }
+
+  InfoActuatorStatusMsg& infoActuatorStatus () { return *(InfoActuatorStatusMsg*)this; }
+  InfoParamResponsePairsMsg& infoParamResponsePairs () { return *(InfoParamResponsePairsMsg*)this; }
+  InfoPeerListMsg& infoPeerList () { return *(InfoPeerListMsg*)this; }
+
+  DeviceInfoMsg& deviceInfo () { return *(DeviceInfoMsg*)this; }
+};
+
+
+class ConfigMsg : public Message {
+protected:
+  ConfigMsg () {}
+public:
+  uint8_t channel () const { return command(); }
+};
+
+class ConfigPeerAddMsg : public ConfigMsg {
+protected:
+  ConfigPeerAddMsg () {}
+public:
+  const Peer& peer1 () const { return *((const Peer*)data()); }
+  Peer peer2 () const { return Peer(peer1(),*(data()+sizeof(Peer))); }
+  uint8_t peers () const { return *(data()+sizeof(Peer))!=0 ? 2 : 1; }
+};
+
+class ConfigPeerRemoveMsg : public ConfigPeerAddMsg {
+protected:
+  ConfigPeerRemoveMsg () {}
+};
+
+class ConfigPeerListReqMsg : public ConfigMsg {
+protected:
+  ConfigPeerListReqMsg () {}
+};
+
+class ConfigParamReqMsg : public ConfigMsg {
+protected:
+  ConfigParamReqMsg () {}
+public:
+  const Peer& peer () const { return *((const Peer*)data()); }
+  uint8_t list () const { return *(data()+sizeof(Peer)); }
+};
+
+
+class AckMsg : public Message {
+public:
+  void init() {
+    initWithCount(0x0a,0x02,0x00,0x00);
+  }
+};
+
+class AckStatusMsg : public Message {
+public:
+  template <class ChannelType>
+  void init(const ChannelType& ch,uint8_t rssi) {
+    initWithCount(0x0e,0x02,0x00,0x01);
+    subcom = ch.number();
+    pload[0] = ch.status();
+    pload[1] = ch.flags();
+    pload[2] = rssi;
+  }
+};
+
+class NackMsg : public Message {
+public:
+  void init() {
+    initWithCount(0x0a,0x02,0x00,0x80);
+  }
+};
+
+
+class InfoActuatorStatusMsg : public Message {
+public:
+  template <class ChannelType>
+  void init (uint8_t count,const ChannelType& ch,uint8_t rssi) {
+    Message::init(0x0e,count,0x10,Message::BIDI,0x06,ch.number());
+    pload[0] = ch.status();
+    pload[1] = ch.flags();
+    pload[2] = rssi;
+  }
+};
+
+class InfoParamResponsePairsMsg : public Message {
+public:
+  void init (uint8_t count) {
+    initWithCount(0x0b-1+(8*2),0x10,Message::BIDI,0x02);
+    cnt = count;
+  }
+  uint8_t* data() { return Message::data()-1; }
+  void entries (uint8_t num) { length(0x0b-1+(num*2)); };
+};
+
+class InfoPeerListMsg : public Message {
+public:
+  void init (uint8_t count) {
+    initWithCount(0x0b-1+(4*sizeof(Peer)),0x10,Message::BIDI,0x01);
+    cnt = count;
+  }
+  uint8_t* data() { return Message::data()-1; }
+  void entries (uint8_t num) { length(0x0b-1+(num*sizeof(Peer))); };
+};
+
+class DeviceInfoMsg : public Message {
+public:
+  void init (const HMID& to,uint8_t count) {
+    Message::init(0x1c,count,0x00, to.valid() ? Message::BIDI : 0x00,0x00,0x00);
+  }
+  uint8_t* data() { return Message::data()-2; }
+  void fill(uint8_t firmversion,uint8_t modelid[2],const char* serial,uint8_t subtype,uint8_t devinfo[3]) {
+    uint8_t* buf = data();
+    *buf = firmversion;
+    memcpy(buf+1,modelid,2);
+    memcpy(buf+3,serial,10);
+    *(buf+13) = subtype;
+    memcpy(buf+14,devinfo,3);
   }
 };
 

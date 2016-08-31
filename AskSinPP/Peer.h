@@ -31,6 +31,15 @@ public:
   uint8_t channel () const {
     return chan;
   }
+
+  bool even () const {
+    return (chan & 0x01) == 0x00;
+  }
+
+  bool odd () const {
+    return (chan & 0x01) == 0x01;
+  }
+
   void dump () {
     DHEX((uint8_t*)this,sizeof(Peer));
   }
