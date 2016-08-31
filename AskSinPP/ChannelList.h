@@ -75,6 +75,12 @@ public:
   static uint8_t size () {
     return sizeof(DataType);
   }
+
+  void dump () {
+    DHEX(address());
+    DPRINT(" - ");
+    eeprom.dump(address(),size());
+  }
 };
 
 #endif

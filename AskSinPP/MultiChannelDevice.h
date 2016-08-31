@@ -188,8 +188,7 @@ public:
            ChannelType& ch = channel(i);
            typename ChannelType::List3 l3 = ch.getList3(p);
            if( l3.valid() == true ) {
-//             DHEX(l3.address()); DPRINT(" - ");
-//             eeprom.dump(l3.sh().address(),l3.sh().size());
+             // l3.dump();
              // TODO long press / l3->actiontype
              ch.jumpToTarget(l3.sh());
              sendAck(msg,ch);
