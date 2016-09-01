@@ -190,8 +190,10 @@ public:
       ChannelType& c = channel(ch);
       if (numlist == 1) {
         return c.getList1();
-      } else if (numlist == 3) {
+      } else if (ChannelType::hasList3() && numlist == 3) {
         return c.getList3(peer);
+      } else if (ChannelType::hasList4() && numlist == 4) {
+        return c.getList4(peer);
       }
     }
     return GenericList();

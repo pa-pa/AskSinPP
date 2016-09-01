@@ -141,4 +141,16 @@ public:
   }
 };
 
+
+class EmptyListData {
+public:
+  static uint8_t getOffset(uint8_t reg) { return 0xff; }
+  static uint8_t getRegister(uint8_t reg) { return 0xff; }
+};
+
+class EmptyList : public ChannelList<EmptyListData> {
+public:
+  EmptyList(uint16_t a) : ChannelList(a) {}
+};
+
 #endif

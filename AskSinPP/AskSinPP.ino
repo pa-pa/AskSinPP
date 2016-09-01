@@ -15,7 +15,7 @@
 #include "Message.h"
 
 
-class SwitchChannel : public Channel<SwitchList1,SwitchList3,4>, public SwitchStateMachine {
+class SwitchChannel : public Channel<SwitchList1,SwitchList3,EmptyList,4>, public SwitchStateMachine {
 
 public:
   SwitchChannel () : Channel() {}
