@@ -4,6 +4,7 @@
 
 #include "HMID.h"
 #include "Channel.h"
+#include "ChannelList.h"
 #include "Message.h"
 #include "CC1101.h"
 
@@ -139,8 +140,6 @@ public:
 
   bool send(Message& msg,const HMID& to);
 
-  bool waitForAck(Message& msg,uint8_t timeout);
-
   void sendAck (Message& msg) {
     msg.ack().init();
     send(msg,msg.from());
@@ -162,7 +161,12 @@ public:
     sendDeviceInfo(HMID::boardcast,nextcount());
   }
 
-  void sendDeviceInfo (const HMID& to,uint8_t count);
+  void sendDeviceInfo (const HMID& to,uint8_t count) {
+    DeviceInfoMsg& pm = msg.deviceInfo();
+    pm.init(to,count);
+    pm.fill(firmversion,model,serial,subtype,devinfo);
+    send(msg,to);
+  }
 
   template <class ChannelType>
   void sendInfoActuatorStatus (const HMID& to,uint8_t count,ChannelType& ch) {
@@ -172,8 +176,7 @@ public:
     ch.changed(false);
   }
 
-  template <class ListType>
-  void sendInfoParamResponsePairs(HMID to,uint8_t count,const ListType& list) {
+  void sendInfoParamResponsePairs(HMID to,uint8_t count,const GenericList& list) {
     // setup message for maximal size
     // msg.initWithCount(0x0b-1+(8*2),0x10,Message::BIDI,0x02);
     // msg.count(count);
@@ -182,7 +185,7 @@ public:
     pm.init(count);
     uint8_t  current=0;
     uint8_t* buf=pm.data();
-    for( int i=0; i<list.size(); ++i ) {
+    for( int i=0; i<list.getSize(); ++i ) {
       *buf++ = list.getRegister(i);
       *buf++ = list.getByte(i);
       current++;
@@ -233,12 +236,24 @@ public:
     send(msg,to);
   }
 
-  template <class ListType>
-  void writeList (ListType& list,const uint8_t* data,uint8_t length) {
+  void writeList (const GenericList& list,const uint8_t* data,uint8_t length) {
     for( uint8_t i=0; i<length; i+=2, data+=2 ) {
       list.writeRegister(*data,*(data+1));
     }
   }
+
+  bool waitForAck(Message& msg,uint8_t timeout) {
+    do {
+      if( radio->readAck(msg) == true ) {
+        return true;
+      }
+      delay(10); // wait 10ms
+      timeout--;
+    }
+    while( timeout > 0 );
+    return false;
+  }
+
 };
 
 #endif

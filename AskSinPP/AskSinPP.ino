@@ -48,13 +48,13 @@ public:
 };
 
 
-StatusLed led(4);
+StatusLed sled(4);
 MultiChannelDevice<SwitchChannel,4> sdev(0x20);
 
 #include "PinChangeInt.h"
 
 void intPin() {
-  led.set(StatusLed::key_long);
+  sled.set(StatusLed::key_long);
 }
 
 void setup () {
@@ -81,7 +81,7 @@ void setup () {
 
   aclock.init();
 
-  led.set(StatusLed::welcome);
+  sled.set(StatusLed::welcome);
 
 #if 0
   SwitchChannel& ch1 = sdev.channel(1);

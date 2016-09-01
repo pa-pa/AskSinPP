@@ -45,7 +45,14 @@ AlarmClock& AlarmClock::operator --() {
       --alarm->tick;
       while ((alarm != 0) && (alarm->tick == 0)) {
         unlink(); // remove expired alarm
-        ready.append(*alarm);
+        // run in interrupt
+        if( alarm->async() == true ) {
+          alarm->trigger(*this);
+        }
+        // run in application
+        else {
+          ready.append(*alarm);
+        }
         alarm = (Alarm*) select();
       }
     }

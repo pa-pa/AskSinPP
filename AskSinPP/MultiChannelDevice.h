@@ -13,11 +13,10 @@ class MultiChannelDevice : public Device {
   List0       list0;
   ChannelType devchannels[ChannelCount];
   uint8_t     cfgChannel;
-  Peer        cfgPeer;
-  uint8_t     cfgList;
+  GenericList cfgList;
 
 public:
-  MultiChannelDevice (uint16_t addr) : list0(addr), cfgChannel(0xff), cfgList(0) {
+  MultiChannelDevice (uint16_t addr) : list0(addr), cfgChannel(0xff) {
     addr += list0.size();
     for( uint8_t i=0; i<channels(); ++i ) {
       devchannels[i].setup(this,i+1,addr);
@@ -113,22 +112,9 @@ public:
          // CONFIG_PARAM_REQ
          else if (msg.subcommand() == AS_CONFIG_PARAM_REQ ) {
            const ConfigParamReqMsg& pm = msg.configParamReq();
-           if( pm.channel() == 0 ) {
-             // channel 0 only has list0
-             sendInfoParamResponsePairs(msg.from(),msg.count(),list0);
-           }
-           else if( hasChannel(pm.channel()) == true ) {
-             uint8_t numlist = pm.list();
-             ChannelType& ch = channel(pm.channel());
-             if( numlist == 1 ) {
-               sendInfoParamResponsePairs(msg.from(),msg.count(),ch.getList1());
-             }
-             else if( numlist == 3 ) {
-               typename ChannelType::List3 l3 = ch.getList3(pm.peer());
-               if( l3.valid() == true ) {
-                 sendInfoParamResponsePairs(msg.from(),msg.count(),l3);
-               }
-             }
+           GenericList gl = findList(pm.channel(),pm.peer(),pm.list());
+           if( gl.valid() == true ) {
+             sendInfoParamResponsePairs(msg.from(),msg.count(),gl);
            }
          }
          // CONFIG_STATUS_REQUEST
@@ -139,14 +125,13 @@ public:
          else if( msg.subcommand() == AS_CONFIG_START ) {
            const ConfigStartMsg& pm = msg.configStart();
            cfgChannel = pm.channel();
-           cfgPeer = pm.peer();
-           cfgList = pm.list();
+           cfgList = findList(cfgChannel,pm.peer(),pm.list());
            // TODO setup alarm to disable after 2000ms
            sendAck(msg);
          }
          // CONFIG_END
          else if( msg.subcommand() == AS_CONFIG_END ) {
-           if( cfgList == 0 ) {
+           if( cfgList.address() == list0.address() ) {
              setMasterID(list0.masterid());
            }
            cfgChannel = 0xff;
@@ -155,22 +140,8 @@ public:
          }
          else if( msg.subcommand() == AS_CONFIG_WRITE_INDEX ) {
            const ConfigWriteIndexMsg& pm = msg.configWriteIndex();
-           if( cfgChannel == pm.channel() ) {
-             if( cfgList == 0 ) {
-               writeList(list0,pm.data(),pm.datasize());
-             }
-             else if( hasChannel(pm.channel()) == true ) {
-               ChannelType& ch = channel(pm.channel());
-               if (cfgList == 1) {
-                 typename ChannelType::List1 l1 = ch.getList1();
-                 writeList(l1,pm.data(),pm.datasize());
-               } else if (cfgList == 3) {
-                 typename ChannelType::List3 l3 = ch.getList3(cfgPeer);
-                 if (l3.valid() == true) {
-                   writeList(l3,pm.data(),pm.datasize());
-                 }
-               }
-             }
+           if( cfgChannel == pm.channel() && cfgList.valid() == true ) {
+             writeList(cfgList,pm.data(),pm.datasize());
            }
            sendAck(msg);
          }
@@ -198,7 +169,7 @@ public:
            if( l3.valid() == true ) {
              // l3.dump();
              typename ChannelType::List3::PeerList pl = lg ? l3.lg() : l3.sh();
-             // l3->actiontype
+             // TODO l3->actiontype
              // pl.dump();
              ch.jumpToTarget(pl);
              sendAck(msg,ch);
@@ -210,6 +181,20 @@ public:
 //       DPRINT(F("ignore "));
 //       msg.dump();
      }
+   }
+
+   GenericList findList(uint8_t ch,const Peer& peer,uint8_t numlist) {
+    if (numlist == 0) {
+      return list0;
+    } else if (hasChannel(ch) == true) {
+      ChannelType& c = channel(ch);
+      if (numlist == 1) {
+        return c.getList1();
+      } else if (numlist == 3) {
+        return c.getList3(peer);
+      }
+    }
+    return GenericList();
    }
 
 };

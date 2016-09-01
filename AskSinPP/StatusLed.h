@@ -30,6 +30,7 @@ private:
 
 public:
   StatusLed (uint8_t p) : Alarm(0), pin(p), step(0), repeat(0) {
+    async(true);
     pinMode(pin,OUTPUT);
     ledOff();
   }
@@ -45,9 +46,11 @@ public:
     digitalWrite(pin,HIGH);
   }
 
+  bool active () const { return current.length != 0; }
+
   virtual void trigger (AlarmClock& clock);
 };
 
-
+extern StatusLed sled;
 
 #endif
