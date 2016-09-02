@@ -40,6 +40,9 @@ public:
 
   void jumpToTarget(SwitchPeerList lst);
   void setState (uint8_t state,uint16_t duration);
+  void toggleState () {
+    setState( state == AS_CM_JT_ON ? AS_CM_JT_OFF : AS_CM_JT_ON, 0xffff);
+  }
 
   uint8_t getNextState(uint8_t state,const SwitchPeerList& lst) const {
     switch( state ) {

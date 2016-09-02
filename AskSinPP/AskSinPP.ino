@@ -56,12 +56,13 @@ MultiChannelDevice<SwitchChannel,2> sdev(0x20);
 class CfgButton : public Button {
 public:
   virtual void state (uint8_t s) {
+    uint8_t old = Button::state();
     Button::state(s);
-    if( s == Button::pressed ) {
-      sdev.startPairing();
+    if( s == Button::released && old == Button::pressed ) {
+      sdev.channel(1).toggleState();
     }
     else if( s== longpressed ) {
-      sled.set(StatusLed::key_long);
+      sdev.startPairing();
     }
     else if( s == Button::longlongpressed ) {
       sdev.reset();
@@ -72,7 +73,7 @@ public:
 CfgButton cfgBtn;
 void cfgBtnISR () { cfgBtn.pinChange(); }
 
-void setup () {
+  void setup () {
 #ifdef ARDUINO
   Serial.begin(57600);
 #endif

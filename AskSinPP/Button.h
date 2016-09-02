@@ -18,13 +18,14 @@ public:
 protected:
   uint8_t stat : 3;
   uint8_t repeat : 5;
+  uint8_t pin;
 
 public:
-  Button () : Alarm(0), stat(none), repeat(0) {}
+  Button () : Alarm(0), stat(none), repeat(0), pin(0) {}
   virtual ~Button () {}
 
   virtual void trigger (AlarmClock& clock) {
-    bool low = digitalRead(8) == LOW;
+    bool low = digitalRead(pin) == LOW;
     switch( state() ) {
       case released:
         state(none);
@@ -66,6 +67,7 @@ public:
   }
 
   virtual void state (uint8_t s) {
+    /*
     switch(s) {
     case released: DPRINTLN("released"); break;
     case pressed: DPRINTLN("pressed"); break;
@@ -73,13 +75,14 @@ public:
     case longpressed: DPRINTLN("longpressed"); break;
     case longlongpressed: DPRINTLN("longlongpressed"); break;
     }
+    */
     stat = s;
   }
 
   uint8_t state () const { return stat; }
 
   void pinChange () {
-    bool low = digitalRead(8) == LOW;
+    bool low = digitalRead(pin) == LOW;
     switch( state() ) {
     case none:
       state(debounce);
@@ -101,6 +104,7 @@ public:
   }
 
   void init (uint8_t pin) {
+    this->pin = pin;
     pinMode(pin, INPUT_PULLUP);
   }
 };

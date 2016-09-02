@@ -177,6 +177,7 @@ public:
          bool found=false;
          bool lg = (msg.command() & 0x40) == 0x40;
          Peer p(msg.from(),msg.command() & 0x3f);
+         uint8_t cnt = msg.subcommand();
 //         p.dump();
          for( uint8_t i=1; i<=channels(); ++i ) {
            ChannelType& ch = channel(i);
@@ -184,9 +185,19 @@ public:
            if( l3.valid() == true ) {
              // l3.dump();
              typename ChannelType::List3::PeerList pl = lg ? l3.lg() : l3.sh();
-             // TODO l3->actiontype
              // pl.dump();
-             ch.jumpToTarget(pl);
+             // perform action as defined in the list
+             switch( pl.actionType() ) {
+               case AS_CM_ACTIONTYPE_JUMP_TO_TARGET:
+                 ch.jumpToTarget(pl);
+                 break;
+               case AS_CM_ACTIONTYPE_TOGGLE_TO_COUNTER:
+                 ch.setState( (cnt & 0x01) == 0x01 ? AS_CM_JT_ON : AS_CM_JT_OFF, 0xffff );
+                 break;
+               case AS_CM_ACTIONTYPE_TOGGLE_INVERSE_TO_COUNTER:
+                 ch.setState( (cnt & 0x01) == 0x00 ? AS_CM_JT_ON : AS_CM_JT_OFF, 0xffff );
+                 break;
+             }
              sendAck(msg,ch);
              found=true;
            }
