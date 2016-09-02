@@ -1,9 +1,5 @@
 
-#ifndef __INC_TIMERONE_H__
-#define __INC_TIMERONE_H__
-#include <TimerOne.h>
-#endif
-
+#include "TimerOne.h"
 #include "AlarmClock.h"
 
 namespace as {

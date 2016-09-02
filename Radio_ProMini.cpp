@@ -5,7 +5,7 @@
   #include "WProgram.h"
 #endif
 
-#include "CC1101.h"
+#include "Radio.h"
 
 #define pinOutput(PORT,PIN)  ((PORT) |=  _BV(PIN))              // pin functions
 #define pinInput(PORT,PIN)   ((PORT) &= ~_BV(PIN))

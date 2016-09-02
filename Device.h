@@ -6,7 +6,7 @@
 #include "Channel.h"
 #include "ChannelList.h"
 #include "Message.h"
-#include "CC1101.h"
+#include "Radio.h"
 
 namespace as {
 

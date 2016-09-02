@@ -1,6 +1,7 @@
 
 #include "Device.h"
-#include "StatusLed.h"
+
+#include "Led.h"
 
 namespace as {
 

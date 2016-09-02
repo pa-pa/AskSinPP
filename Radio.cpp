@@ -13,7 +13,7 @@
 #endif
 
 #include "Debug.h"
-#include "CC1101.h"
+#include "Radio.h"
 #include "Atomic.h"
 
 namespace as {

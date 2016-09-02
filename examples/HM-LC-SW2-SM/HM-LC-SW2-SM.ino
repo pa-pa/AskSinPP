@@ -1,20 +1,17 @@
 
-#include "Debug.h"
+#include <Led.h>
+#include <Debug.h>
 
-#include "AlarmClock.h"
-#include "Peer.h"
-#include "EEProm.h"
-#include "MultiChannelDevice.h"
-#include "Channel.h"
-#include "SwitchList1.h"
-#include "SwitchList3.h"
-#include "SwitchStateMachine.h"
-#include "StatusLed.h"
-
-#include "CC1101.h"
-#include "Message.h"
-#include "Button.h"
-#include "PinChangeInt.h"
+#include <AlarmClock.h>
+#include <MultiChannelDevice.h>
+#include <SwitchList1.h>
+#include <SwitchList3.h>
+#include <SwitchStateMachine.h>
+#include <Message.h>
+#include <Button.h>
+#include <PinChangeInt.h>
+#include <TimerOne.h>
+#include <Radio.h>
 
 using namespace as;
 
