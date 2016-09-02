@@ -6,59 +6,12 @@
 	</projects>
 	<buildSpec>
 		<buildCommand>
-			<name>org.eclipse.cdt.managedbuilder.core.genmakebuilder</name>
-			<triggers>clean,full,incremental,</triggers>
-			<arguments>
-			</arguments>
-		</buildCommand>
-		<buildCommand>
-			<name>org.eclipse.cdt.managedbuilder.core.ScannerConfigBuilder</name>
-			<triggers>full,incremental,</triggers>
+			<name>org.epic.perleditor.perlbuilder</name>
 			<arguments>
 			</arguments>
 		</buildCommand>
 	</buildSpec>
 	<natures>
-		<nature>org.eclipse.cdt.core.cnature</nature>
-		<nature>org.eclipse.cdt.core.ccnature</nature>
-		<nature>org.eclipse.cdt.managedbuilder.core.managedBuildNature</nature>
-		<nature>org.eclipse.cdt.managedbuilder.core.ScannerConfigNature</nature>
-		<nature>it.baeyens.arduinonature</nature>
+		<nature>org.epic.perleditor.perlnature</nature>
 	</natures>
-	<linkedResources>
-		<link>
-			<name>Libraries/PinChangeInt</name>
-			<type>2</type>
-			<locationURI>ArduinoPrivateLibPath/PinChangeInt</locationURI>
-		</link>
-		<link>
-			<name>Libraries/TimerOne</name>
-			<type>2</type>
-			<locationURI>ArduinoPrivateLibPath/TimerOne</locationURI>
-		</link>
-		<link>
-			<name>arduino/core</name>
-			<type>2</type>
-			<locationURI>ArduinoPlatformPath/arduino</locationURI>
-		</link>
-		<link>
-			<name>arduino/variant</name>
-			<type>2</type>
-			<locationURI>ArduinoPinPath/eightanaloginputs</locationURI>
-		</link>
-	</linkedResources>
-	<variableList>
-		<variable>
-			<name>ArduinoHardwareLibPath</name>
-			<value>file:/C:/Users/holger/Desktop/arduino-1.6.5-r5/hardware/arduino/avr/libraries</value>
-		</variable>
-		<variable>
-			<name>ArduinoPinPath</name>
-			<value>file:/C:/Users/holger/Desktop/arduino-1.6.5-r5/hardware/arduino/avr/variants</value>
-		</variable>
-		<variable>
-			<name>ArduinoPlatformPath</name>
-			<value>file:/C:/Users/holger/Desktop/arduino-1.6.5-r5/hardware/arduino/avr/cores</value>
-		</variable>
-	</variableList>
 </projectDescription>

@@ -13,19 +13,27 @@
 #include <TimerOne.h>
 #include <Radio.h>
 
+
+#define PEERS_PER_CHANNEL 4
+#define LED_PIN 4
+#define CONFIG_BUTTON_PIN 8
+#define RELAY1_PIN 5
+#define RELAY2_PIN 6
+
+
 using namespace as;
 
-class SwitchChannel : public Channel<SwitchList1,SwitchList3,EmptyList,4>, public SwitchStateMachine {
+class SwitchChannel : public Channel<SwitchList1,SwitchList3,EmptyList,PEERS_PER_CHANNEL>, public SwitchStateMachine {
 
 public:
   SwitchChannel () : Channel() {}
   virtual ~SwitchChannel() {}
 
   uint8_t pin () {
-    if( number() < 4 ) {
-      return 4+number();
+    if( number() == 1 ) {
+      return RELAY1_PIN;
     }
-    return 3;
+    return RELAY2_PIN;
   }
 
   void setup(Device* dev,uint8_t number,uint16_t addr) {
@@ -74,11 +82,11 @@ void cfgBtnISR () { cfgBtn.pinChange(); }
 #ifndef NDEBUG
   Serial.begin(57600);
 #endif
-  sled.init(4);
+  sled.init(LED_PIN);
 
   // B0 == PIN 8 on Pro Mini
-  cfgBtn.init(8);
-  attachPinChangeInterrupt(8,cfgBtnISR,CHANGE);
+  cfgBtn.init(CONFIG_BUTTON_PIN);
+  attachPinChangeInterrupt(CONFIG_BUTTON_PIN,cfgBtnISR,CHANGE);
   radio.init();
 
   if( eeprom.setup() == true ) {
