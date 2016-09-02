@@ -5,6 +5,8 @@
 #include "HMID.h"
 #include "Debug.h"
 
+namespace as {
+
 class Peer : public HMID {
   uint8_t chan;
 public:
@@ -44,5 +46,7 @@ public:
     DHEX((uint8_t*)this,sizeof(Peer));
   }
 };
+
+}
 
 #endif

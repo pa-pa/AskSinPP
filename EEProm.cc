@@ -1,6 +1,8 @@
 
 #include "EEProm.h"
 
+namespace as {
+
 EEProm eeprom;
 
 bool EEProm::setup () {
@@ -23,4 +25,6 @@ void EEProm::dump (uint16_t start, uint16_t num) {
     DPRINT(" ");
   }
   DPRINT("\n");
+}
+
 }

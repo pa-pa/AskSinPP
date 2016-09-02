@@ -1,24 +1,27 @@
 
-#ifdef ARDUINO
-  #ifndef __INC_TIMERONE_H__
-  #define __INC_TIMERONE_H__
-    #include <TimerOne.h>
-  #endif
+#ifndef __INC_TIMERONE_H__
+#define __INC_TIMERONE_H__
+#include <TimerOne.h>
 #endif
 
 #include "AlarmClock.h"
 
+namespace as {
+
 AlarmClock aclock;
 
+void callback(void) {
+  --aclock;
+}
+
 void AlarmClock::init() {
-#ifdef ARDUINO
-    Timer1.initialize(100000);         // initialize timer1, and set a 1/10 second period
-    Timer1.attachInterrupt(callback);  // attaches callback() as a timer overflow interrupt
-#endif
+  Timer1.initialize(100000); // initialize timer1, and set a 1/10 second period
+  Timer1.attachInterrupt(callback); // attaches callback() as a timer overflow interrupt
 }
 
 void AlarmClock::cancel(Alarm& item) {
-  ATOMIC_BLOCK( ATOMIC_RESTORESTATE ) {
+  ATOMIC_BLOCK( ATOMIC_RESTORESTATE )
+  {
     Alarm *tmp = (Alarm*) select();
     Link *vor = this;
     // search for the alarm to cancel
@@ -39,14 +42,15 @@ void AlarmClock::cancel(Alarm& item) {
 }
 
 AlarmClock& AlarmClock::operator --() {
-  ATOMIC_BLOCK( ATOMIC_RESTORESTATE ) {
+  ATOMIC_BLOCK( ATOMIC_RESTORESTATE )
+  {
     Alarm* alarm = (Alarm*) select();
     if (alarm != 0) {
       --alarm->tick;
       while ((alarm != 0) && (alarm->tick == 0)) {
         unlink(); // remove expired alarm
         // run in interrupt
-        if( alarm->async() == true ) {
+        if (alarm->async() == true) {
           alarm->trigger(*this);
         }
         // run in application
@@ -62,7 +66,8 @@ AlarmClock& AlarmClock::operator --() {
 
 void AlarmClock::add(Alarm& item) {
   if (item.tick > 0) {
-    ATOMIC_BLOCK( ATOMIC_RESTORESTATE ) {
+    ATOMIC_BLOCK( ATOMIC_RESTORESTATE )
+    {
       Link* prev = this;
       Alarm* temp = (Alarm*) select();
       while ((temp != 0) && (temp->tick < item.tick)) {
@@ -94,6 +99,4 @@ uint32_t AlarmClock::get(const Alarm& item) const {
   return 0;
 }
 
-inline void callback(void) {
-  --aclock;
 }

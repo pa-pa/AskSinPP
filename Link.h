@@ -4,6 +4,8 @@
 
 #include "Atomic.h"
 
+namespace as {
+
 class Link {
   // successor element
   Link* link;
@@ -79,5 +81,7 @@ public:
   // Link* search (const Link*) const;     // return container instance
   // void   remove (const Link&);           // remove item
 };
+
+}
 
 #endif

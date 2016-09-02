@@ -6,6 +6,8 @@
 #include "SwitchList3.h"
 #include "AlarmClock.h"
 
+namespace as {
+
 class SwitchStateMachine {
 
   class StateAlarm : public Alarm {
@@ -95,5 +97,7 @@ public:
     return delayActive() ? 0x40 : 0x00;
   }
 };
+
+}
 
 #endif

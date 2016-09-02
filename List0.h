@@ -4,6 +4,8 @@
 #include "ChannelList.h"
 #include "HMID.h"
 
+namespace as {
+
 class List0Data {
 public:
   uint8_t data    :8;     // 0x02, s:0, e:8
@@ -53,5 +55,7 @@ public:
   }
 
 };
+
+}
 
 #endif

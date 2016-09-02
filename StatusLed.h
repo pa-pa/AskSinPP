@@ -4,6 +4,8 @@
 
 #include "Alarm.h"
 
+namespace as {
+
 class StatusLed : public Alarm {
 
 public:
@@ -29,12 +31,16 @@ private:
   void next (AlarmClock& clock);
 
 public:
-  StatusLed (uint8_t p) : Alarm(0), pin(p), step(0), repeat(0) {
+  StatusLed () : Alarm(0), pin(0), step(0), repeat(0) {
     async(true);
+  }
+  virtual ~StatusLed () {}
+
+  void init (uint8_t p) {
+    pin = p;
     pinMode(pin,OUTPUT);
     ledOff();
   }
-  virtual ~StatusLed () {}
 
   void set(Mode stat);
 
@@ -52,5 +58,7 @@ public:
 };
 
 extern StatusLed sled;
+
+}
 
 #endif

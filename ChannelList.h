@@ -4,6 +4,8 @@
 
 #include "EEProm.h"
 
+namespace as {
+
 class BaseList {
   uint16_t  addr;
 
@@ -152,5 +154,7 @@ class EmptyList : public ChannelList<EmptyListData> {
 public:
   EmptyList(uint16_t a) : ChannelList(a) {}
 };
+
+}
 
 #endif

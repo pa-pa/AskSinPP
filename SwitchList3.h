@@ -5,6 +5,8 @@
 #include "ChannelList.h"
 #include "cm.h"
 
+namespace as {
+
 class SwitchPeerData {
 public:
   uint8_t  ctDlyOn           :4;     // 0x02, s:0, e:4
@@ -131,5 +133,7 @@ public:
   void even ();
   void single ();
 };
+
+}
 
 #endif

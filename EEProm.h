@@ -3,39 +3,23 @@
 #define __EEPROM_H__
 
 #include "Debug.h"
-#ifndef ARDUINO
-  #include <string.h>
-#endif
+
+namespace as {
 
 class EEProm {
-  #ifndef ARDUINO
-  uint8_t data[2048]; // simulate 2k eeprom
-  #endif
 public:
-  EEProm () {
-  #ifndef ARDUINO
-    memset(data,0,sizeof(data));
-  #endif
-  }
+  EEProm () {}
 
   bool setup ();
 
   uint8_t getByte (uint16_t addr) {
-  #ifndef ARDUINO
-    return data[addr];
-  #else
     uint8_t b;
     eeprom_read_block((void*)&b,(const void*)addr,1);
     return b;
-  #endif
   }
 
   bool setByte (uint16_t addr, uint8_t d) {
-  #ifndef ARDUINO
-    data[addr] = d;
-  #else
     eeprom_write_block((const void*)&d,(void*)addr,1);    
-  #endif
     return true;
   }
 
@@ -50,13 +34,7 @@ public:
   }
 
   bool setData (uint16_t addr,uint8_t* buf,uint16_t size) {
-  #ifndef ARDUINO
-    for( uint16_t i=0; i<size; ++i, ++buf ) {
-      setByte(addr+i,*buf);
-    }
-  #else
     eeprom_write_block((const void*)buf,(void*)addr,size);    
-  #endif
     return true;
   }
 
@@ -66,13 +44,7 @@ public:
   }
 
   bool getData (uint16_t addr,uint8_t* buf,uint16_t size) {
-  #ifndef ARDUINO
-    for( uint16_t i=0; i<size; ++i, ++buf ) {
-      *buf = getByte(addr+i);
-    }
-  #else
     eeprom_read_block((void*)buf,(const void*)addr,size);
-  #endif
     return true;
   }
 
@@ -92,5 +64,7 @@ public:
 };
 
 extern EEProm eeprom;
+
+}
 
 #endif

@@ -16,6 +16,7 @@
 #include "Button.h"
 #include "PinChangeInt.h"
 
+using namespace as;
 
 class SwitchChannel : public Channel<SwitchList1,SwitchList3,EmptyList,4>, public SwitchStateMachine {
 
@@ -50,7 +51,6 @@ public:
 };
 
 
-StatusLed sled(4);
 MultiChannelDevice<SwitchChannel,2> sdev(0x20);
 
 class CfgButton : public Button {
@@ -74,9 +74,11 @@ CfgButton cfgBtn;
 void cfgBtnISR () { cfgBtn.pinChange(); }
 
   void setup () {
-#ifdef ARDUINO
+#ifndef NDEBUG
   Serial.begin(57600);
 #endif
+  sled.init(4);
+
   // B0 == PIN 8 on Pro Mini
   cfgBtn.init(8);
   attachPinChangeInterrupt(8,cfgBtnISR,CHANGE);
@@ -101,24 +103,6 @@ void cfgBtnISR () { cfgBtn.pinChange(); }
 }
 
 void loop() {
-
   aclock.runready();
   sdev.pollRadio();
-
-#ifndef ARDUINO
-  // simulate timer
-  usleep(100000);
-  --aclock;
-#endif
-
 }
-
-#ifndef ARDUINO
-int main () {
-  setup();
-  while( true )
-    loop();
-  return 0;
-}
-#endif
-

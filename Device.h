@@ -8,6 +8,8 @@
 #include "Message.h"
 #include "CC1101.h"
 
+namespace as {
+
 class Device {
   HMID  devid;
   HMID  master;
@@ -255,5 +257,7 @@ public:
   }
 
 };
+
+}
 
 #endif

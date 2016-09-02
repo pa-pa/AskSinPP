@@ -1,18 +1,19 @@
-
 #ifndef __ALARMCLOCK_H__
 #define __ALARMCLOCK_H__
 
 #include "Alarm.h"
 
-extern void callback();
+namespace as {
+
 
 class AlarmClock: protected Link {
 
   Link ready;
-  
+
 public:
 
-  AlarmClock () {}
+  AlarmClock() {
+  }
 
   void init();
 
@@ -20,9 +21,9 @@ public:
 
   AlarmClock& operator --();
 
-  void runready () {
+  void runready() {
     Alarm* a;
-    while( (a=(Alarm*)ready.unlink()) != 0 ) {
+    while ((a = (Alarm*) ready.unlink()) != 0) {
       a->trigger(*this);
     }
   }
@@ -34,5 +35,7 @@ public:
 };
 
 extern AlarmClock aclock;
+
+}
 
 #endif

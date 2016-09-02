@@ -8,6 +8,8 @@
 #include "cm.h"
 #include "StatusLed.h"
 
+namespace as {
+
 template <class ChannelType,int ChannelCount>
 class MultiChannelDevice : public Device {
 
@@ -162,22 +164,18 @@ public:
        }
        else if( msg.type() == AS_MESSAGE_ACTION ) {
          if( msg.command() == AS_ACTION_SET ) {
-           ChannelType& c = channel(msg.subcommand());
-           uint8_t value = *msg.data();
-           uint16_t delay = 0xffff;
-           if( msg.datasize() >= 5) {
-             delay = (*(msg.data()+3) << 8) + *(msg.data()+4);
-           }
-           if( delay == 0 ) delay = 0xffff;
-           c.setState( value == 0 ? AS_CM_JT_OFF : AS_CM_JT_ON, delay );
+           const ActionMsg& pm = msg.action();
+           ChannelType& c = channel(pm.channel());
+           c.setState( pm.value() == 0 ? AS_CM_JT_OFF : AS_CM_JT_ON, pm.delay() );
            sendAck(msg,c);
          }
        }
        else if (msg.type() == AS_MESSAGE_REMOTE_EVENT ) {
+         const RemoteEventMsg& pm = msg.remoteEvent();
          bool found=false;
-         bool lg = (msg.command() & 0x40) == 0x40;
-         Peer p(msg.from(),msg.command() & 0x3f);
-         uint8_t cnt = msg.subcommand();
+         bool lg = pm.isLong();
+         Peer p(pm.peer());
+         uint8_t cnt = pm.counter();
 //         p.dump();
          for( uint8_t i=1; i<=channels(); ++i ) {
            ChannelType& ch = channel(i);
@@ -230,5 +228,7 @@ public:
    }
 
 };
+
+}
 
 #endif

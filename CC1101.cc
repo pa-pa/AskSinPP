@@ -16,6 +16,8 @@
 #include "CC1101.h"
 #include "Atomic.h"
 
+namespace as {
+
 // this is the global radio object
 CC1101 radio;
 
@@ -324,4 +326,6 @@ bool CC1101::write (const Message& msg, uint8_t burst) {
 
 bool CC1101::write (const Message& msg, uint8_t burst, uint8_t maxretry, uint32_t timeout) {
   return false;
+}
+
 }

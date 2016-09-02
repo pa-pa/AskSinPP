@@ -4,6 +4,8 @@
 
 #include "Atomic.h"
 
+namespace as {
+
 class HMID {
   uint8_t id[3];
 public:
@@ -43,5 +45,7 @@ public:
 
   static HMID boardcast;
 };
+
+}
 
 #endif

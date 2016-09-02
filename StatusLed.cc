@@ -2,6 +2,11 @@
 #include "StatusLed.h"
 #include "AlarmClock.h"
 
+namespace as {
+
+
+StatusLed sled;
+
 const StatusLed::BlinkPattern pattern [11] PROGMEM = {
     {0, 0, {0 , 0 } },  // 0; define nothing
     {2, 0, {5, 5,} },   // 1; define pairing string
@@ -51,4 +56,6 @@ void StatusLed::trigger (AlarmClock& clock) {
       copyPattern(nothing);
     }
   }
+}
+
 }

@@ -35,7 +35,9 @@
 #define SPI_MOSI                PORTB3
 #define SPI_SCLK                PORTB5
 
-extern "C" void radioISR();
+namespace as {
+
+void radioISR();
 
 //- cc1100 hardware functions ---------------------------------------------------------------------------------------------
 void CC1101::ccInitHw(void) {
@@ -84,4 +86,6 @@ void CC1101::ccDeselect(void) {
 
 void radioISR(void) {
   radio.handleGDO0Int();
+}
+
 }

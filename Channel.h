@@ -5,6 +5,8 @@
 #include "Peer.h"
 #include "EEProm.h"
 
+namespace as {
+
 class Device;
 
 template<class List1Type,class List3Type,class List4Type,int PeerCount>
@@ -154,8 +156,8 @@ public:
     }
     return 0x00;
   }
-
-
 };
+
+}
 
 #endif

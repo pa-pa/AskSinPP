@@ -2,11 +2,7 @@
 #ifndef __DEBUG_H__
 #define __DEBUG_H__
 
-#if defined(ARDUINO) && ARDUINO >= 100
-  #include "Arduino.h"
-#else
-  inline const char* F(const char* c) { return c; }
-#endif
+#include "Arduino.h"
 
 //#define NDEBUG
 
@@ -24,7 +20,6 @@
 
 #else
 
-#if defined(ARDUINO) && ARDUINO >= 100
 
   template <class T>
   inline void DPRINT(T str) { Serial.print(str); }
@@ -48,23 +43,6 @@
     Serial.print(b,HEX);
   }
   inline void DHEXLN(uint16_t b) { DHEX(b); DPRINT(F("\n")); }
-
-#else
-
-  #include <unistd.h>
-  #include <iostream>
-  #include <iomanip>
-
-  template <class T>
-  inline void DPRINT(T str) { std::cout << str; }
-  template <class T>
-  inline void DPRINTLN(T str) { DPRINT(str); std::cout << std::endl; }
-  inline void DHEX(uint8_t b) { std::cout << std::setw(2) << std::setfill('0') << std::hex << (int)b; }
-  inline void DHEXLN(uint8_t b) { DHEX(b); std::cout << std::endl; }
-  inline void DHEX(uint16_t b) { std::cout << std::setw(4) << std::setfill('0') << std::hex << (int)b; }
-  inline void DHEXLN(uint16_t b) { DHEX(b); std::cout << std::endl; }
-
-#endif
 
 #endif
 

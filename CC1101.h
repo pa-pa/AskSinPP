@@ -12,6 +12,8 @@
 #include <util/delay.h>
 #include "Message.h"
 
+namespace as {
+
 class CC1101 {
   
   public:		//---------------------------------------------------------------------------------------------------------
@@ -201,5 +203,7 @@ protected:
 
 // our global definition
 extern CC1101 radio;
+
+}
 
 #endif

@@ -10,6 +10,8 @@
 //#define MaxDataLen   60						// maximum length of received bytes
 #define MaxDataLen   25
 
+namespace as {
+
 // some forward declarations
 class ConfigPeerAddMsg;
 class ConfigPeerRemoveMsg;
@@ -28,6 +30,8 @@ class InfoParamResponsePairsMsg;
 class InfoPeerListMsg;
 
 class DeviceInfoMsg;
+class RemoteEventMsg;
+class ActionMsg;
 
 class Message {
 public:
@@ -255,6 +259,9 @@ public:
   const ConfigEndMsg& configEnd () const { return *(ConfigEndMsg*)this; }
   const ConfigWriteIndexMsg& configWriteIndex () const { return *(ConfigWriteIndexMsg*)this; }
 
+  const RemoteEventMsg& remoteEvent () const { return *(RemoteEventMsg*)this; }
+  const ActionMsg& action () const { return *(ActionMsg*)this; }
+
   // cast to write message types
   AckMsg& ack () { return *(AckMsg*)this; }
   AckStatusMsg& ackStatus () { return *(AckStatusMsg*)this; }
@@ -315,6 +322,31 @@ protected:
 class ConfigWriteIndexMsg : public ConfigMsg {
 protected:
   ConfigWriteIndexMsg () {}
+};
+
+class RemoteEventMsg : public Message {
+protected:
+  RemoteEventMsg() {}
+public:
+  Peer peer () const { return Peer(from(),command() & 0x3f); }
+  uint8_t counter () const { return subcommand(); }
+  bool isLong () const { return (command() & 0x40) == 0x40; }
+};
+
+class ActionMsg : public Message {
+protected:
+  ActionMsg() {}
+public:
+  uint8_t channel () const { return subcommand(); }
+  uint8_t value () const { return *data(); }
+  uint16_t delay () const {
+    uint16_t dly = 0xffff;
+    if( datasize() >= 5) {
+      dly = (*(data()+3) << 8) + *(data()+4);
+    }
+    if( dly == 0 ) dly = 0xffff;
+    return dly;
+  }
 };
 
 
@@ -392,5 +424,7 @@ public:
     memcpy(buf+14,devinfo,3);
   }
 };
+
+}
 
 #endif

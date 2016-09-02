@@ -3,6 +3,8 @@
 
 #include "ChannelList.h"
 
+namespace as {
+
 class SwitchList1Data {
 public:
   uint8_t sign             :1;     // 0x08, s:0, e:1
@@ -64,5 +66,7 @@ public:
   }
 
 };
+
+}
 
 #endif

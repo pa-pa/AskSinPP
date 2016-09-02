@@ -2,6 +2,8 @@
 #include "Device.h"
 #include "StatusLed.h"
 
+namespace as {
+
 void Device::process(Message& msg) {}
 
 bool Device::send(Message& msg,const HMID& to) {
@@ -21,3 +23,5 @@ bool Device::send(Message& msg,const HMID& to) {
   return result;
 }
 
+
+}
