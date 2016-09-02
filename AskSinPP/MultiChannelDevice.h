@@ -6,6 +6,7 @@
 #include "Defines.h"
 #include "List0.h"
 #include "cm.h"
+#include "StatusLed.h"
 
 template <class ChannelType,int ChannelCount>
 class MultiChannelDevice : public Device {
@@ -49,6 +50,17 @@ public:
     }
   }
 
+  void reset () {
+    firstinit();
+    setMasterID(list0.masterid());
+    sled.set(StatusLed::welcome);
+  }
+
+  void startPairing () {
+    sled.set(StatusLed::pairing);
+    sendDeviceInfo();
+  }
+
   ChannelType& channel(uint8_t ch) {
     return devchannels[ch-1];
   }
@@ -70,6 +82,7 @@ public:
        if( msg.type() == AS_MESSAGE_CONFIG ) {
          // PAIR_SERIAL
          if( msg.subcommand() == AS_CONFIG_PAIR_SERIAL && memcmp(msg.data(),getSerial(),10)==0 ) {
+           sled.set(StatusLed::pairing);
            list0.masterid(msg.from());
            setMasterID(list0.masterid());
            sendDeviceInfo(getMasterID(),msg.count());
@@ -133,6 +146,7 @@ public:
          else if( msg.subcommand() == AS_CONFIG_END ) {
            if( cfgList.address() == list0.address() ) {
              setMasterID(list0.masterid());
+             sled.set(StatusLed::nothing);
            }
            cfgChannel = 0xff;
            // TODO cancel alarm
@@ -160,6 +174,7 @@ public:
          }
        }
        else if (msg.type() == AS_MESSAGE_REMOTE_EVENT ) {
+         bool found=false;
          bool lg = (msg.command() & 0x40) == 0x40;
          Peer p(msg.from(),msg.command() & 0x3f);
 //         p.dump();
@@ -173,7 +188,11 @@ public:
              // pl.dump();
              ch.jumpToTarget(pl);
              sendAck(msg,ch);
+             found=true;
            }
+         }
+         if( found==false ) {
+           sendNack(msg);
          }
        }
      }

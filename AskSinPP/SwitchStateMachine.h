@@ -41,8 +41,26 @@ public:
   void jumpToTarget(SwitchPeerList lst);
   void setState (uint8_t state,uint16_t duration);
 
-  uint8_t getDelayForState(uint8_t s,SwitchPeerList lst);
-  uint8_t getNextState(uint8_t s,SwitchPeerList lst);
+  uint8_t getNextState(uint8_t state,const SwitchPeerList& lst) const {
+    switch( state ) {
+      case AS_CM_JT_ONDELAY:  return lst.jtDlyOn();
+      case AS_CM_JT_ON:       return lst.jtOn();
+      case AS_CM_JT_OFFDELAY: return lst.jtDlyOff();
+      case AS_CM_JT_OFF:      return lst.jtOff();
+    }
+    return AS_CM_JT_NONE;
+  }
+
+  uint8_t getDelayForState(uint8_t state,const SwitchPeerList& lst) const {
+    switch( state ) {
+      case AS_CM_JT_ONDELAY:  return lst.onDly();
+      case AS_CM_JT_ON:       return lst.onTime();
+      case AS_CM_JT_OFFDELAY: return lst.offDly();
+      case AS_CM_JT_OFF:      return lst.offTime();
+      default: break;
+    }
+    return 0;
+  }
 
   bool delayActive () const { return aclock.get(alarm) > 0; }
 

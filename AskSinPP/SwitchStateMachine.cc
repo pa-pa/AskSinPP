@@ -48,24 +48,4 @@
     }
   }
 
-  uint8_t SwitchStateMachine::getNextState(uint8_t state,SwitchPeerList lst) {
-    switch( state ) {
-      case AS_CM_JT_ONDELAY:  return lst.jtDlyOn();
-      case AS_CM_JT_ON:       return lst.jtOn();
-      case AS_CM_JT_OFFDELAY: return lst.jtDlyOff();
-      case AS_CM_JT_OFF:      return lst.jtOff();
-    }
-    return AS_CM_JT_NONE;
-  }
-
-  uint8_t SwitchStateMachine::getDelayForState(uint8_t state,SwitchPeerList lst) {
-    switch( state ) {
-      case AS_CM_JT_ONDELAY:  return lst.onDly();
-      case AS_CM_JT_ON:       return lst.onTime();
-      case AS_CM_JT_OFFDELAY: return lst.offDly();
-      case AS_CM_JT_OFF:      return lst.offTime();
-      default: break;
-    }
-    return 0;
-  }
 

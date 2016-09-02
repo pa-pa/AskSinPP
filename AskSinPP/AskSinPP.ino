@@ -13,6 +13,8 @@
 
 #include "CC1101.h"
 #include "Message.h"
+#include "Button.h"
+#include "PinChangeInt.h"
 
 
 class SwitchChannel : public Channel<SwitchList1,SwitchList3,EmptyList,4>, public SwitchStateMachine {
@@ -49,22 +51,34 @@ public:
 
 
 StatusLed sled(4);
-MultiChannelDevice<SwitchChannel,4> sdev(0x20);
+MultiChannelDevice<SwitchChannel,2> sdev(0x20);
 
-#include "PinChangeInt.h"
+class CfgButton : public Button {
+public:
+  virtual void state (uint8_t s) {
+    Button::state(s);
+    if( s == Button::pressed ) {
+      sdev.startPairing();
+    }
+    else if( s== longpressed ) {
+      sled.set(StatusLed::key_long);
+    }
+    else if( s == Button::longlongpressed ) {
+      sdev.reset();
+    }
+  }
+};
 
-void intPin() {
-  sled.set(StatusLed::key_long);
-}
+CfgButton cfgBtn;
+void cfgBtnISR () { cfgBtn.pinChange(); }
 
 void setup () {
 #ifdef ARDUINO
   Serial.begin(57600);
 #endif
   // B0 == PIN 8 on Pro Mini
-  pinMode(8, INPUT_PULLUP);
-  attachPinChangeInterrupt(8, intPin, CHANGE);
-
+  cfgBtn.init(8);
+  attachPinChangeInterrupt(8,cfgBtnISR,CHANGE);
   radio.init();
 
   if( eeprom.setup() == true ) {
@@ -83,37 +97,6 @@ void setup () {
 
   sled.set(StatusLed::welcome);
 
-#if 0
-  SwitchChannel& ch1 = sdev.channel(1);
-  SwitchList1 sd = ch1.getList1();
-  eeprom.dump(sd.address(),sd.size());
-
-  DPRINTLN(F("2 Peers"));
-  Peer odd(1,2,3,1);
-  Peer even(1,2,3,2);
-  SwitchChannel ch2 = sdev.channel(2);
-  if( sdev.addPeer(2,odd,even) == true ) {
-    SwitchList3 ssl = ch2.getList3(odd);
-    eeprom.dump(ssl.address(),ssl.size());
-    ssl = ch2.getList3(even);
-    eeprom.dump(ssl.address(),ssl.size());
-
-    ch2.jumpToTarget(ch2.getList3(even).sh());
-    delay(1000);
-    ch2.jumpToTarget(ch2.getList3(odd).sh());
-  }
-
-  DPRINTLN(F("\n\n1 Peer"));
-  Peer p(1,2,3,0);
-  sdev.addPeer(1,p);
-  SwitchList3 ssl = ch1.getList3(p);
-  eeprom.dump(ssl.address(),ssl.size());
-  DPRINTLN(F("Change Delays"));
-  ssl.sh().onTime(0x20 + 5);
-  ssl.sh().offTime(0x20 + 2);
-  eeprom.dump(ssl.address(),ssl.size());
-  ch1.jumpToTarget(ssl.sh());
-#endif
 }
 
 void loop() {
