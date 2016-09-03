@@ -12,11 +12,15 @@ bool Device::send(Message& msg,const HMID& to) {
   msg.from(devid);
   DPRINT(F("<- "));
   msg.dump();
-  bool result = radio->write(msg,msg.burstRequired());
-  if( result == true && msg.ackRequired() ) {
-    result = waitForAck(msg,30); // 300ms
-//    // TODO - retransmit if no ack
-    DPRINT(F("waitAck: ")); DHEX((uint8_t)result); DPRINTLN(F(""));
+  bool result = false;
+  uint8_t maxsend = 6;
+  while( result == false && maxsend > 0 ) {
+    maxsend--;
+    result = radio->write(msg,msg.burstRequired());
+    if( result == true && msg.ackRequired() ) {
+      result = waitForAck(msg,30); // 300ms
+      DPRINT(F("waitAck: ")); DHEX((uint8_t)result); DPRINTLN(F(""));
+    }
   }
   if( sled.active() == false ) {
     sled.set(StatusLed::send);

@@ -9,7 +9,7 @@ StatusLed sled;
 
 const StatusLed::BlinkPattern pattern [11] PROGMEM = {
     {0, 0, {0 , 0 } },  // 0; define nothing
-    {2, 0, {5, 5,} },   // 1; define pairing string
+    {2, 60, {5, 5,} },  // 1; define pairing string
     {2, 1, {20, 0,} },  // 2; define pairing success
     {2, 3, {1, 1,} },   // 3; define pairing error
     {2, 1, {1, 1,} },   // 4; define send indicator

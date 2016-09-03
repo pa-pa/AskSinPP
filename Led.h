@@ -14,8 +14,8 @@ public:
     noack=6, bat_low=7, defect=8, welcome=9, key_long=10 };
 
   struct BlinkPattern {
-    uint8_t  length : 3;
-    uint8_t  duration : 3;
+    uint8_t  length;
+    uint8_t  duration;
     uint8_t  pattern[6];
   };
 
@@ -23,8 +23,8 @@ private:
 
   uint8_t pin;
   BlinkPattern current;
-  uint8_t step : 3; // current step in pattern
-  uint8_t repeat : 3; // current repeat of the pattern
+  uint8_t step;   // current step in pattern
+  uint8_t repeat; // current repeat of the pattern
 
   void copyPattern (Mode stat);
 
