@@ -13,6 +13,32 @@
 #include <TimerOne.h>
 #include <Radio.h>
 
+// number of relays - possible values 1,2,4
+// will map to HM-LC-SW1-SM, HM-LC-SW2-SM, HM-LC-SW4-SM
+#define RELAY_COUNT 2
+
+// define this to read the device id, serial and device type from bootloader section
+// #define USE_OTA_BOOTLOADER
+
+#ifdef USE_OTA_BOOTLOADER
+  #define OTA_MODEL_START  0x7ff0 // start address of 2 byte model id in bootloader
+  #define OTA_SERIAL_START 0x7ff2 // start address of 10 byte serial number in bootloader
+  #define OTA_HMID_START   0x7ffc // start address of 3 byte device id in bootloader
+#else
+  // define model is matching the number of relays
+  #if RELAY_COUNT == 2
+    #define SW_MODEL 0x0a
+  #elif RELAY_COUNT == 4
+    #define SW_MODEL 0x03
+  #else
+    #define SW_MODEL 0x02
+  #endif
+  // device ID
+  #define DEVICE_ID HMID(0x12,0x34,0x56)
+  // serial number
+  #define DEVICE_SERIAL "papa000000"
+#endif
+
 // we use a Pro Mini
 // Arduino pin for the LED
 // D4 == PIN 4 on Pro Mini
@@ -21,9 +47,6 @@
 // B0 == PIN 8 on Pro Mini
 #define CONFIG_BUTTON_PIN 8
 
-// number of relays - possible values 1,2,4
-// will map to HM-LC-SW1-SM, HM-LC-SW2-SM, HM-LC-SW4-SM
-#define RELAY_COUNT 2
 
 // relay output pins compatible to the HM_Relay project
 #define RELAY1_PIN 5
@@ -34,10 +57,6 @@
 // number of available peers per channel
 #define PEERS_PER_CHANNEL 4
 
-// device ID
-#define DEVICE_ID HMID(0x12,0x34,0x56)
-// serial number
-#define DEVICE_SERIAL "papa000000"
 
 // all library classes are placed in the namespace 'as'
 using namespace as;
@@ -113,16 +132,14 @@ void cfgBtnISR () { cfgBtn.pinChange(); }
     sdev.firstinit();
   }
 
+#ifdef USE_OTA_BOOTLOADER
+  sdev.init(radio,OTA_HMID_START,OTA_SERIAL_START);
+  sdev.setModel(OTA_MODEL_START);
+#else
   sdev.init(radio,DEVICE_ID,DEVICE_SERIAL);
-  sdev.setFirmwareVersion(0x16);
-  // set model id matching number of relays
-#if RELAY_COUNT == 2
-  sdev.setModel(0x00,0x0a);
-#elif RELAY_COUNT == 4
-  sdev.setModel(0x00,0x03);
-#else // RELAY_COUNT == 1
-  sdev.setModel(0x00,0x02);
+  sdev.setModel(0x00,SW_MODEL);
 #endif
+  sdev.setFirmwareVersion(0x16);
   sdev.setSubType(0x00);
   sdev.setInfo(0x41,0x01,0x00);
 

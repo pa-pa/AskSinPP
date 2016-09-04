@@ -45,6 +45,15 @@ public:
     setRadio(r);
   }
 
+  void init (CC1101& r,uint16_t idaddr, uint16_t serialaddr) {
+    // read master id from flash
+    setMasterID(list0.masterid());
+    // read id & serial from bootloader
+    setDeviceID(idaddr);
+    setSerial(serialaddr);
+    setRadio(r);
+  }
+
   void firstinit () {
     list0.defaults();
     for( uint8_t i=0; i<channels(); ++i ) {

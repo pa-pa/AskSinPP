@@ -47,6 +47,10 @@ public:
     model[1] = m2;
   }
 
+  void setModel (uint16_t address) {
+    pgm_read(model,address,sizeof(model));
+  }
+
   void setSubType (uint8_t st) {
     subtype = st;
   }
@@ -69,6 +73,10 @@ public:
     devid=id;
   }
 
+  void setDeviceID (uint16_t address) {
+    pgm_read((uint8_t*)&devid,address,sizeof(devid));
+  }
+
   const HMID& getDeviceID () const {
     return devid;
   }
@@ -76,6 +84,10 @@ public:
   void setSerial (const char* ser) {
     memcpy(serial,ser,10);
     serial[10] = 0;
+  }
+
+  void setSerial (uint16_t address) {
+    pgm_read((uint8_t*)serial,address,10);
   }
 
   const char* getSerial () const {
@@ -254,6 +266,12 @@ public:
     }
     while( timeout > 0 );
     return false;
+  }
+
+  void pgm_read(uint8_t* dest,uint16_t adr,uint8_t size) {
+    for( int i=0; i<size; ++i, ++dest ) {
+      *dest = pgm_read_byte(adr + i);
+    }
   }
 
 };
