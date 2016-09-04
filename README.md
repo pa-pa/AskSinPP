@@ -1,4 +1,6 @@
 
+#AskSin++#
+
 C++ implementaion of the AskSin protocol
 
 - easy configuration of the device channels by using templates
