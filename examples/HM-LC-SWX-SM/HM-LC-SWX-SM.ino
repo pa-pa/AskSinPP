@@ -60,6 +60,7 @@
 using namespace as;
 
 // map number of channel to pin
+// this will be called by the SwitchChannel class
 uint8_t SwitchPin (uint8_t number) {
   switch( number ) {
     case 2: return RELAY2_PIN;
