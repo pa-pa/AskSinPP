@@ -8,6 +8,8 @@
 namespace as {
 
 class Device;
+class ActionMsg;
+class RemoteEventMsg;
 
 template<class List1Type,class List3Type,class List4Type,int PeerCount>
 class Channel {
@@ -144,6 +146,15 @@ public:
   static bool hasList4 () {
     return List4Type::size() > 0;
   }
+
+  bool process (const ActionMsg& msg) {
+    return true;
+  }
+
+  bool process (const RemoteEventMsg& msg) {
+    return false;
+  }
+
 
   protected:
   uint16_t peerAddress (uint8_t pidx) const {

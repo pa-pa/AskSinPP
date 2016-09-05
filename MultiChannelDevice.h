@@ -4,7 +4,6 @@
 
 #include "Device.h"
 #include "Defines.h"
-#include "List0.h"
 #include "cm.h"
 #include "Led.h"
 
@@ -78,7 +77,7 @@ public:
 
   void pollRadio () {
     Device::pollRadio();
-    for( uint8_t i=0; i<channels(); ++i ) {
+    for( uint8_t i=1; i<=channels(); ++i ) {
       ChannelType& ch = channel(i);
       if( ch.changed() == true ) {
         sendInfoActuatorStatus(getMasterID(),nextcount(),ch);
@@ -175,36 +174,17 @@ public:
          if( msg.command() == AS_ACTION_SET ) {
            const ActionMsg& pm = msg.action();
            ChannelType& c = channel(pm.channel());
-           c.setState( pm.value() == 0 ? AS_CM_JT_OFF : AS_CM_JT_ON, pm.delay() );
+           c.process(pm);
            sendAck(msg,c);
          }
        }
        else if (msg.type() == AS_MESSAGE_REMOTE_EVENT ) {
          const RemoteEventMsg& pm = msg.remoteEvent();
          bool found=false;
-         bool lg = pm.isLong();
-         Peer p(pm.peer());
-         uint8_t cnt = pm.counter();
 //         p.dump();
          for( uint8_t i=1; i<=channels(); ++i ) {
            ChannelType& ch = channel(i);
-           typename ChannelType::List3 l3 = ch.getList3(p);
-           if( l3.valid() == true ) {
-             // l3.dump();
-             typename ChannelType::List3::PeerList pl = lg ? l3.lg() : l3.sh();
-             // pl.dump();
-             // perform action as defined in the list
-             switch( pl.actionType() ) {
-               case AS_CM_ACTIONTYPE_JUMP_TO_TARGET:
-                 ch.jumpToTarget(pl);
-                 break;
-               case AS_CM_ACTIONTYPE_TOGGLE_TO_COUNTER:
-                 ch.setState( (cnt & 0x01) == 0x01 ? AS_CM_JT_ON : AS_CM_JT_OFF, 0xffff );
-                 break;
-               case AS_CM_ACTIONTYPE_TOGGLE_INVERSE_TO_COUNTER:
-                 ch.setState( (cnt & 0x01) == 0x00 ? AS_CM_JT_ON : AS_CM_JT_OFF, 0xffff );
-                 break;
-             }
+           if( ch.process(pm) == true ) {
              sendAck(msg,ch);
              found=true;
            }

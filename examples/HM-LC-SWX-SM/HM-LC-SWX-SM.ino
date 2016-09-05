@@ -4,9 +4,7 @@
 
 #include <AlarmClock.h>
 #include <MultiChannelDevice.h>
-#include <SwitchList1.h>
-#include <SwitchList3.h>
-#include <SwitchStateMachine.h>
+#include <SwitchChannel.h>
 #include <Message.h>
 #include <Button.h>
 #include <PinChangeInt.h>
@@ -61,42 +59,18 @@
 // all library classes are placed in the namespace 'as'
 using namespace as;
 
-class SwitchChannel : public Channel<SwitchList1,SwitchList3,EmptyList,PEERS_PER_CHANNEL>, public SwitchStateMachine {
-
-public:
-  SwitchChannel () : Channel() {}
-  virtual ~SwitchChannel() {}
-
-  uint8_t pin () {
-    switch( number() ) {
-      case 2: return RELAY2_PIN;
-      case 3: return RELAY3_PIN;
-      case 4: return RELAY4_PIN;
-    }
-    return RELAY1_PIN;
+// map number of channel to pin
+uint8_t SwitchPin (uint8_t number) {
+  switch( number ) {
+    case 2: return RELAY2_PIN;
+    case 3: return RELAY3_PIN;
+    case 4: return RELAY4_PIN;
   }
+  return RELAY1_PIN;
+}
 
-  void setup(Device* dev,uint8_t number,uint16_t addr) {
-    Channel::setup(dev,number,addr);
-    uint8_t p=pin();
-    pinMode(p,OUTPUT);
-    digitalWrite(p,LOW);
-  }
-
-  virtual void switchState(uint8_t oldstate,uint8_t newstate) {
-    if( newstate == AS_CM_JT_ON ) {
-      digitalWrite(pin(),HIGH);
-    }
-    else if ( newstate == AS_CM_JT_OFF ) {
-      digitalWrite(pin(),LOW);
-    }
-    changed(true);
-  }
-
-};
-
-
-MultiChannelDevice<SwitchChannel,RELAY_COUNT> sdev(0x20);
+// setup the device with channel type and number of channels
+MultiChannelDevice<SwitchChannel<PEERS_PER_CHANNEL>,RELAY_COUNT> sdev(0x20);
 
 class CfgButton : public Button {
 public:

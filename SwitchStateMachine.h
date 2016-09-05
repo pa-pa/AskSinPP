@@ -32,6 +32,8 @@ class SwitchStateMachine {
   uint8_t    state : 4;
   StateAlarm alarm;
 
+  void setState (uint8_t state,uint16_t duration);
+
 protected:
   ~SwitchStateMachine () {}
 
@@ -41,7 +43,7 @@ public:
   virtual void switchState(uint8_t oldstate,uint8_t newstate);
 
   void jumpToTarget(SwitchPeerList lst);
-  void setState (uint8_t state,uint16_t duration);
+
   void toggleState () {
     setState( state == AS_CM_JT_ON ? AS_CM_JT_OFF : AS_CM_JT_ON, 0xffff);
   }
@@ -88,6 +90,24 @@ public:
     return (uint32_t)tByte*(iTime>>5);
   }
 
+  void remote (const SwitchPeerList& lst,uint8_t counter) {
+    // perform action as defined in the list
+    switch (lst.actionType()) {
+    case AS_CM_ACTIONTYPE_JUMP_TO_TARGET:
+      jumpToTarget(lst);
+      break;
+    case AS_CM_ACTIONTYPE_TOGGLE_TO_COUNTER:
+      setState((counter & 0x01) == 0x01 ? AS_CM_JT_ON : AS_CM_JT_OFF, 0xffff);
+      break;
+    case AS_CM_ACTIONTYPE_TOGGLE_INVERSE_TO_COUNTER:
+      setState((counter & 0x01) == 0x00 ? AS_CM_JT_ON : AS_CM_JT_OFF, 0xffff);
+      break;
+    }
+  }
+
+  void status (uint8_t stat, uint16_t delay) {
+    setState( stat == 0 ? AS_CM_JT_OFF : AS_CM_JT_ON, delay );
+  }
 
   uint8_t status () const {
     return state == AS_CM_JT_OFF ? 0 : 200;
