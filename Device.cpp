@@ -17,7 +17,7 @@ bool Device::send(Message& msg,const HMID& to) {
   while( result == false && maxsend > 0 ) {
     maxsend--;
     result = radio->write(msg,msg.burstRequired());
-    if( result == true && msg.ackRequired() ) {
+    if( result == true && msg.ackRequired() == true && to.valid() == true ) {
       result = waitForAck(msg,30); // 300ms
       DPRINT(F("waitAck: ")); DHEX((uint8_t)result); DPRINTLN(F(""));
     }

@@ -36,6 +36,9 @@ public:
   bool operator == (const HMID& other) const {
     return id[0]==other.id[0] && id[1]==other.id[1] && id[2]==other.id[2];
   }
+  bool operator != (const HMID& other) const {
+    return (operator == (other)) == false;
+  }
   bool valid() const {
     return id[0]!=0 || id[1]!=0 || id[2]!=0;
   }
