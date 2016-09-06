@@ -31,7 +31,7 @@ class InfoPeerListMsg;
 
 class DeviceInfoMsg;
 class RemoteEventMsg;
-class ActionMsg;
+class ActionSetMsg;
 
 class Message {
 public:
@@ -260,7 +260,7 @@ public:
   const ConfigWriteIndexMsg& configWriteIndex () const { return *(ConfigWriteIndexMsg*)this; }
 
   const RemoteEventMsg& remoteEvent () const { return *(RemoteEventMsg*)this; }
-  const ActionMsg& action () const { return *(ActionMsg*)this; }
+  const ActionSetMsg& action () const { return *(ActionSetMsg*)this; }
 
   // cast to write message types
   AckMsg& ack () { return *(AckMsg*)this; }
@@ -333,9 +333,9 @@ public:
   bool isLong () const { return (command() & 0x40) == 0x40; }
 };
 
-class ActionMsg : public Message {
+class ActionSetMsg : public Message {
 protected:
-  ActionMsg() {}
+  ActionSetMsg() {}
 public:
   uint8_t channel () const { return subcommand(); }
   uint8_t value () const { return *data(); }

@@ -8,15 +8,15 @@
 namespace as {
 
 class Device;
-class ActionMsg;
+class ActionSetMsg;
 class RemoteEventMsg;
 
 template<class List1Type,class List3Type,class List4Type,int PeerCount>
 class Channel {
   Device*   dev;
-  bool      change       : 1;  // the status is changed, we may need to send a status
-  uint8_t   num          : 3;  // max 7 channels per device
-  uint16_t  addr         : 12; // max address 4095
+  bool      change; // the status is changed, we may need to send a status
+  uint8_t   num   ; // channels per device
+  uint16_t  addr  ; // start address in eeprom
 
 public:
   typedef List1Type List1;
@@ -147,7 +147,7 @@ public:
     return List4Type::size() > 0;
   }
 
-  bool process (const ActionMsg& msg) {
+  bool process (const ActionSetMsg& msg) {
     return true;
   }
 

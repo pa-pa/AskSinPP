@@ -24,8 +24,8 @@ public:
   };
 
 protected:
-  uint8_t stat :3;
-  uint8_t repeat :5;
+  uint8_t stat;
+  uint8_t repeat;
   uint8_t pin;
 
 public:

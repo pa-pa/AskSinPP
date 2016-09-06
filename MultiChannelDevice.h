@@ -172,7 +172,7 @@ public:
        }
        else if( msg.type() == AS_MESSAGE_ACTION ) {
          if( msg.command() == AS_ACTION_SET ) {
-           const ActionMsg& pm = msg.action();
+           const ActionSetMsg& pm = msg.action();
            ChannelType& c = channel(pm.channel());
            c.process(pm);
            sendAck(msg,c);

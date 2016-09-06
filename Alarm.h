@@ -13,7 +13,7 @@ protected:
   ~Alarm() {
   }
 public:
-  bool asyn :1;
+  bool asyn;
   uint32_t tick;
 
   virtual void trigger(AlarmClock&) = 0;
