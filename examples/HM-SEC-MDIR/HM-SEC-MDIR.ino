@@ -32,6 +32,9 @@
 // Arduino pin for the config button
 // B0 == PIN 8 on Pro Mini
 #define CONFIG_BUTTON_PIN 8
+// Arduino pin for the PIR
+// A0 == PIN 14 on Pro Mini
+#define PIR_PIN 14
 
 
 // number of available peers per channel
@@ -109,8 +112,9 @@ public:
 class MotionEventMsg : public Message {
 public:
   void init(uint8_t msgcnt,uint8_t ch,uint8_t counter,uint8_t brightness,uint8_t next) {
-    Message::init(12,msgcnt,0x41, Message::BIDI,ch,brightness);
-    pload[0] = next;
+    Message::init(0xd,msgcnt,0x41, Message::BIDI,ch,counter);
+    pload[0] = brightness;
+    pload[1] = next;
   }
 };
 
@@ -118,10 +122,32 @@ public:
 
 class MotionChannel : public Channel<MotionList1,EmptyList,List4,PEERS_PER_CHANNEL>, public Alarm {
 
+  class QuietMode : public Alarm {
+  public:
+    volatile bool enabled;
+    QuietMode () : Alarm(0), enabled(false) { async(true); }
+    virtual ~QuietMode () {}
+    virtual void trigger (AlarmClock& clock) {
+      enabled = false;
+      DPRINTLN("Quiet End");
+    }
+  };
+
+  uint32_t getMinInterval () {
+    switch( getList1().minInterval() ) {
+      case 0: return 15*10;
+      case 1: return 30*10;
+      case 2: return 60*10;
+      case 3: return 120*10;
+    }
+    return 240*10; // we need 10 ticks per second
+  }
+
 private:
   MotionEventMsg   msg;
   uint8_t          msgcnt;
   uint8_t          counter;
+  QuietMode        quiet;
 
 public:
   MotionChannel () : Channel(), Alarm(0), msgcnt(0), counter(0) {}
@@ -143,6 +169,7 @@ public:
     DPRINTLN("Motion");
     msg.init(++msgcnt,number(),++counter,brightness(),0);
     bool sendtopeer=false;
+    // send to all peers
     for( int i=0; i<peers(); ++i ){
       Peer p = peer(i);
       if( p.valid() == true ) {
@@ -150,13 +177,21 @@ public:
         sendtopeer = true;
       }
     }
+    // if we have no peer - send to master/broadcast
     if( sendtopeer == false ) {
       device().send(msg,device().getMasterID());
     }
   }
 
   void motionDetected () {
-    aclock.add(*this);
+    if( quiet.enabled == false ) {
+      // activate motion message handler
+      aclock.add(*this);
+      // start timer to end quiet interval
+      quiet.tick = getMinInterval();
+      quiet.enabled = true;
+      aclock.add(quiet);
+    }
   }
 
 };
@@ -203,17 +238,21 @@ void setup () {
   sdev.setModel(OTA_MODEL_START);
 #else
   sdev.init(radio,DEVICE_ID,DEVICE_SERIAL);
-  sdev.setModel(0x00,0x3d);
+  sdev.setModel(0x00,0x4a);
 #endif
-  sdev.setFirmwareVersion(0x10);
+  sdev.setFirmwareVersion(0x16);
   sdev.setSubType(0x70);
   sdev.setInfo(0x03,0x01,0x00);
 
   radio.enableGDO0Int();
   aclock.init();
 
-  attachPinChangeInterrupt(14,motionISR,FALLING);
-
+  pinMode(PIR_PIN,INPUT);
+#if PIR_PIN == 3
+  attachInterrupt(digitalPinToInterrupt(3), motionISR, RISING);
+#else
+  attachPinChangeInterrupt(PIR_PIN,motionISR,RISING);
+#endif
   sled.set(StatusLed::welcome);
 }
 

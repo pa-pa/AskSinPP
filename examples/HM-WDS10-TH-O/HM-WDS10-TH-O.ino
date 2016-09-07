@@ -47,6 +47,7 @@ public:
   virtual ~TempChannel () {}
 
   virtual void trigger (AlarmClock& clock) {
+    // reactivate for next measure
     tick = 50;
     clock.add(*this);
     DPRINT("Measure...\n");
