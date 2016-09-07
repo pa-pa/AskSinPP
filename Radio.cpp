@@ -292,6 +292,7 @@ bool CC1101::readAck (const Message& msg) {
     if( buffer.length() > 0 ) {
       // decode the message
       buffer.decode();
+      buffer.clear();
       return buffer.isAck() &&
             (buffer.from() == msg.to()) &&
             (buffer.to() == msg.from()) &&
