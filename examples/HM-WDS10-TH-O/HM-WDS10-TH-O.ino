@@ -40,29 +40,55 @@
 // all library classes are placed in the namespace 'as'
 using namespace as;
 
-class TempChannel : public Channel<List1,EmptyList,List4,PEERS_PER_CHANNEL>, public Alarm {
+class WeatherEventMsg : public Message {
+public:
+  void init(uint8_t msgcnt,int16_t temp,uint8_t humidity, bool batlow) {
+    uint8_t t1 = (temp >> 8) & 0x7f;
+    uint8_t t2 = temp & 0xff;
+    if( batlow == true ) {
+      t1 |= 0x80; // set bat low bit
+    }
+    Message::init(0xc,msgcnt,0x70,Message::BIDI,t1,t2);
+    pload[0] = humidity;
+  }
+};
+
+class WeatherChannel : public Channel<List1,EmptyList,List4,PEERS_PER_CHANNEL>, public Alarm {
+
+  WeatherEventMsg msg;
+  uint8_t         msgcnt;
+  int16_t         temp;
+  uint8_t         humidity;
 
 public:
-  TempChannel () : Channel(), Alarm(5) {}
-  virtual ~TempChannel () {}
+  WeatherChannel () : Channel(), Alarm(5), msgcnt(0), temp(0), humidity(50) {}
+  virtual ~WeatherChannel () {}
 
   virtual void trigger (AlarmClock& clock) {
     // reactivate for next measure
-    tick = 50;
+    tick = delay();
     clock.add(*this);
     DPRINT("Measure...\n");
+    measure();
 
-    bool sendtopeer=false;
-    for( int i=0; i<peers(); ++i ){
-      Peer p = peer(i);
-      if( p.valid() == true ) {
-        // TODO send message to peer
-        sendtopeer = true;
-      }
-    }
-    if( sendtopeer == false ) {
-      // TODO send message to master
-    }
+    msg.init(msgcnt,temp,humidity,false);
+    device().sendPeerEvent(msg,*this);
+  }
+
+  // here we do the measurement
+  void measure () {
+    static int16_t tdx = -7;
+    static int8_t  hdx = 1;
+    temp += tdx;
+    humidity += hdx;
+    if( temp >= 40*10 || temp <= -15*10 ) tdx = -tdx;
+    if( humidity == 99 || humidity == 5) hdx = -hdx;
+  }
+
+  // here we calc when to send next value
+  uint32_t delay () {
+    // for testing we use delay of 5sec
+    return 5 * 10;
   }
 
   void setup(Device* dev,uint8_t number,uint16_t addr) {
@@ -81,7 +107,7 @@ public:
 };
 
 
-MultiChannelDevice<TempChannel,1> sdev(0x20);
+MultiChannelDevice<WeatherChannel,1> sdev(0x20);
 
 class CfgButton : public Button {
 public:

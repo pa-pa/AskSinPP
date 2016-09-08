@@ -250,6 +250,24 @@ public:
     send(msg,to);
   }
 
+  template <class ChannelType>
+  void sendPeerEvent (Message& msg,const ChannelType& ch) {
+    bool sendtopeer=false;
+    for( int i=0; i<ch.peers(); ++i ){
+      Peer p = ch.peer(i);
+      if( p.valid() == true ) {
+        typename ChannelType::List4 l4 = ch.getList4(p);
+        msg.burstRequired( l4.burst() );
+        send(msg,p);
+        sendtopeer = true;
+      }
+    }
+    // if we have no peer - send to master/broadcast
+    if( sendtopeer == false ) {
+      send(msg,getMasterID());
+    }
+  }
+
   void writeList (const GenericList& list,const uint8_t* data,uint8_t length) {
     for( uint8_t i=0; i<length; i+=2, data+=2 ) {
       list.writeRegister(*data,*(data+1));

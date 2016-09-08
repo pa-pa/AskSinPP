@@ -168,19 +168,7 @@ public:
   virtual void trigger (AlarmClock& clock) {
     DPRINTLN("Motion");
     msg.init(++msgcnt,number(),++counter,brightness(),0);
-    bool sendtopeer=false;
-    // send to all peers
-    for( int i=0; i<peers(); ++i ){
-      Peer p = peer(i);
-      if( p.valid() == true ) {
-        device().send(msg,p);
-        sendtopeer = true;
-      }
-    }
-    // if we have no peer - send to master/broadcast
-    if( sendtopeer == false ) {
-      device().send(msg,device().getMasterID());
-    }
+    device().sendPeerEvent(msg,*this);
   }
 
   void motionDetected () {
@@ -241,6 +229,7 @@ void setup () {
   sdev.setModel(0x00,0x4a);
 #endif
   sdev.setFirmwareVersion(0x16);
+  // TODO check sub type and infos
   sdev.setSubType(0x70);
   sdev.setInfo(0x03,0x01,0x00);
 

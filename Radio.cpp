@@ -288,20 +288,20 @@ uint8_t CC1101::read (Message& msg) {
 }
 
 bool CC1101::readAck (const Message& msg) {
+  bool ack=false;
   ATOMIC_BLOCK( ATOMIC_RESTORESTATE ) {
     if( buffer.length() > 0 ) {
       // decode the message
       buffer.decode();
+      ack = buffer.isAck() &&
+           (buffer.from() == msg.to()) &&
+           (buffer.to() == msg.from()) &&
+           (buffer.count() == msg.count());
+      // reset buffer
       buffer.clear();
-      return buffer.isAck() &&
-            (buffer.from() == msg.to()) &&
-            (buffer.to() == msg.from()) &&
-            (buffer.count() == msg.count());
     }
-    // reset buffer
-    buffer.clear();
   }
-  return false;
+  return ack;
 }
 
 uint8_t CC1101::read (Message& msg, uint32_t timeout) {

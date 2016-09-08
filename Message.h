@@ -238,6 +238,15 @@ public:
     return (flag & BURST) == BURST;
   }
 
+  void burstRequired (bool value) {
+    if( value == true ) {
+      flag |= BURST;
+    }
+    else {
+      flag &= ~BURST;
+    }
+  }
+
   bool isPairSerial () const {
     return typ==0x01 && subcom==0x0a;
   }
