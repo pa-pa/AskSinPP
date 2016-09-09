@@ -34,6 +34,8 @@ void AlarmClock::cancel(Alarm& item) {
       vor = tmp;
       tmp = (Alarm*) tmp->select();
     }
+    // cancel also in ready queue
+    ready.remove(item);
   }
 }
 

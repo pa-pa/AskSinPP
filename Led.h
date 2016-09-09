@@ -52,6 +52,8 @@ public:
     digitalWrite(pin,HIGH);
   }
 
+  void ledOn (uint8_t ticks);
+
   bool active () const { return current.length != 0; }
 
   virtual void trigger (AlarmClock& clock);

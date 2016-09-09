@@ -36,6 +36,18 @@ void StatusLed::set(Mode stat) {
   }
 }
 
+void StatusLed::ledOn (uint8_t ticks) {
+  if( active() == false && ticks > 0 ) {
+    current.length = 2;
+    current.duration = 1;
+    current.pattern[0] = ticks;
+    current.pattern[1] = 0;
+    // start the pattern
+    step = repeat = 0;
+    next(aclock);
+  }
+}
+
 void StatusLed::next (AlarmClock& clock) {
   tick = current.pattern[step++];
   ((step & 0x01) == 0x01) ? ledOn() : ledOff();
@@ -43,17 +55,19 @@ void StatusLed::next (AlarmClock& clock) {
 }
 
 void StatusLed::trigger (AlarmClock& clock) {
-  if( step < current.length ) {
-    next(clock);
-  }
-  else {
-    step = 0;
-    if( current.duration == 0 || ++repeat < current.duration ) {
+  ATOMIC_BLOCK( ATOMIC_RESTORESTATE ) {
+    if( step < current.length ) {
       next(clock);
     }
     else {
-      ledOff();
-      copyPattern(nothing);
+      step = 0;
+      if( current.duration == 0 || ++repeat < current.duration ) {
+        next(clock);
+      }
+      else {
+        ledOff();
+        copyPattern(nothing);
+      }
     }
   }
 }

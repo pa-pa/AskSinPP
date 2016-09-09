@@ -78,8 +78,32 @@ public:
     }
   }
 
-  // Link* search (const Link*) const;     // return container instance
-  // void   remove (const Link&);           // remove item
+  // return container instance
+  Link* search (const Link* item) const {
+    Link* result = 0;
+    ATOMIC_BLOCK( ATOMIC_RESTORESTATE ) {
+      Link* tmp = select();
+      Link* vor = (Link*)this;
+      while (result == 0 && tmp != 0) {
+        if (tmp == item) {
+          result = vor;
+        }
+        vor = tmp;
+        tmp = tmp->select();
+      }
+    }
+    return result;
+  }
+
+  // remove item
+  void remove (const Link& item) {
+    ATOMIC_BLOCK( ATOMIC_RESTORESTATE ) {
+      Link* vor = search(&item);
+      if( vor != 0 ) {
+        vor->unlink();
+      }
+    }
+  }
 };
 
 }

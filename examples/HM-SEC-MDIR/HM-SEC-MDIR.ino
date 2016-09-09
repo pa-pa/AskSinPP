@@ -87,10 +87,10 @@ public:
 
   uint8_t minInterval () const { return getByte(1,0x07,0); }
   bool minInterval (uint8_t value) const { return setByte(1,value,0x07,0); }
-  bool captureWithinInterval () const { return isBitSet(2,0x80); }
-  bool captureWithinInterval (bool value) const { return setBit(2,0x80,value); }
-  uint8_t brightnessFilter () const { return getByte(0,0xf0,4); }
-  bool brightnessFilter (uint8_t value) const { return setByte(0,value,0xf0,4); }
+  bool captureWithinInterval () const { return isBitSet(1,0x08); }
+  bool captureWithinInterval (bool value) const { return setBit(1,0x08,value); }
+  uint8_t brightnessFilter () const { return getByte(1,0xf0,4); }
+  bool brightnessFilter (uint8_t value) const { return setByte(1,value,0xf0,4); }
 
   bool aesActive () const { return isBitSet(2,0x01); }
   bool aesActive (bool s) const { return setBit(2,0x01,s); }
@@ -114,7 +114,7 @@ public:
   void init(uint8_t msgcnt,uint8_t ch,uint8_t counter,uint8_t brightness,uint8_t next) {
     Message::init(0xd,msgcnt,0x41, Message::BIDI,ch,counter);
     pload[0] = brightness;
-    pload[1] = next;
+    pload[1] = next << 5;
   }
 };
 
@@ -124,12 +124,18 @@ class MotionChannel : public Channel<MotionList1,EmptyList,List4,PEERS_PER_CHANN
 
   class QuietMode : public Alarm {
   public:
-    volatile bool enabled;
-    QuietMode () : Alarm(0), enabled(false) { async(true); }
+    bool  enabled;
+    bool  motion;
+    MotionChannel& channel;
+    QuietMode (MotionChannel& c) : Alarm(0), enabled(false), motion(false), channel(c) {}
     virtual ~QuietMode () {}
     virtual void trigger (AlarmClock& clock) {
+      DPRINTLN("minInterval End");
       enabled = false;
-      DPRINTLN("Quiet End");
+      if( motion == true ) {
+        motion = false;
+        channel.motionDetected();
+      }
     }
   };
 
@@ -150,7 +156,7 @@ private:
   QuietMode        quiet;
 
 public:
-  MotionChannel () : Channel(), Alarm(0), msgcnt(0), counter(0) {}
+  MotionChannel () : Channel(), Alarm(0), msgcnt(0), counter(0), quiet(*this) {}
   virtual ~MotionChannel () {}
 
   uint8_t status () const {
@@ -165,24 +171,35 @@ public:
     return 255;
   }
 
+  // this runs synch to application
   virtual void trigger (AlarmClock& clock) {
-    DPRINTLN("Motion");
-    msg.init(++msgcnt,number(),++counter,brightness(),0);
-    device().sendPeerEvent(msg,*this);
-  }
-
-  void motionDetected () {
     if( quiet.enabled == false ) {
-      // activate motion message handler
-      aclock.add(*this);
+      DPRINTLN("Motion");
+      if( sled.active() == false ) {
+        sled.ledOn(getList1().ledOntime() / 20);
+      }
+      msg.init(++msgcnt,number(),++counter,brightness(),getList1().minInterval());
+      device().sendPeerEvent(msg,*this);
       // start timer to end quiet interval
       quiet.tick = getMinInterval();
       quiet.enabled = true;
       aclock.add(quiet);
     }
+    else if ( getList1().captureWithinInterval() == true ) {
+      // we have had a motion during quiet interval
+      quiet.motion = true;
+    }
   }
 
+  // runs in interrupt
+  void motionDetected () {
+    // cancel may not needed but anyway
+    aclock.cancel(*this);
+    // activate motion message handler
+    aclock.add(*this);
+  }
 };
+
 
 MultiChannelDevice<MotionChannel,1> sdev(0x20);
 void motionISR () { sdev.channel(1).motionDetected(); }
@@ -197,6 +214,7 @@ public:
       sdev.startPairing();
     }
     else if( s== longpressed ) {
+      sled.set(StatusLed::key_long);
     }
     else if( s == Button::longlongpressed ) {
       sdev.reset();
