@@ -9,3 +9,4 @@ C++ implementaion of the AskSin protocol
 Required Arduino libraries:
 - TimerOne - https://github.com/PaulStoffregen/TimerOne
 - PinChangeInt - https://github.com/GreyGnome/PinChangeInt
+- Low-Power - https://github.com/rocketscream/Low-Power.git

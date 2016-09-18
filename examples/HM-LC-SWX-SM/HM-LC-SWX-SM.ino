@@ -81,17 +81,19 @@ public:
     if( s == Button::released && old == Button::pressed ) {
       sdev.channel(1).toggleState();
     }
-    else if( s== longpressed ) {
-      sdev.startPairing();
-    }
-    else if( s == Button::longlongpressed ) {
-      sdev.reset();
+    else if( s == longpressed ) {
+      if( old == longpressed ) {
+        sdev.reset(); // long pressed again - reset
+      }
+      else {
+        sdev.startPairing();
+      }
     }
   }
 };
 
 CfgButton cfgBtn;
-void cfgBtnISR () { cfgBtn.pinChange(); }
+void cfgBtnISR () { cfgBtn.check(); }
 
   void setup () {
 #ifndef NDEBUG

@@ -8,10 +8,7 @@ namespace as {
 
 class Button: public Alarm {
 
-#define LONGTIME 30
 #define DEBOUNCETIME 2
-#define LONGREPEAT 3
-#define LONGLONGTIME 30
 
 public:
   enum States {
@@ -20,33 +17,42 @@ public:
     pressed = 2,
     debounce = 3,
     longpressed = 4,
-    longlongpressed = 5
+    longreleased = 5
   };
 
 protected:
   uint8_t stat;
-  uint8_t repeat;
+  uint8_t longpresstime;
   uint8_t pin;
+  uint8_t pinstate;
 
 public:
   Button() :
-      Alarm(0), stat(none), repeat(0), pin(0) {
+      Alarm(0), stat(none), longpresstime(4), pin(0), pinstate(HIGH) {
   }
   virtual ~Button() {
   }
 
+  void setLongPressTime(uint8_t t) {
+    longpresstime = t;
+  }
+
+  uint8_t getPin () {
+    return pin;
+  }
+
   virtual void trigger(AlarmClock& clock) {
-    bool low = digitalRead(pin) == LOW;
     switch (state()) {
     case released:
+    case longreleased:
       state(none);
       break;
 
     case debounce:
       state(pressed);
-      if (low == true) {
+      if (pinstate == LOW) {
         // set timer for detect longpressed
-        tick = LONGTIME - DEBOUNCETIME;
+        tick = longpresstime - DEBOUNCETIME;
         clock.add(*this);
       } else {
         state(released);
@@ -56,35 +62,29 @@ public:
       break;
 
     case pressed:
-      state(longpressed);
-      repeat = 0;
-      tick = LONGREPEAT;
-      clock.add(*this);
-      break;
-
     case longpressed:
-      DHEXLN(repeat);
-      if (++repeat < 10) {
+      if( pinstate == LOW) {
         state(longpressed);
-        tick = LONGREPEAT;
-        clock.add(*this);
-      } else {
-        state(longlongpressed);
+        tick = longpresstime;
       }
+      else {
+        state() == pressed ? state(released) : state(longreleased);
+        tick = DEBOUNCETIME;
+      }
+      clock.add(*this);
       break;
     }
   }
 
   virtual void state(uint8_t s) {
-    /*
      switch(s) {
-     case released: DPRINTLN("released"); break;
-     case pressed: DPRINTLN("pressed"); break;
-     case debounce: DPRINTLN("debounce"); break;
-     case longpressed: DPRINTLN("longpressed"); break;
-     case longlongpressed: DPRINTLN("longlongpressed"); break;
+     case released: DPRINTLN(" released"); break;
+     case pressed: DPRINTLN(" pressed"); break;
+     case debounce: DPRINTLN(" debounce"); break;
+     case longpressed: DPRINTLN(" longpressed"); break;
+     case longreleased: DPRINTLN(" longreleased"); break;
+     default: DPRINTLN(""); break;
      }
-     */
     stat = s;
   }
 
@@ -92,25 +92,26 @@ public:
     return stat;
   }
 
-  void pinChange() {
-    bool low = digitalRead(pin) == LOW;
-    switch (state()) {
-    case none:
-      state(debounce);
-      tick = DEBOUNCETIME;
-      aclock.add(*this);
-      break;
-
-    case pressed:
-    case longpressed:
-    case longlongpressed:
-      if (low == false) {
-        aclock.cancel(*this);
-        state(released);
+  void check() {
+    uint8_t ps = digitalRead(pin);
+    if( pinstate != ps ) {
+      pinstate = ps;
+      switch (state()) {
+      case none:
+        state(debounce);
         tick = DEBOUNCETIME;
         aclock.add(*this);
+        break;
+
+      case pressed:
+      case longpressed:
+        if (pinstate == HIGH) {
+          aclock.cancel(*this);
+          tick = 0;
+          aclock.add(*this);
+        }
+        break;
       }
-      break;
     }
   }
 

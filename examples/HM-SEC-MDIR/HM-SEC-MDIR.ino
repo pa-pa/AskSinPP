@@ -1,7 +1,10 @@
 
-#include <Led.h>
 #include <Debug.h>
+// we want to sleep to save power
+#define POWER_SLEEP 1
+#include <Activity.h>
 
+#include <Led.h>
 #include <AlarmClock.h>
 #include <MultiChannelDevice.h>
 #include <ChannelList.h>
@@ -112,9 +115,9 @@ public:
 class MotionEventMsg : public Message {
 public:
   void init(uint8_t msgcnt,uint8_t ch,uint8_t counter,uint8_t brightness,uint8_t next) {
-    Message::init(0xd,msgcnt,0x41, Message::BIDI,ch,counter);
+    Message::init(0xd,msgcnt,0x41, Message::BIDI,ch & 0x3f,counter);
     pload[0] = brightness;
-    pload[1] = next << 5;
+    pload[1] = next << 4;
   }
 };
 
@@ -216,14 +219,19 @@ public:
     else if( s== longpressed ) {
       sled.set(StatusLed::key_long);
     }
-    else if( s == Button::longlongpressed ) {
-      sdev.reset();
+    else if( s == longpressed ) {
+      if( old == longpressed ) {
+        sdev.reset(); // long pressed again - reset
+      }
+      else {
+        sled.set(StatusLed::key_long);
+      }
     }
   }
 };
 
 CfgButton cfgBtn;
-void cfgBtnISR () { cfgBtn.pinChange(); }
+void cfgBtnISR () { cfgBtn.check(); }
 
 void setup () {
 #ifndef NDEBUG
@@ -264,6 +272,9 @@ void setup () {
 }
 
 void loop() {
-  aclock.runready();
-  sdev.pollRadio();
+  bool worked = aclock.runready();
+  bool poll = sdev.pollRadio();
+  if( worked == false && poll == false ) {
+    activity.savePower();
+  }
 }

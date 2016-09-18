@@ -2,10 +2,11 @@
 #ifndef __MULTICHANNELDEVICE_H__
 #define __MULTICHANNELDEVICE_H__
 
-#include "Device.h"
-#include "Defines.h"
-#include "cm.h"
-#include "Led.h"
+#include <Device.h>
+#include <Defines.h>
+#include <cm.h>
+#include <Led.h>
+#include <Activity.h>
 
 namespace as {
 
@@ -68,6 +69,7 @@ public:
 
   void startPairing () {
     sled.set(StatusLed::pairing);
+    activity.stayAwake( 120 * 10); // 2 mins
     sendDeviceInfo();
   }
 
@@ -75,14 +77,16 @@ public:
     return devchannels[ch-1];
   }
 
-  void pollRadio () {
-    Device::pollRadio();
+  bool pollRadio () {
+    bool worked = Device::pollRadio();
     for( uint8_t i=1; i<=channels(); ++i ) {
       ChannelType& ch = channel(i);
       if( ch.changed() == true ) {
         sendInfoActuatorStatus(getMasterID(),nextcount(),ch);
+        worked = true;
       }
     }
+    return worked;
   }
 
    void process(Message& msg) {

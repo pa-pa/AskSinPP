@@ -135,11 +135,12 @@ public:
   }
 
 
-  void pollRadio () {
+  bool pollRadio () {
     uint8_t num = getRadio().read(msg);
     if( num > 0 ) {
       process(msg);
     }
+    return num > 0;
   }
 
   uint8_t nextcount () {
