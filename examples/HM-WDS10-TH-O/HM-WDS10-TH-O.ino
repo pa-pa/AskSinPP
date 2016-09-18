@@ -1,7 +1,10 @@
 
-#include <Led.h>
 #include <Debug.h>
+// we want to sleep to save power
+#define POWER_SLEEP 1
+#include <Activity.h>
 
+#include <Led.h>
 #include <AlarmClock.h>
 #include <MultiChannelDevice.h>
 #include <Message.h>
@@ -161,6 +164,9 @@ void setup () {
 }
 
 void loop() {
-  aclock.runready();
-  sdev.pollRadio();
+  bool worked = aclock.runready();
+  bool poll = sdev.pollRadio();
+  if( worked == false && poll == false ) {
+    activity.savePower();
+  }
 }

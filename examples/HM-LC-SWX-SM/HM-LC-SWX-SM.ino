@@ -1,7 +1,10 @@
 
-#include <Led.h>
 #include <Debug.h>
+// we want only the idle mode
+// #define POWER_SLEEP 1
+#include <Activity.h>
 
+#include <Led.h>
 #include <AlarmClock.h>
 #include <MultiChannelDevice.h>
 #include <SwitchChannel.h>
@@ -129,6 +132,9 @@ void cfgBtnISR () { cfgBtn.check(); }
 }
 
 void loop() {
-  aclock.runready();
-  sdev.pollRadio();
+  bool worked = aclock.runready();
+  bool poll = sdev.pollRadio();
+  if( worked == false && poll == false ) {
+    activity.savePower();
+  }
 }
