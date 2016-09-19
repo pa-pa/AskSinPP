@@ -12,12 +12,13 @@ class Button: public Alarm {
 
 public:
   enum States {
-    none = 0,
-    released = 1,
-    pressed = 2,
-    debounce = 3,
-    longpressed = 4,
-    longreleased = 5
+    invalid = 0,
+    none = 1,
+    released = 2,
+    pressed = 3,
+    debounce = 4,
+    longpressed = 5,
+    longreleased = 6,
   };
 
 protected:
@@ -42,37 +43,41 @@ public:
   }
 
   virtual void trigger(AlarmClock& clock) {
-    switch (state()) {
+    uint8_t nextstate = invalid;
+    uint8_t nexttick = 0;
+    switch ( state() ) {
     case released:
     case longreleased:
-      state(none);
+      nextstate = none;
       break;
 
     case debounce:
-      state(pressed);
+      nextstate = pressed;
       if (pinstate == LOW) {
         // set timer for detect longpressed
-        tick = longpresstime - DEBOUNCETIME;
-        clock.add(*this);
+        nexttick = longpresstime - DEBOUNCETIME;
       } else {
-        state(released);
-        tick = DEBOUNCETIME;
-        aclock.add(*this);
+        nextstate = released;
+        nexttick = DEBOUNCETIME;
       }
       break;
 
     case pressed:
     case longpressed:
       if( pinstate == LOW) {
-        state(longpressed);
-        tick = longpresstime;
+        nextstate = longpressed;
+        nexttick = longpresstime;
       }
-      else {
-        state() == pressed ? state(released) : state(longreleased);
-        tick = DEBOUNCETIME;
-      }
-      clock.add(*this);
       break;
+    }
+    // reactivate alarm if needed
+    if( nexttick != 0 ) {
+      tick = nexttick;
+      clock.add(*this);
+    }
+    // trigger the state change
+    if( nextstate != invalid ) {
+      state(nextstate);
     }
   }
 
@@ -96,21 +101,29 @@ public:
     uint8_t ps = digitalRead(pin);
     if( pinstate != ps ) {
       pinstate = ps;
-      switch (state()) {
+      uint8_t nexttick = 0;
+      uint8_t nextstate = state();
+      switch ( state() ) {
       case none:
-        state(debounce);
-        tick = DEBOUNCETIME;
-        aclock.add(*this);
+        nextstate = debounce;
+        nexttick = DEBOUNCETIME;
         break;
 
       case pressed:
       case longpressed:
         if (pinstate == HIGH) {
-          aclock.cancel(*this);
-          tick = 0;
-          aclock.add(*this);
+          nextstate = state() == pressed ? released : longreleased;
+          nexttick = DEBOUNCETIME;
         }
         break;
+      }
+      if( nexttick != 0 ) {
+        aclock.cancel(*this);
+        tick = nexttick;
+        aclock.add(*this);
+      }
+      if( nextstate != state () ) {
+        state(nextstate);
       }
     }
   }

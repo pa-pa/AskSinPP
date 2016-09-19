@@ -1,7 +1,5 @@
 
 #include <Debug.h>
-// we want to sleep to save power
-#define POWER_SLEEP 1
 #include <Activity.h>
 
 #include <Led.h>
@@ -178,15 +176,16 @@ public:
   virtual void trigger (AlarmClock& clock) {
     if( quiet.enabled == false ) {
       DPRINTLN("Motion");
+      // start timer to end quiet interval
+      quiet.tick = getMinInterval();
+      quiet.enabled = true;
+      aclock.add(quiet);
+      // blink led
       if( sled.active() == false ) {
         sled.ledOn(getList1().ledOntime() / 20);
       }
       msg.init(++msgcnt,number(),++counter,brightness(),getList1().minInterval());
       device().sendPeerEvent(msg,*this);
-      // start timer to end quiet interval
-      quiet.tick = getMinInterval();
-      quiet.enabled = true;
-      aclock.add(quiet);
     }
     else if ( getList1().captureWithinInterval() == true ) {
       // we have had a motion during quiet interval
@@ -210,14 +209,14 @@ void motionISR () { sdev.channel(1).motionDetected(); }
 
 class CfgButton : public Button {
 public:
+  CfgButton () {
+    setLongPressTime(30);
+  }
   virtual void state (uint8_t s) {
     uint8_t old = Button::state();
     Button::state(s);
-    if( s == Button::released && old == Button::pressed ) {
+    if( s == Button::released ) {
       sdev.startPairing();
-    }
-    else if( s== longpressed ) {
-      sled.set(StatusLed::key_long);
     }
     else if( s == longpressed ) {
       if( old == longpressed ) {
@@ -275,6 +274,6 @@ void loop() {
   bool worked = aclock.runready();
   bool poll = sdev.pollRadio();
   if( worked == false && poll == false ) {
-    activity.savePower();
+    activity.savePower<Sleep>();
   }
 }

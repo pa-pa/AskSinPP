@@ -2,13 +2,74 @@
 #ifndef __ACTIVITY_H__
 #define __ACTIVITY_H__
 
-#include "Debug.h"
-#include "AlarmClock.h"
+#include <Debug.h>
+#include <AlarmClock.h>
+#include <Radio.h>
 #include <LowPower.h>
 
 
 namespace as {
 
+class Idle {
+public:
+
+  static void waitSerial () {
+//      DPRINT(F("Go sleep - ")); DHEXLN((uint16_t)aclock.next());
+      Serial.flush();
+      while (!(UCSR0A & (1 << UDRE0))) {  // Wait for empty transmit buffer
+        UCSR0A |= 1 << TXC0;  // mark transmission not complete
+      }
+      while (!(UCSR0A & (1 << TXC0)));   // Wait for the transmission to complete
+  }
+
+  static void powerSave () {
+    LowPower.idle(SLEEP_FOREVER,ADC_OFF,TIMER2_OFF,TIMER1_ON,TIMER0_OFF,SPI_ON,USART0_ON,TWI_OFF);
+  }
+
+};
+
+class Sleep : public Idle {
+public:
+  static uint32_t doSleep (uint32_t ticks) {
+    radio.setIdle();
+    uint32_t offset = 0;
+    if( ticks == 0 ) {
+      LowPower.powerDown(SLEEP_FOREVER,ADC_OFF,BOD_OFF);
+    }
+    else if( ticks > 80 ) {
+      LowPower.powerDown(SLEEP_8S,ADC_OFF,BOD_OFF);
+      offset = 80+1;
+    }
+    else if (ticks > 10 ) {
+      LowPower.powerDown(SLEEP_1S,ADC_OFF,BOD_OFF);
+      offset = 10+1;
+    }
+    else if (ticks > 5 ) {
+      LowPower.powerDown(SLEEP_500MS,ADC_OFF,BOD_OFF);
+      offset = 5+1;
+    }
+    return offset;
+  }
+
+  static void powerSave () {
+    aclock.disable();
+    uint32_t ticks = aclock.next();
+    if( aclock.isready() == false ) {
+      if( ticks == 0 || ticks > 5 ) {
+        uint32_t offset = doSleep(ticks);
+        aclock.correct(offset);
+        aclock.enable();
+      }
+      else{
+        aclock.enable();
+        Idle::powerSave();
+      }
+    }
+    else {
+      aclock.enable();
+    }
+  }
+};
 
 class Activity : public Alarm {
 
@@ -37,38 +98,13 @@ public:
     }
   }
 
+  template <class Saver>
   void savePower () {
     if( awake == false ) {
 #ifndef NDEBUG
-//      DPRINT(F("Go sleep - ")); DHEXLN((uint16_t)aclock.next());
-      Serial.flush();
-      while (!(UCSR0A & (1 << UDRE0))) {  // Wait for empty transmit buffer
-        UCSR0A |= 1 << TXC0;  // mark transmission not complete
-      }
-      while (!(UCSR0A & (1 << TXC0)));   // Wait for the transmission to complete
+      Saver::waitSerial();
 #endif
-#ifdef POWER_SLEEP
-      uint32_t ticks = aclock.next();
-      if( aclock.isready() == false ) {
-        if( ticks == 0 ) {
-          LowPower.powerDown(SLEEP_FOREVER,ADC_OFF,BOD_OFF);
-        }
-        else if( ticks > 80 ) {
-          LowPower.powerDown(SLEEP_8S,ADC_OFF,BOD_OFF);
-          aclock.correct(80);
-        }
-        else if (ticks > 10 ) {
-          LowPower.powerDown(SLEEP_1S,ADC_OFF,BOD_OFF);
-          aclock.correct(10);
-        }
-        else if (ticks > 5 ) {
-          LowPower.powerDown(SLEEP_500MS,ADC_OFF,BOD_OFF);
-          aclock.correct(5);
-        }
-      }
-#else // default is idle
-      LowPower.idle(SLEEP_FOREVER,ADC_OFF,TIMER2_OFF,TIMER1_ON,TIMER0_OFF,SPI_ON,USART0_ON,TWI_OFF);
-#endif
+      Saver::powerSave();
     }
   }
 

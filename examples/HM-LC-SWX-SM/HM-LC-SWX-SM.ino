@@ -1,7 +1,5 @@
 
 #include <Debug.h>
-// we want only the idle mode
-// #define POWER_SLEEP 1
 #include <Activity.h>
 
 #include <Led.h>
@@ -78,10 +76,13 @@ MultiChannelDevice<SwitchChannel<PEERS_PER_CHANNEL>,RELAY_COUNT> sdev(0x20);
 
 class CfgButton : public Button {
 public:
+  CfgButton () {
+    setLongPressTime(30);
+  }
   virtual void state (uint8_t s) {
     uint8_t old = Button::state();
     Button::state(s);
-    if( s == Button::released && old == Button::pressed ) {
+    if( s == Button::released ) {
       sdev.channel(1).toggleState();
     }
     else if( s == longpressed ) {
@@ -135,6 +136,6 @@ void loop() {
   bool worked = aclock.runready();
   bool poll = sdev.pollRadio();
   if( worked == false && poll == false ) {
-    activity.savePower();
+    activity.savePower<Idle>();
   }
 }

@@ -1,7 +1,5 @@
 
 #include <Debug.h>
-// we want to sleep to save power
-#define POWER_SLEEP 1
 #include <Activity.h>
 
 #include <Led.h>
@@ -114,15 +112,21 @@ MultiChannelDevice<WeatherChannel,1> sdev(0x20);
 
 class CfgButton : public Button {
 public:
+  CfgButton () {
+    setLongPressTime(30);
+  }
   virtual void state (uint8_t s) {
     uint8_t old = Button::state();
     Button::state(s);
-    if( s == Button::released && old == Button::pressed ) {
+    if( s == Button::released ) {
       sdev.startPairing();
     }
     else if( s == longpressed ) {
       if( old == longpressed ) {
         sdev.reset(); // long pressed again - reset
+      }
+      else {
+        sled.set(StatusLed::key_long);
       }
     }
   }
@@ -167,6 +171,6 @@ void loop() {
   bool worked = aclock.runready();
   bool poll = sdev.pollRadio();
   if( worked == false && poll == false ) {
-    activity.savePower();
+    activity.savePower<Sleep>();
   }
 }

@@ -1,7 +1,6 @@
 
+
 #include <Debug.h>
-// we want to sleep to save power
-#define POWER_SLEEP 1
 #include <Activity.h>
 
 #include <Led.h>
@@ -147,7 +146,6 @@ public:
 
 MultiChannelDevice<BtnChannel,4> sdev(0x20);
 
-
 class CfgButton : public Button {
 public:
   CfgButton () {
@@ -234,6 +232,6 @@ void loop() {
   bool worked = aclock.runready();
   bool poll = sdev.pollRadio();
   if( worked == false && poll == false ) {
-    activity.savePower();
+    activity.savePower<Sleep>();
   }
 }

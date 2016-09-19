@@ -12,7 +12,16 @@ void callback(void) {
 
 void AlarmClock::init() {
   Timer1.initialize(100000); // initialize timer1, and set a 1/10 second period
-  Timer1.attachInterrupt(callback); // attaches callback() as a timer overflow interrupt
+  //Timer1.attachInterrupt(callback); // attaches callback() as a timer overflow interrupt
+  enable();
+}
+
+void AlarmClock::disable () {
+  Timer1.detachInterrupt();
+}
+
+void AlarmClock::enable () {
+  Timer1.attachInterrupt(callback);
 }
 
 void AlarmClock::cancel(Alarm& item) {
