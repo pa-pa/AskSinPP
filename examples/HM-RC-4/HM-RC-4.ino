@@ -180,10 +180,12 @@ public:
     for( uint8_t i=1; i<=sdev.channels(); ++i ) {
       sdev.channel(i).button().check();
     }
+    attachInterrupt(digitalPinToInterrupt(3),btnISR,CHANGE);
   }
 };
 BtnHandler btnhandler;
 void btnISR () {
+  detachInterrupt(digitalPinToInterrupt(3));
   // in the interrupt we only active the handler to read the button states
   aclock.add(btnhandler);
 }
