@@ -48,6 +48,7 @@ public:
       LowPower.powerDown(SLEEP_500MS,ADC_OFF,BOD_OFF);
       offset = 5+1;
     }
+    radio.wakeup();
     return offset;
   }
 

@@ -157,6 +157,7 @@ class CC1101 {
 
 public:		//---------------------------------------------------------------------------------------------------------
 	void    setIdle(void);																	// put CC1101 into power-down state
+	void wakeup (void );
 	uint8_t detectBurst(void);																// detect burst signal, sleep while no signal, otherwise stay awake
 
 	CC1101();

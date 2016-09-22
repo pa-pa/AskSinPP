@@ -172,9 +172,15 @@ uint8_t CC1101::rcvData(uint8_t *buf,uint8_t size) {														// read data p
 
 void    CC1101::setIdle() {																	// put CC1101 into power-down state
 	strobe(CC1101_SIDLE);																// coming from RX state, we need to enter the IDLE state first
-	strobe(CC1101_SFRX);
+	//strobe(CC1101_SFRX);
 	strobe(CC1101_SPWD);																// enter power down state
 	//dbg << "pd\n";
+}
+
+void CC1101::wakeup () {
+  ccSelect();                                     // wake up the communication module
+    waitMiso();
+    ccDeselect();
 }
 
 uint8_t CC1101::detectBurst(void) {
