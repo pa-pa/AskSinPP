@@ -7,13 +7,21 @@
 
 #include <avr/power.h>
 
-#define BAT_NUM_MESS_ADC                  20                // real measures to get the best average measure
-#define BAT_DUMMY_NUM_MESS_ADC            40                // dummy measures to get the ADC working
-
-#define AVR_BANDGAP_VOLTAGE     1100UL                      // band gap reference for Atmega328p
+#if defined(__AVR_ATmega32U4__) || defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__)
+#define ADMUX_VCCWRT1V1 (_BV(REFS0) | _BV(MUX4) | _BV(MUX3) | _BV(MUX2) | _BV(MUX1))
+#elif defined (__AVR_ATtiny24__) || defined(__AVR_ATtiny44__) || defined(__AVR_ATtiny84__)
+#define ADMUX_VCCWRT1V1 (_BV(MUX5) | _BV(MUX0))
+#elif defined (__AVR_ATtiny25__) || defined(__AVR_ATtiny45__) || defined(__AVR_ATtiny85__)
+#define ADMUX_VCCWRT1V1 (_BV(MUX3) | _BV(MUX2))
+#else
+#define ADMUX_VCCWRT1V1 (_BV(REFS0) | _BV(MUX3) | _BV(MUX2) | _BV(MUX1))
+#endif
 
 namespace as {
 
+/**
+ * Use internal bandgap reference to measure battery voltage
+ */
 class BatterySensor : public Alarm {
 
   uint8_t  m_LowValue;
@@ -21,7 +29,7 @@ class BatterySensor : public Alarm {
   uint32_t m_Period;
 
 public:
-  BatterySensor () : Alarm(0), m_LowValue(0), m_LastValue(0), m_Period() {}
+  BatterySensor () : Alarm(0), m_LowValue(0), m_LastValue(0), m_Period(0) {}
   virtual ~BatterySensor() {}
 
   virtual void trigger (AlarmClock& clock) {
@@ -31,7 +39,7 @@ public:
   }
 
   bool low () {
-    return m_LastValue <= m_LowValue;
+    return m_LastValue < m_LowValue;
   }
 
   void init(uint8_t low,uint32_t period) {
@@ -42,52 +50,69 @@ public:
     aclock.add(*this);
   }
 
-  uint8_t voltage(void) {
-    uint16_t adcValue = getAdcValue(                    // Voltage Reference = AVCC with external capacitor at AREF pin; Input Channel = 1.1V (V BG)
-        (0 << REFS1) | (1 << REFS0) | (1 << MUX3) | (1 << MUX2) | (1 << MUX1) | (0 << MUX0)
-    );
-    adcValue = (AVR_BANDGAP_VOLTAGE * 1023) / adcValue / 100;         // calculate battery voltage in V/10
-    DPRINT(F("Bat: ")); DHEXLN(adcValue);
-    return (uint8_t)adcValue;
+  virtual uint8_t voltage() {
+    // Read 1.1V reference against AVcc
+    // set the reference to Vcc and the measurement to the internal 1.1V reference
+    if (ADMUX != ADMUX_VCCWRT1V1) {
+      ADMUX = ADMUX_VCCWRT1V1;
+      // Bandgap reference start-up time: max 70us
+      // Wait for Vref to settle.
+      delayMicroseconds(350);
+    }
+    // Start conversion and wait for it to finish.
+    ADCSRA |= _BV(ADSC);
+    while (bit_is_set(ADCSRA, ADSC)) {};
+    // Result is now stored in ADC.
+    // Calculate Vcc (in V)
+    uint16_t vcc = 1100UL * 1023 / ADC / 100;
+    DPRINT(F("Bat: ")); DHEXLN(vcc);
+    return (uint8_t) vcc;
   }
 
-protected:
-  uint16_t getAdcValue(uint8_t adcmux) {
-    uint16_t adcValue = 0;
 
-    #if defined(__AVR_ATmega32U4__)                       // save content of Power Reduction Register
-      uint8_t tmpPRR0 = PRR0;
-      uint8_t tmpPRR1 = PRR1;
-    #else
-      uint8_t tmpPRR = PRR;
-    #endif
-    power_adc_enable();
+};
 
-    ADMUX = adcmux;                               // start ADC
-    ADCSRA = (1 << ADEN) | (1 << ADPS2) | (1 << ADPS1);             // Enable ADC and set ADC pre scaler
+/**
+ * Measure on analog pin
+ * See https://github.com/rlogiacco/BatterySense for setup
+ */
+class BatterySensorExt : public BatterySensor {
+  uint8_t  m_SensePin;
+  uint8_t  m_ActivationPin;
+  uint8_t  m_DividerRatio;
+  uint16_t m_RefVoltage;
+public:
 
-    for (uint8_t i = 0; i < BAT_NUM_MESS_ADC + BAT_DUMMY_NUM_MESS_ADC; i++) { // take samples in a round
-      ADCSRA |= (1 << ADSC);                          // start conversion
-      while (ADCSRA & (1 << ADSC)) {}                     // wait for conversion complete
+  BatterySensorExt (uint8_t sens,uint8_t activation=0xff) : BatterySensor(),
+    m_SensePin(sens), m_ActivationPin(activation), m_DividerRatio(2), m_RefVoltage(3300) {}
 
-      if (i >= BAT_DUMMY_NUM_MESS_ADC) {                    // we discard the first dummy measurements
-        adcValue += ADCW;
-      }
+  virtual ~BatterySensorExt () {}
+
+  void init( uint8_t low,uint32_t period,uint16_t refvolt=3300,uint8_t divider=2) {
+    m_DividerRatio=divider;
+    m_RefVoltage = refvolt;
+    pinMode(m_SensePin, INPUT);
+    if (m_ActivationPin < 0xFF) {
+      pinMode(m_ActivationPin, OUTPUT);
     }
+    BatterySensor::init(low,period);
+  }
 
-    ADCSRA &= ~(1 << ADEN);                           // ADC disable
-    adcValue = adcValue / BAT_NUM_MESS_ADC;                   // divide adcValue by amount of measurements
 
-    #if defined(__AVR_ATmega32U4__)                       // restore power management
-      PRR0 = tmpPRR0;
-      PRR1 = tmpPRR1;
-    #else
-      PRR = tmpPRR;
-    #endif
-
-    ADCSRA = 0;                                 // ADC off
-
-    return adcValue;                              // return the measured value
+  virtual uint8_t voltage () {
+    if (m_ActivationPin != 0xFF) {
+        digitalWrite(m_ActivationPin, HIGH);
+        delayMicroseconds(10); // copes with slow switching activation circuits
+      }
+      analogRead(m_SensePin);
+      delay(2); // allow the ADC to stabilize
+      uint32_t value = analogRead(m_SensePin);
+      uint16_t vcc = (value * m_DividerRatio * m_RefVoltage) / 1024 / 100;
+      if (m_ActivationPin != 0xFF) {
+        digitalWrite(m_ActivationPin, LOW);
+      }
+      DPRINT(F("Bat: ")); DHEXLN(vcc);
+      return (uint8_t)vcc;
   }
 
 };

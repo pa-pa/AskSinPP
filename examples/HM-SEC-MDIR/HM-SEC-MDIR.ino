@@ -11,6 +11,7 @@
 #include <PinChangeInt.h>
 #include <TimerOne.h>
 #include <Radio.h>
+#include <BatterySensor.h>
 
 // define this to read the device id, serial and device type from bootloader section
 // #define USE_OTA_BOOTLOADER
@@ -110,16 +111,18 @@ public:
   }
 };
 
+BatterySensor battery;
+// BatterySensorExt battery;
+
 class MotionEventMsg : public Message {
 public:
   void init(uint8_t msgcnt,uint8_t ch,uint8_t counter,uint8_t brightness,uint8_t next) {
-    Message::init(0xd,msgcnt,0x41, Message::BIDI,ch & 0x3f,counter);
+    uint8_t lowbat = battery.low() ? 0x80 : 0x00;
+    Message::init(0xd,msgcnt,0x41, Message::BIDI,(ch & 0x3f) | lowbat,counter);
     pload[0] = brightness;
     pload[1] = (next+4) << 4;
   }
 };
-
-
 
 class MotionChannel : public Channel<MotionList1,EmptyList,List4,PEERS_PER_CHANNEL>, public Alarm {
 
@@ -268,6 +271,11 @@ void setup () {
   attachPinChangeInterrupt(PIR_PIN,motionISR,RISING);
 #endif
   sled.set(StatusLed::welcome);
+  // set low voltage to 2.2V
+  // measure battery every 1h
+  battery.init(22,60UL*60*10);
+  // init for external measurement
+  // battery.init(22,60UL*60*10,refvoltage,divider);
 }
 
 void loop() {
