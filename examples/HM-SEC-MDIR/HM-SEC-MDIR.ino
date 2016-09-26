@@ -111,8 +111,9 @@ public:
   }
 };
 
-BatterySensor battery;
+// BatterySensor battery;
 // BatterySensorExt battery;
+BatterySensorUni battery(15,7); // A1 & D7
 
 class MotionEventMsg : public Message {
 public:
@@ -273,9 +274,11 @@ void setup () {
   sled.set(StatusLed::welcome);
   // set low voltage to 2.2V
   // measure battery every 1h
-  battery.init(22,60UL*60*10);
+  //battery.init(22,60UL*60*10);
   // init for external measurement
-  // battery.init(22,60UL*60*10,refvoltage,divider);
+  //battery.init(22,60UL*60*10,refvoltage,divider);
+  // UniversalSensor setup
+  battery.init(22,60UL*60*10);
 }
 
 void loop() {

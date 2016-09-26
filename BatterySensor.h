@@ -65,11 +65,49 @@ public:
     // Result is now stored in ADC.
     // Calculate Vcc (in V)
     uint16_t vcc = 1100UL * 1023 / ADC / 100;
-    DPRINT(F("Bat: ")); DHEXLN(vcc);
+    DPRINT(F("Bat: ")); DDECLN(vcc);
     return (uint8_t) vcc;
   }
 
 
+};
+
+/**
+ * Measure battery voltage as used on the universal sensor board.
+ */
+class BatterySensorUni : public BatterySensor {
+  uint8_t  m_SensePin; // A1
+  uint8_t  m_ActivationPin; // D7
+  uint8_t  m_Factor; // 57 = 470k + 100k / 10
+public:
+
+  BatterySensorUni (uint8_t sens,uint8_t activation) : BatterySensor(),
+  m_SensePin(sens), m_ActivationPin(activation), m_Factor(57) {}
+  virtual ~BatterySensorUni () {}
+
+  void init( uint8_t low,uint32_t period,uint8_t factor=57) {
+    m_Factor=factor;
+    pinMode(m_SensePin, INPUT);
+    pinMode(m_ActivationPin, INPUT);
+    BatterySensor::init(low,period);
+  }
+
+  virtual uint8_t voltage () {
+    pinMode(m_ActivationPin,OUTPUT);
+    digitalWrite(m_ActivationPin,LOW);
+    digitalWrite(m_SensePin,LOW);
+
+    analogRead(m_SensePin);
+    delay(2); // allow the ADC to stabilize
+    uint16_t value = analogRead(m_SensePin);
+    uint16_t vcc = (value * 3300UL * m_Factor) / 1024 / 1000;
+
+    pinMode(m_ActivationPin,INPUT);
+    digitalWrite(m_SensePin,HIGH);
+
+    DPRINT(F("Bat: ")); DDECLN(vcc);
+    return (uint8_t)vcc;
+  }
 };
 
 /**
@@ -85,7 +123,6 @@ public:
 
   BatterySensorExt (uint8_t sens,uint8_t activation=0xff) : BatterySensor(),
     m_SensePin(sens), m_ActivationPin(activation), m_DividerRatio(2), m_RefVoltage(3300) {}
-
   virtual ~BatterySensorExt () {}
 
   void init( uint8_t low,uint32_t period,uint16_t refvolt=3300,uint8_t divider=2) {
@@ -111,7 +148,7 @@ public:
       if (m_ActivationPin != 0xFF) {
         digitalWrite(m_ActivationPin, LOW);
       }
-      DPRINT(F("Bat: ")); DHEXLN(vcc);
+      DPRINT(F("Bat: ")); DDECLN(vcc);
       return (uint8_t)vcc;
   }
 

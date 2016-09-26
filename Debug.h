@@ -18,6 +18,11 @@
   inline void DHEX(uint16_t b) {  }
   inline void DHEXLN(uint16_t b) {  }
 
+  inline void DDEC(uint8_t b) {  }
+  inline void DDECLN(uint8_t b) {  }
+  inline void DDEC(uint16_t b) {  }
+  inline void DDECLN(uint16_t b) {  }
+
 #else
 
 
@@ -43,6 +48,15 @@
     Serial.print(b,HEX);
   }
   inline void DHEXLN(uint16_t b) { DHEX(b); DPRINT(F("\n")); }
+
+  inline void DDEC(uint8_t b) {
+    Serial.print(b,DEC);
+  }
+  inline void DDECLN(uint8_t b) { DDEC(b); DPRINT(F("\n")); }
+  inline void DDEC(uint16_t b) {
+    Serial.print(b,DEC);
+  }
+  inline void DDECLN(uint16_t b) { DDEC(b); DPRINT(F("\n")); }
 
 #endif
 
