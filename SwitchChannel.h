@@ -14,24 +14,29 @@ template <int PeerCount>
 class SwitchChannel : public Channel<SwitchList1,SwitchList3,EmptyList,PeerCount>, public SwitchStateMachine {
 
   typedef Channel<SwitchList1,SwitchList3,EmptyList,PeerCount> BaseChannel;
+  uint8_t lowact;
 
 public:
-  SwitchChannel () : BaseChannel() {}
+  SwitchChannel () : BaseChannel(), lowact(false) {}
   virtual ~SwitchChannel() {}
+
+  void lowactive (bool value) {
+    lowact = value;
+  }
 
   void setup(Device* dev,uint8_t number,uint16_t addr) {
     BaseChannel::setup(dev,number,addr);
     uint8_t p = SwitchPin(number);
     pinMode(p,OUTPUT);
-    digitalWrite(p,LOW);
+    digitalWrite(p,lowact ? HIGH : LOW);
   }
 
   virtual void switchState(uint8_t oldstate,uint8_t newstate) {
     if( newstate == AS_CM_JT_ON ) {
-      digitalWrite(SwitchPin(BaseChannel::number()),HIGH);
+      digitalWrite(SwitchPin(BaseChannel::number()),lowact ? LOW : HIGH);
     }
     else if ( newstate == AS_CM_JT_OFF ) {
-      digitalWrite(SwitchPin(BaseChannel::number()),LOW);
+      digitalWrite(SwitchPin(BaseChannel::number()),lowact ? HIGH : LOW);
     }
     BaseChannel::changed(true);
   }

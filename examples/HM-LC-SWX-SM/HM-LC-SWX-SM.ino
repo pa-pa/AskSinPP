@@ -1,4 +1,8 @@
 
+#include <PinChangeInt.h>
+#include <TimerOne.h>
+#include <AskSinPP.h>
+
 #include <Debug.h>
 #include <Activity.h>
 
@@ -8,13 +12,11 @@
 #include <SwitchChannel.h>
 #include <Message.h>
 #include <Button.h>
-#include <PinChangeInt.h>
-#include <TimerOne.h>
 #include <Radio.h>
 
 // number of relays - possible values 1,2,4
 // will map to HM-LC-SW1-SM, HM-LC-SW2-SM, HM-LC-SW4-SM
-#define RELAY_COUNT 2
+#define RELAY_COUNT 4
 
 // define this to read the device id, serial and device type from bootloader section
 // #define USE_OTA_BOOTLOADER
@@ -99,9 +101,20 @@ public:
 CfgButton cfgBtn;
 void cfgBtnISR () { cfgBtn.check(); }
 
+// if A0 and A1 connected
+// we use LOW for ON and HIGH for OFF
+bool checkLowActive () {
+  pinMode(14,OUTPUT); // A0
+  pinMode(15,INPUT);  // A1
+  digitalWrite(15,HIGH);
+  digitalWrite(15,LOW);
+  return digitalRead(15) == LOW;
+}
+
   void setup () {
 #ifndef NDEBUG
   Serial.begin(57600);
+  DPRINTLN(ASKSIN_PLUS_PLUS_IDENTIFIER);
 #endif
   sled.init(LED_PIN);
 
@@ -111,6 +124,11 @@ void cfgBtnISR () { cfgBtn.check(); }
 
   if( eeprom.setup() == true ) {
     sdev.firstinit();
+  }
+
+  bool low = checkLowActive();
+  for( int i=1; i<=sdev.channels(); ++i ) {
+    sdev.channel(i).lowactive(low);
   }
 
 #ifdef USE_OTA_BOOTLOADER
