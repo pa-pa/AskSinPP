@@ -1,4 +1,8 @@
 
+#include <PinChangeInt.h>
+#include <TimerOne.h>
+#include <AskSinPP.h>
+
 #include <Debug.h>
 #include <Activity.h>
 
@@ -7,8 +11,6 @@
 #include <MultiChannelDevice.h>
 #include <Message.h>
 #include <Button.h>
-#include <PinChangeInt.h>
-#include <TimerOne.h>
 #include <Radio.h>
 
 // define this to read the device id, serial and device type from bootloader section
@@ -138,6 +140,7 @@ void cfgBtnISR () { cfgBtn.check(); }
 void setup () {
 #ifndef NDEBUG
   Serial.begin(57600);
+  DPRINTLN(ASKSIN_PLUS_PLUS_IDENTIFIER);
 #endif
   sled.init(LED_PIN);
 

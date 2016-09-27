@@ -1,4 +1,9 @@
 
+
+#include <PinChangeInt.h>
+#include <TimerOne.h>
+#include <AskSinPP.h>
+
 #include <Debug.h>
 #include <Activity.h>
 
@@ -8,8 +13,6 @@
 #include <ChannelList.h>
 #include <Message.h>
 #include <Button.h>
-#include <PinChangeInt.h>
-#include <TimerOne.h>
 #include <Radio.h>
 #include <BatterySensor.h>
 
@@ -239,6 +242,7 @@ void cfgBtnISR () { cfgBtn.check(); }
 void setup () {
 #ifndef NDEBUG
   Serial.begin(57600);
+  DPRINTLN(ASKSIN_PLUS_PLUS_IDENTIFIER);
 #endif
   sled.init(LED_PIN);
 
