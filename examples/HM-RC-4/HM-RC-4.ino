@@ -150,7 +150,7 @@ MultiChannelDevice<BtnChannel,4> sdev(0x20);
 class CfgButton : public Button {
 public:
   CfgButton () {
-    setLongPressTime(30);
+    setLongPressTime(seconds2ticks(3));
   }
   virtual void state (uint8_t s) {
     uint8_t old = Button::state();

@@ -69,7 +69,7 @@ public:
 
   void startPairing () {
     sled.set(StatusLed::pairing);
-    activity.stayAwake( 120 * 10); // 2 mins
+    activity.stayAwake( seconds2ticks(20) ); // 20 seconds
     sendDeviceInfo();
   }
 

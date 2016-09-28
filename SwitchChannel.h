@@ -22,6 +22,8 @@ public:
 
   void lowactive (bool value) {
     lowact = value;
+    switchState(state,state);
+    BaseChannel::changed(false);
   }
 
   void setup(Device* dev,uint8_t number,uint16_t addr) {

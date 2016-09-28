@@ -36,17 +36,17 @@ public:
     if( ticks == 0 ) {
       LowPower.powerDown(SLEEP_FOREVER,ADC_OFF,BOD_OFF);
     }
-    else if( ticks > 80 ) {
+    else if( ticks > seconds2ticks(8) ) {
       LowPower.powerDown(SLEEP_8S,ADC_OFF,BOD_OFF);
-      offset = 80+1;
+      offset = seconds2ticks(8);
     }
-    else if (ticks > 10 ) {
+    else if (ticks > seconds2ticks(1) ) {
       LowPower.powerDown(SLEEP_1S,ADC_OFF,BOD_OFF);
-      offset = 10+1;
+      offset = seconds2ticks(1);
     }
-    else if (ticks > 5 ) {
+    else if (ticks > millis2ticks(500) ) {
       LowPower.powerDown(SLEEP_500MS,ADC_OFF,BOD_OFF);
-      offset = 5+1;
+      offset = millis2ticks(500);
     }
     radio.wakeup();
     return offset;
@@ -56,7 +56,7 @@ public:
     aclock.disable();
     uint32_t ticks = aclock.next();
     if( aclock.isready() == false ) {
-      if( ticks == 0 || ticks > 5 ) {
+      if( ticks == 0 || ticks > millis2ticks(500) ) {
         uint32_t offset = doSleep(ticks);
         aclock.correct(offset);
         aclock.enable();
@@ -88,7 +88,7 @@ public:
     awake = false;
   }
 
-  // do not sleep for time in 1/10 sec
+  // do not sleep for time in ticks
   void stayAwake (uint32_t time) {
     uint32_t old = aclock.get(*this);
     if( old < time ) {
@@ -114,6 +114,5 @@ public:
 extern Activity activity;
 
 }
-
 
 #endif

@@ -91,7 +91,7 @@ public:
   // here we calc when to send next value
   uint32_t delay () {
     // for testing we use delay of 5sec
-    return 5 * 10;
+    return seconds2ticks(5);
   }
 
   void setup(Device* dev,uint8_t number,uint16_t addr) {
@@ -115,7 +115,7 @@ MultiChannelDevice<WeatherChannel,1> sdev(0x20);
 class CfgButton : public Button {
 public:
   CfgButton () {
-    setLongPressTime(30);
+    setLongPressTime(seconds2ticks(3));
   }
   virtual void state (uint8_t s) {
     uint8_t old = Button::state();

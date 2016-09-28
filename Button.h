@@ -8,7 +8,7 @@ namespace as {
 
 class Button: public Alarm {
 
-#define DEBOUNCETIME 2
+#define DEBOUNCETIME millis2ticks(200)
 
 public:
   enum States {
@@ -29,7 +29,7 @@ protected:
 
 public:
   Button() :
-      Alarm(0), stat(none), longpresstime(4), pin(0), pinstate(HIGH) {
+      Alarm(0), stat(none), longpresstime(millis2ticks(400)), pin(0), pinstate(HIGH) {
   }
   virtual ~Button() {
   }
@@ -133,8 +133,6 @@ public:
     pinMode(pin, INPUT_PULLUP);
   }
 };
-
-// used to register interrupt
 
 }
 

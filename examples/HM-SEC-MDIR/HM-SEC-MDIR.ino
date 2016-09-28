@@ -147,14 +147,15 @@ class MotionChannel : public Channel<MotionList1,EmptyList,List4,PEERS_PER_CHANN
     }
   };
 
+  // return timer ticks
   uint32_t getMinInterval () {
     switch( getList1().minInterval() ) {
-      case 0: return 15*10;
-      case 1: return 30*10;
-      case 2: return 60*10;
-      case 3: return 120*10;
+      case 0: return seconds2ticks(15);
+      case 1: return seconds2ticks(30);
+      case 2: return seconds2ticks(60);
+      case 3: return seconds2ticks(120);
     }
-    return 240*10; // we need 10 ticks per second
+    return seconds2ticks(240);
   }
 
 private:
@@ -189,7 +190,7 @@ public:
       aclock.add(quiet);
       // blink led
       if( sled.active() == false ) {
-        sled.ledOn(getList1().ledOntime() / 20);
+        sled.ledOn( centis2ticks(getList1().ledOntime()) / 2);
       }
       msg.init(++msgcnt,number(),++counter,brightness(),getList1().minInterval());
       device().sendPeerEvent(msg,*this);
@@ -217,7 +218,7 @@ void motionISR () { sdev.channel(1).motionDetected(); }
 class CfgButton : public Button {
 public:
   CfgButton () {
-    setLongPressTime(30);
+    setLongPressTime(seconds2ticks(3));
   }
   virtual void state (uint8_t s) {
     uint8_t old = Button::state();
@@ -282,7 +283,7 @@ void setup () {
   // init for external measurement
   //battery.init(22,60UL*60*10,refvoltage,divider);
   // UniversalSensor setup
-  battery.init(22,60UL*60*10);
+  battery.init(22,seconds2ticks(60UL*60));
 }
 
 void loop() {

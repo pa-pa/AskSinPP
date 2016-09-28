@@ -9,7 +9,7 @@ StatusLed sled;
 
 const StatusLed::BlinkPattern pattern [11] PROGMEM = {
     {0, 0, {0 , 0 } },  // 0; define nothing
-    {2, 120, {5, 5,} }, // 1; define pairing string
+    {2, 20, {5, 5,} },  // 1; define pairing string
     {2, 1, {20, 0,} },  // 2; define pairing success
     {2, 3, {1, 1,} },   // 3; define pairing error
     {2, 1, {1, 1,} },   // 4; define send indicator
@@ -40,7 +40,7 @@ void StatusLed::ledOn (uint8_t ticks) {
   if( active() == false && ticks > 0 ) {
     current.length = 2;
     current.duration = 1;
-    current.pattern[0] = ticks;
+    current.pattern[0] = ticks2decis(ticks);
     current.pattern[1] = 0;
     // start the pattern
     step = repeat = 0;
@@ -49,7 +49,7 @@ void StatusLed::ledOn (uint8_t ticks) {
 }
 
 void StatusLed::next (AlarmClock& clock) {
-  tick = current.pattern[step++];
+  tick = decis2ticks(current.pattern[step++]);
   ((step & 0x01) == 0x01) ? ledOn() : ledOff();
   clock.add(*this);
 }

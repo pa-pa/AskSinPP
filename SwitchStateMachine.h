@@ -26,13 +26,12 @@ class SwitchStateMachine {
     }
   };
 
-
-  uint8_t    state;
-  StateAlarm alarm;
-
   void setState (uint8_t state,uint32_t duration,const SwitchPeerList& lst=SwitchPeerList(0),uint8_t deep=0);
 
 protected:
+  uint8_t    state;
+  StateAlarm alarm;
+
   ~SwitchStateMachine () {}
 
 public:
@@ -99,14 +98,14 @@ public:
 
   bool delayActive () const { return aclock.get(alarm) > 0; }
 
-  // get timer count in 1/10s
+  // get timer count in ticks
   static uint32_t byteTimeCvt(uint8_t tTime) {
     if( tTime == 0xff ) return 0xffffffff;
     const uint16_t c[8] = {1,10,50,100,600,3000,6000,36000};
-    return (uint16_t)(tTime & 0x1F) * c[tTime >> 5];
+    return decis2ticks( (uint32_t)(tTime & 0x1F) * c[tTime >> 5] );
   }
 
-  // get timer count in 1/10s
+  // get timer count in ticks
   static uint32_t intTimeCvt(uint16_t iTime) {
     if (iTime == 0x00) return 0x00;
     if (iTime == 0xffff) return 0xffffffff;
@@ -117,7 +116,7 @@ public:
       for (uint8_t i = 1; i < (iTime & 0x1F); i++) tByte *= 2;
     } else tByte = 1;
 
-    return (uint32_t)tByte*(iTime>>5);
+    return decis2ticks( (uint32_t)tByte*(iTime>>5) );
   }
 
   void remote (const SwitchPeerList& lst,uint8_t counter) {

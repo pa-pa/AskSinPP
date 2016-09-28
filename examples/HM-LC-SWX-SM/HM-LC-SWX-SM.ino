@@ -79,7 +79,7 @@ MultiChannelDevice<SwitchChannel<PEERS_PER_CHANNEL>,RELAY_COUNT> sdev(0x20);
 class CfgButton : public Button {
 public:
   CfgButton () {
-    setLongPressTime(30);
+    setLongPressTime(seconds2ticks(3));
   }
   virtual void state (uint8_t s) {
     uint8_t old = Button::state();
@@ -127,7 +127,7 @@ bool checkLowActive () {
   }
 
   bool low = checkLowActive();
-  for( int i=1; i<=sdev.channels(); ++i ) {
+  for( uint8_t i=1; i<=sdev.channels(); ++i ) {
     sdev.channel(i).lowactive(low);
   }
 
