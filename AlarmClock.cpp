@@ -11,7 +11,7 @@ void callback(void) {
 }
 
 void AlarmClock::init() {
-  Timer1.initialize(100000); // initialize timer1, and set a 1/10 second period
+  Timer1.initialize(1000000 / TICKS_PER_SECOND); // initialize timer1, and set a 1/10 second period
   //Timer1.attachInterrupt(callback); // attaches callback() as a timer overflow interrupt
   enable();
 }
