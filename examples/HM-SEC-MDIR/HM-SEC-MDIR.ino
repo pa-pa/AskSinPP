@@ -121,8 +121,7 @@ BatterySensorUni battery(15,7); // A1 & D7
 class MotionEventMsg : public Message {
 public:
   void init(uint8_t msgcnt,uint8_t ch,uint8_t counter,uint8_t brightness,uint8_t next) {
-    uint8_t lowbat = battery.low() ? 0x80 : 0x00;
-    Message::init(0xd,msgcnt,0x41, Message::BIDI,(ch & 0x3f) | lowbat,counter);
+    Message::init(0xd,msgcnt,0x41,Message::BIDI,ch & 0x3f,counter);
     pload[0] = brightness;
     pload[1] = (next+4) << 4;
   }
@@ -173,7 +172,7 @@ public:
   }
 
   uint8_t flags () const {
-    return 0;
+    return battery.low() ? 0x80 : 0x00;
   }
 
   uint8_t brightness () const {
@@ -279,9 +278,9 @@ void setup () {
   sled.set(StatusLed::welcome);
   // set low voltage to 2.2V
   // measure battery every 1h
-  //battery.init(22,60UL*60*10);
+  //battery.init(22,seconds2ticks(60UL*60));
   // init for external measurement
-  //battery.init(22,60UL*60*10,refvoltage,divider);
+  //battery.init(22,seconds2ticks(60UL*60),refvoltage,divider);
   // UniversalSensor setup
   battery.init(22,seconds2ticks(60UL*60));
 }
