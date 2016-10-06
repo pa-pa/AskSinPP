@@ -146,6 +146,20 @@ class MotionChannel : public Channel<MotionList1,EmptyList,List4,PEERS_PER_CHANN
     }
   };
 
+  // send the brightness every 4 minutes to the master
+  class Cycle : public Alarm {
+  public:
+    MotionChannel& channel;
+    Cycle (MotionChannel& c) : Alarm(seconds2ticks(4*60)), channel(c) {}
+    virtual ~Cycle () {}
+    virtual void trigger (AlarmClock& clock) {
+      tick = seconds2ticks(4*60);
+      clock.add(*this);
+      Device& d = channel.device();
+      d.sendInfoActuatorStatus(d.getMasterID(),d.nextcount(),channel);
+    }
+  };
+
   // return timer ticks
   uint32_t getMinInterval () {
     switch( getList1().minInterval() ) {
@@ -162,9 +176,12 @@ private:
   uint8_t          msgcnt;
   uint8_t          counter;
   QuietMode        quiet;
+  Cycle            cycle;
 
 public:
-  MotionChannel () : Channel(), Alarm(0), msgcnt(0), counter(0), quiet(*this) {}
+  MotionChannel () : Channel(), Alarm(0), msgcnt(0), counter(0), quiet(*this), cycle(*this) {
+    aclock.add(cycle);
+  }
   virtual ~MotionChannel () {}
 
   uint8_t status () const {
@@ -176,7 +193,13 @@ public:
   }
 
   uint8_t brightness () const {
-    return 255;
+    static uint8_t bvalue = 25;
+    static uint8_t bx = -5;
+    bvalue += bx;
+    if( bvalue == 0 || bvalue == 255 ) {
+      bx = -bx;
+    }
+    return bvalue;
   }
 
   // this runs synch to application
