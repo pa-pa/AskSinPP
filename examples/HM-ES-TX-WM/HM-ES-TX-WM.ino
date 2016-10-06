@@ -198,7 +198,11 @@ BatterySensor battery;
 class GasPowerEventMsg : public Message {
 public:
   void init(uint8_t msgcnt,bool boot,uint32_t counter,uint32_t power) {
-    Message::init(0x10,msgcnt,0x54,Message::BIDI,(counter >> 24) & 0x7f,(counter >> 16) & 0xff);
+    uint8_t cnt1 = (counter >> 24) & 0x7f;
+    if( boot == true ) {
+      cnt1 |= 0x80;
+    }
+    Message::init(0x10,msgcnt,0x54,Message::BIDI,cnt1,(counter >> 16) & 0xff);
     pload[0] = (counter >> 8) & 0xff;
     pload[1] = counter & 0xff;
     pload[2] = (power >> 16) & 0xff;
@@ -248,6 +252,7 @@ public:
     }
     counter += dx;
     power += dx;
+    sled.ledOn(millis2ticks(300));
     DHEXLN(counter);
   }
 
