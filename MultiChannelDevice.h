@@ -10,10 +10,10 @@
 
 namespace as {
 
-template <class ChannelType,int ChannelCount>
+template <class ChannelType,int ChannelCount,class List0Type=List0>
 class MultiChannelDevice : public Device {
 
-  List0       list0;
+  List0Type   list0;
   ChannelType devchannels[ChannelCount];
   uint8_t     cfgChannel;
   GenericList cfgList;
