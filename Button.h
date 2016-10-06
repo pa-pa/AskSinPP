@@ -22,10 +22,10 @@ public:
   };
 
 protected:
-  uint8_t stat;
-  uint8_t longpresstime;
-  uint8_t pin;
-  uint8_t pinstate;
+  uint8_t  stat;
+  uint16_t longpresstime;
+  uint8_t  pin;
+  uint8_t  pinstate;
 
 public:
   Button() :
