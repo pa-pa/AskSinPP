@@ -26,16 +26,29 @@ class BatterySensor : public Alarm {
 
   uint8_t  m_LowValue;
   uint8_t  m_LastValue;
+  uint8_t  m_CriticalValue;
   uint32_t m_Period;
 
 public:
-  BatterySensor () : Alarm(0), m_LowValue(0), m_LastValue(0), m_Period(0) {}
+  BatterySensor () : Alarm(0), m_LowValue(0), m_LastValue(0), m_CriticalValue(0xff), m_Period(0) {}
   virtual ~BatterySensor() {}
 
   virtual void trigger (AlarmClock& clock) {
     tick = m_Period;
     clock.add(*this);
     m_LastValue = voltage();
+  }
+
+  uint8_t current () {
+    return m_LastValue;
+  }
+
+  void critical (uint8_t value) {
+    m_CriticalValue = value;
+  }
+
+  bool critical () {
+    return m_LastValue < m_CriticalValue;
   }
 
   bool low () {

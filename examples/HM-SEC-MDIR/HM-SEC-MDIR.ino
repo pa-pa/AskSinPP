@@ -40,6 +40,11 @@
 // Arduino pin for the PIR
 // A0 == PIN 14 on Pro Mini
 #define PIR_PIN 14
+#define PIR_ENABLE_PIN 15
+
+
+#define BATTERY_LOW 22
+#define BATTERY_CRITICAL 19
 
 
 // number of available peers per channel
@@ -139,6 +144,7 @@ class MotionChannel : public Channel<MotionList1,EmptyList,List4,PEERS_PER_CHANN
     virtual void trigger (AlarmClock& clock) {
       DPRINTLN("minInterval End");
       enabled = false;
+      channel.pirPowerOn();
       if( motion == true ) {
         motion = false;
         channel.motionDetected();
@@ -181,6 +187,10 @@ private:
 public:
   MotionChannel () : Channel(), Alarm(0), msgcnt(0), counter(0), quiet(*this), cycle(*this) {
     aclock.add(cycle);
+#ifdef PIR_ENABLE_PIN
+    pinMode(PIR_ENABLE_PIN,OUTPUT);
+#endif
+    pirPowerOn();
   }
   virtual ~MotionChannel () {}
 
@@ -202,6 +212,18 @@ public:
     return bvalue;
   }
 
+  void pirPowerOn () {
+#ifdef PIR_ENABLE_PIN
+    digitalWrite(PIR_ENABLE_PIN,HIGH);
+#endif
+  }
+
+  void pirPowerOff () {
+#ifdef PIR_ENABLE_PIN
+    digitalWrite(PIR_ENABLE_PIN,LOW);
+#endif
+  }
+
   // this runs synch to application
   virtual void trigger (AlarmClock& clock) {
     if( quiet.enabled == false ) {
@@ -216,10 +238,16 @@ public:
       }
       msg.init(++msgcnt,number(),++counter,brightness(),getList1().minInterval());
       device().sendPeerEvent(msg,*this);
+      // if we should not capture during interval - power off
+      if ( getList1().captureWithinInterval() == false ) {
+        pirPowerOff();
+      }
     }
     else if ( getList1().captureWithinInterval() == true ) {
       // we have had a motion during quiet interval
       quiet.motion = true;
+      // we can now power off the hardware
+      pirPowerOff();
     }
   }
 
@@ -301,17 +329,27 @@ void setup () {
   sled.set(StatusLed::welcome);
   // set low voltage to 2.2V
   // measure battery every 1h
-  //battery.init(22,seconds2ticks(60UL*60));
+  //battery.init(BATTERY_LOW,seconds2ticks(60UL*60));
   // init for external measurement
-  //battery.init(22,seconds2ticks(60UL*60),refvoltage,divider);
+  //battery.init(BATTERY_LOW,seconds2ticks(60UL*60),refvoltage,divider);
   // UniversalSensor setup
-  battery.init(22,seconds2ticks(60UL*60));
+  battery.init(BATTERY_LOW,seconds2ticks(60UL*60));
+  battery.critical(BATTERY_CRITICAL);
 }
 
 void loop() {
   bool worked = aclock.runready();
   bool poll = sdev.pollRadio();
   if( worked == false && poll == false ) {
+    // deep discharge protection
+    // if we drop below critical battery level - switch off all and sleep forever
+    if( battery.critical() ) {
+      sdev.channel(1).pirPowerOff();
+      radio.setIdle();
+      // this call will never return
+      activity.sleepForever();
+    }
+    // if nothing to do - go sleep
     activity.savePower<Sleep>();
   }
 }

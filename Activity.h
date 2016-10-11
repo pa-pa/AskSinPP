@@ -109,6 +109,12 @@ public:
     }
   }
 
+  void sleepForever () {
+    while( true ) {
+      LowPower.powerDown(SLEEP_FOREVER,ADC_OFF,BOD_OFF);
+    }
+  }
+
 };
 
 extern Activity activity;
