@@ -173,6 +173,12 @@ public:
            }
            sendAck(msg);
          }
+         // default - send Ack if requested
+         else {
+           if( msg.ackRequired() == true ) {
+             sendAck(msg);
+           }
+         }
        }
        else if( msg.type() == AS_MESSAGE_ACTION ) {
          if( msg.command() == AS_ACTION_SET ) {
@@ -195,6 +201,12 @@ public:
          }
          if( found==false ) {
            sendNack(msg);
+         }
+       }
+       // default - send Ack if requested
+       else {
+         if( msg.ackRequired() == true ) {
+           sendAck(msg);
          }
        }
      }
