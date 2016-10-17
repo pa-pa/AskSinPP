@@ -14,7 +14,6 @@
 
 #include "Debug.h"
 #include "Radio.h"
-#include "Atomic.h"
 
 namespace as {
 
@@ -22,7 +21,7 @@ namespace as {
 CC1101 radio;
 
 // private:		//---------------------------------------------------------------------------------------------------------
-CC1101::CC1101() : crc_ok(0), rss(0), lqi(0) {}
+CC1101::CC1101() : crc_ok(0), rss(0), lqi(0), intread(0), sending(false) {}
 
 void CC1101::init(void) {																// initialize CC1101
   DPRINT(F("CC init"));
@@ -104,6 +103,8 @@ void CC1101::init(void) {																// initialize CC1101
 
 uint8_t CC1101::sndData(uint8_t *buf, uint8_t size, uint8_t burst) {										// send data packet via RF
 
+  sending = true;
+
 	// Going from RX to TX does not work if there was a reception less than 0.5
 	// sec ago. Due to CCA? Using IDLE helps to shorten this period(?)
 	strobe(CC1101_SIDLE);																// go to idle mode
@@ -135,6 +136,8 @@ uint8_t CC1101::sndData(uint8_t *buf, uint8_t size, uint8_t burst) {										//
 		_delay_us(10);
 	}
 
+  sending = false;
+
   return true;
 }
 
@@ -155,6 +158,9 @@ uint8_t CC1101::rcvData(uint8_t *buf,uint8_t size) {														// read data p
 			uint8_t val = readReg(CC1101_RXFIFO, CC1101_CONFIG);						// read LQI and CRC_OK
 			lqi = val & 0x7F;
 			crc_ok = bitRead(val, 7);
+			if( crc_ok == 0 ) {
+			  rxBytes = 0;
+			}
 		}
 	}
 	else {
@@ -269,43 +275,48 @@ void CC1101::writeReg(uint8_t regAddr, uint8_t val) {									// write single re
 }
 
 void CC1101::handleGDO0Int() {
-  // Disable interrupt
-  disableGDO0Int();
-  uint8_t num = rcvData(buffer.buffer(),buffer.buffersize());
-  buffer.length(num);
-  // Enable interrupt
-  enableGDO0Int();
+  if( sending == false ) {
+    DPRINTLN("*");
+    intread = 1;
+  }
 }
 
 uint8_t CC1101::read (Message& msg) {
-  ATOMIC_BLOCK( ATOMIC_RESTORESTATE ) {
-    uint8_t len = buffer.length();
-    if( len > 0 ) {
-      // decode the message
-      buffer.decode();
-      // copy buffer to message
-      memcpy(msg.buffer(),buffer.buffer(),len);
-    }
-    msg.length(len);
-    // reset buffer
-    buffer.clear();
+  if( intread == 0 )
+    return 0;
+  intread = 0;
+
+  uint8_t len = rcvData(buffer.buffer(),buffer.buffersize());
+  if( len > 0 ) {
+    buffer.length(len);
+    // decode the message
+    buffer.decode();
+    // copy buffer to message
+    memcpy(msg.buffer(),buffer.buffer(),len);
   }
+  msg.length(len);
+  // reset buffer
+  buffer.clear();
   return msg.length();
 }
 
 bool CC1101::readAck (const Message& msg) {
+  if( intread == 0 )
+    return 0;
+  intread = 0;
+
   bool ack=false;
-  ATOMIC_BLOCK( ATOMIC_RESTORESTATE ) {
-    if( buffer.length() > 0 ) {
-      // decode the message
-      buffer.decode();
-      ack = buffer.isAck() &&
-           (buffer.from() == msg.to()) &&
-           (buffer.to() == msg.from()) &&
-           (buffer.count() == msg.count());
-      // reset buffer
-      buffer.clear();
-    }
+  uint8_t len = rcvData(buffer.buffer(),buffer.buffersize());
+  if( len > 0 ) {
+    buffer.length(len);
+    // decode the message
+    buffer.decode();
+    ack = buffer.isAck() &&
+         (buffer.from() == msg.to()) &&
+         (buffer.to() == msg.from()) &&
+         (buffer.count() == msg.count());
+    // reset buffer
+    buffer.clear();
   }
   return ack;
 }

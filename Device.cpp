@@ -10,11 +10,11 @@ void Device::process(Message& msg) {}
 bool Device::send(Message& msg,const HMID& to) {
   msg.to(to);
   msg.from(devid);
-  DPRINT(F("<- "));
-  msg.dump();
   bool result = false;
   uint8_t maxsend = 6;
   while( result == false && maxsend > 0 ) {
+    DPRINT(F("<- "));
+    msg.dump();
     maxsend--;
     result = radio->write(msg,msg.burstRequired());
     if( result == true && msg.ackRequired() == true && to.valid() == true ) {

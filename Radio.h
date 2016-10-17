@@ -24,8 +24,10 @@ class CC1101 {
 	uint8_t crc_ok;																			// CRC OK for received message
 	uint8_t rss;																			// signal strength
 	uint8_t lqi;																			// link quality
+	volatile uint8_t intread;
 	Message buffer;
   Message sbuffer;
+  volatile bool sending;
 
 	// CC1101 config register													// Reset  Description
 	#define CC1101_IOCFG2           0x00										// (0x29) GDO2 Output Pin Configuration
@@ -200,6 +202,7 @@ protected:
 	void waitMiso(void);
 	void ccSelect(void);
 	void ccDeselect(void);
+	uint8_t getGDO0 ();
 };
 
 // our global definition

@@ -20,6 +20,7 @@
 #define CC_CS_PIN              PORTB2
 
 #define CC_GDO0_DDR            DDRD                   // GDO0 pin, signals received data
+#define CC_GDO0_PORT           PORTD
 #define CC_GDO0_PIN            PORTB2
 
 #define CC_GDO0_PCICR          PCICR                  // GDO0 interrupt register
@@ -56,15 +57,12 @@ uint8_t CC1101::ccSendByte(uint8_t data) {
   while (!(SPSR & _BV(SPIF)));                        // wait until transfer finished
   return SPDR;
 }
-/*
-uint8_t ccGetGDO0() {
-  uint8_t x = chkPCINT(CC_GDO0_PCIE, CC_GDO0_INT, 0);             // check PCINT without debouncing
-  //if (x>1) dbg << "x:" << x << '\n';
 
-  if (x == 2 ) return 1;                            // falling edge detected
-  else return 0;
+
+uint8_t CC1101::getGDO0 () {
+  return getPin(CC_GDO0_PORT,CC_GDO0_PIN);
 }
-*/
+
 void CC1101::enableGDO0Int(void) {
   ::attachInterrupt(0, radioISR, FALLING);
 }
