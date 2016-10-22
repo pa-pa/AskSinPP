@@ -232,6 +232,12 @@ public:
     return GenericList();
    }
 
+   void sendPeerEvent (Message& msg,const ChannelType& ch) {
+     // we send only to peers if there is no config message pending
+     if( cfgChannel != 0xff ) {
+       Device::sendPeerEvent(msg,ch);
+     }
+   }
 };
 
 }
