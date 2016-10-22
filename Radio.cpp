@@ -276,7 +276,7 @@ void CC1101::writeReg(uint8_t regAddr, uint8_t val) {									// write single re
 
 void CC1101::handleGDO0Int() {
   if( sending == false ) {
-    DPRINTLN("*");
+    // DPRINTLN("*");
     intread = 1;
   }
 }
