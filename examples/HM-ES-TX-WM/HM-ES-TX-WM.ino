@@ -219,6 +219,29 @@ public:
   }
 };
 
+class PowerEventMsg : public Message {
+public:
+  void init(uint8_t msgcnt,bool boot,uint32_t counter,uint32_t power) {
+    uint8_t cnt1 = (counter >> 16) & 0x7f;
+    if( boot == true ) {
+      cnt1 |= 0x80;
+    }
+    Message::init(0x0f,msgcnt,0x5f,Message::BIDI,cnt1,(counter >> 8) & 0xff);
+    pload[0] = counter & 0xff;
+    pload[1] = (power >> 16) & 0xff;
+    pload[2] = (power >> 8) & 0xff;
+    pload[3] = power & 0xff;
+  }
+};
+
+class PowerEventCycleMsg : public PowerEventMsg {
+public:
+  void init(uint8_t msgcnt,bool boot,uint32_t counter,uint32_t power) {
+    PowerEventMsg::init(msgcnt,boot,counter,power);
+    typ = 0x5e;
+  }
+};
+
 class MeterChannel : public Channel<MeterList1,EmptyList,List4,PEERS_PER_CHANNEL>, public Alarm {
 
   uint32_t counter;
