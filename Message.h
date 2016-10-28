@@ -230,6 +230,10 @@ public:
     DHEX(buffer(),length());
   }
 
+  void setRpten () {
+    flag |= RPTEN;
+  }
+
   bool ackRequired () const {
     return (flag & BIDI) == BIDI;
   }

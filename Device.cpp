@@ -10,6 +10,7 @@ void Device::process(Message& msg) {}
 bool Device::send(Message& msg,const HMID& to) {
   msg.to(to);
   msg.from(devid);
+  msg.setRpten(); // has to be set always
   bool result = false;
   uint8_t maxsend = 6;
   while( result == false && maxsend > 0 ) {
