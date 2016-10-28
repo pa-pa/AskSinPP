@@ -421,7 +421,7 @@ public:
 class DeviceInfoMsg : public Message {
 public:
   void init (const HMID& to,uint8_t count) {
-    Message::init(0x1c,count,0x00, to.valid() ? Message::BIDI : 0x00,0x00,0x00);
+    Message::init(0x1a,count,0x00, to.valid() ? Message::BIDI : 0x00,0x00,0x00);
   }
   uint8_t* data() { return Message::data()-2; }
   void fill(uint8_t firmversion,uint8_t modelid[2],const char* serial,uint8_t subtype,uint8_t devinfo[3]) {

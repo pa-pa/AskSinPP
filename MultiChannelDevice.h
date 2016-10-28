@@ -62,6 +62,7 @@ public:
   }
 
   void reset () {
+    DPRINTLN("RESET");
     firstinit();
     setMasterID(list0.masterid());
     sled.set(StatusLed::welcome);
@@ -97,9 +98,8 @@ public:
          // PAIR_SERIAL
          if( msg.subcommand() == AS_CONFIG_PAIR_SERIAL && memcmp(msg.data(),getSerial(),10)==0 ) {
            sled.set(StatusLed::pairing);
-           list0.masterid(msg.from());
-           setMasterID(list0.masterid());
-           sendDeviceInfo(getMasterID(),msg.count());
+           activity.stayAwake( seconds2ticks(20) ); // 20 seconds
+           sendDeviceInfo(getMasterID(),msg.length());
          }
          // CONFIG_PEER_ADD
          else if ( msg.subcommand() == AS_CONFIG_PEER_ADD ) {
@@ -186,6 +186,10 @@ public:
            ChannelType& c = channel(pm.channel());
            c.process(pm);
            sendAck(msg,c);
+         }
+         else if ( msg.command() == AS_ACTION_RESET && msg.subcommand() == 0x00 ) {
+           sendAck(msg);
+           reset();
          }
        }
        else if (msg.type() == AS_MESSAGE_REMOTE_EVENT ) {

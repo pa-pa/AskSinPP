@@ -173,7 +173,7 @@ public:
   }
 
   void sendDeviceInfo () {
-    sendDeviceInfo(HMID::boardcast,nextcount());
+    sendDeviceInfo(getMasterID(),nextcount());
   }
 
   void sendDeviceInfo (const HMID& to,uint8_t count) {

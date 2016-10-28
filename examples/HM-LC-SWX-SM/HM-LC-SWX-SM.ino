@@ -87,12 +87,15 @@ public:
     if( s == Button::released ) {
       sdev.channel(1).toggleState();
     }
+    else if( s == longreleased ) {
+      sdev.startPairing();
+    }
     else if( s == longpressed ) {
       if( old == longpressed ) {
         sdev.reset(); // long pressed again - reset
       }
       else {
-        sdev.startPairing();
+        sled.set(StatusLed::key_long);
       }
     }
   }
