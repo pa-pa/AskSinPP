@@ -155,6 +155,7 @@ public:
     return false;
   }
 
+  void configChanged () {}
 
   protected:
   uint16_t peerAddress (uint8_t pidx) const {

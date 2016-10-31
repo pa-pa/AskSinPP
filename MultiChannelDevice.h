@@ -162,6 +162,10 @@ public:
              setMasterID(list0.masterid());
              sled.set(StatusLed::nothing);
            }
+           else {
+             // signal list update to channel
+             channel(cfgChannel).configChanged();
+           }
            cfgChannel = 0xff;
            // TODO cancel alarm
            sendAck(msg);
