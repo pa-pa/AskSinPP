@@ -1,3 +1,7 @@
+//- -----------------------------------------------------------------------------------------------------------------------
+// AskSin++
+// 2016-10-31 papa Creative Commons - http://creativecommons.org/licenses/by-nc-sa/3.0/de/
+//- -----------------------------------------------------------------------------------------------------------------------
 
 #include "AlarmClock.h"
 #include "Led.h"
@@ -7,6 +11,7 @@ namespace as {
 
 StatusLed sled;
 
+// patters reused from NewAskSin by <trilu@gmx.de>
 const StatusLed::BlinkPattern pattern [11] PROGMEM = {
     {0, 0, {0 , 0 } },  // 0; define nothing
     {2, 20, {5, 5,} },  // 1; define pairing string

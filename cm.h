@@ -6,8 +6,6 @@
 #ifndef _CM_H
 	#define _CM_H
 
-//	#include "HAL.h"
-
 	#define GET_2_BYTE_VALUE(n) ( ((uint16_t)n >> 8) | ((uint16_t)n << 8) )			// macro for changing byte order for ARV little endian
 
 	#define AS_CM_JT_NONE                                     0
@@ -56,8 +54,4 @@
 	#define AS_CM_KEYCODE_SHORT                               1
 	#define AS_CM_KEYCODE_LONG                                2
 
-
-//	void debugActionType(uint8_t actionType);
-//	void debugState(uint8_t state);
-//	inline void debugShowStruct(void);
 #endif
