@@ -10,22 +10,19 @@
 
 namespace as {
 
-#define TICKS_PER_SECOND 10
+#define TICKS_PER_SECOND 100UL
 
 #define seconds2ticks(tm) ( tm * TICKS_PER_SECOND )
 #define ticks2seconds(tm) ( tm / TICKS_PER_SECOND )
 
-//#define decis2ticks(tm) ( tm * TICKS_PER_SECOND / 10 )
-#define decis2ticks(tm) ( tm )
-#define ticks2decis(tm) ( tm )
+#define decis2ticks(tm) ( tm * TICKS_PER_SECOND / 10 )
+#define ticks2decis(tm) ( tm * 10UL / TICKS_PER_SECOND )
 
-//#define centis2ticks(tm)  ( tm * TICKS_PER_SECOND / 100 )
-#define centis2ticks(tm)  ( tm / 10 )
-#define ticks2centis(tm)  ( tm * 10 )
+#define centis2ticks(tm)  ( tm * TICKS_PER_SECOND / 100 )
+#define ticks2centis(tm)  ( tm * 100UL / TICKS_PER_SECOND )
 
-//#define millis2ticks(tm) ( tm * TICKS_PER_SECOND / 1000 )
-#define millis2ticks(tm) ( tm / 100 )
-#define ticks2millis(tm) ( tm * 100 )
+#define millis2ticks(tm) ( tm * TICKS_PER_SECOND / 1000 )
+#define ticks2millis(tm) ( tm * 1000UL / TICKS_PER_SECOND )
 
 class AlarmClock: protected Link {
 
