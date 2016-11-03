@@ -225,10 +225,10 @@ void setup () {
   sdev.init(radio,DEVICE_ID,DEVICE_SERIAL);
   sdev.setModel(0x00,0x08);
 #endif
-  sdev.setFirmwareVersion(0x00);
+  sdev.setFirmwareVersion(0x11);
   // TODO check sub type and infos
-  sdev.setSubType(0x00);
-  sdev.setInfo(0x03,0x01,0x00);
+  sdev.setSubType(0x40);
+  sdev.setInfo(0x04,0x00,0x00);
 
   radio.enableGDO0Int();
   aclock.init();
