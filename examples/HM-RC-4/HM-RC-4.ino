@@ -118,9 +118,10 @@ private:
   BtnEventMsg   msg;
   uint8_t       msgcnt;
   uint8_t       repeatcnt;
+  volatile bool isr;
 
 public:
-  BtnChannel () : Channel(), msgcnt(0), repeatcnt(0) {}
+  BtnChannel () : Channel(), msgcnt(0), repeatcnt(0), isr(false) {}
   virtual ~BtnChannel () {}
 
   Button& button () { return *(Button*)this; }
@@ -145,6 +146,19 @@ public:
       msg.init(++msgcnt,number(),repeatcnt++,true);
       device().sendPeerEvent(msg,*this);
     }
+  }
+
+  void pinchanged () {
+    isr = true;
+  }
+
+  bool checkpin () {
+    bool result = isr;
+    if( isr == true ) {
+      isr = false;
+      Button::check();
+    }
+    return result;
   }
 };
 
@@ -176,25 +190,10 @@ public:
 CfgButton cfgBtn;
 void cfgBtnISR () { cfgBtn.check(); }
 
-class BtnHandler : public Alarm {
-public:
-  BtnHandler () : Alarm(0) {}
-  virtual ~BtnHandler () {}
-
-  virtual void trigger (AlarmClock& clock) {
-    for( uint8_t i=1; i<=sdev.channels(); ++i ) {
-      sdev.channel(i).button().check();
-    }
-    attachInterrupt(digitalPinToInterrupt(3),btnISR,CHANGE);
-  }
-};
-BtnHandler btnhandler;
-void btnISR () {
-  detachInterrupt(digitalPinToInterrupt(3));
-  // in the interrupt we only active the handler to read the button states
-  aclock.add(btnhandler);
-}
-
+void btn1ISR () { sdev.channel(1).pinchanged(); }
+void btn2ISR () { sdev.channel(2).pinchanged(); }
+void btn3ISR () { sdev.channel(3).pinchanged(); }
+void btn4ISR () { sdev.channel(4).pinchanged(); }
 
 void setup () {
 #ifndef NDEBUG
@@ -207,8 +206,10 @@ void setup () {
   sdev.channel(2).button().init(BTN2_PIN);
   sdev.channel(3).button().init(BTN3_PIN);
   sdev.channel(4).button().init(BTN4_PIN);
-  pinMode(3,INPUT_PULLUP);
-  attachInterrupt(digitalPinToInterrupt(3),btnISR,CHANGE);
+  attachPinChangeInterrupt(BTN1_PIN,btn1ISR,CHANGE);
+  attachPinChangeInterrupt(BTN2_PIN,btn2ISR,CHANGE);
+  attachPinChangeInterrupt(BTN3_PIN,btn3ISR,CHANGE);
+  attachPinChangeInterrupt(BTN4_PIN,btn4ISR,CHANGE);
 
   cfgBtn.init(CONFIG_BUTTON_PIN);
   attachPinChangeInterrupt(CONFIG_BUTTON_PIN,cfgBtnISR,CHANGE);
@@ -226,7 +227,6 @@ void setup () {
   sdev.setModel(0x00,0x08);
 #endif
   sdev.setFirmwareVersion(0x11);
-  // TODO check sub type and infos
   sdev.setSubType(0x40);
   sdev.setInfo(0x04,0x00,0x00);
 
@@ -237,9 +237,15 @@ void setup () {
 }
 
 void loop() {
+  bool pinchanged = false;
+  for( int i=1; i<=sdev.channels(); ++i ) {
+    if( sdev.channel(i).checkpin() == true) {
+      pinchanged = true;
+    }
+  }
   bool worked = aclock.runready();
   bool poll = sdev.pollRadio();
-  if( worked == false && poll == false ) {
+  if( pinchanged == false && worked == false && poll == false ) {
     activity.savePower<Sleep>();
   }
 }
