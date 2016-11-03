@@ -26,8 +26,8 @@ public:
 
   void lowactive (bool value) {
     lowact = value;
-    switchState(state,state);
-    BaseChannel::changed(false);
+    typename BaseChannel::List1 l1 = BaseChannel::getList1();
+    switchState(state,l1.powerUpAction() == true ? AS_CM_JT_ON : AS_CM_JT_OFF );
   }
 
   void setup(Device* dev,uint8_t number,uint16_t addr) {
@@ -53,16 +53,36 @@ public:
   }
 
   bool process (const RemoteEventMsg& msg) {
-    bool lg = msg.isLong();
-    Peer p(msg.peer());
-    uint8_t cnt = msg.counter();
-    typename BaseChannel::List3 l3 = BaseChannel::getList3(p);
-    if( l3.valid() == true ) {
-      // l3.dump();
-      typename BaseChannel::List3::PeerList pl = lg ? l3.lg() : l3.sh();
-      // pl.dump();
-      remote(pl,cnt);
-      return true;
+    if( this->inhibit() == false ) {
+      bool lg = msg.isLong();
+      Peer p(msg.peer());
+      uint8_t cnt = msg.counter();
+      typename BaseChannel::List3 l3 = BaseChannel::getList3(p);
+      if( l3.valid() == true ) {
+        // l3.dump();
+        typename BaseChannel::List3::PeerList pl = lg ? l3.lg() : l3.sh();
+        // pl.dump();
+        remote(pl,cnt);
+        return true;
+      }
+    }
+    return false;
+  }
+
+  bool process (const SensorEventMsg& msg) {
+    if( this->inhibit() == false ) {
+      bool lg = msg.isLong();
+      Peer p(msg.peer());
+      uint8_t cnt = msg.counter();
+      uint8_t value = msg.value();
+      typename BaseChannel::List3 l3 = BaseChannel::getList3(p);
+      if( l3.valid() == true ) {
+        // l3.dump();
+        typename BaseChannel::List3::PeerList pl = lg ? l3.lg() : l3.sh();
+        // pl.dump();
+        sensor(pl,cnt,value);
+        return true;
+      }
     }
     return false;
   }

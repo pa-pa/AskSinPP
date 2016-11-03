@@ -77,6 +77,16 @@ public:
     return AS_CM_JT_NONE;
   }
 
+  uint8_t getConditionForState(uint8_t stat,const SwitchPeerList& lst) const {
+    switch( stat ) {
+      case AS_CM_JT_ONDELAY:  return lst.ctDlyOn();
+      case AS_CM_JT_ON:       return lst.ctOn();
+      case AS_CM_JT_OFFDELAY: return lst.ctDlyOff();
+      case AS_CM_JT_OFF:      return lst.ctOff();
+    }
+    return AS_CM_CT_X_GE_COND_VALUE_LO;
+  }
+
   uint32_t getDelayForState(uint8_t stat,const SwitchPeerList& lst) const {
     if( lst.valid() == false ) {
       return getDefaultDelay(stat);
@@ -135,6 +145,34 @@ public:
     case AS_CM_ACTIONTYPE_TOGGLE_INVERSE_TO_COUNTER:
       setState((counter & 0x01) == 0x00 ? AS_CM_JT_ON : AS_CM_JT_OFF, DELAY_INFINITE);
       break;
+    }
+  }
+
+  void sensor (const SwitchPeerList& lst,uint8_t counter,uint8_t value) {
+    uint8_t cond = getConditionForState(state,lst);
+    bool doit = false;
+    switch( cond ) {
+    case AS_CM_CT_X_GE_COND_VALUE_LO:
+      doit = (value >= lst.ctValLo());
+      break;
+    case AS_CM_CT_X_GE_COND_VALUE_HI:
+      doit = (value >= lst.ctValHi());
+      break;
+    case AS_CM_CT_X_LT_COND_VALUE_LO:
+      doit = (value < lst.ctValLo());
+      break;
+    case AS_CM_CT_X_LT_COND_VALUE_HI:
+      doit = (value < lst.ctValHi());
+      break;
+    case AS_CM_CT_COND_VALUE_LO_LE_X_LT_COND_VALUE_HI:
+      doit = ((lst.ctValLo() <= value) && (value < lst.ctValHi()));
+      break;
+    case AS_CM_CT_X_LT_COND_VALUE_LO_OR_X_GE_COND_VALUE_HI:
+      doit =((value < lst.ctValLo()) || (value >= lst.ctValHi()));
+      break;
+    }
+    if( doit == true ) {
+      remote(lst,counter);
     }
   }
 

@@ -189,7 +189,17 @@ public:
          }
        }
        else if( msg.type() == AS_MESSAGE_ACTION ) {
-         if( msg.command() == AS_ACTION_SET ) {
+         if( msg.command() == AS_ACTION_INHIBIT_OFF ) {
+           const ActionInhibitMsg& pm = msg.inhibit();
+           ChannelType& c = channel(pm.channel());
+           c.inhibit(false);
+         }
+         else if( msg.command() == AS_ACTION_INHIBIT_ON ) {
+           const ActionInhibitMsg& pm = msg.inhibit();
+           ChannelType& c = channel(pm.channel());
+           c.inhibit(true);
+         }
+         else if( msg.command() == AS_ACTION_SET ) {
            const ActionSetMsg& pm = msg.action();
            ChannelType& c = channel(pm.channel());
            c.process(pm);
@@ -202,6 +212,21 @@ public:
        }
        else if (msg.type() == AS_MESSAGE_REMOTE_EVENT ) {
          const RemoteEventMsg& pm = msg.remoteEvent();
+         bool found=false;
+//         p.dump();
+         for( uint8_t i=1; i<=channels(); ++i ) {
+           ChannelType& ch = channel(i);
+           if( ch.process(pm) == true ) {
+             sendAck(msg,ch);
+             found=true;
+           }
+         }
+         if( found==false ) {
+           sendNack(msg);
+         }
+       }
+       else if (msg.type() == AS_MESSAGE_SENSOR_EVENT ) {
+         const SensorEventMsg& pm = msg.sensorEvent();
          bool found=false;
 //         p.dump();
          for( uint8_t i=1; i<=channels(); ++i ) {

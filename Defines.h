@@ -86,6 +86,8 @@
 	#define AS_INFO_RT_STATUS                             0x0A
 
 	// Byte 10: action values
+  #define AS_ACTION_INHIBIT_OFF                         0x00
+  #define AS_ACTION_INHIBIT_ON                          0x01
 	#define AS_ACTION_SET                                 0x02
 	#define AS_ACTION_STOP_CHANGE                         0x03
 	#define AS_ACTION_RESET                               0x04

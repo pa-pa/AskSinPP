@@ -14,11 +14,13 @@ namespace as {
 class Device;
 class ActionSetMsg;
 class RemoteEventMsg;
+class SensorEventMsg;
 
 template<class List1Type,class List3Type,class List4Type,int PeerCount>
 class Channel {
   Device*   dev;
   bool      change; // the status is changed, we may need to send a status
+  bool      inhi;
   uint8_t   num   ; // channels per device
   uint16_t  addr  ; // start address in eeprom
 
@@ -28,7 +30,7 @@ public:
   typedef List4Type List4;
 
   public:
-  Channel () : dev(0), change(false), num(0), addr(0) {}
+  Channel () : dev(0), change(false), inhi(false), num(0), addr(0) {}
 
   Device& device () { return *dev; }
 
@@ -41,6 +43,10 @@ public:
   bool changed () const { return change; }
 
   void changed (bool c) { change = c; }
+
+  void inhibit (bool value) { inhi = value; }
+
+  bool inhibit () const { return inhi; }
 
   void setup(Device* dev,uint8_t number,uint16_t addr) {
     this->dev = dev;
@@ -156,6 +162,10 @@ public:
   }
 
   bool process (const RemoteEventMsg& msg) {
+    return false;
+  }
+
+  bool process (const SensorEventMsg& msg) {
     return false;
   }
 

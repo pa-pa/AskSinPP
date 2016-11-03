@@ -35,6 +35,8 @@ class InfoPeerListMsg;
 
 class DeviceInfoMsg;
 class RemoteEventMsg;
+class SensorEventMsg;
+class ActionInhibitMsg;
 class ActionSetMsg;
 
 class Message {
@@ -277,6 +279,8 @@ public:
   const ConfigWriteIndexMsg& configWriteIndex () const { return *(ConfigWriteIndexMsg*)this; }
 
   const RemoteEventMsg& remoteEvent () const { return *(RemoteEventMsg*)this; }
+  const SensorEventMsg& sensorEvent () const { return *(SensorEventMsg*)this; }
+  const ActionInhibitMsg& inhibit () const { return *(ActionInhibitMsg*)this; }
   const ActionSetMsg& action () const { return *(ActionSetMsg*)this; }
 
   // cast to write message types
@@ -348,6 +352,23 @@ public:
   Peer peer () const { return Peer(from(),command() & 0x3f); }
   uint8_t counter () const { return subcommand(); }
   bool isLong () const { return (command() & 0x40) == 0x40; }
+};
+
+class SensorEventMsg : public Message {
+protected:
+  SensorEventMsg() {}
+public:
+  Peer peer () const { return Peer(from(),command() & 0x3f); }
+  uint8_t counter () const { return subcommand(); }
+  uint8_t value () const { return *data(); }
+  bool isLong () const { return (command() & 0x40) == 0x40; }
+};
+
+class ActionInhibitMsg : public Message {
+protected:
+  ActionInhibitMsg() {}
+public:
+  uint8_t channel () const { return subcommand(); }
 };
 
 class ActionSetMsg : public Message {
