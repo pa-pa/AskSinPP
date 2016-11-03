@@ -38,7 +38,7 @@ public:
   virtual ~Button() {
   }
 
-  void setLongPressTime(uint8_t t) {
+  void setLongPressTime(uint16_t t) {
     longpresstime = t;
   }
 
