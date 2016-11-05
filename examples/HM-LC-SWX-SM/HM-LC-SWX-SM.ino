@@ -146,7 +146,7 @@ bool checkLowActive () {
   sdev.setModel(0x00,SW_MODEL);
 #endif
   sdev.setFirmwareVersion(0x16);
-  sdev.setSubType(0x00);
+  sdev.setSubType(0x10);
   sdev.setInfo(0x41,0x01,0x00);
 
   radio.enableGDO0Int();
@@ -155,6 +155,7 @@ bool checkLowActive () {
 
   sled.set(StatusLed::welcome);
 
+  // TODO - random delay
 }
 
 void loop() {
