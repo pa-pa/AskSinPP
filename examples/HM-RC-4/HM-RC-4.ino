@@ -227,7 +227,7 @@ void setup () {
   sdev.setModel(0x00,0x08);
 #endif
   sdev.setFirmwareVersion(0x11);
-  sdev.setSubType(0x40);
+  sdev.setSubType(Device::Remote);
   sdev.setInfo(0x04,0x00,0x00);
 
   radio.enableGDO0Int();

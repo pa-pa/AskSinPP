@@ -19,11 +19,12 @@ class MultiChannelDevice : public Device {
 
   List0Type   list0;
   ChannelType devchannels[ChannelCount];
+  uint8_t     numChannels;
   uint8_t     cfgChannel;
   GenericList cfgList;
 
 public:
-  MultiChannelDevice (uint16_t addr) : list0(addr), cfgChannel(0xff) {
+  MultiChannelDevice (uint16_t addr) : list0(addr), numChannels(ChannelCount), cfgChannel(0xff) {
     addr += list0.size();
     for( uint8_t i=0; i<channels(); ++i ) {
       devchannels[i].setup(this,i+1,addr);
@@ -32,13 +33,16 @@ public:
   }
   virtual ~MultiChannelDevice () {}
 
+  void channels (uint8_t num) {
+    numChannels = min(num,ChannelCount);
+  }
 
   uint8_t channels () const {
-    return ChannelCount;
+    return numChannels;
   }
 
   bool hasChannel (uint8_t number) const {
-    return number != 0 && number <= ChannelCount;
+    return number != 0 && number <= channels();
   }
 
   void init (CC1101& r,const HMID& id,const char* serial) {
@@ -98,6 +102,13 @@ public:
      if( msg.to() == getDeviceID() || (msg.to() == HMID::boardcast && isBoardcastMsg(msg))) {
        DPRINT(F("-> "));
        msg.dump();
+       // ignore repeated messages
+       if( isRepeat(msg) == true ) {
+         if( msg.ackRequired() == true ) {
+           sendAck(msg);
+         }
+         return;
+       }
        if( msg.type() == AS_MESSAGE_CONFIG ) {
          // PAIR_SERIAL
          if( msg.subcommand() == AS_CONFIG_PAIR_SERIAL && memcmp(msg.data(),getSerial(),10)==0 ) {

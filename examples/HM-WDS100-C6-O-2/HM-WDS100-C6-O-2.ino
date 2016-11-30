@@ -251,8 +251,7 @@ void setup () {
 #endif
   // TODO check with version to use
   sdev.setFirmwareVersion(0x11);
-  // TODO check sub type and infos
-  sdev.setSubType(0x70);
+  sdev.setSubType(Device::THSensor);
   sdev.setInfo(0x03,0x01,0x00);
 
   radio.enableGDO0Int();

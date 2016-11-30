@@ -15,6 +15,33 @@
 namespace as {
 
 class Device {
+
+public:
+  enum SubTypes {
+    AlarmControl = 0x01,
+    Switch = 0x10,
+    OutputUnit = 0x12,
+    Dimmer = 0x20,
+    BlindActuator = 0x30,
+    ClimateControl = 0x39,
+    Remote = 0x40,
+    Sensor = 0x41,
+    Swi = 0x42,
+    PushButton = 0x43,
+    SingleButton = 0x44,
+    PowerMeter = 0x51,
+    Thermostat = 0x58,
+    KFM100 = 0x60,
+    THSensor = 0x70,
+    ThreeStateSensor = 0x80,
+    MotionDetector = 0x81,
+    KeyMatic = 0xC0,
+    WinMatic = 0xC1,
+    TipTronic = 0xC3,
+    SmokeDetector = 0xCD,
+  };
+
+private:
   HMID  devid;
   HMID  master;
   char serial[11];
@@ -27,11 +54,24 @@ class Device {
   CC1101* radio;
   uint8_t msgcount;
 
+  HMID    lastdev;
+  uint8_t lastmsg;
+
 protected:
   Message msg;
 
 public:
   virtual ~Device () {}
+
+  bool isRepeat(const Message& m) {
+    if( lastdev == m.from() && lastmsg == m.count() ) {
+      return true;
+    }
+    // store last message data
+    lastdev = m.from();
+    lastmsg = m.count();
+    return false;
+  }
 
   void setRadio(CC1101& r) {
     msgcount=0;
@@ -49,6 +89,10 @@ public:
   void setModel (uint8_t m1, uint8_t m2) {
     model[0] = m1;
     model[1] = m2;
+  }
+
+  const uint8_t* const getModel () const {
+    return model;
   }
 
   void setModel (uint16_t address) {

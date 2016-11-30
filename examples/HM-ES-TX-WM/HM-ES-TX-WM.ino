@@ -396,8 +396,7 @@ void setup () {
   sdev.setModel(0x00,0xde);
 #endif
   sdev.setFirmwareVersion(0x11);
-  // TODO check sub type and infos
-  sdev.setSubType(0x70);
+  sdev.setSubType(Device::PowerMeter);
   sdev.setInfo(0x03,0x01,0x00);
 
   radio.enableGDO0Int();

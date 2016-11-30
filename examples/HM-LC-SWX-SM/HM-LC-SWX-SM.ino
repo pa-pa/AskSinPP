@@ -114,7 +114,7 @@ bool checkLowActive () {
   pinMode(14,OUTPUT); // A0
   pinMode(15,INPUT);  // A1
   digitalWrite(15,HIGH);
-  digitalWrite(15,LOW);
+  digitalWrite(14,LOW);
   return digitalRead(15) == LOW;
 }
 
@@ -141,12 +141,23 @@ bool checkLowActive () {
 #ifdef USE_OTA_BOOTLOADER
   sdev.init(radio,OTA_HMID_START,OTA_SERIAL_START);
   sdev.setModel(OTA_MODEL_START);
+  if( sdev.getModel()[1] == 0x02 ) {
+    sdev.channels(1);
+    DPRINTLN(F("HM-LC-SW1-SM"));
+  }
+  else if( sdev.getModel()[1] == 0x0a ) {
+    sdev.channels(2);
+    DPRINTLN(F("HM-LC-SW2-SM"));
+  }
+  else {
+    DPRINTLN(F("HM-LC-SW4-SM"));
+  }
 #else
   sdev.init(radio,DEVICE_ID,DEVICE_SERIAL);
   sdev.setModel(0x00,SW_MODEL);
 #endif
   sdev.setFirmwareVersion(0x16);
-  sdev.setSubType(0x10);
+  sdev.setSubType(Device::Switch);
   sdev.setInfo(0x41,0x01,0x00);
 
   radio.enableGDO0Int();
