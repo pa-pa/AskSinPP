@@ -64,7 +64,7 @@ public:
   virtual ~Device () {}
 
   bool isRepeat(const Message& m) {
-    if( lastdev == m.from() && lastmsg == m.count() ) {
+    if( m.isRepeated() && lastdev == m.from() && lastmsg == m.count() ) {
       return true;
     }
     // store last message data

@@ -240,6 +240,10 @@ public:
     flag |= RPTEN;
   }
 
+  bool isRepeated () const {
+    return (flag & RPTED) == RPTED;
+  }
+
   bool ackRequired () const {
     return (flag & BIDI) == BIDI;
   }
