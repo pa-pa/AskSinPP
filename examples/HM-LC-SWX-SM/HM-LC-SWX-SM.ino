@@ -118,20 +118,21 @@ bool checkLowActive () {
   return digitalRead(15) == LOW;
 }
 
-  void setup () {
+void setup () {
 #ifndef NDEBUG
   Serial.begin(57600);
   DPRINTLN(ASKSIN_PLUS_PLUS_IDENTIFIER);
 #endif
+  // first initialize EEProm if needed
+  if( eeprom.setup(sdev.checksum()) == true ) {
+    sdev.firstinit();
+  }
+
   sled.init(LED_PIN);
 
   cfgBtn.init(CONFIG_BUTTON_PIN);
   attachPinChangeInterrupt(CONFIG_BUTTON_PIN,cfgBtnISR,CHANGE);
   radio.init();
-
-  if( eeprom.setup() == true ) {
-    sdev.firstinit();
-  }
 
   bool low = checkLowActive();
   for( uint8_t i=1; i<=sdev.channels(); ++i ) {

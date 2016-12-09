@@ -33,6 +33,31 @@ public:
   }
   virtual ~MultiChannelDevice () {}
 
+  uint16_t checksum () {
+    uint16_t crc = 0;
+    // add register of list0
+    for( uint8_t i=0; i<list0.size(); ++i ) {
+      crc = EEProm::crc16(crc,list0.getRegister(i));
+    }
+    // add number of channels
+    crc = EEProm::crc16(crc,ChannelCount);
+    // add register list 1
+    for( uint8_t i=0; i<ChannelType::List1::size(); ++i ) {
+      crc = EEProm::crc16(crc,ChannelType::List1::getRegister(i));
+    }
+    // add register list 3
+    for( uint8_t i=0; i<ChannelType::List3::size(); ++i ) {
+      crc = EEProm::crc16(crc,ChannelType::List3::getRegister(i));
+    }
+    // add register list 4
+    for( uint8_t i=0; i<ChannelType::List4::size(); ++i ) {
+      crc = EEProm::crc16(crc,ChannelType::List4::getRegister(i));
+    }
+    // add number of peers
+    crc = EEProm::crc16(crc,channel(1).peers());
+    return crc;
+  }
+
   void channels (uint8_t num) {
     numChannels = min(num,ChannelCount);
   }

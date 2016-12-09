@@ -14,7 +14,7 @@ class EEProm {
 public:
   EEProm () {}
 
-  bool setup ();
+  bool setup (uint16_t checksum=0);
 
   uint8_t getByte (uint16_t addr) {
     uint8_t b;
@@ -65,6 +65,9 @@ public:
   }
 
   void dump (uint16_t start, uint16_t num);
+
+  static uint16_t crc16 (uint16_t crc,uint8_t d);
+
 };
 
 extern EEProm eeprom;

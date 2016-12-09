@@ -9,14 +9,23 @@ namespace as {
 
 EEProm eeprom;
 
-bool EEProm::setup () {
+uint16_t EEProm::crc16 (uint16_t crc,uint8_t d) {
+  crc ^= d;
+  for( uint8_t i = 8; i != 0; --i ) {
+    crc = (crc >> 1) ^ ((crc & 1) ? 0xA001 : 0 );
+  }
+  return crc;
+}
+
+bool EEProm::setup (uint16_t checksum) {
   bool firststart = false;
-  uint32_t magic;
-  getData(0x0,(uint8_t*)&magic,4);
-  if(magic != 0x0CAFFEE0) {
-    DPRINTLN(F("Init EEProm"));
+  uint32_t mem;
+  getData(0x0,(uint8_t*)&mem,4);
+  uint32_t magic = 0xCAFE0000 | checksum;
+  if(magic != mem) {
+    DPRINT(F("Init EEProm: "));
+    DHEXLN(magic);
     // init eeprom
-    magic = 0x0CAFFEE0;
     setData(0x0,(uint8_t*)&magic,4);
     firststart = true;
   }

@@ -232,15 +232,15 @@ void setup () {
   Serial.begin(57600);
   DPRINTLN(ASKSIN_PLUS_PLUS_IDENTIFIER);
 #endif
+  if( eeprom.setup(sdev.checksum()) == true ) {
+    sdev.firstinit();
+  }
+
   sled.init(LED_PIN);
 
   cfgBtn.init(CONFIG_BUTTON_PIN);
   attachPinChangeInterrupt(CONFIG_BUTTON_PIN,cfgBtnISR,CHANGE);
   radio.init();
-
-  if( eeprom.setup() == true ) {
-    sdev.firstinit();
-  }
 
 #ifdef USE_OTA_BOOTLOADER
   sdev.init(radio,OTA_HMID_START,OTA_SERIAL_START);
