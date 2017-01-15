@@ -353,6 +353,9 @@ public:
   CfgButton () {
     setLongPressTime(seconds2ticks(3));
   }
+protected:
+  bool lastWasLongpress;
+  
   virtual void state (uint8_t s) {
     uint8_t old = Button::state();
     Button::state(s);
@@ -360,7 +363,6 @@ public:
       sdev.startPairing();
     }
     else if( s == longpressed ) {
-      if( old == longpressed ) {
         sdev.reset(); // long pressed again - reset
       }
       else {
