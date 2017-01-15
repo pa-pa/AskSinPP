@@ -271,9 +271,9 @@ public:
     MeterList1 l1 = getList1();
     uint16_t dx = 1;
     switch( l1.meterType() ) {
-    case 0: dx = l1.constantGas(); break;
-    case 1: dx = l1.constantIR(); break;
-    case 2: dx = l1.constantLed(); break;
+    case 1: dx = l1.constantGas(); break;
+    case 2: dx = l1.constantIR(); break;
+    case 4: dx = l1.constantLed(); break;
     default: break;
     }
     counter += dx;
