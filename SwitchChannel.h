@@ -38,11 +38,12 @@ public:
   }
 
   virtual void switchState(uint8_t oldstate,uint8_t newstate) {
+    uint8_t pin = SwitchPin(BaseChannel::number());
     if( newstate == AS_CM_JT_ON ) {
-      digitalWrite(SwitchPin(BaseChannel::number()),lowact ? LOW : HIGH);
+      digitalWrite(pin,lowact ? LOW : HIGH);
     }
     else if ( newstate == AS_CM_JT_OFF ) {
-      digitalWrite(SwitchPin(BaseChannel::number()),lowact ? HIGH : LOW);
+      digitalWrite(pin,lowact ? HIGH : LOW);
     }
     BaseChannel::changed(true);
   }

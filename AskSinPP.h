@@ -10,4 +10,7 @@
 
 #define ASKSIN_PLUS_PLUS_IDENTIFIER "AskSin++ V" ASKSIN_PLUS_PLUS_VERSION
 
+// configure EnableInterrupt library
+#define EI_NOTEXTERNAL
+
 #endif
