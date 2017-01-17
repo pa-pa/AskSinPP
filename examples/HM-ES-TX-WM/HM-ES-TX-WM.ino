@@ -249,7 +249,8 @@ class MeterChannel : public Channel<MeterList1,EmptyList,List4,PEERS_PER_CHANNEL
 
   uint32_t counter;
   uint32_t power;
-  GasPowerEventCycleMsg     msg;
+  GasPowerEventCycleMsg     msgGas;
+  PowerEventCycleMsg        msgPower;
   uint8_t     msgcnt;
   bool        boot;
 
@@ -271,15 +272,17 @@ public:
     MeterList1 l1 = getList1();
     uint16_t dx = 1;
     switch( l1.meterType() ) {
-    case 0: dx = l1.constantGas(); break;
-    case 1: dx = l1.constantIR(); break;
-    case 2: dx = l1.constantLed(); break;
+    case 1: dx = l1.constantGas(); break;
+    case 2: dx = l1.constantIR(); break;
+    case 4: dx = l1.constantLed(); break;
     default: break;
     }
     counter += dx;
     power += dx;
     sled.ledOn(millis2ticks(300));
-    DHEXLN(counter);
+    #ifndef NDEBUG
+      DHEXLN(counter);
+    #endif
   }
 
   virtual void trigger (AlarmClock& clock) {
@@ -287,8 +290,28 @@ public:
     clock.add(*this);
     //DHEXLN(counter);
     power *= (seconds2ticks(60UL*60) / MSG_CYCLE);
-    msg.init(msgcnt++,boot,counter,power);
-    device().sendPeerEvent(msg,*this);
+
+    MeterList1 l1 = getList1();
+    uint16_t dx = 1;
+    switch( l1.meterType() ) {
+    case 1: 
+            #ifndef NDEBUG
+              DPRINTLN("Metertype: GAS");
+            #endif
+            msgGas.init(msgcnt++,boot,counter,power);
+            device().sendPeerEvent(msgGas,*this);
+            break;
+    case 2: 
+    case 4: 
+            #ifndef NDEBUG
+              DPRINTLN("Metertype: Power");
+            #endif
+            msgPower.init(msgcnt++,boot,counter,power);
+            device().sendPeerEvent(msgPower,*this);
+            break;
+    default: break;
+    }
+    
     boot = false;
     power = 0;
   }
@@ -353,18 +376,23 @@ public:
   CfgButton () {
     setLongPressTime(seconds2ticks(3));
   }
+protected:
+  bool lastWasLongpress;
+  
   virtual void state (uint8_t s) {
-    uint8_t old = Button::state();
     Button::state(s);
     if( s == Button::released ) {
       sdev.startPairing();
+      lastWasLongpress = false;
     }
     else if( s == longpressed ) {
-      if( old == longpressed ) {
+      if(lastWasLongpress) {
         sdev.reset(); // long pressed again - reset
+        lastWasLongpress = false;
       }
       else {
         sled.set(StatusLed::key_long);
+        lastWasLongpress = true;
       }
     }
   }
