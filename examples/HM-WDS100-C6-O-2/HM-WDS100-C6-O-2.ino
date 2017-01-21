@@ -3,21 +3,23 @@
 // 2016-10-31 papa Creative Commons - http://creativecommons.org/licenses/by-nc-sa/3.0/de/
 //- -----------------------------------------------------------------------------------------------------------------------
 
+/*
+ * Setup defines to configure the library.
+ * Note: If you are using the Eclipse Arduino IDE you will need to set the
+ * defines in the project properties.
+ */
+#ifndef __IN_ECLIPSE__
+  #define USE_AES
+  #define HM_DEF_KEY 0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x0a,0x0b,0x0c,0x0d,0x0e,0x0f,0x10
+  #define HM_DEF_KEY_INDEX 0
+#endif
+
+#include <AskSinPP.h>
 #include <PinChangeInt.h>
 #include <TimerOne.h>
 #include <LowPower.h>
-#include <AskSinPP.h>
 
-#include <Debug.h>
-#include <Activity.h>
-
-#include <Led.h>
-#include <AlarmClock.h>
 #include <MultiChannelDevice.h>
-#include <ChannelList.h>
-#include <Message.h>
-#include <Button.h>
-#include <Radio.h>
 #include <BatterySensor.h>
 
 // define this to read the device id, serial and device type from bootloader section
@@ -129,6 +131,8 @@ public:
   bool sunshineThreshold (uint8_t value) const { return setByte(0,value); }
   uint8_t windSpeedResultSource () const { return getByte(1); }
   bool windSpeedResultSource (uint8_t value) const { return setByte(1,value); }
+
+  bool aesActive () const { return false; }
 
   void defaults () {
     sunshineThreshold(0);

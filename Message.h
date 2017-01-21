@@ -28,6 +28,10 @@ class ConfigWriteIndexMsg;
 class AckMsg;
 class AckStatusMsg;
 class NackMsg;
+class AckAesMsg;
+class AesChallengeMsg;
+class AesResponseMsg;
+class AesExchangeMsg;
 
 class InfoActuatorStatusMsg;
 class InfoParamResponsePairsMsg;
@@ -36,7 +40,7 @@ class InfoPeerListMsg;
 class DeviceInfoMsg;
 class RemoteEventMsg;
 class SensorEventMsg;
-class ActionInhibitMsg;
+class ActionMsg;
 class ActionSetMsg;
 
 class Message {
@@ -262,15 +266,23 @@ public:
   }
 
   bool isPairSerial () const {
-    return typ==0x01 && subcom==0x0a;
+    return typ==AS_MESSAGE_CONFIG && subcom==AS_CONFIG_PAIR_SERIAL;
   }
 
   bool isAck () const {
-    return typ==0x02 && (comm & 0x80) == 0;
+    return typ==AS_MESSAGE_RESPONSE && (comm & AS_RESPONSE_NACK) == AS_RESPONSE_ACK;
   }
 
   bool isNack () const {
-    return typ==0x02 && (comm & 0x80) == 0x80;
+    return typ==AS_MESSAGE_RESPONSE && (comm & AS_RESPONSE_NACK) == AS_RESPONSE_NACK;
+  }
+
+  bool isResponseAes () const {
+    return typ==AS_MESSAGE_RESPONSE_AES;
+  }
+
+  bool isChallengeAes () const {
+    return typ==AS_MESSAGE_RESPONSE && (comm & AS_RESPONSE_AES_CHALLANGE) == AS_RESPONSE_AES_CHALLANGE;
   }
 
   // cast to specific read-only message types
@@ -284,13 +296,17 @@ public:
 
   const RemoteEventMsg& remoteEvent () const { return *(RemoteEventMsg*)this; }
   const SensorEventMsg& sensorEvent () const { return *(SensorEventMsg*)this; }
-  const ActionInhibitMsg& inhibit () const { return *(ActionInhibitMsg*)this; }
-  const ActionSetMsg& action () const { return *(ActionSetMsg*)this; }
+  const ActionMsg& action () const { return *(ActionMsg*)this; }
+  const ActionSetMsg& actionSet () const { return *(ActionSetMsg*)this; }
 
   // cast to write message types
   AckMsg& ack () { return *(AckMsg*)this; }
   AckStatusMsg& ackStatus () { return *(AckStatusMsg*)this; }
   NackMsg& nack () { return *(NackMsg*)this; }
+  AckAesMsg& ackAes () { return *(AckAesMsg*)this; }
+  AesChallengeMsg& aesChallenge () { return *(AesChallengeMsg*)this; }
+  AesResponseMsg& aesResponse () { return *(AesResponseMsg*)this; }
+  AesExchangeMsg& aesExchange () { return *(AesExchangeMsg*)this; }
 
   InfoActuatorStatusMsg& infoActuatorStatus () { return *(InfoActuatorStatusMsg*)this; }
   InfoParamResponsePairsMsg& infoParamResponsePairs () { return *(InfoParamResponsePairsMsg*)this; }
@@ -358,24 +374,21 @@ public:
   bool isLong () const { return (command() & 0x40) == 0x40; }
 };
 
-class SensorEventMsg : public Message {
+class SensorEventMsg : public RemoteEventMsg {
 protected:
   SensorEventMsg() {}
 public:
-  Peer peer () const { return Peer(from(),command() & 0x3f); }
-  uint8_t counter () const { return subcommand(); }
   uint8_t value () const { return *data(); }
-  bool isLong () const { return (command() & 0x40) == 0x40; }
 };
 
-class ActionInhibitMsg : public Message {
+class ActionMsg : public Message {
 protected:
-  ActionInhibitMsg() {}
+  ActionMsg() {}
 public:
   uint8_t channel () const { return subcommand(); }
 };
 
-class ActionSetMsg : public Message {
+class ActionSetMsg : public ActionMsg {
 protected:
   ActionSetMsg() {}
 public:
@@ -396,7 +409,7 @@ public:
 class AckMsg : public Message {
 public:
   void init() {
-    initWithCount(0x0a,0x02,0x00,0x00);
+    initWithCount(0x0a,AS_MESSAGE_RESPONSE,0x00,AS_RESPONSE_ACK);
   }
 };
 
@@ -404,7 +417,7 @@ class AckStatusMsg : public Message {
 public:
   template <class ChannelType>
   void init(const ChannelType& ch,uint8_t rssi) {
-    initWithCount(0x0e,0x02,0x00,0x01);
+    initWithCount(0x0e,AS_MESSAGE_RESPONSE,0x00,AS_RESPONSE_ACK_STATUS);
     subcom = ch.number();
     pload[0] = ch.status();
     pload[1] = ch.flags();
@@ -415,10 +428,60 @@ public:
 class NackMsg : public Message {
 public:
   void init() {
-    initWithCount(0x0a,0x02,0x00,0x80);
+    initWithCount(0x0a,AS_MESSAGE_RESPONSE,0x00,AS_RESPONSE_NACK);
   }
 };
 
+class AckAesMsg : public Message {
+public:
+  void init(const uint8_t* data) {
+    initWithCount(0x12,AS_MESSAGE_RESPONSE,0x00,AS_RESPONSE_ACK);
+    subcom = data[0];
+    pload[0] = data[1];
+    pload[1] = data[2];
+    pload[2] = data[3];
+  }
+};
+
+class AesChallengeMsg : public Message {
+public:
+  void init(const Message& msg,uint8_t keyidx) {
+    initWithCount(0x11,AS_MESSAGE_RESPONSE,RPTEN|BIDI,AS_RESPONSE_AES_CHALLANGE);
+    to(msg.from());
+    from(msg.to());
+    count(msg.count());
+    uint8_t* tmp = data()-1;
+    for( uint8_t i=0; i<6; i++ ) {
+      *tmp = (uint8_t)rand();
+      tmp++;
+    }
+    *tmp = keyidx;
+  }
+  const uint8_t* challenge () const {
+    return data()-1;
+  }
+  uint8_t keyindex () const {
+    return *(challenge()+6);
+  }
+};
+
+class AesResponseMsg : public Message {
+public:
+  void init(const Message& msg) {
+    initWithCount(0x19,AS_MESSAGE_RESPONSE_AES,0x00,0x00);
+    count(msg.count());
+  }
+  uint8_t* data () {
+    return Message::data()-2;
+  }
+};
+
+class AesExchangeMsg : public Message {
+public:
+  uint8_t* data () {
+    return Message::data()-2;
+  }
+};
 
 class InfoActuatorStatusMsg : public Message {
 public:

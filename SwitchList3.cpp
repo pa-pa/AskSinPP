@@ -19,7 +19,7 @@ void SwitchList3::defaults() {
   ssl.onTime(0xff);
   ssl.offDly(0);
   ssl.offTime(0xff);
-  ssl.actionType(AS_CM_JT_ONDELAY);
+  ssl.actionType(AS_CM_ACTIONTYPE_JUMP_TO_TARGET);
   ssl.offTimeMode(false);
   ssl.onTimeMode(false);
 
@@ -34,7 +34,7 @@ void SwitchList3::defaults() {
   ssl.onTime(0xff);
   ssl.offDly(0);
   ssl.offTime(0xff);
-  ssl.actionType(AS_CM_JT_ONDELAY);
+  ssl.actionType(AS_CM_ACTIONTYPE_JUMP_TO_TARGET);
   ssl.multiExec(true);
   ssl.offTimeMode(false);
   ssl.onTimeMode(false);

@@ -3,21 +3,27 @@
 // 2016-10-31 papa Creative Commons - http://creativecommons.org/licenses/by-nc-sa/3.0/de/
 //- -----------------------------------------------------------------------------------------------------------------------
 
+/*
+ * Setup defines to configure the library.
+ * Note: If you are using the Eclipse Arduino IDE you will need to set the
+ * defines in the project properties.
+ */
+#ifndef __IN_ECLIPSE__
+  #define USE_AES
+  #define HM_DEF_KEY 0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x0a,0x0b,0x0c,0x0d,0x0e,0x0f,0x10
+  #define HM_DEF_KEY_INDEX 0
+#endif
+
+#include <AskSinPP.h>
 #include <PinChangeInt.h>
 #include <TimerOne.h>
-#include <AskSinPP.h>
+#include <LowPower.h>
 
-#include <Debug.h>
-#include <Activity.h>
-
-#include <Led.h>
-#include <AlarmClock.h>
 #include <MultiChannelDevice.h>
-#include <ChannelList.h>
-#include <Message.h>
-#include <Button.h>
-#include <Radio.h>
 #include <BatterySensor.h>
+
+#include <TSL2561.h>
+#include <Wire.h>
 
 // define this to read the device id, serial and device type from bootloader section
 // #define USE_OTA_BOOTLOADER
@@ -55,6 +61,11 @@
 
 // all library classes are placed in the namespace 'as'
 using namespace as;
+
+// Create an SFE_TSL2561 object, here called "light":
+TSL2561 light;
+
+void motionISR ();
 
 class MotionList1Data {
 public:
@@ -122,9 +133,9 @@ public:
   }
 };
 
-// BatterySensor battery;
+BatterySensor battery;
 // BatterySensorExt battery;
-BatterySensorUni battery(15,7); // A1 & D7
+// BatterySensorUni battery(16,7); // A2 & D7
 
 class MotionEventMsg : public Message {
 public:
@@ -156,16 +167,16 @@ class MotionChannel : public Channel<MotionList1,EmptyList,List4,PEERS_PER_CHANN
   };
 
   // send the brightness every 4 minutes to the master
+  #define LIGHTCYCLE seconds2ticks(4*60)
   class Cycle : public Alarm {
   public:
     MotionChannel& channel;
-    Cycle (MotionChannel& c) : Alarm(seconds2ticks(4*60)), channel(c) {}
+    Cycle (MotionChannel& c) : Alarm(LIGHTCYCLE), channel(c) {}
     virtual ~Cycle () {}
     virtual void trigger (AlarmClock& clock) {
-      tick = seconds2ticks(4*60);
+      tick = LIGHTCYCLE;
       clock.add(*this);
-      Device& d = channel.device();
-      d.sendInfoActuatorStatus(d.getMasterID(),d.nextcount(),channel);
+      channel.sendState();
     }
   };
 
@@ -186,14 +197,22 @@ private:
   uint8_t          counter;
   QuietMode        quiet;
   Cycle            cycle;
+  volatile uint8_t states;
+
+#define STATE_POWEROFF 0x01
+#define STATE_SENDING  0x02
 
 public:
-  MotionChannel () : Channel(), Alarm(0), msgcnt(0), counter(0), quiet(*this), cycle(*this) {
+  MotionChannel () : Channel(), Alarm(0), msgcnt(0), counter(0), quiet(*this), cycle(*this), states(0) {
     aclock.add(cycle);
+    pinMode(PIR_PIN,INPUT);
 #ifdef PIR_ENABLE_PIN
     pinMode(PIR_ENABLE_PIN,OUTPUT);
+    pinMode(17,OUTPUT);
+    digitalWrite(17,LOW);
 #endif
     pirPowerOn();
+    pirInterruptOn();
   }
   virtual ~MotionChannel () {}
 
@@ -205,24 +224,59 @@ public:
     return battery.low() ? 0x80 : 0x00;
   }
 
+  void sendState () {
+    states |= STATE_SENDING;
+    Device& d = device();
+    d.sendInfoActuatorStatus(d.getMasterID(),d.nextcount(),*this);
+    states &= ~STATE_SENDING;
+  }
+
   uint8_t brightness () const {
-    static uint8_t bvalue = 25;
-    static uint8_t bx = -5;
-    bvalue += bx;
-    if( bvalue == 0 || bvalue == 255 ) {
-      bx = -bx;
+    static uint16_t maxvalue = 0;
+    uint8_t value = 0;
+    unsigned int data0, data1;
+    if (light.getData(data0,data1)) {
+      double lux;    // Resulting lux value
+      light.getLux (data0,data1,lux);
+      uint16_t current = (uint16_t)lux;
+      DPRINT("light: "); DHEXLN(current);
+      if( maxvalue < current ) {
+        maxvalue = current;
+      }
+      value = 200UL * current / maxvalue;
     }
-    return bvalue;
+    return value;
+  }
+
+  void pirInterruptOn () {
+#if PIR_PIN == 3
+    attachInterrupt(digitalPinToInterrupt(3), motionISR, RISING);
+#else
+    attachPinChangeInterrupt(PIR_PIN,motionISR,RISING);
+#endif
+  }
+
+  void pirInterruptOff () {
+#if PIR_PIN == 3
+    detachInterrupt(digitalPinToInterrupt(3));
+#else
+    detachPinChangeInterrupt(PIR_PIN);
+#endif
   }
 
   void pirPowerOn () {
 #ifdef PIR_ENABLE_PIN
     digitalWrite(PIR_ENABLE_PIN,HIGH);
+    delayMicroseconds(3000);
+    states &= ~ STATE_POWEROFF;
+    digitalWrite(17,LOW);
 #endif
   }
 
   void pirPowerOff () {
 #ifdef PIR_ENABLE_PIN
+    digitalWrite(17,HIGH);
+    states |= STATE_POWEROFF;
     digitalWrite(PIR_ENABLE_PIN,LOW);
 #endif
   }
@@ -256,10 +310,12 @@ public:
 
   // runs in interrupt
   void motionDetected () {
-    // cancel may not needed but anyway
-    aclock.cancel(*this);
-    // activate motion message handler
-    aclock.add(*this);
+    if( (states & (STATE_POWEROFF | STATE_SENDING)) == 0x00 ) {
+      // cancel may not needed but anyway
+      aclock.cancel(*this);
+      // activate motion message handler
+      aclock.add(*this);
+    }
   }
 };
 
@@ -302,6 +358,16 @@ void setup () {
     sdev.firstinit();
   }
 
+  light.begin();
+  // If gain = false (0), device is set to low gain (1X)
+  // If gain = high (1), device is set to high gain (16X)
+  // If time = 0, integration will be 13.7ms
+  // If time = 1, integration will be 101ms
+  // If time = 2, integration will be 402ms
+  // If time = 3, use manual start / stop to perform your own integration
+  light.setTiming(0,2); //gain,time);
+  light.setPowerUp();
+
   sled.init(LED_PIN);
 
   cfgBtn.init(CONFIG_BUTTON_PIN);
@@ -323,12 +389,6 @@ void setup () {
   radio.enableGDO0Int();
   aclock.init();
 
-  pinMode(PIR_PIN,INPUT);
-#if PIR_PIN == 3
-  attachInterrupt(digitalPinToInterrupt(3), motionISR, RISING);
-#else
-  attachPinChangeInterrupt(PIR_PIN,motionISR,RISING);
-#endif
   sled.set(StatusLed::welcome);
   // set low voltage to 2.2V
   // measure battery every 1h

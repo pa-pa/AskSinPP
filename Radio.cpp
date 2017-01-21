@@ -189,8 +189,8 @@ void    CC1101::setIdle() {																	// put CC1101 into power-down state
 
 void CC1101::wakeup () {
   ccSelect();                                     // wake up the communication module
-    waitMiso();
-    ccDeselect();
+  waitMiso();
+  ccDeselect();
 }
 
 uint8_t CC1101::detectBurst(void) {

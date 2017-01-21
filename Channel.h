@@ -158,7 +158,7 @@ public:
   }
 
   bool process (const ActionSetMsg& msg) {
-    return true;
+    return false;
   }
 
   bool process (const RemoteEventMsg& msg) {

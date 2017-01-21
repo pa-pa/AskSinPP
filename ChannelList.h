@@ -50,7 +50,13 @@ public:
     return eeprom.clearBits(addr + offset, bit);
   }
 
+  bool setData (uint8_t offset,uint8_t* buf,uint16_t size) const {
+    return eeprom.setData(addr + offset,buf,size);
+  }
 
+  bool getData (uint8_t offset,uint8_t* buf,uint16_t size) const {
+    return eeprom.getData(addr + offset,buf,size);
+  }
 };
 
 class GenericList : public BaseList {
@@ -218,7 +224,7 @@ public:
 
 class List1Data {
 public:
-  uint8_t  sign      :1;     // 0x08, s:0, e:1
+  uint8_t  AesActive :1;     // 0x08, s:0, e:1
   uint8_t  notused   :7;
 
   static uint8_t getOffset(uint8_t reg) {
@@ -242,8 +248,8 @@ class List1 : public ChannelList<List1Data> {
 public:
   List1(uint16_t a) : ChannelList(a) {}
 
-  bool sign () const { return isBitSet(0,0x01); }
-  bool sign (bool s) const { return setBit(0,0x01,s); }
+  bool aesActive () const { return isBitSet(0,0x01); }
+  bool aesActive (bool s) const { return setBit(0,0x01,s); }
 
   void defaults () {
     setByte(0,0x00);

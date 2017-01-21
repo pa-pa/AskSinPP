@@ -6,11 +6,19 @@
 #ifndef __ASKSINPP_h__
 #define __ASKSINPP_h__
 
-#define ASKSIN_PLUS_PLUS_VERSION "0.1.4"
+#define ASKSIN_PLUS_PLUS_VERSION "0.3.0"
 
 #define ASKSIN_PLUS_PLUS_IDENTIFIER "AskSin++ V" ASKSIN_PLUS_PLUS_VERSION
 
 // configure EnableInterrupt library
-#define EI_NOTEXTERNAL
+// #define EI_NOTEXTERNAL
+
+#include <Debug.h>
+#include <Activity.h>
+#include <Led.h>
+#include <AlarmClock.h>
+#include <Message.h>
+#include <Button.h>
+#include <Radio.h>
 
 #endif

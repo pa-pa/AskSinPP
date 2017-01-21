@@ -12,7 +12,7 @@ namespace as {
 
 class SwitchList1Data {
 public:
-  uint8_t sign             :1;     // 0x08, s:0, e:1
+  uint8_t AesActive        :1;     // 0x08, s:0, e:1
   uint8_t                  :7;     //
   uint8_t transmitTryMax   :8;     // 0x30, s:0, e:8
   uint8_t powerUpAction    :1;     // 0x56, s:0, e:1
@@ -47,8 +47,8 @@ class SwitchList1 : public ChannelList<SwitchList1Data> {
 public:
   SwitchList1(uint16_t a) : ChannelList(a) {}
 
-  bool sign () const { return isBitSet(0,0x01); }
-  bool sign (bool s) const { return setBit(0,0x01,s); }
+  bool aesActive () const { return isBitSet(0,0x01); }
+  bool aesActive (bool s) const { return setBit(0,0x01,s); }
 
   uint8_t transmitTryMax () { return getByte(1); }
   bool transmitTryMax (uint8_t v) { return setByte(1,v); }
@@ -63,7 +63,7 @@ public:
 
   void defaults () {
     setByte(0,0);
-    sign(false);
+    aesActive(false);
     transmitTryMax(6);
     powerUpAction(false);
     statusInfoMinDly(0);

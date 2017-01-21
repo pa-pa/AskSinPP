@@ -27,14 +27,14 @@ public:
   void lowactive (bool value) {
     lowact = value;
     typename BaseChannel::List1 l1 = BaseChannel::getList1();
-    switchState(state,l1.powerUpAction() == true ? AS_CM_JT_ON : AS_CM_JT_OFF );
+    status(l1.powerUpAction() == true ? 200 : 0, 0xffff );
+    BaseChannel::changed(true);
   }
 
   void setup(Device* dev,uint8_t number,uint16_t addr) {
     BaseChannel::setup(dev,number,addr);
     uint8_t p = SwitchPin(number);
     pinMode(p,OUTPUT);
-    digitalWrite(p,lowact ? HIGH : LOW);
   }
 
   virtual void switchState(uint8_t oldstate,uint8_t newstate) {
@@ -54,36 +54,32 @@ public:
   }
 
   bool process (const RemoteEventMsg& msg) {
-    if( this->inhibit() == false ) {
-      bool lg = msg.isLong();
-      Peer p(msg.peer());
-      uint8_t cnt = msg.counter();
-      typename BaseChannel::List3 l3 = BaseChannel::getList3(p);
-      if( l3.valid() == true ) {
-        // l3.dump();
-        typename BaseChannel::List3::PeerList pl = lg ? l3.lg() : l3.sh();
-        // pl.dump();
-        remote(pl,cnt);
-        return true;
-      }
+    bool lg = msg.isLong();
+    Peer p(msg.peer());
+    uint8_t cnt = msg.counter();
+    typename BaseChannel::List3 l3 = BaseChannel::getList3(p);
+    if( l3.valid() == true ) {
+      // l3.dump();
+      typename BaseChannel::List3::PeerList pl = lg ? l3.lg() : l3.sh();
+      // pl.dump();
+      remote(pl,cnt);
+      return true;
     }
     return false;
   }
 
   bool process (const SensorEventMsg& msg) {
-    if( this->inhibit() == false ) {
-      bool lg = msg.isLong();
-      Peer p(msg.peer());
-      uint8_t cnt = msg.counter();
-      uint8_t value = msg.value();
-      typename BaseChannel::List3 l3 = BaseChannel::getList3(p);
-      if( l3.valid() == true ) {
-        // l3.dump();
-        typename BaseChannel::List3::PeerList pl = lg ? l3.lg() : l3.sh();
-        // pl.dump();
-        sensor(pl,cnt,value);
-        return true;
-      }
+    bool lg = msg.isLong();
+    Peer p(msg.peer());
+    uint8_t cnt = msg.counter();
+    uint8_t value = msg.value();
+    typename BaseChannel::List3 l3 = BaseChannel::getList3(p);
+    if( l3.valid() == true ) {
+      // l3.dump();
+      typename BaseChannel::List3::PeerList pl = lg ? l3.lg() : l3.sh();
+      // pl.dump();
+      sensor(pl,cnt,value);
+      return true;
     }
     return false;
   }
