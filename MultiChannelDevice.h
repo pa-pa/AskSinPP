@@ -110,7 +110,7 @@ public:
   }
 
   void bootloader () {
-    DPRINTLN("RESET");
+    DPRINTLN("BOOTLOADER");
     wdt_enable(WDTO_250MS);
     while(1);
   }
