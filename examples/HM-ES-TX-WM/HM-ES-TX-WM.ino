@@ -251,9 +251,9 @@ class MeterChannel : public Channel<MeterList1,EmptyList,List4,PEERS_PER_CHANNEL
 
   uint32_t counter;
   uint32_t power;
-  GasPowerEventCycleMsg     msg;
-  uint8_t     msgcnt;
-  bool        boot;
+  Message  msg;
+  uint8_t  msgcnt;
+  bool     boot;
 
 private:
 
@@ -273,9 +273,9 @@ public:
     MeterList1 l1 = getList1();
     uint16_t dx = 1;
     switch( l1.meterType() ) {
-    case 0: dx = l1.constantGas(); break;
-    case 1: dx = l1.constantIR(); break;
-    case 2: dx = l1.constantLed(); break;
+    case 1: dx = l1.constantGas(); break;
+    case 2: dx = l1.constantIR(); break;
+    case 4: dx = l1.constantLed(); break;
     default: break;
     }
     counter += dx;
@@ -289,7 +289,17 @@ public:
     clock.add(*this);
     //DHEXLN(counter);
     power *= (seconds2ticks(60UL*60) / MSG_CYCLE);
-    msg.init(msgcnt++,boot,counter,power);
+    switch( getList1().meterType() ) {
+    case 1:
+      ((GasPowerEventCycleMsg&)msg).init(msgcnt++,boot,counter,power);
+      break;
+    case 2:
+    case 4:
+      ((PowerEventCycleMsg&)msg).init(msgcnt++,boot,counter,power);
+      break;
+    default:
+      break;
+    }
     device().sendPeerEvent(msg,*this);
     boot = false;
     power = 0;
