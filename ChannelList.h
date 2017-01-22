@@ -99,7 +99,7 @@ public:
 
   void dump () const {
     DHEX(address());
-    DPRINT(" - ");
+    DPRINT(F(" - "));
     eeprom.dump(address(),getSize());
   }
 
@@ -145,7 +145,7 @@ public:
 
   void dump () const {
     DHEX(address());
-    DPRINT(" - ");
+    DPRINT(F(" - "));
     eeprom.dump(address(),size());
   }
 

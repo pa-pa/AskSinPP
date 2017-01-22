@@ -87,12 +87,12 @@ public:
 
   virtual void state(uint8_t s) {
      switch(s) {
-     case released: DPRINTLN(" released"); break;
-     case pressed: DPRINTLN(" pressed"); break;
-     case debounce: DPRINTLN(" debounce"); break;
-     case longpressed: DPRINTLN(" longpressed"); break;
-     case longreleased: DPRINTLN(" longreleased"); break;
-     default: DPRINTLN(""); break;
+     case released: DPRINTLN(F(" released")); break;
+     case pressed: DPRINTLN(F(" pressed")); break;
+     case debounce: DPRINTLN(F(" debounce")); break;
+     case longpressed: DPRINTLN(F(" longpressed")); break;
+     case longreleased: DPRINTLN(F(" longreleased")); break;
+     default: DPRINTLN(F("")); break;
      }
     stat = s;
   }

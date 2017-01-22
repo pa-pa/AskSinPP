@@ -156,7 +156,7 @@ class MotionChannel : public Channel<MotionList1,EmptyList,List4,PEERS_PER_CHANN
     QuietMode (MotionChannel& c) : Alarm(0), enabled(false), motion(false), channel(c) {}
     virtual ~QuietMode () {}
     virtual void trigger (AlarmClock& clock) {
-      DPRINTLN("minInterval End");
+      DPRINTLN(F("minInterval End"));
       enabled = false;
       channel.pirPowerOn();
       if( motion == true ) {
@@ -239,7 +239,7 @@ public:
       double lux;    // Resulting lux value
       light.getLux (data0,data1,lux);
       uint16_t current = (uint16_t)lux;
-      DPRINT("light: "); DHEXLN(current);
+      DPRINT(F("light: ")); DHEXLN(current);
       if( maxvalue < current ) {
         maxvalue = current;
       }
@@ -284,7 +284,7 @@ public:
   // this runs synch to application
   virtual void trigger (AlarmClock& clock) {
     if( quiet.enabled == false ) {
-      DPRINTLN("Motion");
+      DPRINTLN(F("Motion"));
       // start timer to end quiet interval
       quiet.tick = getMinInterval();
       quiet.enabled = true;

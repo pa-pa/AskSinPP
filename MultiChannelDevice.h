@@ -102,7 +102,7 @@ public:
   }
 
   void reset () {
-    DPRINTLN("RESET");
+    DPRINTLN(F("RESET"));
     firstinit();
     kstore.init();
     setMasterID(list0.masterid());
@@ -110,7 +110,7 @@ public:
   }
 
   void bootloader () {
-    DPRINTLN("BOOTLOADER");
+    DPRINTLN(F("BOOTLOADER"));
     wdt_enable(WDTO_250MS);
     while(1);
   }

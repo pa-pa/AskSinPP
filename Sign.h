@@ -124,8 +124,8 @@ public:
       else {
         memcpy(key,keytmp,8);
         memcpy(key+8,data+2,8);
-        DPRINT("New Key: ");DHEX(key,16);
-        DPRINT("Index: ");DHEXLN((uint8_t)(data[1] & 0xfe));
+        DPRINT(F("New Key: "));DHEX(key,16);
+        DPRINT(F("Index: "));DHEXLN((uint8_t)(data[1] & 0xfe));
         writeKey(key);
         setIndex(data[1] & 0xfe);
       }

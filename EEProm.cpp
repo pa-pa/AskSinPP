@@ -35,9 +35,9 @@ bool EEProm::setup (uint16_t checksum) {
 void EEProm::dump (uint16_t start, uint16_t num) {
   for( uint16_t i=0; i<num; ++i ) {
     DHEX(getByte(start + i));
-    DPRINT(" ");
+    DPRINT(F(" "));
   }
-  DPRINT("\n");
+  DPRINT(F("\n"));
 }
 
 }

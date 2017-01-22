@@ -405,7 +405,7 @@ public:
     signmsg.init(msg,kstore.getIndex());
     kstore.challengeKey(signmsg.challenge(),kstore.getIndex());
     // TODO re-send message handling
-    DPRINT("<- "); signmsg.dump();
+    DPRINT(F("<- ")); signmsg.dump();
     radio->write(signmsg,signmsg.burstRequired());
     // read answer
     if( waitForAesResponse(msg.from(),signmsg,30) == true ) {
@@ -427,11 +427,11 @@ public:
   //    DPRINT("s "); DHEX(msg.buffer(),10);
       // compare decrypted message with original message
       if( memcmp(data+6,msg.buffer(),10) == 0 ) {
-        DPRINTLN("Signature OK");
+        DPRINTLN(F("Signature OK"));
         return true;
       }
       else {
-        DPRINTLN("Signature FAILED");
+        DPRINTLN(F("Signature FAILED"));
       }
     }
     return false;
@@ -460,7 +460,7 @@ public:
     do {
       uint8_t num = radio->read(answer);
       if( num > 0 && answer.isResponseAes() && from == answer.from() ) {
-        DPRINT("-> "); answer.dump();
+        DPRINT(F("-> ")); answer.dump();
         return true;
       }
       delay(10); // wait 10ms
