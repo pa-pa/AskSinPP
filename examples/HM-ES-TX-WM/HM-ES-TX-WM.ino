@@ -304,14 +304,14 @@ public:
     uint32_t consumptionPerSignal = 1000000 / sigs;
 
     counterSum = counterSum + c;
-
+    
     // calculate sum 
-    uint32_t consumptionSum = (counterSum * consumptionPerSignal) / 100;
+    uint32_t consumptionSum = (counterSum * consumptionPerSignal) / 100 + 1;
 
     // TODO verify handling the overflow
-    if(consumptionSum > maxVal){
+    if(consumptionSum > maxVal + 1){
 
-      uint64_t maxCounterSum = (maxVal * 100) /  countPerSignal;
+      uint64_t maxCounterSum = (maxVal * 100) /  consumptionPerSignal;
       // security check if counterSum is really higher than maxCounterSum to prevent negative overflow
       if(counterSum > maxCounterSum)
         counterSum = counterSum - maxCounterSum;
@@ -320,7 +320,7 @@ public:
     }
 
     // calculate consumption whithin the last MSG_CYCLE period
-    uint32_t actualConsumption = ((c * consumptionPerSignal) / 100) * (seconds2ticks(3600) / MSG_CYCLE);
+    uint32_t actualConsumption = ((c * consumptionPerSignal) / 100 + 1) * (seconds2ticks(3600) / MSG_CYCLE);
     
     switch( metertype ) {
     case 1: 
