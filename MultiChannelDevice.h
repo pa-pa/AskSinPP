@@ -230,6 +230,7 @@ public:
              cfgList = findList(cfgChannel,pm.peer(),pm.list());
              // TODO setup alarm to disable after 2000ms
              sendAck(msg);
+             activity.stayAwake(seconds2ticks(2));
            }
          }
          // CONFIG_END
@@ -245,6 +246,7 @@ public:
            cfgChannel = 0xff;
            // TODO cancel alarm
            sendAck(msg);
+           activity.stayAwake(millis2ticks(500));
          }
          else if( msubc == AS_CONFIG_WRITE_INDEX ) {
            const ConfigWriteIndexMsg& pm = msg.configWriteIndex();
@@ -261,6 +263,7 @@ public:
              }
              sendAck(msg);
            }
+           activity.stayAwake(millis2ticks(500));
          }
          // default - send Nack if answer is requested
          else {
@@ -311,6 +314,11 @@ public:
            if( ack == true ) sendAck(msg,ch);
            else sendNack(msg);
          }
+       }
+       else if( mtype == AS_MESSAGE_HAVE_DATA ) {
+         DPRINTLN(F("HAVE DATA"));
+         activity.stayAwake(millis2ticks(500));
+         sendAck(msg);
        }
        else if (mtype == AS_MESSAGE_REMOTE_EVENT || mtype == AS_MESSAGE_SENSOR_EVENT) {
          const RemoteEventMsg& pm = msg.remoteEvent();
@@ -390,6 +398,9 @@ public:
      // we send only to peers if there is no config message pending
      if( cfgChannel != 0xff ) {
        Device::sendPeerEvent(msg,ch);
+       if( msg.isWakeMeUp() == true ) {
+         activity.stayAwake(millis2ticks(500));
+       }
      }
    }
 };

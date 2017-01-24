@@ -243,8 +243,14 @@ public:
   }
 
 
-  void sendAck (Message& msg) {
-    msg.ack().init();
+  void sendAck (Message& msg,uint8_t flag=0x00) {
+    msg.ack().init(flag);
+    kstore.addAuth(msg);
+    send(msg,msg.from());
+  }
+
+  void sendAck2 (Message& msg,uint8_t flag=0x00) {
+    msg.ack2().init(flag);
     kstore.addAuth(msg);
     send(msg,msg.from());
   }

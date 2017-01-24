@@ -26,6 +26,7 @@ class ConfigEndMsg;
 class ConfigWriteIndexMsg;
 
 class AckMsg;
+class Ack2Msg;
 class AckStatusMsg;
 class NackMsg;
 class AckAesMsg;
@@ -244,6 +245,10 @@ public:
     flag |= RPTEN;
   }
 
+  bool isWakeMeUp () const {
+    return (flag & WKMEUP) == WKMEUP;
+  }
+
   bool isRepeated () const {
     return (flag & RPTED) == RPTED;
   }
@@ -301,6 +306,7 @@ public:
 
   // cast to write message types
   AckMsg& ack () { return *(AckMsg*)this; }
+  Ack2Msg& ack2 () { return *(Ack2Msg*)this; }
   AckStatusMsg& ackStatus () { return *(AckStatusMsg*)this; }
   NackMsg& nack () { return *(NackMsg*)this; }
   AckAesMsg& ackAes () { return *(AckAesMsg*)this; }
@@ -408,8 +414,15 @@ public:
 
 class AckMsg : public Message {
 public:
-  void init() {
-    initWithCount(0x0a,AS_MESSAGE_RESPONSE,0x00,AS_RESPONSE_ACK);
+  void init(uint8_t flags=0x00) {
+    initWithCount(0x0a,AS_MESSAGE_RESPONSE,flags,AS_RESPONSE_ACK);
+  }
+};
+
+class Ack2Msg : public Message {
+public:
+  void init(uint8_t flags=0x00) {
+    initWithCount(0x0a,AS_MESSAGE_RESPONSE,flags,AS_RESPONSE_ACK2);
   }
 };
 
@@ -487,7 +500,7 @@ class InfoActuatorStatusMsg : public Message {
 public:
   template <class ChannelType>
   void init (uint8_t count,const ChannelType& ch,uint8_t rssi) {
-    Message::init(0x0e,count,0x10,Message::BIDI,0x06,ch.number());
+    Message::init(0x0e,count,0x10,BIDI,0x06,ch.number());
     pload[0] = ch.status();
     pload[1] = ch.flags();
     pload[2] = rssi;
@@ -497,7 +510,7 @@ public:
 class InfoParamResponsePairsMsg : public Message {
 public:
   void init (uint8_t count) {
-    initWithCount(0x0b-1+(8*2),0x10,Message::BIDI,0x02);
+    initWithCount(0x0b-1+(8*2),0x10,BIDI,0x02);
     cnt = count;
   }
   uint8_t* data() { return Message::data()-1; }

@@ -140,7 +140,7 @@ BatterySensor battery;
 class MotionEventMsg : public Message {
 public:
   void init(uint8_t msgcnt,uint8_t ch,uint8_t counter,uint8_t brightness,uint8_t next) {
-    Message::init(0xd,msgcnt,0x41,Message::BIDI,ch & 0x3f,counter);
+    Message::init(0xd,msgcnt,0x41,Message::BIDI|Message::WKMEUP,ch & 0x3f,counter);
     pload[0] = brightness;
     pload[1] = (next+4) << 4;
   }
