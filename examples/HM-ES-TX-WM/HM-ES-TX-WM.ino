@@ -285,12 +285,17 @@ public:
     tick = MSG_CYCLE;
     clock.add(*this);
 
+    uint32_t consumptionPerSignal;
+    uint32_t consumptionSum;
+    uint32_t actualConsumption;
+
     MeterList1 l1 = getList1();
     uint8_t metertype = l1.meterType(); // cache metertype to reduce eeprom access
 
     // copy value, to be consistent during calculation (counter may change when an interrupt is triggered)
     uint32_t c = counter;
     counter = 0;
+    counterSum = counterSum + c;
     
     uint16_t sigs = 1;
     switch( metertype ) {
@@ -300,34 +305,37 @@ public:
       default: break;
     }
 
-    // calculate consumption per signal
-    uint32_t consumptionPerSignal = 1000000 / sigs;
-
-    counterSum = counterSum + c;
-    
-    // calculate sum 
-    uint32_t consumptionSum = (counterSum * consumptionPerSignal) / 100 + 1;
-
-    // TODO verify handling the overflow
-    if(consumptionSum > maxVal + 1){
-
-      uint64_t maxCounterSum = (maxVal * 100) /  consumptionPerSignal;
-      // security check if counterSum is really higher than maxCounterSum to prevent negative overflow
-      if(counterSum > maxCounterSum)
-        counterSum = counterSum - maxCounterSum;
-        
-      consumptionSum = consumptionSum - maxVal;
-    }
-
-    // calculate consumption whithin the last MSG_CYCLE period
-    uint32_t actualConsumption = ((c * consumptionPerSignal) / 100 + 1) * (seconds2ticks(3600) / MSG_CYCLE);
-    
     switch( metertype ) {
-    case 1: 
+    case 1:
+      consumptionSum = counterSum * sigs;
+      actualConsumption = (c * sigs * 10) / (MSG_CYCLE*2 / 60);
+
+      // TODO handle overflow
+      
       ((GasPowerEventCycleMsg&)msg).init(msgcnt++,boot,consumptionSum,actualConsumption);
       break;
     case 2: 
     case 4: 
+      // calculate consumption per signal
+      consumptionPerSignal = 1000000 / sigs;
+      
+      // calculate sum 
+      consumptionSum = (counterSum * consumptionPerSignal) / 100 + 1;
+  
+      // TODO verify handling the overflow
+      if(consumptionSum > maxVal + 1){
+  
+        uint64_t maxCounterSum = (maxVal * 100) /  consumptionPerSignal;
+        // security check if counterSum is really higher than maxCounterSum to prevent negative overflow
+        if(counterSum > maxCounterSum)
+          counterSum = counterSum - maxCounterSum;
+          
+        consumptionSum = consumptionSum - maxVal;
+      }
+  
+      // calculate consumption whithin the last MSG_CYCLE period
+      actualConsumption = ((c * consumptionPerSignal) / 100 + 1) * (seconds2ticks(3600) / MSG_CYCLE);
+      
       ((PowerEventCycleMsg&)msg).init(msgcnt++,boot,consumptionSum,actualConsumption);
       break;
     default:
