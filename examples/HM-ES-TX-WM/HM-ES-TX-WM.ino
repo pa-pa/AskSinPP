@@ -249,16 +249,17 @@ public:
 
 class MeterChannel : public Channel<MeterList1,EmptyList,List4,PEERS_PER_CHANNEL>, public Alarm {
 
-  uint32_t counter;
-  uint32_t power;
-  Message  msg;
-  uint8_t  msgcnt;
-  bool     boot;
-
+  const uint32_t maxVal = 838860700;
+  uint64_t counterSum;
+  volatile uint32_t counter; // declare as volatile because of usage withing interrupt
+  Message     msg;
+  uint8_t     msgcnt;
+  bool        boot;
+  
 private:
 
 public:
-  MeterChannel () : Channel(), Alarm(MSG_CYCLE), counter(0), power(0), msgcnt(0), boot(true) {}
+  MeterChannel () : Channel(), Alarm(MSG_CYCLE), counterSum(0), counter(0), msgcnt(0), boot(true) {}
   virtual ~MeterChannel () {}
 
   uint8_t status () const {
@@ -270,39 +271,79 @@ public:
   }
 
   void next () {
-    MeterList1 l1 = getList1();
-    uint16_t dx = 1;
-    switch( l1.meterType() ) {
-    case 1: dx = l1.constantGas(); break;
-    case 2: dx = l1.constantIR(); break;
-    case 4: dx = l1.constantLed(); break;
-    default: break;
-    }
-    counter += dx;
-    power += dx;
+    // only count rotations/flashes and calculate real value when sending, to prevent inaccuracy
+    counter++;
+
     sled.ledOn(millis2ticks(300));
-    DHEXLN(counter);
+    
+    #ifndef NDEBUG
+      DHEXLN(counter);
+    #endif
   }
 
   virtual void trigger (AlarmClock& clock) {
     tick = MSG_CYCLE;
     clock.add(*this);
-    //DHEXLN(counter);
-    power *= (seconds2ticks(60UL*60) / MSG_CYCLE);
-    switch( getList1().meterType() ) {
+
+    uint32_t consumptionPerSignal;
+    uint32_t consumptionSum;
+    uint32_t actualConsumption;
+
+    MeterList1 l1 = getList1();
+    uint8_t metertype = l1.meterType(); // cache metertype to reduce eeprom access
+
+    // copy value, to be consistent during calculation (counter may change when an interrupt is triggered)
+    uint32_t c = counter;
+    counter = 0;
+    counterSum = counterSum + c;
+    
+    uint16_t sigs = 1;
+    switch( metertype ) {
+      case 1: sigs = l1.constantGas(); break;
+      case 2: sigs = l1.constantIR(); break;
+      case 4: sigs = l1.constantLed(); break;
+      default: break;
+    }
+
+    switch( metertype ) {
     case 1:
-      ((GasPowerEventCycleMsg&)msg).init(msgcnt++,boot,counter,power);
+      consumptionSum = counterSum * sigs;
+      actualConsumption = (c * sigs * 10) / (MSG_CYCLE*2 / 60);
+
+      // TODO handle overflow
+      
+      ((GasPowerEventCycleMsg&)msg).init(msgcnt++,boot,consumptionSum,actualConsumption);
       break;
-    case 2:
-    case 4:
-      ((PowerEventCycleMsg&)msg).init(msgcnt++,boot,counter,power);
+    case 2: 
+    case 4: 
+      // calculate consumption per signal
+      consumptionPerSignal = 1000000 / sigs;
+      
+      // calculate sum 
+      consumptionSum = (counterSum * consumptionPerSignal) / 100 + 1;
+  
+      // TODO verify handling the overflow
+      if(consumptionSum > maxVal + 1){
+  
+        uint64_t maxCounterSum = (maxVal * 100) /  consumptionPerSignal;
+        // security check if counterSum is really higher than maxCounterSum to prevent negative overflow
+        if(counterSum > maxCounterSum)
+          counterSum = counterSum - maxCounterSum;
+          
+        consumptionSum = consumptionSum - maxVal;
+      }
+  
+      // calculate consumption whithin the last MSG_CYCLE period
+      actualConsumption = ((c * consumptionPerSignal) / 100 + 1) * (seconds2ticks(3600) / MSG_CYCLE);
+      
+      ((PowerEventCycleMsg&)msg).init(msgcnt++,boot,consumptionSum,actualConsumption);
       break;
     default:
       break;
     }
+
     device().sendPeerEvent(msg,*this);
     boot = false;
-    power = 0;
   }
 };
 
