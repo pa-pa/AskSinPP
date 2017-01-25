@@ -308,7 +308,7 @@ public:
     switch( metertype ) {
     case 1:
       consumptionSum = counterSum * sigs;
-      actualConsumption = (c * sigs * 10) / (MSG_CYCLE*2 / 60);
+      actualConsumption = (c * sigs * 10) / (MSG_CYCLE / 60);
 
       // TODO handle overflow
       
