@@ -320,6 +320,7 @@ public:
       // TODO handle overflow
       
       // calculate consumption whithin the last MSG_CYCLE period
+      actualConsumption = (60 * 100000 * c) / (sigs * (MSG_CYCLE / seconds2ticks(60)));
       ((PowerEventCycleMsg&)msg).init(msgcnt++,boot,consumptionSum,actualConsumption);
       break;
     default:
