@@ -285,7 +285,6 @@ public:
     tick = MSG_CYCLE;
     clock.add(*this);
 
-    uint32_t consumptionPerSignal;
     uint32_t consumptionSum;
     uint32_t actualConsumption;
 
@@ -308,7 +307,7 @@ public:
     switch( metertype ) {
     case 1:
       consumptionSum = counterSum * sigs;
-      actualConsumption = (c * sigs * 10) / (MSG_CYCLE / 60);
+      actualConsumption = (c * sigs * 10) / (MSG_CYCLE / seconds2ticks(60));
 
       // TODO handle overflow
       
@@ -316,26 +315,12 @@ public:
       break;
     case 2: 
     case 4: 
-      // calculate consumption per signal
-      consumptionPerSignal = 1000000 / sigs;
+      // calculate sum
+      consumptionSum = (10000 * counterSum / sigs);
+      // TODO handle overflow
       
-      // calculate sum 
-      consumptionSum = (counterSum * consumptionPerSignal) / 100 + 1;
-  
-      // TODO verify handling the overflow
-      if(consumptionSum > maxVal + 1){
-  
-        uint64_t maxCounterSum = (maxVal * 100) /  consumptionPerSignal;
-        // security check if counterSum is really higher than maxCounterSum to prevent negative overflow
-        if(counterSum > maxCounterSum)
-          counterSum = counterSum - maxCounterSum;
-          
-        consumptionSum = consumptionSum - maxVal;
-      }
-  
       // calculate consumption whithin the last MSG_CYCLE period
-      actualConsumption = ((c * consumptionPerSignal) / 100 + 1) * (seconds2ticks(3600) / MSG_CYCLE);
-      
+      actualConsumption = (60 * 100000 * c) / (sigs * (MSG_CYCLE / seconds2ticks(60)));
       ((PowerEventCycleMsg&)msg).init(msgcnt++,boot,consumptionSum,actualConsumption);
       break;
     default:
