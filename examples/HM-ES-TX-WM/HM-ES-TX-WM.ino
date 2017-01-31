@@ -207,7 +207,7 @@ public:
     if( boot == true ) {
       cnt1 |= 0x80;
     }
-    Message::init(0x10,msgcnt,0x54,Message::BIDI,cnt1,(counter >> 16) & 0xff);
+    Message::init(0x10,msgcnt,0x54,BIDI|WKMEUP,cnt1,(counter >> 16) & 0xff);
     pload[0] = (counter >> 8) & 0xff;
     pload[1] = counter & 0xff;
     pload[2] = (power >> 16) & 0xff;
@@ -231,7 +231,7 @@ public:
     if( boot == true ) {
       cnt1 |= 0x80;
     }
-    Message::init(0x0f,msgcnt,0x5f,Message::BIDI,cnt1,(counter >> 8) & 0xff);
+    Message::init(0x0f,msgcnt,0x5f,BIDI|WKMEUP,cnt1,(counter >> 8) & 0xff);
     pload[0] = counter & 0xff;
     pload[1] = (power >> 16) & 0xff;
     pload[2] = (power >> 8) & 0xff;
