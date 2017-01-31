@@ -114,11 +114,11 @@ public:
 };
 
 
+BtnEventMsg   msg;
 
 class BtnChannel : public Channel<BtnList1,EmptyList,List4,PEERS_PER_CHANNEL>, public Button {
 
 private:
-  BtnEventMsg   msg;
   uint8_t       msgcnt;
   uint8_t       repeatcnt;
   volatile bool isr;
