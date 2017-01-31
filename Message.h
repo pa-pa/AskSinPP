@@ -249,6 +249,10 @@ public:
     return (flag & WKMEUP) == WKMEUP;
   }
 
+  void setWakeMeUp () {
+    flag |= WKMEUP;
+  }
+
   bool isRepeated () const {
     return (flag & RPTED) == RPTED;
   }

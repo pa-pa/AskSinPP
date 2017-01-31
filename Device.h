@@ -214,6 +214,7 @@ public:
     msg.setRpten(); // has to be set always
     bool result = false;
     uint8_t maxsend = 6;
+    sled.set(StatusLed::send);
     while( result == false && maxsend > 0 ) {
       DPRINT(F("<- "));
       msg.dump();
@@ -236,9 +237,8 @@ public:
         DPRINT(F("waitAck: ")); DHEX((uint8_t)result); DPRINTLN(F(""));
       }
     }
-    if( sled.active() == false ) {
-      sled.set(StatusLed::send);
-    }
+    if( result == true ) sled.set(StatusLed::ack);
+    else sled.set(StatusLed::nack);
     return result;
   }
 
@@ -373,7 +373,7 @@ public:
       if( radio->readAck(msg) == true ) {
         return true;
       }
-      delay(10); // wait 10ms
+      _delay_ms(10); // wait 10ms
       timeout--;
     }
     while( timeout > 0 );
@@ -387,7 +387,7 @@ public:
           msg.to() == response.from() ) {
         return true;
       }
-      delay(10); // wait 10ms
+      _delay_ms(10); // wait 10ms
       timeout--;
     }
     while( timeout > 0 );
@@ -445,6 +445,7 @@ public:
 
   bool processChallenge(const Message& msg,const uint8_t* challenge,uint8_t keyidx) {
     if( kstore.challengeKey(challenge,keyidx) == true ) {
+      DPRINT("Process Challenge - Key: ");DHEXLN(keyidx);
       AesResponseMsg answer;
       answer.init(msg);
       // fill initial vector with message to sign
@@ -469,7 +470,7 @@ public:
         DPRINT(F("-> ")); answer.dump();
         return true;
       }
-      delay(10); // wait 10ms
+      _delay_ms(10); // wait 10ms
       timeout--;
     }
     while( timeout > 0 );

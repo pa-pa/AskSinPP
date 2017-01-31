@@ -11,19 +11,16 @@ namespace as {
 
 StatusLed sled;
 
-// patters reused from NewAskSin by <trilu@gmx.de>
-const StatusLed::BlinkPattern pattern [11] PROGMEM = {
+
+const StatusLed::BlinkPattern pattern [8] PROGMEM = {
     {0, 0, {0 , 0 } },  // 0; define nothing
     {2, 20, {5, 5,} },  // 1; define pairing string
-    {2, 1, {20, 0,} },  // 2; define pairing success
-    {2, 3, {1, 1,} },   // 3; define pairing error
-    {2, 1, {1, 1,} },   // 4; define send indicator
-    {0, 0, {0, 0,} },   // 5; define ack indicator
-    {0, 0, {0, 0,} },   // 6; define no ack indicator
-    {6, 3, {5, 1, 1, 1, 1, 10} }, // 7; define battery low indicator
-    {6, 3, {1, 1, 1, 1, 1, 10} }, // 8; define defect indicator
-    {6, 1, {1, 1, 5, 1, 5, 10} }, // 9; define welcome indicator
-    {2, 6, {2, 2, } },  // 10; key long indicator
+    {2, 1, {10, 1,} },   // 2; define send indicator
+    {0, 0, {0, 0,} },   // 3; define ack indicator
+    {0, 0, {0, 0,} },   // 4; define no ack indicator
+    {6, 3, {5, 1, 1, 1, 1, 10} }, // 5; define battery low indicator
+    {6, 1, {1, 1, 5, 1, 5, 10} }, // 6; define welcome indicator
+    {2, 6, {2, 2, } },  // 7; key long indicator
 };
 
 void StatusLed::copyPattern (Mode stat) {

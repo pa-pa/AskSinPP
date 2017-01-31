@@ -331,7 +331,7 @@ uint8_t CC1101::read (Message& msg, uint32_t timeout) {
   do {
     num = read(msg);
     if( num == 0 ) {
-      delay(50); // wait 50ms
+      _delay_ms(50); // wait 50ms
       time += 50;
     }
   }

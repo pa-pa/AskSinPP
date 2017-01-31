@@ -14,8 +14,8 @@ class StatusLed : public Alarm {
 
 public:
 
-  enum Mode { nothing=0, pairing=1, pair_suc=2, pair_err=3, send=4, ack=5,
-    noack=6, bat_low=7, defect=8, welcome=9, key_long=10 };
+  enum Mode { nothing=0, pairing=1,send=2, ack=3,
+    nack=4, bat_low=5, welcome=6, key_long=7 };
 
   struct BlinkPattern {
     uint8_t  length;
