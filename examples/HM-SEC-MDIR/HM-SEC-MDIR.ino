@@ -49,7 +49,6 @@
 // Arduino pin for the PIR
 // A0 == PIN 14 on Pro Mini
 #define PIR_PIN 14
-#define PIR_ENABLE_PIN 15
 
 
 #define BATTERY_LOW 22
@@ -158,7 +157,6 @@ class MotionChannel : public Channel<MotionList1,EmptyList,List4,PEERS_PER_CHANN
     virtual void trigger (AlarmClock& clock) {
       DPRINTLN(F("minInterval End"));
       enabled = false;
-      channel.pirPowerOn();
       if( motion == true ) {
         motion = false;
         channel.motionDetected();
@@ -197,21 +195,11 @@ private:
   uint8_t          counter;
   QuietMode        quiet;
   Cycle            cycle;
-  volatile uint8_t states;
-
-#define STATE_POWEROFF 0x01
-#define STATE_SENDING  0x02
 
 public:
-  MotionChannel () : Channel(), Alarm(0), msgcnt(0), counter(0), quiet(*this), cycle(*this), states(0) {
+  MotionChannel () : Channel(), Alarm(0), msgcnt(0), counter(0), quiet(*this), cycle(*this) {
     aclock.add(cycle);
     pinMode(PIR_PIN,INPUT);
-#ifdef PIR_ENABLE_PIN
-    pinMode(PIR_ENABLE_PIN,OUTPUT);
-    pinMode(17,OUTPUT);
-    digitalWrite(17,LOW);
-#endif
-    pirPowerOn();
     pirInterruptOn();
   }
   virtual ~MotionChannel () {}
@@ -225,10 +213,10 @@ public:
   }
 
   void sendState () {
-    states |= STATE_SENDING;
+    pirInterruptOff();
     Device& d = device();
     d.sendInfoActuatorStatus(d.getMasterID(),d.nextcount(),*this);
-    states &= ~STATE_SENDING;
+    pirInterruptOn();
   }
 
   uint8_t brightness () const {
@@ -264,23 +252,6 @@ public:
 #endif
   }
 
-  void pirPowerOn () {
-#ifdef PIR_ENABLE_PIN
-    digitalWrite(PIR_ENABLE_PIN,HIGH);
-    delayMicroseconds(3000);
-    states &= ~ STATE_POWEROFF;
-    digitalWrite(17,LOW);
-#endif
-  }
-
-  void pirPowerOff () {
-#ifdef PIR_ENABLE_PIN
-    digitalWrite(17,HIGH);
-    states |= STATE_POWEROFF;
-    digitalWrite(PIR_ENABLE_PIN,LOW);
-#endif
-  }
-
   // this runs synch to application
   virtual void trigger (AlarmClock& clock) {
     if( quiet.enabled == false ) {
@@ -295,28 +266,20 @@ public:
       }
       msg.init(++msgcnt,number(),++counter,brightness(),getList1().minInterval());
       device().sendPeerEvent(msg,*this);
-      // if we should not capture during interval - power off
-      if ( getList1().captureWithinInterval() == false ) {
-        pirPowerOff();
-      }
     }
     else if ( getList1().captureWithinInterval() == true ) {
       // we have had a motion during quiet interval
       quiet.motion = true;
-      // we can now power off the hardware
-      pirPowerOff();
     }
   }
 
   // runs in interrupt
   void motionDetected () {
-    if( (states & (STATE_POWEROFF | STATE_SENDING)) == 0x00 ) {
-      // cancel may not needed but anyway
-      aclock.cancel(*this);
-      // activate motion message handler
-      aclock.add(*this);
+    // cancel may not needed but anyway
+    aclock.cancel(*this);
+    // activate motion message handler
+    aclock.add(*this);
     }
-  }
 };
 
 
@@ -407,7 +370,6 @@ void loop() {
     // deep discharge protection
     // if we drop below critical battery level - switch off all and sleep forever
     if( battery.critical() ) {
-      sdev.channel(1).pirPowerOff();
       radio.setIdle();
       // this call will never return
       activity.sleepForever();
