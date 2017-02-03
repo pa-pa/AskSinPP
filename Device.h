@@ -222,7 +222,7 @@ public:
       result = radio->write(msg,msg.burstRequired());
       if( result == true && msg.ackRequired() == true && to.valid() == true ) {
         Message response;
-        if( waitResponse(msg,response,30) ) { // 300ms
+        if( (result=waitResponse(msg,response,30)) ) { // 300ms
   #ifdef USE_AES
           if( response.isChallengeAes() == true ) {
             AesChallengeMsg& cm = response.aesChallenge();
@@ -382,10 +382,13 @@ public:
 
   bool waitResponse(const Message& msg,Message& response,uint8_t timeout) {
     do {
-      if( radio->read(response) > 0 &&
-          msg.count() == response.count() &&
-          msg.to() == response.from() ) {
-        return true;
+      uint8_t num = radio->read(response);
+      if( num > 0 ) {
+//        response.dump();
+        if( msg.count() == response.count() &&
+            msg.to() == response.from() ) {
+          return true;
+        }
       }
       _delay_ms(10); // wait 10ms
       timeout--;
