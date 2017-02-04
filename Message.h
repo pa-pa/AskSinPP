@@ -485,7 +485,7 @@ public:
 class AesResponseMsg : public Message {
 public:
   void init(const Message& msg) {
-    initWithCount(0x19,AS_MESSAGE_RESPONSE_AES,0x00,0x00);
+    initWithCount(0x19,AS_MESSAGE_RESPONSE_AES,BIDI,0x00);
     count(msg.count());
   }
   uint8_t* data () {
