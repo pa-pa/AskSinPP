@@ -195,7 +195,7 @@ protected:
   uint8_t sndData(uint8_t *buf, uint8_t size, uint8_t burst);                     // send data packet via RF
   uint8_t rcvData(uint8_t *buf, uint8_t size);                              // read data packet from RX FIFO
 
-	void    strobe(uint8_t cmd);                              // send command strobe to the CC1101 IC via SPI
+  uint8_t strobe(uint8_t cmd);                              // send command strobe to the CC1101 IC via SPI
   void    readBurst(uint8_t * buf, uint8_t regAddr, uint8_t len);             // read burst data from CC1101 via SPI
   void    writeBurst(uint8_t regAddr, uint8_t* buf, uint8_t len);             // write multiple registers into the CC1101 IC via SPI
   uint8_t readReg(uint8_t regAddr, uint8_t regType);                    // read CC1101 register via SPI

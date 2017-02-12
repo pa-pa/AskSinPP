@@ -180,11 +180,12 @@ uint8_t CC1101::rcvData(uint8_t *buf,uint8_t size) {														// read data p
 	return rxBytes;	// return number of byte in buffer
 }
 
-void    CC1101::setIdle() {																	// put CC1101 into power-down state
-	strobe(CC1101_SIDLE);																// coming from RX state, we need to enter the IDLE state first
-	//strobe(CC1101_SFRX);
-	strobe(CC1101_SPWD);																// enter power down state
-	//dbg << "pd\n";
+void CC1101::setIdle() {																	// put CC1101 into power-down state
+  uint8_t cnt = 0xff;
+  while(cnt-- && (strobe(CC1101_SIDLE) & 0x70) != 0) {
+    _delay_us(10);
+  }
+  strobe(CC1101_SPWD);                            // enter power down state
 }
 
 void CC1101::wakeup () {
@@ -235,11 +236,12 @@ uint8_t CC1101::detectBurst(void) {
 	return (bTmp & 0x40)?1:0;															// return carrier sense bit
 }
 
-void CC1101::strobe(uint8_t cmd) {														// send command strobe to the CC1101 IC via SPI
-	ccSelect();																			// select CC1101
-	waitMiso();																			// wait until MISO goes low
-	ccSendByte(cmd);																	// send strobe command
-	ccDeselect();																		// deselect CC1101
+uint8_t CC1101::strobe(uint8_t cmd) {            // send command strobe to the CC1101 IC via SPI
+  ccSelect();                                     // select CC1101
+  waitMiso();                                     // wait until MISO goes low
+  uint8_t ret = ccSendByte(cmd);                  // send strobe command
+  ccDeselect();                                   // deselect CC1101
+  return ret;
 }
 
 void CC1101::readBurst(uint8_t *buf, uint8_t regAddr, uint8_t len) {						// read burst data from CC1101 via SPI
