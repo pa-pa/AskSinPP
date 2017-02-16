@@ -11,14 +11,14 @@
 
 namespace as {
 
-class Device;
+template <class HalType> class Device;
 class ActionSetMsg;
 class RemoteEventMsg;
 class SensorEventMsg;
 
-template<class List1Type,class List3Type,class List4Type,int PeerCount>
+template<class HalType,class List1Type,class List3Type,class List4Type,int PeerCount>
 class Channel {
-  Device*   dev;
+  Device<HalType>*   dev;
   bool      change; // the status is changed, we may need to send a status
   bool      inhi;
   uint8_t   num   ; // channels per device
@@ -28,11 +28,12 @@ public:
   typedef List1Type List1;
   typedef List3Type List3;
   typedef List4Type List4;
+  typedef Device<HalType> DeviceType;
 
   public:
   Channel () : dev(0), change(false), inhi(false), num(0), addr(0) {}
 
-  Device& device () { return *dev; }
+  DeviceType& device () { return *dev; }
 
   uint8_t number () const { return num; }
 
@@ -48,7 +49,7 @@ public:
 
   bool inhibit () const { return inhi; }
 
-  void setup(Device* dev,uint8_t number,uint16_t addr) {
+  void setup(Device<HalType>* dev,uint8_t number,uint16_t addr) {
     this->dev = dev;
     this->num = number;
     this->addr = addr;

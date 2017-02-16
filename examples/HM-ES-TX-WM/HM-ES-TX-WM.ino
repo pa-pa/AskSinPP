@@ -55,6 +55,12 @@
 // all library classes are placed in the namespace 'as'
 using namespace as;
 
+/**
+ * Configure the used hardware
+ */
+typedef AskSin<StatusLed,NoBattery,CC1101> Hal;
+Hal hal;
+
 class MeterList0Data : public List0Data {
   uint8_t LocalResetDisbale : 1;   // 0x18 - 24
   uint8_t Baudrate          : 8;   // 0x23 - 35
@@ -247,7 +253,7 @@ public:
   }
 };
 
-class MeterChannel : public Channel<MeterList1,EmptyList,List4,PEERS_PER_CHANNEL>, public Alarm {
+class MeterChannel : public Channel<Hal,MeterList1,EmptyList,List4,PEERS_PER_CHANNEL>, public Alarm {
 
   const uint32_t maxVal = 838860700;
   uint64_t counterSum;
@@ -274,7 +280,7 @@ public:
     // only count rotations/flashes and calculate real value when sending, to prevent inaccuracy
     counter++;
 
-    sled.ledOn(millis2ticks(300));
+    hal.led.ledOn(millis2ticks(300));
     
     #ifndef NDEBUG
       DHEXLN(counter);
@@ -333,7 +339,7 @@ public:
 };
 
 
-MultiChannelDevice<MeterChannel,2> sdev(0x20);
+MultiChannelDevice<Hal,MeterChannel,2> sdev(0x20);
 
 template <uint8_t pin, void (*isr)(), uint16_t millis>
 class ISRWrapper : public Alarm {
@@ -402,7 +408,7 @@ public:
         sdev.reset(); // long pressed again - reset
       }
       else {
-        sled.set(StatusLed::key_long);
+        hal.led.set(StatusLed::key_long);
       }
     }
   }
@@ -420,32 +426,32 @@ void setup () {
     sdev.firstinit();
   }
 
-  sled.init(LED_PIN);
+  hal.led.init(LED_PIN);
 
   cfgBtn.init(CONFIG_BUTTON_PIN);
   attachPinChangeInterrupt(CONFIG_BUTTON_PIN,cfgBtnISR,CHANGE);
-  radio.init();
+  hal.radio.init();
 
 #ifdef USE_OTA_BOOTLOADER
-  sdev.init(radio,OTA_HMID_START,OTA_SERIAL_START);
+  sdev.init(hal,OTA_HMID_START,OTA_SERIAL_START);
   sdev.setModel(OTA_MODEL_START);
 #else
-  sdev.init(radio,DEVICE_ID,DEVICE_SERIAL);
+  sdev.init(hal,DEVICE_ID,DEVICE_SERIAL);
   sdev.setModel(0x00,0xde);
 #endif
   sdev.setFirmwareVersion(0x11);
-  sdev.setSubType(Device::PowerMeter);
+  sdev.setSubType(DeviceType::PowerMeter);
   sdev.setInfo(0x03,0x01,0x00);
 
-  radio.enableGDO0Int();
+  hal.radio.enableGDO0Int();
   aclock.init();
 
   gasISR.attach();
 
-  sled.set(StatusLed::welcome);
+  hal.led.set(StatusLed::welcome);
   // set low voltage to 2.2V
   // measure battery every 1h
-  battery.init(22,seconds2ticks(60UL*60));
+  battery.init(22,seconds2ticks(60UL*60),aclock);
 
   // add channel 1 to timer to send event
   aclock.add(sdev.channel(1));
@@ -455,6 +461,6 @@ void loop() {
   bool worked = aclock.runready();
   bool poll = sdev.pollRadio();
   if( worked == false && poll == false ) {
-    activity.savePower<Sleep>();
+    hal.activity.savePower<Sleep>(hal);
   }
 }

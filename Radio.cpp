@@ -21,9 +21,6 @@
 
 namespace as {
 
-// this is the global radio object
-CC1101 radio;
-
 // private:		//---------------------------------------------------------------------------------------------------------
 CC1101::CC1101() : crc_ok(0), rss(0), lqi(0), intread(0), sending(false) {}
 
@@ -345,7 +342,7 @@ bool CC1101::write (const Message& msg, uint8_t burst) {
   memcpy(sbuffer.buffer(),msg.buffer(),msg.length());
   sbuffer.length(msg.length());
   sbuffer.encode();
-  return radio.sndData(sbuffer.buffer(),sbuffer.length(),burst);
+  return sndData(sbuffer.buffer(),sbuffer.length(),burst);
 }
 
 bool CC1101::write (const Message& msg, uint8_t burst, uint8_t maxretry, uint32_t timeout) {

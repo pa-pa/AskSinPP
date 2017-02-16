@@ -70,6 +70,12 @@
 // all library classes are placed in the namespace 'as'
 using namespace as;
 
+/**
+ * Configure the used hardware
+ */
+typedef AskSin<StatusLed,NoBattery,CC1101> Hal;
+Hal hal;
+
 // map number of channel to pin
 // this will be called by the SwitchChannel class
 uint8_t SwitchPin (uint8_t number) {
@@ -82,7 +88,7 @@ uint8_t SwitchPin (uint8_t number) {
 }
 
 // setup the device with channel type and number of channels
-MultiChannelDevice<SwitchChannel<PEERS_PER_CHANNEL>,RELAY_COUNT> sdev(0x20);
+MultiChannelDevice<Hal,SwitchChannel<Hal,PEERS_PER_CHANNEL>,RELAY_COUNT> sdev(0x20);
 
 class CfgButton : public Button {
 public:
@@ -103,7 +109,7 @@ public:
         sdev.reset(); // long pressed again - reset
       }
       else {
-        sled.set(StatusLed::key_long);
+        hal.led.set(StatusLed::key_long);
       }
     }
   }
@@ -132,11 +138,11 @@ void setup () {
     sdev.firstinit();
   }
 
-  sled.init(LED_PIN);
+  hal.led.init(LED_PIN);
 
   cfgBtn.init(CONFIG_BUTTON_PIN);
   attachPinChangeInterrupt(CONFIG_BUTTON_PIN,cfgBtnISR,CHANGE);
-  radio.init();
+  hal.radio.init();
 
   bool low = checkLowActive();
   for( uint8_t i=1; i<=sdev.channels(); ++i ) {
@@ -144,7 +150,7 @@ void setup () {
   }
 
 #ifdef USE_OTA_BOOTLOADER
-  sdev.init(radio,OTA_HMID_START,OTA_SERIAL_START);
+  sdev.init(hal,OTA_HMID_START,OTA_SERIAL_START);
   sdev.setModel(OTA_MODEL_START);
   if( sdev.getModel()[1] == 0x02 ) {
     sdev.channels(1);
@@ -158,18 +164,18 @@ void setup () {
     DPRINTLN(F("HM-LC-SW4-SM"));
   }
 #else
-  sdev.init(radio,DEVICE_ID,DEVICE_SERIAL);
+  sdev.init(hal,DEVICE_ID,DEVICE_SERIAL);
   sdev.setModel(0x00,SW_MODEL);
 #endif
   sdev.setFirmwareVersion(0x16);
-  sdev.setSubType(Device::Switch);
+  sdev.setSubType(DeviceType::Switch);
   sdev.setInfo(0x41,0x01,0x00);
 
-  radio.enableGDO0Int();
+  hal.radio.enableGDO0Int();
 
   aclock.init();
 
-  sled.set(StatusLed::welcome);
+  hal.led.set(StatusLed::welcome);
 
   // TODO - random delay
 }
@@ -178,6 +184,6 @@ void loop() {
   bool worked = aclock.runready();
   bool poll = sdev.pollRadio();
   if( worked == false && poll == false ) {
-    activity.savePower<Idle>();
+    hal.activity.savePower<Idle>(hal);
   }
 }

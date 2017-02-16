@@ -20,5 +20,24 @@
 #include <Message.h>
 #include <Button.h>
 #include <Radio.h>
+#include <BatterySensor.h>
+
+namespace as {
+
+template <class StatusLed,class Battery,class Radio>
+class AskSin {
+public:
+  typedef StatusLed LedType;
+  typedef Battery   BatteryType;
+  typedef Radio     RadioType;
+
+  LedType     led;
+  BatteryType battery;
+  RadioType   radio;
+  Activity    activity;
+
+};
+
+}
 
 #endif

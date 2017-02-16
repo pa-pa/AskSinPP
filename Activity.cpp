@@ -7,6 +7,5 @@
 
 namespace as {
 
-Activity activity;
 
 }

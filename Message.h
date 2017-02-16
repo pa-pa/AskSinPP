@@ -38,6 +38,7 @@ class InfoActuatorStatusMsg;
 class InfoParamResponsePairsMsg;
 class InfoPeerListMsg;
 
+class SerialInfoMsg;
 class DeviceInfoMsg;
 class RemoteEventMsg;
 class SensorEventMsg;
@@ -323,6 +324,7 @@ public:
   InfoPeerListMsg& infoPeerList () { return *(InfoPeerListMsg*)this; }
 
   DeviceInfoMsg& deviceInfo () { return *(DeviceInfoMsg*)this; }
+  SerialInfoMsg& serialInfo () { return *(SerialInfoMsg*)this; }
 };
 
 
@@ -544,6 +546,18 @@ public:
     memcpy(buf+3,serial,10);
     *(buf+13) = subtype;
     memcpy(buf+14,devinfo,3);
+  }
+};
+
+class SerialInfoMsg : public Message {
+public:
+  void init (const HMID& to,uint8_t count) {
+    Message::init(0x14,count,0x10,0x00,0x00,0x00);
+  }
+  uint8_t* data() { return Message::data()-4; }
+  void fill(const char* serial) {
+    uint8_t* buf = data();
+    memcpy(buf+3,serial,10);
   }
 };
 

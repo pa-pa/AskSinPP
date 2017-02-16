@@ -209,9 +209,6 @@ protected:
 	uint8_t getGDO0 ();
 };
 
-// our global definition
-extern CC1101 radio;
-
 }
 
 #endif

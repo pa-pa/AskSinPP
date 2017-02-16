@@ -26,7 +26,8 @@ public:
       while (!(UCSR0A & (1 << TXC0)));   // Wait for the transmission to complete
   }
 
-  static void powerSave () {
+  template <class Hal>
+  static void powerSave (Hal& hal) {
     LowPower.idle(SLEEP_FOREVER,ADC_OFF,TIMER2_OFF,TIMER1_ON,TIMER0_OFF,SPI_ON,USART0_ON,TWI_OFF);
   }
 
@@ -35,7 +36,6 @@ public:
 class Sleep : public Idle {
 public:
   static uint32_t doSleep (uint32_t ticks) {
-    radio.setIdle();
     uint32_t offset = 0;
     if( ticks == 0 ) {
       LowPower.powerDown(SLEEP_FOREVER,ADC_OFF,BOD_OFF);
@@ -52,22 +52,24 @@ public:
       LowPower.powerDown(SLEEP_500MS,ADC_OFF,BOD_OFF);
       offset = millis2ticks(500);
     }
-    radio.wakeup();
     return offset;
   }
 
-  static void powerSave () {
+  template <class Hal>
+  static void powerSave (Hal& hal) {
     aclock.disable();
     uint32_t ticks = aclock.next();
     if( aclock.isready() == false ) {
       if( ticks == 0 || ticks > millis2ticks(500) ) {
+        hal.radio.setIdle();
         uint32_t offset = doSleep(ticks);
+        hal.radio.wakeup();
         aclock.correct(offset);
         aclock.enable();
       }
       else{
         aclock.enable();
-        Idle::powerSave();
+        Idle::powerSave(hal);
       }
     }
     else {
@@ -103,25 +105,25 @@ public:
     }
   }
 
-  template <class Saver>
-  void savePower () {
+  template <class Saver,class Hal>
+  void savePower (Hal& hal) {
     if( awake == false ) {
 #ifndef NDEBUG
       Saver::waitSerial();
 #endif
-      Saver::powerSave();
+      Saver::powerSave(hal);
     }
   }
 
-  void sleepForever () {
+  template <class Hal>
+  void sleepForever (Hal& hal) {
+    hal.radio.setIdle();
     while( true ) {
       LowPower.powerDown(SLEEP_FOREVER,ADC_OFF,BOD_OFF);
     }
   }
 
 };
-
-extern Activity activity;
 
 }
 

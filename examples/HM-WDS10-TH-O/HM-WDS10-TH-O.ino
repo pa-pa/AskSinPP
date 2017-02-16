@@ -51,6 +51,12 @@
 // all library classes are placed in the namespace 'as'
 using namespace as;
 
+/**
+ * Configure the used hardware
+ */
+typedef AskSin<StatusLed,BatterySensor,CC1101> Hal;
+Hal hal;
+
 class WeatherEventMsg : public Message {
 public:
   void init(uint8_t msgcnt,int16_t temp,uint8_t humidity, bool batlow) {
@@ -64,7 +70,7 @@ public:
   }
 };
 
-class WeatherChannel : public Channel<List1,EmptyList,List4,PEERS_PER_CHANNEL>, public Alarm {
+class WeatherChannel : public Channel<Hal,List1,EmptyList,List4,PEERS_PER_CHANNEL>, public Alarm {
 
   WeatherEventMsg msg;
   uint8_t         msgcnt;
@@ -102,7 +108,7 @@ public:
     return seconds2ticks(5);
   }
 
-  void setup(Device* dev,uint8_t number,uint16_t addr) {
+  void setup(Device<Hal>* dev,uint8_t number,uint16_t addr) {
     Channel::setup(dev,number,addr);
     aclock.add(*this);
   }
@@ -118,7 +124,7 @@ public:
 };
 
 
-MultiChannelDevice<WeatherChannel,1> sdev(0x20);
+MultiChannelDevice<Hal,WeatherChannel,1> sdev(0x20);
 
 class CfgButton : public Button {
 public:
@@ -136,7 +142,7 @@ public:
         sdev.reset(); // long pressed again - reset
       }
       else {
-        sled.set(StatusLed::key_long);
+        hal.led.set(StatusLed::key_long);
       }
     }
   }
@@ -154,34 +160,34 @@ void setup () {
     sdev.firstinit();
   }
 
-  sled.init(LED_PIN);
+  hal.led.init(LED_PIN);
 
   cfgBtn.init(CONFIG_BUTTON_PIN);
   attachPinChangeInterrupt(CONFIG_BUTTON_PIN,cfgBtnISR,CHANGE);
-  radio.init();
+  hal.radio.init();
 
 #ifdef USE_OTA_BOOTLOADER
-  sdev.init(radio,OTA_HMID_START,OTA_SERIAL_START);
+  sdev.init(hal,OTA_HMID_START,OTA_SERIAL_START);
   sdev.setModel(OTA_MODEL_START);
 #else
-  sdev.init(radio,DEVICE_ID,DEVICE_SERIAL);
+  sdev.init(hal,DEVICE_ID,DEVICE_SERIAL);
   sdev.setModel(0x00,0x3d);
 #endif
   sdev.setFirmwareVersion(0x10);
-  sdev.setSubType(Device::THSensor);
+  sdev.setSubType(DeviceType::THSensor);
   sdev.setInfo(0x03,0x01,0x00);
 
-  radio.enableGDO0Int();
+  hal.radio.enableGDO0Int();
 
   aclock.init();
 
-  sled.set(StatusLed::welcome);
+  hal.led.set(StatusLed::welcome);
 }
 
 void loop() {
   bool worked = aclock.runready();
   bool poll = sdev.pollRadio();
   if( worked == false && poll == false ) {
-    activity.savePower<Sleep>();
+    hal.activity.savePower<Sleep>(hal);
   }
 }

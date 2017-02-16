@@ -23,6 +23,15 @@
 
 namespace as {
 
+
+class NoBattery {
+public:
+  uint8_t current () { return 0; }
+  bool critical () { return false; }
+  bool low () { return false; }
+};
+
+
 /**
  * Use internal bandgap reference to measure battery voltage
  */
@@ -59,12 +68,12 @@ public:
     return m_LastValue < m_LowValue;
   }
 
-  void init(uint8_t low,uint32_t period) {
+  void init(uint8_t low,uint32_t period,AlarmClock& clock) {
     m_LowValue = low;
     m_LastValue = voltage();
     m_Period = period;
     tick = m_Period;
-    aclock.add(*this);
+    clock.add(*this);
   }
 
   virtual uint8_t voltage() {
@@ -102,11 +111,11 @@ public:
   m_SensePin(sens), m_ActivationPin(activation), m_Factor(57) {}
   virtual ~BatterySensorUni () {}
 
-  void init( uint8_t low,uint32_t period,uint8_t factor=57) {
+  void init( uint8_t low,uint32_t period,AlarmClock& clock,uint8_t factor=57) {
     m_Factor=factor;
     pinMode(m_SensePin, INPUT);
     pinMode(m_ActivationPin, INPUT);
-    BatterySensor::init(low,period);
+    BatterySensor::init(low,period,clock);
   }
 
   virtual uint8_t voltage () {
@@ -142,14 +151,14 @@ public:
     m_SensePin(sens), m_ActivationPin(activation), m_DividerRatio(2), m_RefVoltage(3300) {}
   virtual ~BatterySensorExt () {}
 
-  void init( uint8_t low,uint32_t period,uint16_t refvolt=3300,uint8_t divider=2) {
+  void init( uint8_t low,uint32_t period,AlarmClock& clock,uint16_t refvolt=3300,uint8_t divider=2) {
     m_DividerRatio=divider;
     m_RefVoltage = refvolt;
     pinMode(m_SensePin, INPUT);
     if (m_ActivationPin < 0xFF) {
       pinMode(m_ActivationPin, OUTPUT);
     }
-    BatterySensor::init(low,period);
+    BatterySensor::init(low,period,clock);
   }
 
 

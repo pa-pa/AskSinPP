@@ -39,9 +39,10 @@
 // Arduino pin for the LED
 // D4 == PIN 4 on Pro Mini
 #define LED_PIN 4
+#define LED_PIN2 5
 // Arduino pin for the config button
 // B0 == PIN 8 on Pro Mini
-#define CONFIG_BUTTON_PIN 8
+#define CONFIG_BUTTON_PIN 3
 // Arduino pins for the buttons
 // A0,A1,A2,A3 == PIN 14,15,16,17 on Pro Mini
 #define BTN1_PIN 14
@@ -55,6 +56,13 @@
 
 // all library classes are placed in the namespace 'as'
 using namespace as;
+
+/**
+ * Configure the used hardware
+ */
+typedef AskSin<DualStatusLed,NoBattery,CC1101> Hal;
+Hal hal;
+
 
 class BtnList1Data {
 public:
@@ -116,7 +124,7 @@ public:
 
 BtnEventMsg   msg;
 
-class BtnChannel : public Channel<BtnList1,EmptyList,List4,PEERS_PER_CHANNEL>, public Button {
+class BtnChannel : public Channel<Hal,BtnList1,EmptyList,List4,PEERS_PER_CHANNEL>, public Button {
 
 private:
   uint8_t       msgcnt;
@@ -166,7 +174,7 @@ public:
 };
 
 
-MultiChannelDevice<BtnChannel,4> sdev(0x20);
+MultiChannelDevice<Hal,BtnChannel,4> sdev(0x20);
 
 class CfgButton : public Button {
 public:
@@ -184,7 +192,7 @@ public:
         sdev.reset(); // long pressed again - reset
       }
       else {
-        sled.set(StatusLed::key_long);
+        sdev.led().set(StatusLed::key_long);
       }
     }
   }
@@ -207,8 +215,6 @@ void setup () {
     sdev.firstinit();
   }
 
-  sled.init(LED_PIN);
-
   sdev.channel(1).button().init(BTN1_PIN);
   sdev.channel(2).button().init(BTN2_PIN);
   sdev.channel(3).button().init(BTN3_PIN);
@@ -220,23 +226,24 @@ void setup () {
 
   cfgBtn.init(CONFIG_BUTTON_PIN);
   attachPinChangeInterrupt(CONFIG_BUTTON_PIN,cfgBtnISR,CHANGE);
-  radio.init();
+  hal.radio.init();
 
 #ifdef USE_OTA_BOOTLOADER
-  sdev.init(radio,OTA_HMID_START,OTA_SERIAL_START);
+  sdev.init(hal,OTA_HMID_START,OTA_SERIAL_START);
   sdev.setModel(OTA_MODEL_START);
 #else
-  sdev.init(radio,DEVICE_ID,DEVICE_SERIAL);
+  sdev.init(hal,DEVICE_ID,DEVICE_SERIAL);
   sdev.setModel(0x00,0x08);
 #endif
   sdev.setFirmwareVersion(0x11);
-  sdev.setSubType(Device::Remote);
+  sdev.setSubType(DeviceType::Remote);
   sdev.setInfo(0x04,0x00,0x00);
 
-  radio.enableGDO0Int();
+  hal.radio.enableGDO0Int();
   aclock.init();
 
-  sled.set(StatusLed::welcome);
+  hal.led.init(LED_PIN2,LED_PIN);
+  hal.led.set(StatusLed::welcome);
 }
 
 void loop() {
@@ -249,6 +256,6 @@ void loop() {
   bool worked = aclock.runready();
   bool poll = sdev.pollRadio();
   if( pinchanged == false && worked == false && poll == false ) {
-    activity.savePower<Sleep>();
+    hal.activity.savePower<Sleep>(hal);
   }
 }
