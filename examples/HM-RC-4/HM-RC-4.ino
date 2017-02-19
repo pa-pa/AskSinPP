@@ -60,7 +60,7 @@ using namespace as;
 /**
  * Configure the used hardware
  */
-typedef AskSin<DualStatusLed,NoBattery,CC1101> Hal;
+typedef AskSin<DualStatusLed,BatterySensor,CC1101> Hal;
 Hal hal;
 
 
@@ -116,8 +116,12 @@ public:
 
 class BtnEventMsg : public Message {
 public:
-  void init(uint8_t msgcnt,uint8_t ch,uint8_t counter,bool lg) {
-    Message::init(0xb,msgcnt,0x40, Message::BIDI,(ch & 0x3f) | (lg ? 0x40 : 0x00),counter);
+  void init(uint8_t msgcnt,uint8_t ch,uint8_t counter,bool lg,bool lowbat) {
+    uint8_t flags = lg ? 0x40 : 0x00;
+    if( lowbat == true ) {
+      flags |= 0x80; // low battery
+    }
+    Message::init(0xb,msgcnt,0x40, Message::BIDI,(ch & 0x3f) | flags,counter);
   }
 };
 
@@ -150,11 +154,11 @@ public:
     Button::state(s);
     if( s == released ) {
       repeatcnt=0;
-      msg.init(++msgcnt,number(),repeatcnt,false);
+      msg.init(++msgcnt,number(),repeatcnt,false,hal.battery.low());
       device().sendPeerEvent(msg,*this);
     }
     else if( s == longpressed ) {
-      msg.init(++msgcnt,number(),repeatcnt++,true);
+      msg.init(++msgcnt,number(),repeatcnt++,true,hal.battery.low());
       device().sendPeerEvent(msg,*this);
     }
   }
@@ -244,6 +248,8 @@ void setup () {
 
   hal.led.init(LED_PIN2,LED_PIN);
   hal.led.set(StatusLed::welcome);
+
+  hal.battery.init(22,seconds2ticks(60UL*60*24),aclock);
 }
 
 void loop() {
