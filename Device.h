@@ -435,7 +435,7 @@ public:
     DPRINT(F("<- ")); signmsg.dump();
     radio().write(signmsg,signmsg.burstRequired());
     // read answer
-    if( waitForAesResponse(msg.from(),signmsg,30) == true ) {
+    if( waitForAesResponse(msg.from(),signmsg,60) == true ) {
       AesResponseMsg& response = signmsg.aesResponse();
   //    DPRINT("AES ");DHEX(response.data(),16);
       // fill initial vector with message to sign
@@ -460,6 +460,9 @@ public:
       else {
         DPRINTLN(F("Signature FAILED"));
       }
+    }
+    else {
+      DPRINTLN(F("waitForAesResponse failed"));
     }
     return false;
   }
@@ -487,9 +490,11 @@ public:
   bool waitForAesResponse(const HMID& from,Message& answer,uint8_t timeout) {
     do {
       uint8_t num = radio().read(answer);
-      if( num > 0 && answer.isResponseAes() && from == answer.from() ) {
+      if( num > 0 ) {
         DPRINT(F("-> ")); answer.dump();
-        return true;
+        if( answer.isResponseAes() && from == answer.from() ) {
+          return true;
+        }
       }
       _delay_ms(10); // wait 10ms
       timeout--;
