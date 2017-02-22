@@ -60,8 +60,12 @@ using namespace as;
 /**
  * Configure the used hardware
  */
-typedef AskSin<DualStatusLed,BatterySensor,CC1101> Hal;
-Hal hal;
+//typedef AskSin<DualStatusLed,BatterySensor,CC1101> Hal;
+class Hal : public AskSin<DualStatusLed,BatterySensor,CC1101> {
+public:
+  AlarmClock btncounter;  // extra clock to count button press events
+} hal;
+
 
 
 class BtnList1Data {
@@ -156,10 +160,12 @@ public:
       repeatcnt=0;
       msg.init(++msgcnt,number(),repeatcnt,false,hal.battery.low());
       device().sendPeerEvent(msg,*this);
+      --hal.btncounter;
     }
     else if( s == longpressed ) {
       msg.init(++msgcnt,number(),repeatcnt++,true,hal.battery.low());
       device().sendPeerEvent(msg,*this);
+      --hal.btncounter;
     }
   }
 
@@ -248,8 +254,8 @@ void setup () {
 
   hal.led.init(LED_PIN2,LED_PIN);
   hal.led.set(StatusLed::welcome);
-
-  hal.battery.init(22,seconds2ticks(60UL*60*24),aclock);
+  // get new battery value after 50 key press
+  hal.battery.init(22,50,hal.btncounter);
 }
 
 void loop() {
@@ -259,7 +265,7 @@ void loop() {
       pinchanged = true;
     }
   }
-  bool worked = aclock.runready();
+  bool worked = aclock.runready() || hal.btncounter.runready();
   bool poll = sdev.pollRadio();
   if( pinchanged == false && worked == false && poll == false ) {
     hal.activity.savePower<Sleep>(hal);
