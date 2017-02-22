@@ -96,11 +96,9 @@ public:
   }
 
   void firstinit () {
+    eeprom.clearData(address(),size());
     List1Type cl = getList1();
     cl.defaults();
-    for( uint8_t i=0; i<peers(); ++i ) {
-      eeprom.clearData(peerAddress(i),Peer::size() + List3Type::size() + List4Type::size());
-    }
   }
 
   List1Type getList1 () const {
