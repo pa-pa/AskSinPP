@@ -243,6 +243,10 @@ public:
   #endif
           {
             result = response.isAck();
+            // we got the fag to stay awake
+            if( response.isKeepAwake() ) {
+              activity().stayAwake(millis2ticks(500));
+            }
           }
         }
         DPRINT(F("waitAck: ")); DHEX((uint8_t)result); DPRINTLN(F(""));
@@ -404,7 +408,7 @@ public:
     do {
       uint8_t num = radio().read(response);
       if( num > 0 ) {
-//        response.dump();
+        DPRINT(F("-> ")); response.dump();
         if( msg.count() == response.count() &&
             msg.to() == response.from() ) {
           return true;

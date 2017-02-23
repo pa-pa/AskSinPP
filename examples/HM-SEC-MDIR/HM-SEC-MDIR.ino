@@ -193,13 +193,12 @@ class MotionChannel : public Channel<Hal,MotionList1,EmptyList,List4,PEERS_PER_C
 
 private:
   MotionEventMsg   msg;
-  uint8_t          msgcnt;
   uint8_t          counter;
   QuietMode        quiet;
   Cycle            cycle;
 
 public:
-  MotionChannel () : Channel(), Alarm(0), msgcnt(0), counter(0), quiet(*this), cycle(*this) {
+  MotionChannel () : Channel(), Alarm(0), counter(0), quiet(*this), cycle(*this) {
     aclock.add(cycle);
     pinMode(PIR_PIN,INPUT);
     pirInterruptOn();
@@ -266,7 +265,7 @@ public:
       if( hal.led.active() == false ) {
         hal.led.ledOn( centis2ticks(getList1().ledOntime()) / 2);
       }
-      msg.init(++msgcnt,number(),++counter,brightness(),getList1().minInterval());
+      msg.init(device().nextcount(),number(),++counter,brightness(),getList1().minInterval());
       device().sendPeerEvent(msg,*this);
     }
     else if ( getList1().captureWithinInterval() == true ) {

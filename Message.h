@@ -250,6 +250,10 @@ public:
     flag &= ~BIDI;
   }
 
+  bool isKeepAwake () const {
+    return (flag & WKUP) == WKUP;
+  }
+
   bool isWakeMeUp () const {
     return (flag & WKMEUP) == WKMEUP;
   }
@@ -510,7 +514,7 @@ class InfoActuatorStatusMsg : public Message {
 public:
   template <class ChannelType>
   void init (uint8_t count,const ChannelType& ch,uint8_t rssi) {
-    Message::init(0x0e,count,0x10,BIDI,0x06,ch.number());
+    Message::init(0x0e,count,0x10,BIDI|WKMEUP,0x06,ch.number());
     pload[0] = ch.status();
     pload[1] = ch.flags();
     pload[2] = rssi;
