@@ -152,6 +152,7 @@ public:
        uint8_t mcomm = msg.command();
        uint8_t msubc = msg.subcommand();
        if( mtype == AS_MESSAGE_CONFIG ) {
+         activity.stayAwake(seconds2ticks(2));
          // PAIR_SERIAL
          if( msubc == AS_CONFIG_PAIR_SERIAL && memcmp(msg.data(),getSerial(),10)==0 ) {
            sled.set(StatusLed::pairing);
@@ -230,7 +231,6 @@ public:
              cfgList = findList(cfgChannel,pm.peer(),pm.list());
              // TODO setup alarm to disable after 2000ms
              sendAck(msg);
-             activity.stayAwake(seconds2ticks(2));
            }
          }
          // CONFIG_END
@@ -246,7 +246,6 @@ public:
            cfgChannel = 0xff;
            // TODO cancel alarm
            sendAck(msg);
-           activity.stayAwake(millis2ticks(500));
          }
          else if( msubc == AS_CONFIG_WRITE_INDEX ) {
            const ConfigWriteIndexMsg& pm = msg.configWriteIndex();
@@ -398,9 +397,6 @@ public:
      // we send only to peers if there is no config message pending
      if( cfgChannel != 0xff ) {
        Device::sendPeerEvent(msg,ch);
-       if( msg.isWakeMeUp() == true ) {
-         activity.stayAwake(millis2ticks(500));
-       }
      }
    }
 };
