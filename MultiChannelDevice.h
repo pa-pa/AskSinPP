@@ -16,6 +16,8 @@
 
 namespace as {
 
+void(* resetFunc) (void) = 0;
+
 template <class ChannelType,int ChannelCount,class List0Type=List0>
 class MultiChannelDevice : public Device {
 
@@ -104,9 +106,7 @@ public:
   void reset () {
     DPRINTLN(F("RESET"));
     firstinit();
-    kstore.init();
-    setMasterID(list0.masterid());
-    sled.set(StatusLed::welcome);
+    resetFunc();
   }
 
   void bootloader () {
