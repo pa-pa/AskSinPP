@@ -329,6 +329,7 @@ public:
     *buf++ = 0;
     current++;
     pm.entries(current);
+    pm.clearAck();
     send(msg,to);
   }
 
@@ -359,6 +360,7 @@ public:
     memset(buf,0,sizeof(Peer));
     current++;
     pm.entries(current);
+    pm.clearAck();
     send(msg,to);
   }
 

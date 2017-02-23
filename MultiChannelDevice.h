@@ -16,6 +16,8 @@
 
 namespace as {
 
+void(* resetFunc) (void) = 0;
+
 template <class HalType,class ChannelType,int ChannelCount,class List0Type=List0>
 class MultiChannelDevice : public Device<HalType> {
 
@@ -107,9 +109,7 @@ public:
   void reset () {
     DPRINTLN(F("RESET"));
     firstinit();
-    DeviceType::keystore().init();
-    DeviceType::setMasterID(list0.masterid());
-    DeviceType::led().set(StatusLed::welcome);
+    resetFunc();
   }
 
   void bootloader () {
