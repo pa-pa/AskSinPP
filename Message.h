@@ -245,6 +245,10 @@ public:
     flag |= RPTEN;
   }
 
+  void clearAck () {
+    flag &= ~BIDI;
+  }
+
   bool isWakeMeUp () const {
     return (flag & WKMEUP) == WKMEUP;
   }
