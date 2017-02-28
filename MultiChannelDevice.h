@@ -155,7 +155,7 @@ public:
        uint8_t mcomm = msg.command();
        uint8_t msubc = msg.subcommand();
        if( mtype == AS_MESSAGE_CONFIG ) {
-         DeviceType::activity().stayAwake(seconds2ticks(2));
+         DeviceType::activity().stayAwake(millis2ticks(500));
          // PAIR_SERIAL
          if( msubc == AS_CONFIG_PAIR_SERIAL && memcmp(msg.data(),DeviceType::getSerial(),10)==0 ) {
            DeviceType::led().set(StatusLed::pairing);

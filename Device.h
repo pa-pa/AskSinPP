@@ -114,7 +114,7 @@ public:
   }
 
   void setModel (uint16_t address) {
-    pgm_read(model,address,sizeof(model));
+    HalType::pgm_read(model,address,sizeof(model));
   }
 
   void setSubType (uint8_t st) {
@@ -140,7 +140,7 @@ public:
   }
 
   void setDeviceID (uint16_t address) {
-    pgm_read((uint8_t*)&devid,address,sizeof(devid));
+    HalType::pgm_read((uint8_t*)&devid,address,sizeof(devid));
   }
 
   const HMID& getDeviceID () const {
@@ -153,7 +153,7 @@ public:
   }
 
   void setSerial (uint16_t address) {
-    pgm_read((uint8_t*)serial,address,10);
+    HalType::pgm_read((uint8_t*)serial,address,10);
   }
 
   const char* getSerial () const {
@@ -243,8 +243,9 @@ public:
   #endif
           {
             result = response.isAck();
+            // we request wakeup
             // we got the fag to stay awake
-            if( response.isKeepAwake() ) {
+            if( msg.isWakeMeUp() /*response.isKeepAwake()*/ ) {
               activity().stayAwake(millis2ticks(500));
             }
           }
@@ -419,12 +420,6 @@ public:
     }
     while( timeout > 0 );
     return false;
-  }
-
-  void pgm_read(uint8_t* dest,uint16_t adr,uint8_t size) {
-    for( int i=0; i<size; ++i, ++dest ) {
-      *dest = pgm_read_byte(adr + i);
-    }
   }
 
 #ifdef USE_AES
