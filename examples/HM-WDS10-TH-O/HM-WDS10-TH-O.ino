@@ -14,8 +14,8 @@
   #define HM_DEF_KEY_INDEX 0
 #endif
 
+#include <EnableInterrupt.h>
 #include <AskSinPP.h>
-#include <PinChangeInt.h>
 #include <TimerOne.h>
 #include <LowPower.h>
 
@@ -54,7 +54,8 @@ using namespace as;
 /**
  * Configure the used hardware
  */
-typedef AskSin<StatusLed,BatterySensor,CC1101> Hal;
+typedef SPI<10,11,12,13,2> ArduinoSPI;
+typedef AskSin<StatusLed,BatterySensor,Radio<ArduinoSPI> > Hal;
 Hal hal;
 
 class WeatherEventMsg : public Message {
@@ -156,14 +157,14 @@ void setup () {
   Serial.begin(57600);
   DPRINTLN(ASKSIN_PLUS_PLUS_IDENTIFIER);
 #endif
-  if( eeprom.setup(sdev.checksum()) == true ) {
+  if( storage.setup(sdev.checksum()) == true ) {
     sdev.firstinit();
   }
 
   hal.led.init(LED_PIN);
 
   cfgBtn.init(CONFIG_BUTTON_PIN);
-  attachPinChangeInterrupt(CONFIG_BUTTON_PIN,cfgBtnISR,CHANGE);
+  enableInterrupt(CONFIG_BUTTON_PIN,cfgBtnISR,CHANGE);
   hal.radio.init();
 
 #ifdef USE_OTA_BOOTLOADER
@@ -177,7 +178,7 @@ void setup () {
   sdev.setSubType(DeviceType::THSensor);
   sdev.setInfo(0x03,0x01,0x00);
 
-  hal.radio.enableGDO0Int();
+  hal.radio.enable();
 
   aclock.init();
 

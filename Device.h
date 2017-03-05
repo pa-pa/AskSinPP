@@ -85,6 +85,7 @@ public:
   KeyStore& keystore () { return this->kstore; }
   Activity& activity () { return hal->activity; }
 
+  Message& message () { return msg; }
 
   bool isRepeat(const Message& m) {
     if( m.isRepeated() && lastdev == m.from() && lastmsg == m.count() ) {
@@ -109,7 +110,7 @@ public:
     model[1] = m2;
   }
 
-  const uint8_t* const getModel () const {
+  const uint8_t* getModel () const {
     return model;
   }
 
@@ -213,7 +214,7 @@ public:
     return ++msgcount;
   }
 
-  virtual void process(Message& msg) {}
+  virtual void process(__attribute__((unused)) Message& msg) {}
 
   bool isBoardcastMsg(Message msg) {
     return msg.isPairSerial();

@@ -7,7 +7,7 @@
 #define __CHANNEL_H__
 
 #include "Peer.h"
-#include "EEProm.h"
+#include "Storage.h"
 
 namespace as {
 
@@ -67,14 +67,14 @@ public:
     Peer result;
     uint16_t paddr = peerAddress(idx);
     if( paddr != 0 ) {
-      eeprom.getData(paddr,&result);
+      storage.getData(paddr,&result);
     }
     return result;
   }
 
 
   bool peer (uint8_t idx,const Peer& p) const {
-    return eeprom.setData(peerAddress(idx),p);
+    return storage.setData(peerAddress(idx),p);
   }
 
   uint8_t findpeer () const {
@@ -96,7 +96,7 @@ public:
   }
 
   void firstinit () {
-    eeprom.clearData(address(),size());
+    storage.clearData(address(),size());
     List1Type cl = getList1();
     cl.defaults();
   }
@@ -156,15 +156,15 @@ public:
     return List4Type::size() > 0;
   }
 
-  bool process (const ActionSetMsg& msg) {
+  bool process (__attribute__((unused)) const ActionSetMsg& msg) {
     return false;
   }
 
-  bool process (const RemoteEventMsg& msg) {
+  bool process (__attribute__((unused)) const RemoteEventMsg& msg) {
     return false;
   }
 
-  bool process (const SensorEventMsg& msg) {
+  bool process (__attribute__((unused)) const SensorEventMsg& msg) {
     return false;
   }
 

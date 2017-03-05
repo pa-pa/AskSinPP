@@ -14,8 +14,8 @@
   #define HM_DEF_KEY_INDEX 0
 #endif
 
+#include <EnableInterrupt.h>
 #include <AskSinPP.h>
-#include <PinChangeInt.h>
 #include <TimerOne.h>
 #include <LowPower.h>
 
@@ -64,7 +64,8 @@ using namespace as;
 /**
  * Configure the used hardware
  */
-typedef AskSin<StatusLed,BatterySensor,CC1101> Hal;
+typedef SPI<10,11,12,13,2> ArduinoSPI;
+typedef AskSin<StatusLed,BatterySensor,Radio<ArduinoSPI> > Hal;
 Hal hal;
 
 // Create an SFE_TSL2561 object, here called "light":
@@ -238,19 +239,11 @@ public:
   }
 
   void pirInterruptOn () {
-#if PIR_PIN == 3
-    attachInterrupt(digitalPinToInterrupt(3), motionISR, RISING);
-#else
-    attachPinChangeInterrupt(PIR_PIN,motionISR,RISING);
-#endif
+    ebanleInterrupt(PIR_PIN, motionISR, RISING);
   }
 
   void pirInterruptOff () {
-#if PIR_PIN == 3
-    detachInterrupt(digitalPinToInterrupt(3));
-#else
-    detachPinChangeInterrupt(PIR_PIN);
-#endif
+    disbaleInterrupt(PIR_PIN);
   }
 
   // this runs synch to application
@@ -318,7 +311,7 @@ void setup () {
   Serial.begin(57600);
   DPRINTLN(ASKSIN_PLUS_PLUS_IDENTIFIER);
 #endif
-  if( eeprom.setup(sdev.checksum()) == true ) {
+  if( storage.setup(sdev.checksum()) == true ) {
     sdev.firstinit();
   }
 
@@ -335,7 +328,7 @@ void setup () {
   hal.led.init(LED_PIN);
 
   cfgBtn.init(CONFIG_BUTTON_PIN);
-  attachPinChangeInterrupt(CONFIG_BUTTON_PIN,cfgBtnISR,CHANGE);
+  enableInterrupt(CONFIG_BUTTON_PIN,cfgBtnISR,CHANGE);
   hal.radio.init();
 
 #ifdef USE_OTA_BOOTLOADER
@@ -350,7 +343,7 @@ void setup () {
   sdev.setSubType(DeviceType::MotionDetector);
   sdev.setInfo(0x01,0x01,0x00);
 
-  hal.radio.enableGDO0Int();
+  hal.radio.enable();
   aclock.init();
 
   hal.led.set(StatusLed::welcome);

@@ -14,8 +14,8 @@
   #define HM_DEF_KEY_INDEX 0
 #endif
 
+#include <EnableInterrupt.h>
 #include <AskSinPP.h>
-#include <PinChangeInt.h>
 #include <TimerOne.h>
 #include <LowPower.h>
 
@@ -42,7 +42,7 @@
 #define LED_PIN2 5
 // Arduino pin for the config button
 // B0 == PIN 8 on Pro Mini
-#define CONFIG_BUTTON_PIN 3
+#define CONFIG_BUTTON_PIN 8
 // Arduino pins for the buttons
 // A0,A1,A2,A3 == PIN 14,15,16,17 on Pro Mini
 #define BTN1_PIN 14
@@ -60,8 +60,8 @@ using namespace as;
 /**
  * Configure the used hardware
  */
-//typedef AskSin<DualStatusLed,BatterySensor,CC1101> Hal;
-class Hal : public AskSin<DualStatusLed,BatterySensor,CC1101> {
+typedef SPI<10,11,12,13,2> ArduinoSPI;
+class Hal : public AskSin<DualStatusLed,BatterySensor,Radio<ArduinoSPI> > {
 public:
   AlarmClock btncounter;  // extra clock to count button press events
 } hal;
@@ -130,7 +130,6 @@ public:
 };
 
 
-BtnEventMsg   msg;
 
 class BtnChannel : public Channel<Hal,BtnList1,EmptyList,List4,PEERS_PER_CHANNEL>, public Button {
 
@@ -158,11 +157,13 @@ public:
     Button::state(s);
     if( s == released ) {
       repeatcnt=0;
+      BtnEventMsg& msg = (BtnEventMsg&)device().message();
       msg.init(++msgcnt,number(),repeatcnt,false,hal.battery.low());
       device().sendPeerEvent(msg,*this);
       --hal.btncounter;
     }
     else if( s == longpressed ) {
+      BtnEventMsg& msg = (BtnEventMsg&)device().message();
       msg.init(++msgcnt,number(),repeatcnt++,true,hal.battery.low());
       device().sendPeerEvent(msg,*this);
       --hal.btncounter;
@@ -221,7 +222,7 @@ void setup () {
   Serial.begin(57600);
   DPRINTLN(ASKSIN_PLUS_PLUS_IDENTIFIER);
 #endif
-  if( eeprom.setup(sdev.checksum()) == true ) {
+  if( storage.setup(sdev.checksum()) == true ) {
     sdev.firstinit();
   }
 
@@ -229,13 +230,13 @@ void setup () {
   sdev.channel(2).button().init(BTN2_PIN);
   sdev.channel(3).button().init(BTN3_PIN);
   sdev.channel(4).button().init(BTN4_PIN);
-  attachPinChangeInterrupt(BTN1_PIN,btn1ISR,CHANGE);
-  attachPinChangeInterrupt(BTN2_PIN,btn2ISR,CHANGE);
-  attachPinChangeInterrupt(BTN3_PIN,btn3ISR,CHANGE);
-  attachPinChangeInterrupt(BTN4_PIN,btn4ISR,CHANGE);
+  enableInterrupt(BTN1_PIN,btn1ISR,CHANGE);
+  enableInterrupt(BTN2_PIN,btn2ISR,CHANGE);
+  enableInterrupt(BTN3_PIN,btn3ISR,CHANGE);
+  enableInterrupt(BTN4_PIN,btn4ISR,CHANGE);
 
   cfgBtn.init(CONFIG_BUTTON_PIN);
-  attachPinChangeInterrupt(CONFIG_BUTTON_PIN,cfgBtnISR,CHANGE);
+  enableInterrupt(CONFIG_BUTTON_PIN,cfgBtnISR,CHANGE);
   hal.radio.init();
 
 #ifdef USE_OTA_BOOTLOADER
@@ -249,7 +250,7 @@ void setup () {
   sdev.setSubType(DeviceType::Remote);
   sdev.setInfo(0x04,0x00,0x00);
 
-  hal.radio.enableGDO0Int();
+  hal.radio.enable();
   aclock.init();
 
   hal.led.init(LED_PIN2,LED_PIN);

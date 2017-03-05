@@ -6,12 +6,10 @@
 #ifndef __ASKSINPP_h__
 #define __ASKSINPP_h__
 
-#define ASKSIN_PLUS_PLUS_VERSION "1.0.0"
+#define ASKSIN_PLUS_PLUS_VERSION "1.0.1"
 
 #define ASKSIN_PLUS_PLUS_IDENTIFIER F("AskSin++ V" ASKSIN_PLUS_PLUS_VERSION)
 
-// configure EnableInterrupt library
-// #define EI_NOTEXTERNAL
 
 #include <Debug.h>
 #include <Activity.h>
@@ -41,6 +39,15 @@ public:
       *dest = pgm_read_byte(adr + i);
     }
   }
+
+  static uint16_t crc16 (uint16_t crc,uint8_t d) {
+    crc ^= d;
+    for( uint8_t i = 8; i != 0; --i ) {
+      crc = (crc >> 1) ^ ((crc & 1) ? 0xA001 : 0 );
+    }
+    return crc;
+  }
+
 
 };
 

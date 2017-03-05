@@ -14,13 +14,12 @@
   #define HM_DEF_KEY_INDEX 0
 #endif
 
+#include <EnableInterrupt.h>
 #include <AskSinPP.h>
-#include <PinChangeInt.h>
 #include <TimerOne.h>
 #include <LowPower.h>
 
 #include <MultiChannelDevice.h>
-#include <BatterySensor.h>
 
 // define this to read the device id, serial and device type from bootloader section
 // #define USE_OTA_BOOTLOADER
@@ -58,7 +57,8 @@ using namespace as;
 /**
  * Configure the used hardware
  */
-typedef AskSin<StatusLed,NoBattery,CC1101> Hal;
+typedef SPI<10,11,12,13,2> ArduinoSPI;
+typedef AskSin<StatusLed,NoBattery,Radio<ArduinoSPI> > Hal;
 Hal hal;
 
 class MeterList0Data : public List0Data {
@@ -361,13 +361,11 @@ public:
   }
 
   void attach() {
-    if( pin > 3 ) PCintPort::attachInterrupt(pin,isr,CHANGE);
-    else attachInterrupt(digitalPinToInterrupt(pin),isr,CHANGE);
+    enableInterrupt(pin,isr,CHANGE);
   }
 
   void detach () {
-    if( pin > 3 ) PCintPort::detachInterrupt(pin);
-    else detachInterrupt(digitalPinToInterrupt(pin));
+    disableInterrupt(pin);
   }
 
   void debounce () {
@@ -422,14 +420,14 @@ void setup () {
   Serial.begin(57600);
   DPRINTLN(ASKSIN_PLUS_PLUS_IDENTIFIER);
 #endif
-  if( eeprom.setup(sdev.checksum()) == true ) {
+  if( storage.setup(sdev.checksum()) == true ) {
     sdev.firstinit();
   }
 
   hal.led.init(LED_PIN);
 
   cfgBtn.init(CONFIG_BUTTON_PIN);
-  attachPinChangeInterrupt(CONFIG_BUTTON_PIN,cfgBtnISR,CHANGE);
+  enableInterrupt(CONFIG_BUTTON_PIN,cfgBtnISR,CHANGE);
   hal.radio.init();
 
 #ifdef USE_OTA_BOOTLOADER
@@ -443,7 +441,7 @@ void setup () {
   sdev.setSubType(DeviceType::PowerMeter);
   sdev.setInfo(0x03,0x01,0x00);
 
-  hal.radio.enableGDO0Int();
+  hal.radio.enable();
   aclock.init();
 
   gasISR.attach();

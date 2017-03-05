@@ -27,7 +27,7 @@ public:
   }
 
   template <class Hal>
-  static void powerSave (Hal& hal) {
+  static void powerSave (__attribute__((unused)) Hal& hal) {
     LowPower.idle(SLEEP_FOREVER,ADC_OFF,TIMER2_OFF,TIMER1_ON,TIMER0_OFF,SPI_ON,USART0_ON,TWI_OFF);
   }
 
@@ -90,7 +90,7 @@ public:
 
   virtual ~Activity () {}
 
-  virtual void trigger (AlarmClock& clock) {
+  virtual void trigger (__attribute__((unused)) AlarmClock& clock) {
     awake = false;
   }
 

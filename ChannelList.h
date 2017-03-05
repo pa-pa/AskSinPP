@@ -6,7 +6,7 @@
 #ifndef __CHANNELLIST_H__
 #define __CHANNELLIST_H__
 
-#include "EEProm.h"
+#include "Storage.h"
 #include "HMID.h"
 
 namespace as {
@@ -22,7 +22,7 @@ public:
   bool valid () const { return addr != 0; }
 
   uint8_t getByte (uint8_t offset) const {
-    return eeprom.getByte(addr + offset);
+    return storage.getByte(addr + offset);
   }
 
   uint8_t getByte (uint8_t offset, uint8_t mask, uint8_t shift) const {
@@ -30,7 +30,7 @@ public:
   }
 
   bool setByte (uint8_t offset, uint8_t data) const {
-    return eeprom.setByte(addr + offset, data);
+    return storage.setByte(addr + offset, data);
   }
 
   bool setByte (uint8_t offset, uint8_t data, uint8_t mask, uint8_t shift) const {
@@ -40,22 +40,22 @@ public:
   }
 
   bool isBitSet (uint8_t offset, uint8_t bit) const {
-    return (eeprom.getByte(addr + offset) & bit) == bit;
+    return (storage.getByte(addr + offset) & bit) == bit;
   }
 
   bool setBit (uint8_t offset, uint8_t bit, bool value) const {
     if( value == true ) {
-      return eeprom.setBits(addr + offset, bit);
+      return storage.setBits(addr + offset, bit);
     }
-    return eeprom.clearBits(addr + offset, bit);
+    return storage.clearBits(addr + offset, bit);
   }
 
   bool setData (uint8_t offset,uint8_t* buf,uint16_t size) const {
-    return eeprom.setData(addr + offset,buf,size);
+    return storage.setData(addr + offset,buf,size);
   }
 
   bool getData (uint8_t offset,uint8_t* buf,uint16_t size) const {
-    return eeprom.getData(addr + offset,buf,size);
+    return storage.getData(addr + offset,buf,size);
   }
 };
 
@@ -100,7 +100,7 @@ public:
   void dump () const {
     DHEX(address());
     DPRINT(F(" - "));
-    eeprom.dump(address(),getSize());
+    storage.dump(address(),getSize());
   }
 
 
@@ -146,7 +146,7 @@ public:
   void dump () const {
     DHEX(address());
     DPRINT(F(" - "));
-    eeprom.dump(address(),size());
+    storage.dump(address(),size());
   }
 
   operator GenericList () const {
@@ -157,8 +157,8 @@ public:
 
 class EmptyListData {
 public:
-  static uint8_t getOffset(uint8_t reg) { return 0xff; }
-  static uint8_t getRegister(uint8_t reg) { return 0xff; }
+  static uint8_t getOffset(__attribute__((unused)) uint8_t reg) { return 0xff; }
+  static uint8_t getRegister(__attribute__((unused)) uint8_t reg) { return 0xff; }
 };
 
 class EmptyList : public ChannelList<EmptyListData> {

@@ -39,7 +39,7 @@ public:
 
   KeyStore(uint16_t a) : BaseList(a), count(0) {}
 
-  // return space needed in EEprom
+  // return space needed in Storage
   static uint16_t size () {
     return AES_KEY_SIZE + 1;
   }
@@ -143,7 +143,7 @@ class KeyStore {
 public:
   KeyStore(uint16_t a) {}
 
-  // return space needed in EEprom
+  // return space needed in Storage
   static uint16_t size () {
     return 0;
   }

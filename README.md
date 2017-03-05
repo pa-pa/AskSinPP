@@ -1,4 +1,6 @@
 
+#Please use V1 Branch for your devices. The master branch is currently not stable#
+
 #AskSin++#
 
 C++ implementation of the AskSin protocol
@@ -9,9 +11,8 @@ C++ implementation of the AskSin protocol
 
 Required Arduino libraries:
 - TimerOne - https://github.com/PaulStoffregen/TimerOne
-- PinChangeInt - https://github.com/GreyGnome/PinChangeInt
+- EnableInterrupt - https://github.com/GreyGnome/EnableInterrupt
 - Low-Power - https://github.com/rocketscream/Low-Power.git
-
 
 ## Enable AES Support
 

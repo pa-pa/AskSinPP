@@ -543,7 +543,7 @@ public:
 
 class DeviceInfoMsg : public Message {
 public:
-  void init (const HMID& to,uint8_t count) {
+  void init (__attribute__((unused)) const HMID& to,uint8_t count) {
     Message::init(0x1a,count,0x00,0x00,0x00,0x00);
   }
   uint8_t* data() { return Message::data()-2; }
@@ -559,7 +559,7 @@ public:
 
 class SerialInfoMsg : public Message {
 public:
-  void init (const HMID& to,uint8_t count) {
+  void init (__attribute__((unused)) const HMID& to,uint8_t count) {
     Message::init(0x14,count,0x10,0x00,0x00,0x00);
   }
   uint8_t* data() { return Message::data()-4; }
