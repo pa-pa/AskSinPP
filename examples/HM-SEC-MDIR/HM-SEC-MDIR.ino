@@ -239,11 +239,11 @@ public:
   }
 
   void pirInterruptOn () {
-    ebanleInterrupt(PIR_PIN, motionISR, RISING);
+    enableInterrupt(PIR_PIN, motionISR, RISING);
   }
 
   void pirInterruptOff () {
-    disbaleInterrupt(PIR_PIN);
+    disableInterrupt(PIR_PIN);
   }
 
   // this runs synch to application
