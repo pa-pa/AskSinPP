@@ -134,7 +134,6 @@ uint8_t CC1101::sndData(uint8_t *buf, uint8_t size, uint8_t burst) {										//
 	for(uint8_t i = 0; i < 200; i++) {													// after sending out all bytes the chip should go automatically in RX mode
 		if( readReg(CC1101_MARCSTATE, CC1101_STATUS) == MARCSTATE_IDLE)
 			break;																		//now in IDLE mode, good
-		}
 		_delay_us(10);
 	}
 
