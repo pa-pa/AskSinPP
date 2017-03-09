@@ -17,6 +17,7 @@ namespace as {
 template <class HalType,int PeerCount>
 class SwitchChannel : public Channel<HalType,SwitchList1,SwitchList3,EmptyList,PeerCount>, public SwitchStateMachine {
 
+protected:
   typedef Channel<HalType,SwitchList1,SwitchList3,EmptyList,PeerCount> BaseChannel;
   uint8_t lowact;
 
