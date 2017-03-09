@@ -39,7 +39,7 @@ protected:
   ~SwitchStateMachine () {}
 
 public:
-  SwitchStateMachine() : state(AS_CM_JT_OFF), alarm(*this) {}
+  SwitchStateMachine() : state(AS_CM_JT_NONE), alarm(*this) {}
 
   virtual void switchState(uint8_t oldstate,uint8_t newstate);
 

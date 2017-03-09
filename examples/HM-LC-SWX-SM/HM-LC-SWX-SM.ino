@@ -132,16 +132,16 @@ void setup () {
     sdev.firstinit();
   }
 
+  bool low = checkLowActive();
+  for( uint8_t i=1; i<=sdev.channels(); ++i ) {
+    sdev.channel(i).lowactive(low);
+  }
+
   sled.init(LED_PIN);
 
   cfgBtn.init(CONFIG_BUTTON_PIN);
   attachPinChangeInterrupt(CONFIG_BUTTON_PIN,cfgBtnISR,CHANGE);
   radio.init();
-
-  bool low = checkLowActive();
-  for( uint8_t i=1; i<=sdev.channels(); ++i ) {
-    sdev.channel(i).lowactive(low);
-  }
 
 #ifdef USE_OTA_BOOTLOADER
   sdev.init(radio,OTA_HMID_START,OTA_SERIAL_START);
