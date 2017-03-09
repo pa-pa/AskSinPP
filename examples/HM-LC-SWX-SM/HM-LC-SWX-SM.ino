@@ -139,16 +139,16 @@ void setup () {
     sdev.firstinit();
   }
 
+  bool low = checkLowActive();
+  for( uint8_t i=1; i<=sdev.channels(); ++i ) {
+    sdev.channel(i).lowactive(low);
+  }
+
   hal.led.init(LED_PIN);
 
   cfgBtn.init(CONFIG_BUTTON_PIN);
   enableInterrupt(CONFIG_BUTTON_PIN,cfgBtnISR,CHANGE);
   hal.radio.init();
-
-  bool low = checkLowActive();
-  for( uint8_t i=1; i<=sdev.channels(); ++i ) {
-    sdev.channel(i).lowactive(low);
-  }
 
 #ifdef USE_OTA_BOOTLOADER
   sdev.init(hal,OTA_HMID_START,OTA_SERIAL_START);
