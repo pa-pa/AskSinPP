@@ -148,19 +148,11 @@ namespace as {
 #define PA_MaxPower              0xC0
 
 
-template <uint8_t CS,uint8_t MOSI,uint8_t MISO,uint8_t SCLK,uint8_t GDO0>
-class SPI {
 
-public:
-  void init () {
-    pinMode(CS,OUTPUT);
-    pinMode(MOSI,OUTPUT);
-    pinMode(MISO,INPUT);
-    pinMode(SCLK,OUTPUT);
-    pinMode(GDO0,INPUT);
-    // SPI enable, master, speed = CLK/4
-    SPCR = _BV(SPE) | _BV(MSTR);
-  }
+#ifdef __AVR_ATmega328P__
+
+template <uint8_t CS,uint8_t MOSI,uint8_t MISO,uint8_t SCLK>
+class AvrSPI {
 
   uint8_t send (uint8_t data) {
     SPDR = data;                  // send byte
@@ -168,20 +160,18 @@ public:
     return SPDR;
   }
 
-  uint8_t getGDO0 () {
-    return digitalRead(GDO0);
-  }
-
-  void enableGDO0 (void (*isr)(void) ) {
-    enableInterrupt(GDO0, isr, FALLING);
-  }
-
-  void disableGDO0 () {
-    disableInterrupt(GDO0);
-  }
-
   void waitMiso () {
     while(digitalRead(MISO));
+  }
+
+public:
+  void init () {
+    pinMode(CS,OUTPUT);
+    pinMode(MOSI,OUTPUT);
+    pinMode(MISO,INPUT);
+    pinMode(SCLK,OUTPUT);
+    // SPI enable, master, speed = CLK/4
+    SPCR = _BV(SPE) | _BV(MSTR);
   }
 
   void select () {
@@ -192,15 +182,151 @@ public:
     digitalWrite(CS,HIGH);
   }
 
+  void ping () {
+    select();                                     // wake up the communication module
+    waitMiso();
+    deselect();
+  }
+
+  uint8_t strobe(uint8_t cmd) {
+    select();                                     // select CC1101
+    waitMiso();                                     // wait until MISO goes low
+    uint8_t ret = send(cmd);                  // send strobe command
+    deselect();                                   // deselect CC1101
+    return ret;
+  }
+
+  void readBurst(uint8_t * buf, uint8_t regAddr, uint8_t len) {
+    select();                                     // select CC1101
+    waitMiso();                                     // wait until MISO goes low
+    send(regAddr | READ_BURST);                         // send register address
+    for(uint8_t i=0 ; i<len ; i++) {
+      buf[i] = send(0x00);                            // read result byte by byte
+      //dbg << i << ":" << buf[i] << '\n';
+    }
+    deselect();                                   // deselect CC1101
+  }
+
+  void writeBurst(uint8_t regAddr, uint8_t* buf, uint8_t len) {
+    select();                                     // select CC1101
+    waitMiso();                                     // wait until MISO goes low
+    send(regAddr | WRITE_BURST);                          // send register address
+    for(uint8_t i=0 ; i<len ; i++)
+      send(buf[i]);                  // send value
+    deselect();                                   // deselect CC1101
+  }
+
+  uint8_t readReg(uint8_t regAddr, uint8_t regType) {
+    select();                                     // select CC1101
+    waitMiso();                                     // wait until MISO goes low
+    send(regAddr | regType);                            // send register address
+    uint8_t val = send(0x00);                           // read result
+    deselect();                                   // deselect CC1101
+    return val;
+  }
+
+  void writeReg(uint8_t regAddr, uint8_t val) {
+    select();                                     // select CC1101
+    waitMiso();                                     // wait until MISO goes low
+    send(regAddr);                                // send register address
+    send(val);                                  // send value
+    deselect();                                   // deselect CC1101
+  }
+
 };
+
+#endif
+
+
+#ifdef SPI_MODE0
+
+template <uint8_t CS,uint32_t CLOCK=2000000, uint8_t BITORDER=MSBFIRST, uint8_t MODE=SPI_MODE0>
+class LibSPI {
+
+public:
+  LibSPI () {}
+  void init () {
+    pinMode(CS,OUTPUT);
+    SPI.begin();
+  }
+
+  void select () {
+    digitalWrite(CS,LOW);
+  }
+
+  void deselect () {
+    digitalWrite(CS,HIGH);
+  }
+
+  void ping () {
+    SPI.beginTransaction(SPISettings(CLOCK,BITORDER,MODE));
+    select();                                     // wake up the communication module
+    SPI.transfer(0); // ????
+    deselect();
+    SPI.endTransaction();
+  }
+
+  uint8_t strobe(uint8_t cmd) {
+    SPI.beginTransaction(SPISettings(CLOCK,BITORDER,MODE));
+    select();                                     // select CC1101
+    uint8_t ret = SPI.transfer(cmd);
+    deselect();                                   // deselect CC1101
+    SPI.endTransaction();
+    return ret;
+  }
+
+  void readBurst(uint8_t * buf, uint8_t regAddr, uint8_t len) {
+    SPI.beginTransaction(SPISettings(CLOCK,BITORDER,MODE));
+    select();                                     // select CC1101
+    SPI.transfer(regAddr | READ_BURST);                         // send register address
+    for(uint8_t i=0 ; i<len ; i++) {
+      buf[i] = SPI.transfer(0x00);                            // read result byte by byte
+      //dbg << i << ":" << buf[i] << '\n';
+    }
+    deselect();                                   // deselect CC1101
+    SPI.endTransaction();
+  }
+
+  void writeBurst(uint8_t regAddr, uint8_t* buf, uint8_t len) {
+    SPI.beginTransaction(SPISettings(CLOCK,BITORDER,MODE));
+    select();                                     // select CC1101
+    SPI.transfer(regAddr | WRITE_BURST);                          // send register address
+    for(uint8_t i=0 ; i<len ; i++)
+      SPI.transfer(buf[i]);                  // send value
+    deselect();                                   // deselect CC1101
+    SPI.endTransaction();
+  }
+
+  uint8_t readReg(uint8_t regAddr, uint8_t regType) {
+    SPI.beginTransaction(SPISettings(CLOCK,BITORDER,MODE));
+    select();                                     // select CC1101
+    SPI.transfer(regAddr | regType);                            // send register address
+    uint8_t val = SPI.transfer(0x00);                           // read result
+    deselect();                                   // deselect CC1101
+    SPI.endTransaction();
+    return val;
+  }
+
+  void writeReg(uint8_t regAddr, uint8_t val) {
+    SPI.beginTransaction(SPISettings(CLOCK,BITORDER,MODE));
+    select();                                     // select CC1101
+    SPI.transfer(regAddr);                                // send register address
+    SPI.transfer(val);                                  // send value
+    deselect();                                   // deselect CC1101
+    SPI.endTransaction();
+  }
+
+};
+#endif
+
 
 static void* instance;
 
-template <class SPIType>
+template <class SPIType ,uint8_t GDO0>
 class Radio {
 
   static void isr () {
-    ((Radio<SPIType>*)instance)->handleInt();
+    ((Radio<SPIType,GDO0>*)instance)->handleInt();
   }
 
 private:
@@ -216,16 +342,14 @@ private:
 public:   //---------------------------------------------------------------------------------------------------------
   void setIdle () {
     uint8_t cnt = 0xff;
-    while(cnt-- && (strobe(CC1101_SIDLE) & 0x70) != 0) {
+    while(cnt-- && (spi.strobe(CC1101_SIDLE) & 0x70) != 0) {
       _delay_us(10);
     }
-    strobe(CC1101_SPWD);                            // enter power down state
+    spi.strobe(CC1101_SPWD);                            // enter power down state
   }
 
   void wakeup () {
-    spi.select();                                     // wake up the communication module
-    spi.waitMiso();
-    spi.deselect();
+    spi.ping();
   }
 
   Radio () : rss(0), lqi(0), intread(0), sending(false) {}
@@ -234,6 +358,8 @@ public:   //--------------------------------------------------------------------
     instance = this;
     DPRINT(F("CC init"));
     spi.init();                                     // init the hardware to get access to the RF modul
+    pinMode(GDO0,INPUT);
+
     DPRINT(F("1"));
     spi.deselect();                                   // some deselect and selects to init the TRX868modul
     _delay_us(5);
@@ -242,7 +368,7 @@ public:   //--------------------------------------------------------------------
     spi.deselect();
     _delay_us(41);
 
-    strobe(CC1101_SRES);                                // send reset
+    spi.strobe(CC1101_SRES);                                // send reset
     _delay_ms(10);
 
     // define init settings for TRX868
@@ -286,18 +412,18 @@ public:   //--------------------------------------------------------------------
       CC1101_PATABLE, 0xC3,
     };
     for (uint8_t i=0; i<sizeof(initVal); i+=2) {                    // write init value to TRX868
-      writeReg(pgm_read_byte(&initVal[i]), pgm_read_byte(&initVal[i+1]));
+      spi.writeReg(pgm_read_byte(&initVal[i]), pgm_read_byte(&initVal[i+1]));
     }
     DPRINT(F("2"));
-    strobe(CC1101_SCAL);                                // calibrate frequency synthesizer and turn it off
-    while (readReg(CC1101_MARCSTATE, CC1101_STATUS) != 1) {               // waits until module gets ready
+    spi.strobe(CC1101_SCAL);                                // calibrate frequency synthesizer and turn it off
+    while (spi.readReg(CC1101_MARCSTATE, CC1101_STATUS) != 1) {               // waits until module gets ready
       _delay_us(1);
       DPRINT(F("."));
     }
     DPRINT(F("3"));
-    writeReg(CC1101_PATABLE, PA_MaxPower);                        // configure PATABLE
-    strobe(CC1101_SRX);                                 // flush the RX buffer
-    strobe(CC1101_SWORRST);                               // reset real time clock
+    spi.writeReg(CC1101_PATABLE, PA_MaxPower);                        // configure PATABLE
+    spi.strobe(CC1101_SRX);                                 // flush the RX buffer
+    spi.strobe(CC1101_SWORRST);                               // reset real time clock
     DPRINTLN(F(" - ready"));
   }
 
@@ -308,8 +434,16 @@ public:   //--------------------------------------------------------------------
     }
   }
 
-  void enable () { spi.enableGDO0(isr); }
-  void disable () { spi.disbaleGDO0(); }
+  uint8_t getGDO0 () {
+    return digitalRead(GDO0);
+  }
+
+  void enable () {
+    enableInterrupt(GDO0, isr, FALLING);
+  }
+  void disable () {
+    disableInterrupt(GDO0);
+  }
 
   // read the message form the internal buffer, if any
   uint8_t read (Message& msg) {
@@ -386,28 +520,28 @@ protected:
 
     // Going from RX to TX does not work if there was a reception less than 0.5
     // sec ago. Due to CCA? Using IDLE helps to shorten this period(?)
-    strobe(CC1101_SIDLE);                               // go to idle mode
-    strobe(CC1101_SFRX );                               // flush RX buffer
-    strobe(CC1101_SFTX );                               // flush TX buffer
+    spi.strobe(CC1101_SIDLE);                               // go to idle mode
+    spi.strobe(CC1101_SFRX );                               // flush RX buffer
+    spi.strobe(CC1101_SFTX );                               // flush TX buffer
 
     //dbg << "tx\n";
 
     if (burst) {                                    // BURST-bit set?
-      strobe(CC1101_STX  );                             // send a burst
+      spi.strobe(CC1101_STX  );                             // send a burst
       _delay_ms(360);                                 // according to ELV, devices get activated every 300ms, so send burst for 360ms
       //dbg << "send burst\n";
     } else {
       _delay_ms(1);                                 // wait a short time to set TX mode
     }
 
-    writeReg(CC1101_TXFIFO, size);
-    writeBurst(CC1101_TXFIFO, buf, size);           // write in TX FIFO
+    spi.writeReg(CC1101_TXFIFO, size);
+    spi.writeBurst(CC1101_TXFIFO, buf, size);           // write in TX FIFO
 
-    strobe(CC1101_SFRX);                                // flush the RX buffer
-    strobe(CC1101_STX);                                 // send a burst
+    spi.strobe(CC1101_SFRX);                                // flush the RX buffer
+    spi.strobe(CC1101_STX);                                 // send a burst
 
     for(uint8_t i = 0; i < 200; i++) {                          // after sending out all bytes the chip should go automatically in RX mode
-      if( readReg(CC1101_MARCSTATE, CC1101_STATUS) == MARCSTATE_IDLE)
+      if( spi.readReg(CC1101_MARCSTATE, CC1101_STATUS) == MARCSTATE_IDLE)
         break;                                    //now in RX mode, good
       _delay_us(10);
     }
@@ -418,20 +552,20 @@ protected:
   }
 
   uint8_t rcvData(uint8_t *buf, uint8_t size) {
-    uint8_t rxBytes = readReg(CC1101_RXBYTES, CC1101_STATUS);             // how many bytes are in the buffer
+    uint8_t rxBytes = spi.readReg(CC1101_RXBYTES, CC1101_STATUS);             // how many bytes are in the buffer
     //dbg << rxBytes << ' ';
 
     if ((rxBytes & 0x7F) && !(rxBytes & 0x80)) {                    // any byte waiting to be read and no overflow?
-      rxBytes = readReg(CC1101_RXFIFO, CC1101_CONFIG);                  // read data length
+      rxBytes = spi.readReg(CC1101_RXFIFO, CC1101_CONFIG);                  // read data length
       if (rxBytes > size) {                         // if packet is too long
         rxBytes = 0;                                  // discard packet
       }
       else {
-        readBurst(buf, CC1101_RXFIFO, rxBytes);                 // read data packet
-        rss = readReg(CC1101_RXFIFO, CC1101_CONFIG);                // read RSSI
+        spi.readBurst(buf, CC1101_RXFIFO, rxBytes);                 // read data packet
+        rss = spi.readReg(CC1101_RXFIFO, CC1101_CONFIG);                // read RSSI
         if (rss >= 128) rss = 255 - rss;
         rss /= 2; rss += 72;
-        uint8_t val = readReg(CC1101_RXFIFO, CC1101_CONFIG);            // read LQI and CRC_OK
+        uint8_t val = spi.readReg(CC1101_RXFIFO, CC1101_CONFIG);            // read LQI and CRC_OK
         lqi = val & 0x7F;
         if( bitRead(val, 7) == 0 ) { // check crc_ok
           rxBytes = 0;
@@ -441,61 +575,17 @@ protected:
     else {
       rxBytes = 0;                                  // nothing to do, or overflow
     }
-    strobe(CC1101_SFRX);                                // flush Rx FIFO
-    strobe(CC1101_SIDLE);                               // enter IDLE state
-    strobe(CC1101_SRX);                                 // back to RX state
-    strobe(CC1101_SWORRST);                               // reset real time clock
+    spi.strobe(CC1101_SFRX);                                // flush Rx FIFO
+    spi.strobe(CC1101_SIDLE);                               // enter IDLE state
+    spi.strobe(CC1101_SRX);                                 // back to RX state
+    spi.strobe(CC1101_SWORRST);                               // reset real time clock
     //  trx868.rfState = RFSTATE_RX;                          // declare to be in Rx state
   //  DPRINT("-> ");
   //  DHEX(buf,buf[0]);
     return rxBytes; // return number of byte in buffer
   }
 
-  uint8_t strobe(uint8_t cmd) {
-    spi.select();                                     // select CC1101
-    spi.waitMiso();                                     // wait until MISO goes low
-    uint8_t ret = spi.send(cmd);                  // send strobe command
-    spi.deselect();                                   // deselect CC1101
-    return ret;
-  }
-
-  void readBurst(uint8_t * buf, uint8_t regAddr, uint8_t len) {
-    spi.select();                                     // select CC1101
-    spi.waitMiso();                                     // wait until MISO goes low
-    spi.send(regAddr | READ_BURST);                         // send register address
-    for(uint8_t i=0 ; i<len ; i++) {
-      buf[i] = spi.send(0x00);                            // read result byte by byte
-      //dbg << i << ":" << buf[i] << '\n';
-    }
-    spi.deselect();                                   // deselect CC1101
-  }
-
-  void writeBurst(uint8_t regAddr, uint8_t* buf, uint8_t len) {
-    spi.select();                                     // select CC1101
-    spi.waitMiso();                                     // wait until MISO goes low
-    spi.send(regAddr | WRITE_BURST);                          // send register address
-    for(uint8_t i=0 ; i<len ; i++) spi.send(buf[i]);                  // send value
-    spi.deselect();                                   // deselect CC1101
-  }
-
-  uint8_t readReg(uint8_t regAddr, uint8_t regType) {
-    spi.select();                                     // select CC1101
-    spi.waitMiso();                                     // wait until MISO goes low
-    spi.send(regAddr | regType);                            // send register address
-    uint8_t val = spi.send(0x00);                           // read result
-    spi.deselect();                                   // deselect CC1101
-    return val;
-  }
-
-  void writeReg(uint8_t regAddr, uint8_t val) {
-    spi.select();                                     // select CC1101
-    spi.waitMiso();                                     // wait until MISO goes low
-    spi.send(regAddr);                                // send register address
-    spi.send(val);                                  // send value
-    spi.deselect();                                   // deselect CC1101
-  }
 };
-
 
 }
 

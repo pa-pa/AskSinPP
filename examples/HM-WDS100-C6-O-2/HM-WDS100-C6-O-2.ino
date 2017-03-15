@@ -53,8 +53,8 @@ using namespace as;
 /**
  * Configure the used hardware
  */
-typedef SPI<10,11,12,13,2> ArduinoSPI;
-typedef AskSin<StatusLed,BatterySensor,Radio<ArduinoSPI> > Hal;
+typedef AvrSPI<10,11,12,13> RadioSPI;
+typedef AskSin<StatusLed,BatterySensor,Radio<RadioSPI,2> > Hal;
 Hal hal;
 
 class Wds100List0Data : public List0Data {

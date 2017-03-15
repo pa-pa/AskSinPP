@@ -15,6 +15,7 @@
 #endif
 
 #include <EnableInterrupt.h>
+#include <SPI.h>  // after including SPI Library - we can use LibSPI class
 #include <AskSinPP.h>
 #include <TimerOne.h>
 #include <LowPower.h>
@@ -60,12 +61,12 @@ using namespace as;
 /**
  * Configure the used hardware
  */
-typedef SPI<10,11,12,13,2> ArduinoSPI;
-class Hal : public AskSin<DualStatusLed,BatterySensor,Radio<ArduinoSPI> > {
+// typedef AvrSPI<10,11,12,13> RadioSPI;
+typedef LibSPI<10> RadioSPI;
+class Hal : public AskSin<DualStatusLed,BatterySensor,Radio<RadioSPI,2> > {
 public:
   AlarmClock btncounter;  // extra clock to count button press events
 } hal;
-
 
 
 class BtnList1Data {

@@ -15,6 +15,7 @@
 #endif
 
 #include <EnableInterrupt.h>
+// #include <SPI.h>  // when we include SPI.h - we can use LibSPI class
 #include <AskSinPP.h>
 #include <TimerOne.h>
 #include <LowPower.h>
@@ -73,8 +74,9 @@ using namespace as;
 /**
  * Configure the used hardware
  */
-typedef SPI<10,11,12,13,2> ArduinoSPI;
-typedef AskSin<StatusLed,NoBattery,Radio<ArduinoSPI> > Hal;
+typedef AvrSPI<10,11,12,13> RadioSPI;
+//typedef LibSPI<10> RadioSPI;
+typedef AskSin<StatusLed,NoBattery,Radio<RadioSPI,2> > Hal;
 Hal hal;
 
 // map number of channel to pin
