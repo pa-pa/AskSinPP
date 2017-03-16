@@ -14,10 +14,11 @@ extern uint8_t SwitchPin(uint8_t nummber);
 
 namespace as {
 
-template <int PeerCount>
-class SwitchChannel : public Channel<SwitchList1,SwitchList3,EmptyList,PeerCount>, public SwitchStateMachine {
+template <class HalType,int PeerCount>
+class SwitchChannel : public Channel<HalType,SwitchList1,SwitchList3,EmptyList,PeerCount>, public SwitchStateMachine {
 
-  typedef Channel<SwitchList1,SwitchList3,EmptyList,PeerCount> BaseChannel;
+protected:
+  typedef Channel<HalType,SwitchList1,SwitchList3,EmptyList,PeerCount> BaseChannel;
   uint8_t lowact;
 
 public:
@@ -31,7 +32,7 @@ public:
     BaseChannel::changed(true);
   }
 
-  void setup(Device* dev,uint8_t number,uint16_t addr) {
+  void setup(Device<HalType>* dev,uint8_t number,uint16_t addr) {
     BaseChannel::setup(dev,number,addr);
     uint8_t p = SwitchPin(number);
     pinMode(p,OUTPUT);

@@ -26,6 +26,7 @@ class ConfigEndMsg;
 class ConfigWriteIndexMsg;
 
 class AckMsg;
+class Ack2Msg;
 class AckStatusMsg;
 class NackMsg;
 class AckAesMsg;
@@ -37,6 +38,7 @@ class InfoActuatorStatusMsg;
 class InfoParamResponsePairsMsg;
 class InfoPeerListMsg;
 
+class SerialInfoMsg;
 class DeviceInfoMsg;
 class RemoteEventMsg;
 class SensorEventMsg;
@@ -244,6 +246,22 @@ public:
     flag |= RPTEN;
   }
 
+  void clearAck () {
+    flag &= ~BIDI;
+  }
+
+  bool isKeepAwake () const {
+    return (flag & WKUP) == WKUP;
+  }
+
+  bool isWakeMeUp () const {
+    return (flag & WKMEUP) == WKMEUP;
+  }
+
+  void setWakeMeUp () {
+    flag |= WKMEUP;
+  }
+
   bool isRepeated () const {
     return (flag & RPTED) == RPTED;
   }
@@ -301,6 +319,7 @@ public:
 
   // cast to write message types
   AckMsg& ack () { return *(AckMsg*)this; }
+  Ack2Msg& ack2 () { return *(Ack2Msg*)this; }
   AckStatusMsg& ackStatus () { return *(AckStatusMsg*)this; }
   NackMsg& nack () { return *(NackMsg*)this; }
   AckAesMsg& ackAes () { return *(AckAesMsg*)this; }
@@ -313,6 +332,7 @@ public:
   InfoPeerListMsg& infoPeerList () { return *(InfoPeerListMsg*)this; }
 
   DeviceInfoMsg& deviceInfo () { return *(DeviceInfoMsg*)this; }
+  SerialInfoMsg& serialInfo () { return *(SerialInfoMsg*)this; }
 };
 
 
@@ -408,8 +428,15 @@ public:
 
 class AckMsg : public Message {
 public:
-  void init() {
-    initWithCount(0x0a,AS_MESSAGE_RESPONSE,0x00,AS_RESPONSE_ACK);
+  void init(uint8_t flags=0x00) {
+    initWithCount(0x0a,AS_MESSAGE_RESPONSE,flags,AS_RESPONSE_ACK);
+  }
+};
+
+class Ack2Msg : public Message {
+public:
+  void init(uint8_t flags=0x00) {
+    initWithCount(0x0a,AS_MESSAGE_RESPONSE,flags,AS_RESPONSE_ACK2);
   }
 };
 
@@ -468,7 +495,7 @@ public:
 class AesResponseMsg : public Message {
 public:
   void init(const Message& msg) {
-    initWithCount(0x19,AS_MESSAGE_RESPONSE_AES,0x00,0x00);
+    initWithCount(0x19,AS_MESSAGE_RESPONSE_AES,BIDI,0x00);
     count(msg.count());
   }
   uint8_t* data () {
@@ -487,7 +514,7 @@ class InfoActuatorStatusMsg : public Message {
 public:
   template <class ChannelType>
   void init (uint8_t count,const ChannelType& ch,uint8_t rssi) {
-    Message::init(0x0e,count,0x10,Message::BIDI,0x06,ch.number());
+    Message::init(0x0e,count,0x10,BIDI|WKMEUP,0x06,ch.number());
     pload[0] = ch.status();
     pload[1] = ch.flags();
     pload[2] = rssi;
@@ -497,7 +524,7 @@ public:
 class InfoParamResponsePairsMsg : public Message {
 public:
   void init (uint8_t count) {
-    initWithCount(0x0b-1+(8*2),0x10,Message::BIDI,0x02);
+    initWithCount(0x0b-1+(8*2),0x10,BIDI,0x02);
     cnt = count;
   }
   uint8_t* data() { return Message::data()-1; }
@@ -516,8 +543,8 @@ public:
 
 class DeviceInfoMsg : public Message {
 public:
-  void init (const HMID& to,uint8_t count) {
-    Message::init(0x1a,count,0x00, to.valid() ? Message::BIDI : 0x00,0x00,0x00);
+  void init (__attribute__((unused)) const HMID& to,uint8_t count) {
+    Message::init(0x1a,count,0x00,0x00,0x00,0x00);
   }
   uint8_t* data() { return Message::data()-2; }
   void fill(uint8_t firmversion,uint8_t modelid[2],const char* serial,uint8_t subtype,uint8_t devinfo[3]) {
@@ -527,6 +554,18 @@ public:
     memcpy(buf+3,serial,10);
     *(buf+13) = subtype;
     memcpy(buf+14,devinfo,3);
+  }
+};
+
+class SerialInfoMsg : public Message {
+public:
+  void init (__attribute__((unused)) const HMID& to,uint8_t count) {
+    Message::init(0x14,count,0x10,0x00,0x00,0x00);
+  }
+  uint8_t* data() { return Message::data()-4; }
+  void fill(const char* serial) {
+    uint8_t* buf = data();
+    memcpy(buf+3,serial,10);
   }
 };
 

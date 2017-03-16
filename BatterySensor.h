@@ -23,6 +23,25 @@
 
 namespace as {
 
+
+class NoBattery {
+public:
+  uint8_t current () { return 0; }
+  bool critical () { return false; }
+  bool low () { return false; }
+};
+
+
+#define ADMUX_ADCMASK  ((1 << MUX3)|(1 << MUX2)|(1 << MUX1)|(1 << MUX0))
+#define ADMUX_REFMASK  ((1 << REFS1)|(1 << REFS0))
+
+#define ADMUX_REF_AREF ((0 << REFS1)|(0 << REFS0))
+#define ADMUX_REF_AVCC ((0 << REFS1)|(1 << REFS0))
+#define ADMUX_REF_RESV ((1 << REFS1)|(0 << REFS0))
+#define ADMUX_REF_VBG  ((1 << REFS1)|(1 << REFS0))
+
+#define ADMUX_ADC_VBG  ((1 << MUX3)|(1 << MUX2)|(1 << MUX1)|(0 << MUX0))
+
 /**
  * Use internal bandgap reference to measure battery voltage
  */
@@ -59,28 +78,25 @@ public:
     return m_LastValue < m_LowValue;
   }
 
-  void init(uint8_t low,uint32_t period) {
+  void init(uint8_t low,uint32_t period,AlarmClock& clock) {
     m_LowValue = low;
     m_LastValue = voltage();
     m_Period = period;
     tick = m_Period;
-    aclock.add(*this);
+    clock.add(*this);
   }
 
   virtual uint8_t voltage() {
     // Read 1.1V reference against AVcc
     // set the reference to Vcc and the measurement to the internal 1.1V reference
-    if (ADMUX != ADMUX_VCCWRT1V1) {
-      ADMUX = ADMUX_VCCWRT1V1;
-      // Bandgap reference start-up time: max 70us
-      // Wait for Vref to settle.
-      delayMicroseconds(350);
-    }
-    // Start conversion and wait for it to finish.
-    ADCSRA |= _BV(ADSC);
-    while (bit_is_set(ADCSRA, ADSC)) {};
-    // Result is now stored in ADC.
-    // Calculate Vcc (in V)
+    ADMUX &= ~(ADMUX_REFMASK | ADMUX_ADCMASK);
+    ADMUX |= ADMUX_REF_AVCC;      // select AVCC as reference
+    ADMUX |= ADMUX_ADC_VBG;       // measure bandgap reference voltage
+
+    _delay_ms(350);               // a delay rather than a dummy measurement is needed to give a stable reading!
+    ADCSRA |= (1 << ADSC);        // start conversion
+    while (ADCSRA & (1 << ADSC)); // wait to finish
+
     uint16_t vcc = 1100UL * 1023 / ADC / 100;
     DPRINT(F("Bat: ")); DDECLN(vcc);
     return (uint8_t) vcc;
@@ -102,11 +118,11 @@ public:
   m_SensePin(sens), m_ActivationPin(activation), m_Factor(57) {}
   virtual ~BatterySensorUni () {}
 
-  void init( uint8_t low,uint32_t period,uint8_t factor=57) {
+  void init( uint8_t low,uint32_t period,AlarmClock& clock,uint8_t factor=57) {
     m_Factor=factor;
     pinMode(m_SensePin, INPUT);
     pinMode(m_ActivationPin, INPUT);
-    BatterySensor::init(low,period);
+    BatterySensor::init(low,period,clock);
   }
 
   virtual uint8_t voltage () {
@@ -142,14 +158,14 @@ public:
     m_SensePin(sens), m_ActivationPin(activation), m_DividerRatio(2), m_RefVoltage(3300) {}
   virtual ~BatterySensorExt () {}
 
-  void init( uint8_t low,uint32_t period,uint16_t refvolt=3300,uint8_t divider=2) {
+  void init( uint8_t low,uint32_t period,AlarmClock& clock,uint16_t refvolt=3300,uint8_t divider=2) {
     m_DividerRatio=divider;
     m_RefVoltage = refvolt;
     pinMode(m_SensePin, INPUT);
     if (m_ActivationPin < 0xFF) {
       pinMode(m_ActivationPin, OUTPUT);
     }
-    BatterySensor::init(low,period);
+    BatterySensor::init(low,period,clock);
   }
 
 

@@ -7,18 +7,18 @@
 #define __CHANNEL_H__
 
 #include "Peer.h"
-#include "EEProm.h"
+#include "Storage.h"
 
 namespace as {
 
-class Device;
+template <class HalType> class Device;
 class ActionSetMsg;
 class RemoteEventMsg;
 class SensorEventMsg;
 
-template<class List1Type,class List3Type,class List4Type,int PeerCount>
+template<class HalType,class List1Type,class List3Type,class List4Type,int PeerCount>
 class Channel {
-  Device*   dev;
+  Device<HalType>*   dev;
   bool      change; // the status is changed, we may need to send a status
   bool      inhi;
   uint8_t   num   ; // channels per device
@@ -28,11 +28,12 @@ public:
   typedef List1Type List1;
   typedef List3Type List3;
   typedef List4Type List4;
+  typedef Device<HalType> DeviceType;
 
   public:
   Channel () : dev(0), change(false), inhi(false), num(0), addr(0) {}
 
-  Device& device () { return *dev; }
+  DeviceType& device () { return *dev; }
 
   uint8_t number () const { return num; }
 
@@ -48,7 +49,7 @@ public:
 
   bool inhibit () const { return inhi; }
 
-  void setup(Device* dev,uint8_t number,uint16_t addr) {
+  void setup(Device<HalType>* dev,uint8_t number,uint16_t addr) {
     this->dev = dev;
     this->num = number;
     this->addr = addr;
@@ -66,14 +67,14 @@ public:
     Peer result;
     uint16_t paddr = peerAddress(idx);
     if( paddr != 0 ) {
-      eeprom.getData(paddr,&result);
+      storage.getData(paddr,&result);
     }
     return result;
   }
 
 
   bool peer (uint8_t idx,const Peer& p) const {
-    return eeprom.setData(peerAddress(idx),p);
+    return storage.setData(peerAddress(idx),p);
   }
 
   uint8_t findpeer () const {
@@ -95,11 +96,9 @@ public:
   }
 
   void firstinit () {
+    storage.clearData(address(),size());
     List1Type cl = getList1();
     cl.defaults();
-    for( uint8_t i=0; i<peers(); ++i ) {
-      eeprom.clearData(peerAddress(i),Peer::size() + List3Type::size() + List4Type::size());
-    }
   }
 
   List1Type getList1 () const {
@@ -157,15 +156,15 @@ public:
     return List4Type::size() > 0;
   }
 
-  bool process (const ActionSetMsg& msg) {
+  bool process (__attribute__((unused)) const ActionSetMsg& msg) {
     return false;
   }
 
-  bool process (const RemoteEventMsg& msg) {
+  bool process (__attribute__((unused)) const RemoteEventMsg& msg) {
     return false;
   }
 
-  bool process (const SensorEventMsg& msg) {
+  bool process (__attribute__((unused)) const SensorEventMsg& msg) {
     return false;
   }
 

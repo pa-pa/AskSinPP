@@ -26,14 +26,14 @@ public:
   };
 
 protected:
-  uint8_t  stat;
-  uint16_t longpresstime;
+  uint8_t  stat     : 3;
+  uint8_t  pinstate : 1;
   uint8_t  pin;
-  uint8_t  pinstate;
+  uint16_t longpresstime;
 
 public:
   Button() :
-      Alarm(0), stat(none), longpresstime(millis2ticks(400)), pin(0), pinstate(HIGH) {
+      Alarm(0), stat(none), pinstate(HIGH), pin(0), longpresstime(millis2ticks(400))  {
   }
   virtual ~Button() {
   }

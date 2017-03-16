@@ -14,8 +14,8 @@
   #define HM_DEF_KEY_INDEX 0
 #endif
 
+#include <EnableInterrupt.h>
 #include <AskSinPP.h>
-#include <PinChangeInt.h>
 #include <TimerOne.h>
 #include <LowPower.h>
 
@@ -49,6 +49,13 @@
 
 // all library classes are placed in the namespace 'as'
 using namespace as;
+
+/**
+ * Configure the used hardware
+ */
+typedef AvrSPI<10,11,12,13> RadioSPI;
+typedef AskSin<StatusLed,BatterySensor,Radio<RadioSPI,2> > Hal;
+Hal hal;
 
 class Wds100List0Data : public List0Data {
   uint8_t LiveModeRx        : 1;   // 0x01 - 01
@@ -140,9 +147,6 @@ public:
   }
 };
 
-// use internal bandgap reference to measure battery voltage
-BatterySensor battery;
-
 class Wds100EventMsg : public Message {
 public:
   void init(uint8_t msgcnt,uint16_t temp,uint8_t humidity,
@@ -164,7 +168,7 @@ public:
 };
 
 
-class Wds100Channel : public Channel<Wds100List1,EmptyList,List4,PEERS_PER_CHANNEL>, public Alarm {
+class Wds100Channel : public Channel<Hal,Wds100List1,EmptyList,List4,PEERS_PER_CHANNEL>, public Alarm {
 
   Wds100EventMsg     msg;
   uint8_t     msgcnt;
@@ -181,7 +185,7 @@ public:
 
   uint8_t flags () const {
     // ??? no idea if this is correct
-    return battery.low() ? 0x80 : 0x00;
+    return hal.battery.low() ? 0x80 : 0x00;
   }
 
   virtual void trigger (AlarmClock& clock) {
@@ -203,7 +207,7 @@ public:
 };
 
 
-MultiChannelDevice<Wds100Channel,1> sdev(0x20);
+MultiChannelDevice<Hal,Wds100Channel,1> sdev(0x20);
 
 
 class CfgButton : public Button {
@@ -222,7 +226,7 @@ public:
         sdev.reset(); // long pressed again - reset
       }
       else {
-        sled.set(StatusLed::key_long);
+        hal.led.set(StatusLed::key_long);
       }
     }
   }
@@ -236,35 +240,35 @@ void setup () {
   Serial.begin(57600);
   DPRINTLN(ASKSIN_PLUS_PLUS_IDENTIFIER);
 #endif
-  if( eeprom.setup(sdev.checksum()) == true ) {
+  if( storage.setup(sdev.checksum()) == true ) {
     sdev.firstinit();
   }
 
-  sled.init(LED_PIN);
+  hal.led.init(LED_PIN);
 
   cfgBtn.init(CONFIG_BUTTON_PIN);
-  attachPinChangeInterrupt(CONFIG_BUTTON_PIN,cfgBtnISR,CHANGE);
-  radio.init();
+  enableInterrupt(CONFIG_BUTTON_PIN,cfgBtnISR,CHANGE);
+  hal.radio.init();
 
 #ifdef USE_OTA_BOOTLOADER
-  sdev.init(radio,OTA_HMID_START,OTA_SERIAL_START);
+  sdev.init(hal,OTA_HMID_START,OTA_SERIAL_START);
   sdev.setModel(OTA_MODEL_START);
 #else
-  sdev.init(radio,DEVICE_ID,DEVICE_SERIAL);
+  sdev.init(hal,DEVICE_ID,DEVICE_SERIAL);
   sdev.setModel(0x00,0xae);
 #endif
   // TODO check with version to use
   sdev.setFirmwareVersion(0x11);
-  sdev.setSubType(Device::THSensor);
+  sdev.setSubType(DeviceType::THSensor);
   sdev.setInfo(0x03,0x01,0x00);
 
-  radio.enableGDO0Int();
+  hal.radio.enable();
   aclock.init();
 
-  sled.set(StatusLed::welcome);
+  hal.led.set(StatusLed::welcome);
   // set low voltage to 2.2V
   // measure battery every 1h
-  battery.init(22,seconds2ticks(60UL*60));
+  hal.battery.init(22,seconds2ticks(60UL*60),aclock);
 
   // add channel 1 to timer to send event
   aclock.add(sdev.channel(1));
@@ -274,6 +278,6 @@ void loop() {
   bool worked = aclock.runready();
   bool poll = sdev.pollRadio();
   if( worked == false && poll == false ) {
-    activity.savePower<Sleep>();
+    hal.activity.savePower<Sleep>(hal);
   }
 }

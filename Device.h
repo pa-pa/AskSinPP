@@ -16,32 +16,41 @@
 
 namespace as {
 
+class DeviceType {
+public:
+enum Types {
+  AlarmControl = 0x01,
+  Switch = 0x10,
+  OutputUnit = 0x12,
+  Dimmer = 0x20,
+  BlindActuator = 0x30,
+  ClimateControl = 0x39,
+  Remote = 0x40,
+  Sensor = 0x41,
+  Swi = 0x42,
+  PushButton = 0x43,
+  SingleButton = 0x44,
+  PowerMeter = 0x51,
+  Thermostat = 0x58,
+  KFM100 = 0x60,
+  THSensor = 0x70,
+  ThreeStateSensor = 0x80,
+  MotionDetector = 0x81,
+  KeyMatic = 0xC0,
+  WinMatic = 0xC1,
+  TipTronic = 0xC3,
+  SmokeDetector = 0xCD,
+};
+};
+
+
+template <class HalType>
 class Device {
 
 public:
-  enum SubTypes {
-    AlarmControl = 0x01,
-    Switch = 0x10,
-    OutputUnit = 0x12,
-    Dimmer = 0x20,
-    BlindActuator = 0x30,
-    ClimateControl = 0x39,
-    Remote = 0x40,
-    Sensor = 0x41,
-    Swi = 0x42,
-    PushButton = 0x43,
-    SingleButton = 0x44,
-    PowerMeter = 0x51,
-    Thermostat = 0x58,
-    KFM100 = 0x60,
-    THSensor = 0x70,
-    ThreeStateSensor = 0x80,
-    MotionDetector = 0x81,
-    KeyMatic = 0xC0,
-    WinMatic = 0xC1,
-    TipTronic = 0xC3,
-    SmokeDetector = 0xCD,
-  };
+  typedef typename HalType::LedType LedType;
+  typedef typename HalType::BatteryType BatteryType;
+  typedef typename HalType::RadioType RadioType;
 
 private:
   HMID  devid;
@@ -53,22 +62,30 @@ private:
   uint8_t subtype;
   uint8_t devinfo[3];
 
-  CC1101* radio;
+  HalType* hal;
   uint8_t msgcount;
 
   HMID    lastdev;
   uint8_t lastmsg;
 
 protected:
-
   Message     msg;
   KeyStore    kstore;
 
+
 public:
-  Device (uint16_t addr) : firmversion(0), subtype(0), radio(0), msgcount(0), lastmsg(0), kstore(addr) {
+  Device (uint16_t addr) : firmversion(0), subtype(0), hal(0), msgcount(0), lastmsg(0), kstore(addr) {
     // TODO init seed
   }
   virtual ~Device () {}
+
+  LedType& led ()  { return hal->led; }
+  BatteryType& battery ()  { return hal->battery; }
+  RadioType& radio () { return hal->radio; }
+  KeyStore& keystore () { return this->kstore; }
+  Activity& activity () { return hal->activity; }
+
+  Message& message () { return msg; }
 
   bool isRepeat(const Message& m) {
     if( m.isRepeated() && lastdev == m.from() && lastmsg == m.count() ) {
@@ -80,13 +97,8 @@ public:
     return false;
   }
 
-  void setRadio(CC1101& r) {
-    msgcount=0;
-    radio = &r;
-  }
-
-  CC1101& getRadio () {
-    return *radio;
+  void setHal (HalType& h) {
+    hal = &h;
   }
 
   void setFirmwareVersion (uint8_t v) {
@@ -98,12 +110,12 @@ public:
     model[1] = m2;
   }
 
-  const uint8_t* const getModel () const {
+  const uint8_t* getModel () const {
     return model;
   }
 
   void setModel (uint16_t address) {
-    pgm_read(model,address,sizeof(model));
+    HalType::pgm_read(model,address,sizeof(model));
   }
 
   void setSubType (uint8_t st) {
@@ -129,7 +141,7 @@ public:
   }
 
   void setDeviceID (uint16_t address) {
-    pgm_read((uint8_t*)&devid,address,sizeof(devid));
+    HalType::pgm_read((uint8_t*)&devid,address,sizeof(devid));
   }
 
   const HMID& getDeviceID () const {
@@ -142,7 +154,7 @@ public:
   }
 
   void setSerial (uint16_t address) {
-    pgm_read((uint8_t*)serial,address,10);
+    HalType::pgm_read((uint8_t*)serial,address,10);
   }
 
   const char* getSerial () const {
@@ -191,7 +203,7 @@ public:
 
 
   bool pollRadio () {
-    uint8_t num = getRadio().read(msg);
+    uint8_t num = radio().read(msg);
     if( num > 0 ) {
       process(msg);
     }
@@ -202,7 +214,7 @@ public:
     return ++msgcount;
   }
 
-  virtual void process(Message& msg) {}
+  virtual void process(__attribute__((unused)) Message& msg) {}
 
   bool isBoardcastMsg(Message msg) {
     return msg.isPairSerial();
@@ -214,14 +226,15 @@ public:
     msg.setRpten(); // has to be set always
     bool result = false;
     uint8_t maxsend = 6;
+    led().set(StatusLed::send);
     while( result == false && maxsend > 0 ) {
       DPRINT(F("<- "));
       msg.dump();
       maxsend--;
-      result = radio->write(msg,msg.burstRequired());
+      result = radio().write(msg,msg.burstRequired());
       if( result == true && msg.ackRequired() == true && to.valid() == true ) {
         Message response;
-        if( waitResponse(msg,response,30) ) { // 300ms
+        if( (result=waitResponse(msg,response,30)) ) { // 300ms
   #ifdef USE_AES
           if( response.isChallengeAes() == true ) {
             AesChallengeMsg& cm = response.aesChallenge();
@@ -231,20 +244,30 @@ public:
   #endif
           {
             result = response.isAck();
+            // we request wakeup
+            // we got the fag to stay awake
+            if( msg.isWakeMeUp() /*response.isKeepAwake()*/ ) {
+              activity().stayAwake(millis2ticks(500));
+            }
           }
         }
         DPRINT(F("waitAck: ")); DHEX((uint8_t)result); DPRINTLN(F(""));
       }
     }
-    if( sled.active() == false ) {
-      sled.set(StatusLed::send);
-    }
+    if( result == true ) led().set(StatusLed::ack);
+    else led().set(StatusLed::nack);
     return result;
   }
 
 
-  void sendAck (Message& msg) {
-    msg.ack().init();
+  void sendAck (Message& msg,uint8_t flag=0x00) {
+    msg.ack().init(flag);
+    kstore.addAuth(msg);
+    send(msg,msg.from());
+  }
+
+  void sendAck2 (Message& msg,uint8_t flag=0x00) {
+    msg.ack2().init(flag);
     kstore.addAuth(msg);
     send(msg,msg.from());
   }
@@ -256,7 +279,7 @@ public:
 
   template <class ChannelType>
   void sendAck (Message& msg,ChannelType& ch) {
-    msg.ackStatus().init(ch,radio->rssi());
+    msg.ackStatus().init(ch,radio().rssi());
     kstore.addAuth(msg);
     send(msg,msg.from());
     ch.changed(false);
@@ -273,10 +296,17 @@ public:
     send(msg,to);
   }
 
+  void sendSerialInfo (const HMID& to,uint8_t count) {
+    SerialInfoMsg& pm = msg.serialInfo();
+    pm.init(to,count);
+    pm.fill(serial);
+    send(msg,to);
+  }
+
   template <class ChannelType>
   void sendInfoActuatorStatus (const HMID& to,uint8_t count,ChannelType& ch) {
     InfoActuatorStatusMsg& pm = msg.infoActuatorStatus();
-    pm.init(count,ch,radio->rssi());
+    pm.init(count,ch,radio().rssi());
     send(msg,to);
     ch.changed(false);
   }
@@ -305,6 +335,7 @@ public:
     *buf++ = 0;
     current++;
     pm.entries(current);
+    pm.clearAck();
     send(msg,to);
   }
 
@@ -335,6 +366,7 @@ public:
     memset(buf,0,sizeof(Peer));
     current++;
     pm.entries(current);
+    pm.clearAck();
     send(msg,to);
   }
 
@@ -364,10 +396,10 @@ public:
 
   bool waitForAck(Message& msg,uint8_t timeout) {
     do {
-      if( radio->readAck(msg) == true ) {
+      if( radio().readAck(msg) == true ) {
         return true;
       }
-      delay(10); // wait 10ms
+      _delay_ms(10); // wait 10ms
       timeout--;
     }
     while( timeout > 0 );
@@ -376,22 +408,19 @@ public:
 
   bool waitResponse(const Message& msg,Message& response,uint8_t timeout) {
     do {
-      if( radio->read(response) > 0 &&
-          msg.count() == response.count() &&
-          msg.to() == response.from() ) {
-        return true;
+      uint8_t num = radio().read(response);
+      if( num > 0 ) {
+        DPRINT(F("-> ")); response.dump();
+        if( msg.count() == response.count() &&
+            msg.to() == response.from() ) {
+          return true;
+        }
       }
-      delay(10); // wait 10ms
+      _delay_ms(10); // wait 10ms
       timeout--;
     }
     while( timeout > 0 );
     return false;
-  }
-
-  void pgm_read(uint8_t* dest,uint16_t adr,uint8_t size) {
-    for( int i=0; i<size; ++i, ++dest ) {
-      *dest = pgm_read_byte(adr + i);
-    }
   }
 
 #ifdef USE_AES
@@ -406,9 +435,9 @@ public:
     kstore.challengeKey(signmsg.challenge(),kstore.getIndex());
     // TODO re-send message handling
     DPRINT(F("<- ")); signmsg.dump();
-    radio->write(signmsg,signmsg.burstRequired());
+    radio().write(signmsg,signmsg.burstRequired());
     // read answer
-    if( waitForAesResponse(msg.from(),signmsg,30) == true ) {
+    if( waitForAesResponse(msg.from(),signmsg,60) == true ) {
       AesResponseMsg& response = signmsg.aesResponse();
   //    DPRINT("AES ");DHEX(response.data(),16);
       // fill initial vector with message to sign
@@ -434,11 +463,15 @@ public:
         DPRINTLN(F("Signature FAILED"));
       }
     }
+    else {
+      DPRINTLN(F("waitForAesResponse failed"));
+    }
     return false;
   }
 
   bool processChallenge(const Message& msg,const uint8_t* challenge,uint8_t keyidx) {
     if( kstore.challengeKey(challenge,keyidx) == true ) {
+      DPRINT("Process Challenge - Key: ");DHEXLN(keyidx);
       AesResponseMsg answer;
       answer.init(msg);
       // fill initial vector with message to sign
@@ -458,12 +491,14 @@ public:
 
   bool waitForAesResponse(const HMID& from,Message& answer,uint8_t timeout) {
     do {
-      uint8_t num = radio->read(answer);
-      if( num > 0 && answer.isResponseAes() && from == answer.from() ) {
+      uint8_t num = radio().read(answer);
+      if( num > 0 ) {
         DPRINT(F("-> ")); answer.dump();
-        return true;
+        if( answer.isResponseAes() && from == answer.from() ) {
+          return true;
+        }
       }
-      delay(10); // wait 10ms
+      _delay_ms(10); // wait 10ms
       timeout--;
     }
     while( timeout > 0 );

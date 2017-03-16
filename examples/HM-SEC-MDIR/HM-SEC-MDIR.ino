@@ -14,8 +14,8 @@
   #define HM_DEF_KEY_INDEX 0
 #endif
 
+#include <EnableInterrupt.h>
 #include <AskSinPP.h>
-#include <PinChangeInt.h>
 #include <TimerOne.h>
 #include <LowPower.h>
 
@@ -49,7 +49,6 @@
 // Arduino pin for the PIR
 // A0 == PIN 14 on Pro Mini
 #define PIR_PIN 14
-#define PIR_ENABLE_PIN 15
 
 
 #define BATTERY_LOW 22
@@ -61,6 +60,13 @@
 
 // all library classes are placed in the namespace 'as'
 using namespace as;
+
+/**
+ * Configure the used hardware
+ */
+typedef AvrSPI<10,11,12,13> RadioSPI;
+typedef AskSin<StatusLed,BatterySensor,Radio<RadioSPI,2> > Hal;
+Hal hal;
 
 // Create an SFE_TSL2561 object, here called "light":
 TSL2561 light;
@@ -133,20 +139,16 @@ public:
   }
 };
 
-BatterySensor battery;
-// BatterySensorExt battery;
-// BatterySensorUni battery(16,7); // A2 & D7
-
 class MotionEventMsg : public Message {
 public:
   void init(uint8_t msgcnt,uint8_t ch,uint8_t counter,uint8_t brightness,uint8_t next) {
-    Message::init(0xd,msgcnt,0x41,Message::BIDI,ch & 0x3f,counter);
+    Message::init(0xd,msgcnt,0x41,Message::BIDI|Message::WKMEUP,ch & 0x3f,counter);
     pload[0] = brightness;
     pload[1] = (next+4) << 4;
   }
 };
 
-class MotionChannel : public Channel<MotionList1,EmptyList,List4,PEERS_PER_CHANNEL>, public Alarm {
+class MotionChannel : public Channel<Hal,MotionList1,EmptyList,List4,PEERS_PER_CHANNEL>, public Alarm {
 
   class QuietMode : public Alarm {
   public:
@@ -158,7 +160,6 @@ class MotionChannel : public Channel<MotionList1,EmptyList,List4,PEERS_PER_CHANN
     virtual void trigger (AlarmClock& clock) {
       DPRINTLN(F("minInterval End"));
       enabled = false;
-      channel.pirPowerOn();
       if( motion == true ) {
         motion = false;
         channel.motionDetected();
@@ -193,25 +194,14 @@ class MotionChannel : public Channel<MotionList1,EmptyList,List4,PEERS_PER_CHANN
 
 private:
   MotionEventMsg   msg;
-  uint8_t          msgcnt;
   uint8_t          counter;
   QuietMode        quiet;
   Cycle            cycle;
-  volatile uint8_t states;
-
-#define STATE_POWEROFF 0x01
-#define STATE_SENDING  0x02
 
 public:
-  MotionChannel () : Channel(), Alarm(0), msgcnt(0), counter(0), quiet(*this), cycle(*this), states(0) {
+  MotionChannel () : Channel(), Alarm(0), counter(0), quiet(*this), cycle(*this) {
     aclock.add(cycle);
     pinMode(PIR_PIN,INPUT);
-#ifdef PIR_ENABLE_PIN
-    pinMode(PIR_ENABLE_PIN,OUTPUT);
-    pinMode(17,OUTPUT);
-    digitalWrite(17,LOW);
-#endif
-    pirPowerOn();
     pirInterruptOn();
   }
   virtual ~MotionChannel () {}
@@ -221,14 +211,14 @@ public:
   }
 
   uint8_t flags () const {
-    return battery.low() ? 0x80 : 0x00;
+    return hal.battery.low() ? 0x80 : 0x00;
   }
 
   void sendState () {
-    states |= STATE_SENDING;
-    Device& d = device();
+    pirInterruptOff();
+    Device<Hal>& d = device();
     d.sendInfoActuatorStatus(d.getMasterID(),d.nextcount(),*this);
-    states &= ~STATE_SENDING;
+    pirInterruptOn();
   }
 
   uint8_t brightness () const {
@@ -249,36 +239,11 @@ public:
   }
 
   void pirInterruptOn () {
-#if PIR_PIN == 3
-    attachInterrupt(digitalPinToInterrupt(3), motionISR, RISING);
-#else
-    attachPinChangeInterrupt(PIR_PIN,motionISR,RISING);
-#endif
+    enableInterrupt(PIR_PIN, motionISR, RISING);
   }
 
   void pirInterruptOff () {
-#if PIR_PIN == 3
-    detachInterrupt(digitalPinToInterrupt(3));
-#else
-    detachPinChangeInterrupt(PIR_PIN);
-#endif
-  }
-
-  void pirPowerOn () {
-#ifdef PIR_ENABLE_PIN
-    digitalWrite(PIR_ENABLE_PIN,HIGH);
-    delayMicroseconds(3000);
-    states &= ~ STATE_POWEROFF;
-    digitalWrite(17,LOW);
-#endif
-  }
-
-  void pirPowerOff () {
-#ifdef PIR_ENABLE_PIN
-    digitalWrite(17,HIGH);
-    states |= STATE_POWEROFF;
-    digitalWrite(PIR_ENABLE_PIN,LOW);
-#endif
+    disableInterrupt(PIR_PIN);
   }
 
   // this runs synch to application
@@ -290,37 +255,29 @@ public:
       quiet.enabled = true;
       aclock.add(quiet);
       // blink led
-      if( sled.active() == false ) {
-        sled.ledOn( centis2ticks(getList1().ledOntime()) / 2);
+      if( hal.led.active() == false ) {
+        hal.led.ledOn( centis2ticks(getList1().ledOntime()) / 2);
       }
-      msg.init(++msgcnt,number(),++counter,brightness(),getList1().minInterval());
+      msg.init(device().nextcount(),number(),++counter,brightness(),getList1().minInterval());
       device().sendPeerEvent(msg,*this);
-      // if we should not capture during interval - power off
-      if ( getList1().captureWithinInterval() == false ) {
-        pirPowerOff();
-      }
     }
     else if ( getList1().captureWithinInterval() == true ) {
       // we have had a motion during quiet interval
       quiet.motion = true;
-      // we can now power off the hardware
-      pirPowerOff();
     }
   }
 
   // runs in interrupt
   void motionDetected () {
-    if( (states & (STATE_POWEROFF | STATE_SENDING)) == 0x00 ) {
-      // cancel may not needed but anyway
-      aclock.cancel(*this);
-      // activate motion message handler
-      aclock.add(*this);
+    // cancel may not needed but anyway
+    aclock.cancel(*this);
+    // activate motion message handler
+    aclock.add(*this);
     }
-  }
 };
 
 
-MultiChannelDevice<MotionChannel,1> sdev(0x20);
+MultiChannelDevice<Hal,MotionChannel,1> sdev(0x20);
 void motionISR () { sdev.channel(1).motionDetected(); }
 
 
@@ -340,7 +297,7 @@ public:
         sdev.reset(); // long pressed again - reset
       }
       else {
-        sled.set(StatusLed::key_long);
+        hal.led.set(StatusLed::key_long);
       }
     }
   }
@@ -354,7 +311,7 @@ void setup () {
   Serial.begin(57600);
   DPRINTLN(ASKSIN_PLUS_PLUS_IDENTIFIER);
 #endif
-  if( eeprom.setup(sdev.checksum()) == true ) {
+  if( storage.setup(sdev.checksum()) == true ) {
     sdev.firstinit();
   }
 
@@ -368,36 +325,36 @@ void setup () {
   light.setTiming(0,2); //gain,time);
   light.setPowerUp();
 
-  sled.init(LED_PIN);
+  hal.led.init(LED_PIN);
 
   cfgBtn.init(CONFIG_BUTTON_PIN);
-  attachPinChangeInterrupt(CONFIG_BUTTON_PIN,cfgBtnISR,CHANGE);
-  radio.init();
+  enableInterrupt(CONFIG_BUTTON_PIN,cfgBtnISR,CHANGE);
+  hal.radio.init();
 
 #ifdef USE_OTA_BOOTLOADER
-  sdev.init(radio,OTA_HMID_START,OTA_SERIAL_START);
+  sdev.init(hal,OTA_HMID_START,OTA_SERIAL_START);
   sdev.setModel(OTA_MODEL_START);
 #else
-  sdev.init(radio,DEVICE_ID,DEVICE_SERIAL);
+  sdev.init(hal,DEVICE_ID,DEVICE_SERIAL);
   sdev.setModel(0x00,0x4a);
 #endif
   sdev.setFirmwareVersion(0x16);
   // TODO check sub type and infos
-  sdev.setSubType(Device::MotionDetector);
+  sdev.setSubType(DeviceType::MotionDetector);
   sdev.setInfo(0x01,0x01,0x00);
 
-  radio.enableGDO0Int();
+  hal.radio.enable();
   aclock.init();
 
-  sled.set(StatusLed::welcome);
+  hal.led.set(StatusLed::welcome);
   // set low voltage to 2.2V
   // measure battery every 1h
   //battery.init(BATTERY_LOW,seconds2ticks(60UL*60));
   // init for external measurement
   //battery.init(BATTERY_LOW,seconds2ticks(60UL*60),refvoltage,divider);
   // UniversalSensor setup
-  battery.init(BATTERY_LOW,seconds2ticks(60UL*60));
-  battery.critical(BATTERY_CRITICAL);
+  hal.battery.init(BATTERY_LOW,seconds2ticks(60UL*60),aclock);
+  hal.battery.critical(BATTERY_CRITICAL);
 }
 
 void loop() {
@@ -406,13 +363,11 @@ void loop() {
   if( worked == false && poll == false ) {
     // deep discharge protection
     // if we drop below critical battery level - switch off all and sleep forever
-    if( battery.critical() ) {
-      sdev.channel(1).pirPowerOff();
-      radio.setIdle();
+    if( hal.battery.critical() ) {
       // this call will never return
-      activity.sleepForever();
+      hal.activity.sleepForever(hal);
     }
     // if nothing to do - go sleep
-    activity.savePower<Sleep>();
+    hal.activity.savePower<Sleep>(hal);
   }
 }

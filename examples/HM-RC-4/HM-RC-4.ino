@@ -14,8 +14,9 @@
   #define HM_DEF_KEY_INDEX 0
 #endif
 
+#include <EnableInterrupt.h>
+#include <SPI.h>  // after including SPI Library - we can use LibSPI class
 #include <AskSinPP.h>
-#include <PinChangeInt.h>
 #include <TimerOne.h>
 #include <LowPower.h>
 
@@ -39,6 +40,7 @@
 // Arduino pin for the LED
 // D4 == PIN 4 on Pro Mini
 #define LED_PIN 4
+#define LED_PIN2 5
 // Arduino pin for the config button
 // B0 == PIN 8 on Pro Mini
 #define CONFIG_BUTTON_PIN 8
@@ -55,6 +57,17 @@
 
 // all library classes are placed in the namespace 'as'
 using namespace as;
+
+/**
+ * Configure the used hardware
+ */
+// typedef AvrSPI<10,11,12,13> RadioSPI;
+typedef LibSPI<10> RadioSPI;
+class Hal : public AskSin<DualStatusLed,BatterySensor,Radio<RadioSPI,2> > {
+public:
+  AlarmClock btncounter;  // extra clock to count button press events
+} hal;
+
 
 class BtnList1Data {
 public:
@@ -108,17 +121,20 @@ public:
 
 class BtnEventMsg : public Message {
 public:
-  void init(uint8_t msgcnt,uint8_t ch,uint8_t counter,bool lg) {
-    Message::init(0xb,msgcnt,0x40, Message::BIDI,(ch & 0x3f) | (lg ? 0x40 : 0x00),counter);
+  void init(uint8_t msgcnt,uint8_t ch,uint8_t counter,bool lg,bool lowbat) {
+    uint8_t flags = lg ? 0x40 : 0x00;
+    if( lowbat == true ) {
+      flags |= 0x80; // low battery
+    }
+    Message::init(0xb,msgcnt,0x40, Message::BIDI,(ch & 0x3f) | flags,counter);
   }
 };
 
 
 
-class BtnChannel : public Channel<BtnList1,EmptyList,List4,PEERS_PER_CHANNEL>, public Button {
+class BtnChannel : public Channel<Hal,BtnList1,EmptyList,List4,PEERS_PER_CHANNEL>, public Button {
 
 private:
-  BtnEventMsg   msg;
   uint8_t       msgcnt;
   uint8_t       repeatcnt;
   volatile bool isr;
@@ -142,12 +158,16 @@ public:
     Button::state(s);
     if( s == released ) {
       repeatcnt=0;
-      msg.init(++msgcnt,number(),repeatcnt,false);
+      BtnEventMsg& msg = (BtnEventMsg&)device().message();
+      msg.init(++msgcnt,number(),repeatcnt,false,hal.battery.low());
       device().sendPeerEvent(msg,*this);
+      --hal.btncounter;
     }
     else if( s == longpressed ) {
-      msg.init(++msgcnt,number(),repeatcnt++,true);
+      BtnEventMsg& msg = (BtnEventMsg&)device().message();
+      msg.init(++msgcnt,number(),repeatcnt++,true,hal.battery.low());
       device().sendPeerEvent(msg,*this);
+      --hal.btncounter;
     }
   }
 
@@ -166,7 +186,7 @@ public:
 };
 
 
-MultiChannelDevice<BtnChannel,4> sdev(0x20);
+MultiChannelDevice<Hal,BtnChannel,4> sdev(0x20);
 
 class CfgButton : public Button {
 public:
@@ -184,7 +204,7 @@ public:
         sdev.reset(); // long pressed again - reset
       }
       else {
-        sled.set(StatusLed::key_long);
+        sdev.led().set(StatusLed::key_long);
       }
     }
   }
@@ -203,40 +223,41 @@ void setup () {
   Serial.begin(57600);
   DPRINTLN(ASKSIN_PLUS_PLUS_IDENTIFIER);
 #endif
-  if( eeprom.setup(sdev.checksum()) == true ) {
+  if( storage.setup(sdev.checksum()) == true ) {
     sdev.firstinit();
   }
-
-  sled.init(LED_PIN);
 
   sdev.channel(1).button().init(BTN1_PIN);
   sdev.channel(2).button().init(BTN2_PIN);
   sdev.channel(3).button().init(BTN3_PIN);
   sdev.channel(4).button().init(BTN4_PIN);
-  attachPinChangeInterrupt(BTN1_PIN,btn1ISR,CHANGE);
-  attachPinChangeInterrupt(BTN2_PIN,btn2ISR,CHANGE);
-  attachPinChangeInterrupt(BTN3_PIN,btn3ISR,CHANGE);
-  attachPinChangeInterrupt(BTN4_PIN,btn4ISR,CHANGE);
+  enableInterrupt(BTN1_PIN,btn1ISR,CHANGE);
+  enableInterrupt(BTN2_PIN,btn2ISR,CHANGE);
+  enableInterrupt(BTN3_PIN,btn3ISR,CHANGE);
+  enableInterrupt(BTN4_PIN,btn4ISR,CHANGE);
 
   cfgBtn.init(CONFIG_BUTTON_PIN);
-  attachPinChangeInterrupt(CONFIG_BUTTON_PIN,cfgBtnISR,CHANGE);
-  radio.init();
+  enableInterrupt(CONFIG_BUTTON_PIN,cfgBtnISR,CHANGE);
+  hal.radio.init();
 
 #ifdef USE_OTA_BOOTLOADER
-  sdev.init(radio,OTA_HMID_START,OTA_SERIAL_START);
+  sdev.init(hal,OTA_HMID_START,OTA_SERIAL_START);
   sdev.setModel(OTA_MODEL_START);
 #else
-  sdev.init(radio,DEVICE_ID,DEVICE_SERIAL);
+  sdev.init(hal,DEVICE_ID,DEVICE_SERIAL);
   sdev.setModel(0x00,0x08);
 #endif
   sdev.setFirmwareVersion(0x11);
-  sdev.setSubType(Device::Remote);
+  sdev.setSubType(DeviceType::Remote);
   sdev.setInfo(0x04,0x00,0x00);
 
-  radio.enableGDO0Int();
+  hal.radio.enable();
   aclock.init();
 
-  sled.set(StatusLed::welcome);
+  hal.led.init(LED_PIN2,LED_PIN);
+  hal.led.set(StatusLed::welcome);
+  // get new battery value after 50 key press
+  hal.battery.init(22,50,hal.btncounter);
 }
 
 void loop() {
@@ -246,9 +267,9 @@ void loop() {
       pinchanged = true;
     }
   }
-  bool worked = aclock.runready();
+  bool worked = aclock.runready() || hal.btncounter.runready();
   bool poll = sdev.pollRadio();
   if( pinchanged == false && worked == false && poll == false ) {
-    activity.savePower<Sleep>();
+    hal.activity.savePower<Sleep>(hal);
   }
 }

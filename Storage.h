@@ -3,16 +3,16 @@
 // 2016-10-31 papa Creative Commons - http://creativecommons.org/licenses/by-nc-sa/3.0/de/
 //- -----------------------------------------------------------------------------------------------------------------------
 
-#ifndef __EEPROM_H__
-#define __EEPROM_H__
+#ifndef __STORAGE_H__
+#define __STORAGE_H__
 
 #include "Debug.h"
 
 namespace as {
 
-class EEProm {
+class Storage {
 public:
-  EEProm () {}
+  Storage () {}
 
   bool setup (uint16_t checksum=0);
 
@@ -70,7 +70,7 @@ public:
 
 };
 
-extern EEProm eeprom;
+extern Storage storage;
 
 }
 

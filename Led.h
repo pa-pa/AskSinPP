@@ -7,15 +7,17 @@
 #define __STATUSLED_H__
 
 #include "Alarm.h"
+#include "Debug.h"
 
 namespace as {
 
-class StatusLed : public Alarm {
+
+class StatusLed {
 
 public:
 
-  enum Mode { nothing=0, pairing=1, pair_suc=2, pair_err=3, send=4, ack=5,
-    noack=6, bat_low=7, defect=8, welcome=9, key_long=10 };
+  enum Mode { nothing=0, pairing=1,send=2, ack=3,
+    nack=4, bat_low=5, welcome=6, key_long=7 };
 
   struct BlinkPattern {
     uint8_t  length;
@@ -23,47 +25,70 @@ public:
     uint8_t  pattern[6];
   };
 
+protected:
+
+  class Led : public Alarm {
 private:
+    uint8_t pin;
+    BlinkPattern current;
+    uint8_t step;   // current step in pattern
+    uint8_t repeat; // current repeat of the pattern
 
-  uint8_t pin;
-  BlinkPattern current;
-  uint8_t step;   // current step in pattern
-  uint8_t repeat; // current repeat of the pattern
-
-  void copyPattern (Mode stat);
-
-  void next (AlarmClock& clock);
+    void copyPattern (Mode stat,const BlinkPattern* patt);
+    void next (AlarmClock& clock);
 
 public:
-  StatusLed () : Alarm(0), pin(0), step(0), repeat(0) {
-    async(true);
-  }
-  virtual ~StatusLed () {}
+    Led () : Alarm(0), pin(0), step(0), repeat(0) {
+      async(true);
+    }
+    virtual ~Led() {}
 
-  void init (uint8_t p) {
-    pin = p;
-    pinMode(pin,OUTPUT);
-    ledOff();
-  }
+    void init (uint8_t p) {
+      pin = p;
+      pinMode(pin,OUTPUT);
+      ledOff();
+    }
 
+    void set(Mode stat,const BlinkPattern* patt);
+
+    void ledOff () {
+      digitalWrite(pin,LOW);
+    }
+
+    void ledOn () {
+      digitalWrite(pin,HIGH);
+    }
+
+    void ledOn (uint8_t ticks);
+
+    bool active () const { return current.length != 0; }
+
+    virtual void trigger (AlarmClock& clock);
+
+
+  };
+
+  Led led1;
+
+public:
+  StatusLed () {}
+
+  void init (uint8_t p1) {  led1.init(p1); }
+  bool active () const { return led1.active(); }
+  void ledOn (uint8_t ticks) { led1.ledOn(ticks); }
   void set(Mode stat);
-
-  void ledOff () {
-    digitalWrite(pin,LOW);
-  }
-
-  void ledOn () {
-    digitalWrite(pin,HIGH);
-  }
-
-  void ledOn (uint8_t ticks);
-
-  bool active () const { return current.length != 0; }
-
-  virtual void trigger (AlarmClock& clock);
 };
 
-extern StatusLed sled;
+class DualStatusLed : public StatusLed {
+private:
+  Led led2;
+public:
+  DualStatusLed () {}
+  void init (uint8_t p1, uint8_t p2) { led1.init(p1); led2.init(p2); }
+  bool active () const { return led1.active() || led2.active(); }
+  void ledOn (uint8_t ticks) { led1.ledOn(ticks); led2.ledOn(ticks); }
+  void set(Mode stat);
+};
 
 }
 

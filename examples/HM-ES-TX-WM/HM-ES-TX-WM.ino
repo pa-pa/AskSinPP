@@ -14,13 +14,12 @@
   #define HM_DEF_KEY_INDEX 0
 #endif
 
+#include <EnableInterrupt.h>
 #include <AskSinPP.h>
-#include <PinChangeInt.h>
 #include <TimerOne.h>
 #include <LowPower.h>
 
 #include <MultiChannelDevice.h>
-#include <BatterySensor.h>
 
 // define this to read the device id, serial and device type from bootloader section
 // #define USE_OTA_BOOTLOADER
@@ -54,6 +53,13 @@
 
 // all library classes are placed in the namespace 'as'
 using namespace as;
+
+/**
+ * Configure the used hardware
+ */
+typedef AvrSPI<10,11,12,13> RadioSPI;
+typedef AskSin<StatusLed,NoBattery,Radio<RadioSPI,2> > Hal;
+Hal hal;
 
 class MeterList0Data : public List0Data {
   uint8_t LocalResetDisbale : 1;   // 0x18 - 24
@@ -207,7 +213,7 @@ public:
     if( boot == true ) {
       cnt1 |= 0x80;
     }
-    Message::init(0x10,msgcnt,0x54,Message::BIDI,cnt1,(counter >> 16) & 0xff);
+    Message::init(0x10,msgcnt,0x54,BIDI|WKMEUP,cnt1,(counter >> 16) & 0xff);
     pload[0] = (counter >> 8) & 0xff;
     pload[1] = counter & 0xff;
     pload[2] = (power >> 16) & 0xff;
@@ -231,7 +237,7 @@ public:
     if( boot == true ) {
       cnt1 |= 0x80;
     }
-    Message::init(0x0f,msgcnt,0x5f,Message::BIDI,cnt1,(counter >> 8) & 0xff);
+    Message::init(0x0f,msgcnt,0x5f,BIDI|WKMEUP,cnt1,(counter >> 8) & 0xff);
     pload[0] = counter & 0xff;
     pload[1] = (power >> 16) & 0xff;
     pload[2] = (power >> 8) & 0xff;
@@ -247,7 +253,7 @@ public:
   }
 };
 
-class MeterChannel : public Channel<MeterList1,EmptyList,List4,PEERS_PER_CHANNEL>, public Alarm {
+class MeterChannel : public Channel<Hal,MeterList1,EmptyList,List4,PEERS_PER_CHANNEL>, public Alarm {
 
   const uint32_t maxVal = 838860700;
   uint64_t counterSum;
@@ -274,7 +280,7 @@ public:
     // only count rotations/flashes and calculate real value when sending, to prevent inaccuracy
     counter++;
 
-    sled.ledOn(millis2ticks(300));
+    hal.led.ledOn(millis2ticks(300));
     
     #ifndef NDEBUG
       DHEXLN(counter);
@@ -333,7 +339,7 @@ public:
 };
 
 
-MultiChannelDevice<MeterChannel,2> sdev(0x20);
+MultiChannelDevice<Hal,MeterChannel,2> sdev(0x20);
 
 template <uint8_t pin, void (*isr)(), uint16_t millis>
 class ISRWrapper : public Alarm {
@@ -355,13 +361,11 @@ public:
   }
 
   void attach() {
-    if( pin > 3 ) PCintPort::attachInterrupt(pin,isr,CHANGE);
-    else attachInterrupt(digitalPinToInterrupt(pin),isr,CHANGE);
+    enableInterrupt(pin,isr,CHANGE);
   }
 
   void detach () {
-    if( pin > 3 ) PCintPort::detachInterrupt(pin);
-    else detachInterrupt(digitalPinToInterrupt(pin));
+    disableInterrupt(pin);
   }
 
   void debounce () {
@@ -402,7 +406,7 @@ public:
         sdev.reset(); // long pressed again - reset
       }
       else {
-        sled.set(StatusLed::key_long);
+        hal.led.set(StatusLed::key_long);
       }
     }
   }
@@ -416,36 +420,36 @@ void setup () {
   Serial.begin(57600);
   DPRINTLN(ASKSIN_PLUS_PLUS_IDENTIFIER);
 #endif
-  if( eeprom.setup(sdev.checksum()) == true ) {
+  if( storage.setup(sdev.checksum()) == true ) {
     sdev.firstinit();
   }
 
-  sled.init(LED_PIN);
+  hal.led.init(LED_PIN);
 
   cfgBtn.init(CONFIG_BUTTON_PIN);
-  attachPinChangeInterrupt(CONFIG_BUTTON_PIN,cfgBtnISR,CHANGE);
-  radio.init();
+  enableInterrupt(CONFIG_BUTTON_PIN,cfgBtnISR,CHANGE);
+  hal.radio.init();
 
 #ifdef USE_OTA_BOOTLOADER
-  sdev.init(radio,OTA_HMID_START,OTA_SERIAL_START);
+  sdev.init(hal,OTA_HMID_START,OTA_SERIAL_START);
   sdev.setModel(OTA_MODEL_START);
 #else
-  sdev.init(radio,DEVICE_ID,DEVICE_SERIAL);
+  sdev.init(hal,DEVICE_ID,DEVICE_SERIAL);
   sdev.setModel(0x00,0xde);
 #endif
   sdev.setFirmwareVersion(0x11);
-  sdev.setSubType(Device::PowerMeter);
+  sdev.setSubType(DeviceType::PowerMeter);
   sdev.setInfo(0x03,0x01,0x00);
 
-  radio.enableGDO0Int();
+  hal.radio.enable();
   aclock.init();
 
   gasISR.attach();
 
-  sled.set(StatusLed::welcome);
+  hal.led.set(StatusLed::welcome);
   // set low voltage to 2.2V
   // measure battery every 1h
-  battery.init(22,seconds2ticks(60UL*60));
+  battery.init(22,seconds2ticks(60UL*60),aclock);
 
   // add channel 1 to timer to send event
   aclock.add(sdev.channel(1));
@@ -455,6 +459,6 @@ void loop() {
   bool worked = aclock.runready();
   bool poll = sdev.pollRadio();
   if( worked == false && poll == false ) {
-    activity.savePower<Sleep>();
+    hal.activity.savePower<Sleep>(hal);
   }
 }
