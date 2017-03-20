@@ -9,10 +9,14 @@
 #include <Debug.h>
 #include <AlarmClock.h>
 #include <Radio.h>
-#include <LowPower.h>
 
+#ifdef ARDUINO_ARCH_AVR
+#include <LowPower.h>
+#endif
 
 namespace as {
+
+#ifdef ARDUINO_ARCH_AVR
 
 class Idle {
 public:
@@ -78,6 +82,8 @@ public:
   }
 };
 
+#endif
+
 class Activity : public Alarm {
 
   bool  awake;
@@ -119,7 +125,9 @@ public:
   void sleepForever (Hal& hal) {
     hal.radio.setIdle();
     while( true ) {
+#ifdef ARDUINO_ARCH_AVR
       LowPower.powerDown(SLEEP_FOREVER,ADC_OFF,BOD_OFF);
+#endif
     }
   }
 

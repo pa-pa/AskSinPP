@@ -12,7 +12,9 @@
 #include <Led.h>
 #include <Activity.h>
 
+#ifdef ARDUINO_ARCH_AVR
 #include <avr/wdt.h>
+#endif
 
 namespace as {
 
@@ -114,8 +116,10 @@ public:
 
   void bootloader () {
     DPRINTLN(F("BOOTLOADER"));
+#ifdef ARDUINO_ARCH_AVR
     wdt_enable(WDTO_250MS);
     while(1);
+#endif
   }
 
   void startPairing () {
@@ -180,7 +184,13 @@ public:
                }
              }
            }
-           success == true ? DeviceType::sendAck(msg) : DeviceType::sendNack(msg);
+           if( success == true ) {
+             storage.store();
+             DeviceType::sendAck(msg);
+           }
+           else {
+             DeviceType::sendNack(msg);
+           }
          }
          // CONFIG_PEER_REMOVE
          else if ( msubc == AS_CONFIG_PEER_REMOVE ) {
@@ -198,7 +208,13 @@ public:
                }
              }
            }
-           success == true ? DeviceType::sendAck(msg) : DeviceType::sendNack(msg);
+           if( success == true ) {
+             storage.store();
+             DeviceType::sendAck(msg);
+           }
+           else {
+             DeviceType::sendNack(msg);
+           }
          }
          // CONFIG_PEER_LIST_REQ
          else if( msubc == AS_CONFIG_PEER_LIST_REQ ) {
@@ -247,6 +263,7 @@ public:
              channel(cfgChannel).configChanged();
            }
            cfgChannel = 0xff;
+           storage.store();
            // TODO cancel alarm
            DeviceType::sendAck(msg);
          }

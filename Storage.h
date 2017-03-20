@@ -11,19 +11,46 @@
 namespace as {
 
 class Storage {
+#ifdef ARDUINO_ARCH_STM32F1
+  // we use 1k memory and read/write it from/into the flash
+  uint8_t data[1024];
+
+  void eeprom_read_block(void* buf,const void* addr,size_t size) {
+    uintptr_t offset = (uintptr_t)addr;
+    if( offset + size < sizeof(data) ) {
+      memcpy(buf,&data[offset],size);
+    }
+  }
+  void eeprom_write_block(const void* buf,void* addr,size_t size) {
+    uintptr_t offset = (uintptr_t)addr;
+    if( offset + size < sizeof(data) ) {
+      memcpy(&data[offset],buf,size);
+    }
+  }
+#endif
 public:
-  Storage () {}
+  Storage () {
+#ifdef ARDUINO_ARCH_STM32F1
+    // TODO copy from FLASH
+    memset(data,0,sizeof(data));
+#endif
+  }
+
+  void store () {
+    // TODO copy to FLASH
+  }
 
   bool setup (uint16_t checksum=0);
 
   uint8_t getByte (uint16_t addr) {
-    uint8_t b;
-    eeprom_read_block((void*)&b,(const void*)addr,1);
+    uint8_t b = 0;
+    eeprom_read_block(&b,(void*)(uintptr_t)addr,1);
     return b;
   }
 
   bool setByte (uint16_t addr, uint8_t d) {
-    eeprom_write_block((const void*)&d,(void*)addr,1);    
+    uint8_t b = d;
+    eeprom_write_block(&b,(void*)(uintptr_t)addr,1);
     return true;
   }
 
@@ -38,7 +65,7 @@ public:
   }
 
   bool setData (uint16_t addr,uint8_t* buf,uint16_t size) {
-    eeprom_write_block((const void*)buf,(void*)addr,size);    
+    eeprom_write_block(buf,(void*)(uintptr_t)addr,size);
     return true;
   }
 
@@ -48,7 +75,7 @@ public:
   }
 
   bool getData (uint16_t addr,uint8_t* buf,uint16_t size) {
-    eeprom_read_block((void*)buf,(const void*)addr,size);
+    eeprom_read_block(buf,(const void*)(uintptr_t)addr,size);
     return true;
   }
 

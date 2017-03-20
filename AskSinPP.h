@@ -10,6 +10,14 @@
 
 #define ASKSIN_PLUS_PLUS_IDENTIFIER F("AskSin++ V" ASKSIN_PLUS_PLUS_VERSION)
 
+#ifdef ARDUINO_ARCH_STM32F1
+  #define _delay_us(us) delayMicroseconds(us)
+  inline void _delay_ms(uint32_t ms) { do { delayMicroseconds(1000); } while( (--ms) > 0); }
+
+  #define enableInterrupt(pin,handler,mode) attachInterrupt(pin,handler,mode)
+  #define disableInterrupt(pin) detachInterrupt(pin)
+#endif
+
 
 #include <Debug.h>
 #include <Activity.h>
@@ -19,6 +27,7 @@
 #include <Button.h>
 #include <Radio.h>
 #include <BatterySensor.h>
+
 
 namespace as {
 

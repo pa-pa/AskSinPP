@@ -9,6 +9,8 @@
 #include <Debug.h>
 #include <AlarmClock.h>
 
+#ifdef ARDUINO_ARCH_AVR
+
 #include <avr/power.h>
 
 #if defined(__AVR_ATmega32U4__) || defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__)
@@ -21,6 +23,9 @@
 #define ADMUX_VCCWRT1V1 (_BV(REFS0) | _BV(MUX3) | _BV(MUX2) | _BV(MUX1))
 #endif
 
+#endif
+
+
 namespace as {
 
 
@@ -31,6 +36,7 @@ public:
   bool low () { return false; }
 };
 
+#ifdef ARDUINO_ARCH_AVR
 
 #define ADMUX_ADCMASK  ((1 << MUX3)|(1 << MUX2)|(1 << MUX1)|(1 << MUX0))
 #define ADMUX_REFMASK  ((1 << REFS1)|(1 << REFS0))
@@ -41,6 +47,8 @@ public:
 #define ADMUX_REF_VBG  ((1 << REFS1)|(1 << REFS0))
 
 #define ADMUX_ADC_VBG  ((1 << MUX3)|(1 << MUX2)|(1 << MUX1)|(0 << MUX0))
+
+#endif
 
 /**
  * Use internal bandgap reference to measure battery voltage
@@ -53,7 +61,13 @@ class BatterySensor : public Alarm {
   uint32_t m_Period;
 
 public:
-  BatterySensor () : Alarm(0), m_LowValue(0), m_LastValue(0), m_CriticalValue(0xff), m_Period(0) {}
+  BatterySensor () : Alarm(0), m_LowValue(0), m_LastValue(0), m_CriticalValue(0xff), m_Period(0) {
+#ifdef ARDUINO_ARCH_STM32F1
+    adc_reg_map *regs = ADC1->regs;
+    regs->CR2 |= ADC_CR2_TSVREFE;    // enable VREFINT and temp sensor
+    regs->SMPR1 =  ADC_SMPR1_SMP17;  // sample rate for VREFINT ADC channel
+#endif
+  }
   virtual ~BatterySensor() {}
 
   virtual void trigger (AlarmClock& clock) {
@@ -87,6 +101,8 @@ public:
   }
 
   virtual uint8_t voltage() {
+    uint16_t vcc = 0;
+#ifdef ARDUINO_ARCH_AVR
     // Read 1.1V reference against AVcc
     // set the reference to Vcc and the measurement to the internal 1.1V reference
     ADMUX &= ~(ADMUX_REFMASK | ADMUX_ADCMASK);
@@ -97,7 +113,11 @@ public:
     ADCSRA |= (1 << ADSC);        // start conversion
     while (ADCSRA & (1 << ADSC)); // wait to finish
 
-    uint16_t vcc = 1100UL * 1023 / ADC / 100;
+    vcc = 1100UL * 1023 / ADC / 100;
+#elif defined ARDUINO_ARCH_STM32F1
+    int millivolts = 1200 * 4096 / adc_read(ADC1, 17);  // ADC sample to millivolts
+    vcc = millivolts / 100;
+#endif
     DPRINT(F("Bat: ")); DDECLN(vcc);
     return (uint8_t) vcc;
   }
@@ -131,7 +151,7 @@ public:
     digitalWrite(m_SensePin,LOW);
 
     analogRead(m_SensePin);
-    delay(2); // allow the ADC to stabilize
+    _delay_ms(2); // allow the ADC to stabilize
     uint16_t value = analogRead(m_SensePin);
     uint16_t vcc = (value * 3300UL * m_Factor) / 1024 / 1000;
 
@@ -175,7 +195,7 @@ public:
         delayMicroseconds(10); // copes with slow switching activation circuits
       }
       analogRead(m_SensePin);
-      delay(2); // allow the ADC to stabilize
+      _delay_ms(2); // allow the ADC to stabilize
       uint32_t value = analogRead(m_SensePin);
       uint16_t vcc = (value * m_DividerRatio * m_RefVoltage) / 1024 / 100;
       if (m_ActivationPin != 0xFF) {

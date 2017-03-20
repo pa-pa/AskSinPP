@@ -13,10 +13,14 @@
 #ifndef _CC_H
 #define _CC_H
 
-#include <util/delay.h>
 #include "Message.h"
-#define LIBCALL_ENABLEINTERRUPT
-#include <EnableInterrupt.h>
+
+#ifdef ARDUINO_ARCH_AVR
+  #include <util/delay.h>
+  #define LIBCALL_ENABLEINTERRUPT
+  #include <EnableInterrupt.h>
+  typedef uint8_t BitOrder;
+#endif
 
 namespace as {
 
@@ -149,7 +153,7 @@ namespace as {
 
 
 
-#ifdef __AVR_ATmega328P__
+#ifdef ARDUINO_ARCH_AVR
 
 template <uint8_t CS,uint8_t MOSI,uint8_t MISO,uint8_t SCLK>
 class AvrSPI {
@@ -240,7 +244,7 @@ public:
 
 #ifdef SPI_MODE0
 
-template <uint8_t CS,uint32_t CLOCK=2000000, uint8_t BITORDER=MSBFIRST, uint8_t MODE=SPI_MODE0>
+template <uint8_t CS,uint32_t CLOCK=2000000, BitOrder BITORDER=MSBFIRST, uint8_t MODE=SPI_MODE0>
 class LibSPI {
 
 public:

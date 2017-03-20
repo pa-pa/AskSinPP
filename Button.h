@@ -8,9 +8,14 @@
 #include "AlarmClock.h"
 #include "Debug.h"
 
+#ifdef ARDUINO_ARCH_AVR
+  typedef uint8_t WiringPinMode;
+#endif
+
 namespace as {
 
-class Button: public Alarm {
+template <uint8_t OFFSTATE=HIGH,uint8_t ONSTATE=LOW,WiringPinMode MODE=INPUT_PULLUP>
+class StateButton: public Alarm {
 
 #define DEBOUNCETIME millis2ticks(200)
 
@@ -32,10 +37,10 @@ protected:
   uint16_t longpresstime;
 
 public:
-  Button() :
-      Alarm(0), stat(none), pinstate(HIGH), pin(0), longpresstime(millis2ticks(400))  {
+  StateButton() :
+      Alarm(0), stat(none), pinstate(OFFSTATE), pin(0), longpresstime(millis2ticks(400))  {
   }
-  virtual ~Button() {
+  virtual ~StateButton() {
   }
 
   void setLongPressTime(uint16_t t) {
@@ -57,7 +62,7 @@ public:
 
     case debounce:
       nextstate = pressed;
-      if (pinstate == LOW) {
+      if (pinstate == ONSTATE) {
         // set timer for detect longpressed
         nexttick = longpresstime - DEBOUNCETIME;
       } else {
@@ -68,7 +73,7 @@ public:
 
     case pressed:
     case longpressed:
-      if( pinstate == LOW) {
+      if( pinstate == ONSTATE) {
         nextstate = longpressed;
         nexttick = longpresstime;
       }
@@ -115,7 +120,7 @@ public:
 
       case pressed:
       case longpressed:
-        if (pinstate == HIGH) {
+        if (pinstate == OFFSTATE) {
           nextstate = state() == pressed ? released : longreleased;
           nexttick = DEBOUNCETIME;
         }
@@ -134,9 +139,12 @@ public:
 
   void init(uint8_t pin) {
     this->pin = pin;
-    pinMode(pin, INPUT_PULLUP);
+    pinMode(pin, MODE);
   }
 };
+
+// define standard button switches to GND
+typedef StateButton<HIGH,LOW,INPUT_PULLUP> Button;
 
 }
 
