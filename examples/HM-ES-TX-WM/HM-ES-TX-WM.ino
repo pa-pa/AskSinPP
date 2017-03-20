@@ -69,6 +69,7 @@ class MeterList0Data : public List0Data {
   uint8_t MeterProtocolMode : 8;   // 0x26 - 38
   uint8_t SamplesPerCycle   : 8;   // 0x27 - 39
 
+public:
   static uint8_t getOffset(uint8_t reg) {
     switch (reg) {
       case 0x18: return sizeof(List0Data) + 0;
@@ -339,7 +340,7 @@ public:
 };
 
 
-MultiChannelDevice<Hal,MeterChannel,2> sdev(0x20);
+MultiChannelDevice<Hal,MeterChannel,2,MeterList0> sdev(0x20);
 
 template <uint8_t pin, void (*isr)(), uint16_t millis>
 class ISRWrapper : public Alarm {

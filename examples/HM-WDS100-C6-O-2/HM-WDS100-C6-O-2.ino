@@ -62,6 +62,7 @@ class Wds100List0Data : public List0Data {
   uint8_t CycleInfoMsgDis   : 1;   // 0x11 - 17
   uint8_t LocalResetDisbale : 1;   // 0x18 - 24
 
+public:
   static uint8_t getOffset(uint8_t reg) {
     switch (reg) {
       case 0x01: return sizeof(List0Data) + 0;
@@ -207,7 +208,7 @@ public:
 };
 
 
-MultiChannelDevice<Hal,Wds100Channel,1> sdev(0x20);
+MultiChannelDevice<Hal,Wds100Channel,1,Wds100List0> sdev(0x20);
 
 
 class CfgButton : public Button {
