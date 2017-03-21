@@ -12,7 +12,8 @@
 #define HM_DEF_KEY 0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x0a,0x0b,0x0c,0x0d,0x0e,0x0f,0x10
 #define HM_DEF_KEY_INDEX 0
 
-#include <SPI.h>  // when we include SPI.h - we can use LibSPI class
+#include <SPI.h>    // when we include SPI.h - we can use LibSPI class
+#include <EEPROM.h> // the EEPROM library contains Flash Access Methods
 #include <AskSinPP.h>
 
 #include <MultiChannelDevice.h>
@@ -113,6 +114,10 @@ void setup () {
   if( storage.setup(sdev.checksum()) == true ) {
     sdev.firstinit();
     storage.store();
+  }
+  // this will also trigger powerUpAction handling
+  for( uint8_t i=1; i<=sdev.channels(); ++i ) {
+    sdev.channel(i).lowactive(false);
   }
 
   hal.led.init(LED_PIN);

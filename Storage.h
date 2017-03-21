@@ -8,12 +8,24 @@
 
 #include "Debug.h"
 
+#ifdef ARDUINO_ARCH_STM32F1
+  #include "flash_stm32.h"
+#endif
+
 namespace as {
 
 class Storage {
+
 #ifdef ARDUINO_ARCH_STM32F1
-  // we use 1k memory and read/write it from/into the flash
-  uint8_t data[1024];
+ #ifdef MCU_STM32F103CB
+  #define FlashPageSize 0x400
+  #define FlashStartAddress 0x0801fc00  // Page127 -
+ #else
+  #error Unknown CPU type
+ #endif
+
+  // we mirror 1 Flash Page into RAM
+  uint8_t data[FlashPageSize];
 
   void eeprom_read_block(void* buf,const void* addr,size_t size) {
     uintptr_t offset = (uintptr_t)addr;
@@ -28,16 +40,30 @@ class Storage {
     }
   }
 #endif
+
 public:
   Storage () {
 #ifdef ARDUINO_ARCH_STM32F1
-    // TODO copy from FLASH
-    memset(data,0,sizeof(data));
+    // copy data from FLASH into RAM
+    uint16_t* towrite = (uint16_t*)data;
+    uint16_t *toread = (uint16_t*)(uintptr_t)FlashStartAddress;
+    for( size_t i=0; i<sizeof(data)/2; ++i ) {
+      *(towrite + i) = *(toread + i);
+    }
 #endif
   }
 
   void store () {
-    // TODO copy to FLASH
+#ifdef ARDUINO_ARCH_STM32F1
+    // copy data from RAM to FLASH
+    FLASH_Unlock(); //unlock flash writing
+    FLASH_ErasePage(FlashStartAddress);
+    uint16_t* toread = (uint16_t*)data;
+    for( size_t i=0; i<sizeof(data)/2; ++i ) {
+      FLASH_ProgramHalfWord(FlashStartAddress+i+i,*(toread+i));
+    }
+    FLASH_Lock();
+#endif
   }
 
   bool setup (uint16_t checksum=0);
