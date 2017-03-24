@@ -141,9 +141,8 @@ public:
     DHEX(number());
     Button::state(s);
     if( s == released ) {
-      repeatcnt=0;
-      msg.init(++msgcnt,number(),repeatcnt,false);
       device().sendPeerEvent(msg,*this);
+      msg.init(++msgcnt, number(), repeatcnt++, false);
     }
     else if( s == longpressed ) {
       msg.init(++msgcnt,number(),repeatcnt++,true);
