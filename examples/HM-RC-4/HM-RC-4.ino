@@ -135,12 +135,11 @@ public:
 class BtnChannel : public Channel<Hal,BtnList1,EmptyList,List4,PEERS_PER_CHANNEL>, public Button {
 
 private:
-  uint8_t       msgcnt;
   uint8_t       repeatcnt;
   volatile bool isr;
 
 public:
-  BtnChannel () : Channel(), msgcnt(0), repeatcnt(0), isr(false) {}
+  BtnChannel () : Channel(), repeatcnt(0), isr(false) {}
   virtual ~BtnChannel () {}
 
   Button& button () { return *(Button*)this; }
@@ -157,17 +156,19 @@ public:
     DHEX(number());
     Button::state(s);
     if( s == released ) {
-      repeatcnt=0;
       BtnEventMsg& msg = (BtnEventMsg&)device().message();
-      msg.init(++msgcnt,number(),repeatcnt,false,hal.battery.low());
+      msg.init(device().nextcount(),number(),repeatcnt++,false,hal.battery.low());
       device().sendPeerEvent(msg,*this);
       --hal.btncounter;
     }
     else if( s == longpressed ) {
       BtnEventMsg& msg = (BtnEventMsg&)device().message();
-      msg.init(++msgcnt,number(),repeatcnt++,true,hal.battery.low());
+      msg.init(device().nextcount(),number(),repeatcnt,true,hal.battery.low());
       device().sendPeerEvent(msg,*this);
       --hal.btncounter;
+    }
+    else if( s == longreleased ) {
+      repeatcnt++;
     }
   }
 
