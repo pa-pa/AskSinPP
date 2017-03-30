@@ -41,6 +41,32 @@ class Storage {
   }
 #endif
 
+#ifndef ARDUINO
+  // we mirror 1 Flash Page into RAM
+  uint8_t data[1024];
+
+  inline void memcpy(void* dest,const void* src,size_t size) {
+    uint8_t* d = (uint8_t*)dest;
+    const uint8_t* s = (const uint8_t*)s;
+    for( size_t i=0; i<size; ++i ) {
+      *d++ = *s++;
+    }
+  }
+
+  void eeprom_read_block(void* buf,const void* addr,size_t size) {
+    uintptr_t offset = (uintptr_t)addr;
+    if( offset + size < sizeof(data) ) {
+      memcpy(buf,&data[offset],size);
+    }
+  }
+  void eeprom_write_block(const void* buf,void* addr,size_t size) {
+    uintptr_t offset = (uintptr_t)addr;
+    if( offset + size < sizeof(data) ) {
+      memcpy(&data[offset],buf,size);
+    }
+  }
+#endif
+
 public:
   Storage () {
 #ifdef ARDUINO_ARCH_STM32F1

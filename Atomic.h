@@ -2,7 +2,8 @@
 #ifndef __ATOMIC_H__
 #define __ATOMIC_H__
 
-#include <Arduino.h>
+#ifdef ARDUINO
+  #include <Arduino.h>
 
 #ifdef ARDUINO_ARCH_AVR
   #include <util/atomic.h>
@@ -67,6 +68,12 @@ uint32_t primask_save __attribute__((__cleanup__(__iCliParam))) = 0
 #endif
 #endif
 
+#endif
+
+#else  // ARDUINO
+
+#define ATOMIC_BLOCK(type)
+#include <stdint.h>
 
 #endif
 

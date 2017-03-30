@@ -68,7 +68,7 @@ public:
     Alarm* n = (Alarm*)select();
     if( n != 0 ) {
       uint32_t nextticks = n->tick-1;
-      n->tick -= min(nextticks,ticks);
+      n->tick -= nextticks < ticks ? nextticks : ticks;
     }
     --(*this);
   }

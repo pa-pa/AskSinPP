@@ -414,6 +414,13 @@ protected:
 public:
   uint8_t channel () const { return subcommand(); }
   uint8_t value () const { return *data(); }
+  uint16_t ramp () const {
+    uint16_t value = 0;
+    if( datasize() >= 3) {
+      value = (*(data()+1) << 8) + *(data()+2);
+    }
+    return value;
+  }
   uint16_t delay () const {
     uint16_t dly = 0xffff;
     if( datasize() >= 5) {
