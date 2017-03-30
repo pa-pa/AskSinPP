@@ -1,4 +1,5 @@
 
+// g++ -g -I .. -o dim dim.cpp ../AlarmClock.cpp ../Storage.cpp
 
 #include <Debug.h>
 #include <unistd.h>
