@@ -7,7 +7,9 @@
 #define __DIMMER_H__
 
 #include "AlarmClock.h"
+#include "Channel.h"
 #include "ChannelList.h"
+#include "Message.h"
 #include "cm.h"
 
 #define LOGIC_INACTIVE 0
@@ -494,14 +496,95 @@ class DimmerStateMachine {
     DimmerStateMachine& sm;
     DimmerPeerList      lst;
   public:
-    StateAlarm(DimmerStateMachine& m) : Alarm(0), sm(m), lst(0) {}
-    void list(DimmerPeerList l) {lst=l;}
+    StateAlarm (DimmerStateMachine& m) : Alarm(0), sm(m), lst(0) {}
+    void list (DimmerPeerList l) { lst=l; }
     virtual void trigger (AlarmClock& clock) {
       uint8_t next = sm.getNextState();
       uint32_t dly = sm.getDelayForState(next,lst);
       sm.setState(next,dly,lst);
     }
   };
+
+  class RampAlarm : public Alarm {
+    DimmerStateMachine& sm;
+    DimmerPeerList      lst;
+    uint32_t            delay, tack;
+    uint8_t             destlevel;
+    uint8_t             dx;
+  public:
+    RampAlarm (DimmerStateMachine& m) : Alarm(0), sm(m), lst(0), delay(0), tack(0), destlevel(0), dx(5) {}
+    void list (DimmerPeerList l) { lst=l; }
+    void init (uint8_t state,DimmerPeerList l) {
+      uint8_t destlevel = state == AS_CM_JT_RAMPOFF ? 0 : 200;
+      if( l.valid() == true ) {
+        destlevel = state == AS_CM_JT_RAMPOFF ? l.offLevel() : l.onLevel();
+      }
+      init(sm.getDelayForState(state,l),destlevel,l.valid() ? 0 : DELAY_INFINITE,l);
+    }
+    void init (uint32_t ramptime,uint8_t level,uint32_t dly,DimmerPeerList l=DimmerPeerList(0)) {
+      DPRINT("Ramp/Level: ");DDEC(ramptime);DPRINT("/");DDECLN(level);
+      lst=l;
+      destlevel=level;
+      delay = dly;
+      uint8_t curlevel = sm.status();
+      uint32_t diff;
+      sm.updateState(destlevel==0 ? AS_CM_JT_RAMPOFF : AS_CM_JT_RAMPON);
+      if( curlevel > destlevel ) { // dim down
+        diff = curlevel - destlevel;
+      }
+      else { // dim up
+        diff = destlevel - curlevel;
+      }
+      if( ramptime > diff ) {
+        dx = 1;
+        tack = ramptime / diff;
+      }
+      else {
+        tack = 1;
+        dx = uint8_t(diff / (ramptime > 0 ? ramptime : 1));
+      }
+      DPRINT("Dx/Tack: ");DDEC(dx);DPRINT("/");DDECLN(tack);
+    }
+    virtual void trigger (AlarmClock& clock) {
+      uint8_t curlevel = sm.status();
+      DHEX(curlevel);DPRINT("  ");DHEXLN(destlevel);
+      if( sm.status() != destlevel ) {
+        if( curlevel > destlevel ) { // dim down
+          uint8_t rest = curlevel - destlevel;
+          sm.updateLevel( curlevel - (rest < dx ? rest : dx));
+        }
+        else { // dim up
+          uint8_t rest = destlevel - curlevel;
+          sm.updateLevel( curlevel + (rest < dx ? rest : dx));
+        }
+      }
+      // we catch our destination level -> go to next state
+      if( sm.status() == destlevel ) {
+        uint8_t next = sm.getNextState();
+        if( delay == 0 && lst.valid() == true ) {
+          delay = sm.getDelayForState(next,lst);
+        }
+        sm.setState(next,delay,lst);
+      }
+      else { // enable again for next ramp step
+        set(tack);
+        clock.add(*this);
+      }
+    }
+  };
+
+  void updateLevel (uint8_t newlevel) {
+    level = newlevel;
+    changed = true;
+  }
+
+  void updateState (uint8_t next) {
+    if( state != next ) {
+      switchState(state, next);
+      state = next;
+      changed = true;
+    }
+  }
 
   void setState (uint8_t next,uint32_t delay,const DimmerPeerList& lst=DimmerPeerList(0),uint8_t deep=0) {
     // check deep to prevent infinite recursion
@@ -510,34 +593,41 @@ class DimmerStateMachine {
       aclock.cancel(alarm);
       // if state is different
       if (state != next) {
-        switchState(state, next);
-        state = next;
+        updateState(next);
       }
-      if (delay == DELAY_NO) {
-        // go immediately to the next state
-        next = getNextState();
-        delay = getDelayForState(next,lst);
-        setState(next, delay, lst, ++deep);
+      if ( state == AS_CM_JT_RAMPON || state == AS_CM_JT_RAMPOFF ) {
+        rampalarm.init(state,lst);
+        aclock.add(rampalarm);
       }
-      else if (delay != DELAY_INFINITE) {
-        alarm.list(lst);
-        alarm.set(delay);
-        aclock.add(alarm);
+      else {
+        if (delay == DELAY_NO) {
+          // go immediately to the next state
+          next = getNextState();
+          delay = getDelayForState(next,lst);
+          setState(next, delay, lst, ++deep);
+        }
+        else if (delay != DELAY_INFINITE) {
+          alarm.list(lst);
+          alarm.set(delay);
+          aclock.add(alarm);
+        }
       }
     }
   }
 
 protected:
-  uint8_t    state;
+  uint8_t    state : 4;
+  bool       changed : 1;
   uint8_t    level;
   StateAlarm alarm;
+  RampAlarm  rampalarm;
 
 public:
-  DimmerStateMachine() : state(AS_CM_JT_NONE), level(0), alarm(*this) {}
+  DimmerStateMachine() : state(AS_CM_JT_NONE), changed(false), level(0), alarm(*this), rampalarm(*this) {}
   virtual ~DimmerStateMachine () {}
 
   virtual void switchState(uint8_t oldstate,uint8_t newstate) {
-    DPRINT("Switch State: ");DHEX(oldstate);DPRINT(" -> ");DHEXLN(newstate);
+    DPRINT("Switch State: ");DHEX(oldstate);DPRINT(" -> ");DHEX(newstate);DPRINT("  Level: ");DHEXLN(level);
   }
 
   void jumpToTarget(const DimmerPeerList& lst) {
@@ -551,7 +641,12 @@ public:
   }
 
   void toggleState () {
-    setState( state == AS_CM_JT_ON ? AS_CM_JT_OFF : AS_CM_JT_ON, DELAY_INFINITE);
+    if( state == AS_CM_JT_ON ) {
+      setLevel(200,5,DELAY_INFINITE);
+    }
+    else {
+      setLevel(0,5,DELAY_INFINITE);
+    }
   }
 
   uint8_t getNextState () {
@@ -611,6 +706,9 @@ public:
       case AS_CM_JT_ON:
       case AS_CM_JT_OFF:
         return DELAY_INFINITE;
+      case AS_CM_JT_RAMPON:
+      case AS_CM_JT_RAMPOFF:
+        return decis2ticks(5);
     }
     return DELAY_NO;
   }
@@ -638,6 +736,16 @@ public:
     return decis2ticks( (uint32_t)tByte*(iTime>>5) );
   }
 
+  void dimUp (const DimmerPeerList& lst) {
+    uint8_t dx = lst.dimStep();
+    level += dx;
+  }
+
+  void dimDown (const DimmerPeerList& lst) {
+    uint8_t dx = lst.dimStep();
+    level -= dx;
+  }
+
   void remote (const DimmerPeerList& lst,uint8_t counter) {
     // perform action as defined in the list
     switch (lst.actionType()) {
@@ -645,20 +753,24 @@ public:
       jumpToTarget(lst);
       break;
     case AS_CM_ACTIONTYPE_TOGGLE_TO_COUNTER:
-//      setState((counter & 0x01) == 0x01 ? AS_CM_JT_ON : AS_CM_JT_OFF, DELAY_INFINITE);
+      setState((counter & 0x01) == 0x01 ? AS_CM_JT_RAMPON : AS_CM_JT_RAMPOFF, DELAY_INFINITE, lst);
       break;
     case AS_CM_ACTIONTYPE_TOGGLE_INVERSE_TO_COUNTER:
-//      setState((counter & 0x01) == 0x00 ? AS_CM_JT_ON : AS_CM_JT_OFF, DELAY_INFINITE);
+      setState((counter & 0x01) == 0x01 ? AS_CM_JT_RAMPON : AS_CM_JT_RAMPOFF, DELAY_INFINITE, lst);
       break;
     case AS_CM_ACTIONTYPE_UPDIM:
+      dimUp(lst);
       break;
     case AS_CM_ACTIONTYPE_DOWNDIM:
+      dimDown(lst);
       break;
     case AS_CM_ACTIONTYPE_TOGGLEDIM:
       break;
     case AS_CM_ACTIONTYPE_TOGGLEDIM_TO_COUNTER:
+      (counter & 0x01) == 0x01 ? dimUp(lst) : dimDown(lst);
       break;
     case AS_CM_ACTIONTYPE_TOGGLEDIM_TO_COUNTER_INVERSE:
+      (counter & 0x01) == 0x00 ? dimUp(lst) : dimDown(lst);
       break;
     }
 
@@ -695,8 +807,11 @@ public:
     }
   }
 
-  void status (uint8_t stat, uint16_t delay) {
-    setState( stat == 0 ? AS_CM_JT_OFF : AS_CM_JT_ON, intTimeCvt(delay) );
+  void setLevel (uint8_t level, uint16_t ramp, uint16_t delay) {
+    DPRINT("SetLevel: ");DHEX(level);DPRINT(" ");DHEX(ramp);DPRINT(" ");DHEXLN(delay);
+    aclock.cancel(rampalarm);
+    rampalarm.init(intTimeCvt(ramp), level, intTimeCvt(delay));
+    aclock.add(rampalarm);
   }
 
   uint8_t status () const {
@@ -707,6 +822,67 @@ public:
     return delayActive() ? 0x40 : 0x00;
   }
 };
+
+
+template <class HalType,int PeerCount>
+class DimmerChannel : public Channel<HalType,DimmerList1,DimmerList3,EmptyList,PeerCount>, public DimmerStateMachine {
+
+protected:
+  typedef Channel<HalType,DimmerList1,DimmerList3,EmptyList,PeerCount> BaseChannel;
+
+public:
+  DimmerChannel () : BaseChannel() {}
+  virtual ~DimmerChannel() {}
+
+  void setup(Device<HalType>* dev,uint8_t number,uint16_t addr) {
+    BaseChannel::setup(dev,number,addr);
+  }
+
+  virtual void switchState(uint8_t oldstate,uint8_t newstate) {
+//    BaseChannel::changed(true);
+  }
+
+  bool changed () const { return DimmerStateMachine::changed; }
+
+  void changed (bool c) { DimmerStateMachine::changed = c; }
+
+  bool process (const ActionSetMsg& msg) {
+    setLevel( msg.value(), msg.ramp(), msg.delay() );
+    return true;
+  }
+
+  bool process (const RemoteEventMsg& msg) {
+    bool lg = msg.isLong();
+    Peer p(msg.peer());
+    uint8_t cnt = msg.counter();
+    typename BaseChannel::List3 l3 = BaseChannel::getList3(p);
+    if( l3.valid() == true ) {
+      // l3.dump();
+      typename BaseChannel::List3::PeerList pl = lg ? l3.lg() : l3.sh();
+      // pl.dump();
+      remote(pl,cnt);
+      return true;
+    }
+    return false;
+  }
+
+  bool process (const SensorEventMsg& msg) {
+    bool lg = msg.isLong();
+    Peer p(msg.peer());
+    uint8_t cnt = msg.counter();
+    uint8_t value = msg.value();
+    typename BaseChannel::List3 l3 = BaseChannel::getList3(p);
+    if( l3.valid() == true ) {
+      // l3.dump();
+      typename BaseChannel::List3::PeerList pl = lg ? l3.lg() : l3.sh();
+      // pl.dump();
+      sensor(pl,cnt,value);
+      return true;
+    }
+    return false;
+  }
+};
+
 
 }
 

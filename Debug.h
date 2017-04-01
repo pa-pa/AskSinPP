@@ -63,6 +63,9 @@
   inline void DDEC(uint16_t b) {
     Serial.print(b,DEC);
   }
+  inline void DDEC(uint32_t b) {
+    Serial.print(b,DEC);
+  }
 
 #else
 
@@ -74,7 +77,7 @@
   #endif
 
   template <class T>
-  inline void DPRINT(T str) { std::cout << str; }
+  inline void DPRINT(T str) { std::cout << str << std::flush; }
   template <class T>
   inline void DPRINTLN(T str) { std::cout << str << std::endl;  }
   inline void DHEX(uint8_t b) { std::cout << std::setw(2) << std::setfill('0') << std::hex << (int)b; }
@@ -83,6 +86,7 @@
 
   inline void DDEC(uint8_t b) { std::cout << std::dec << (int)b; }
   inline void DDEC(uint16_t b) { std::cout << std::dec << (int)b; }
+  inline void DDEC(uint32_t b) { std::cout << std::dec << (int)b; }
 
 #endif // ARDUINO
 
@@ -97,6 +101,7 @@
   inline void DHEXLN(uint32_t b) { DHEX(b); DPRINT(F("\n")); }
   inline void DDECLN(uint8_t b) { DDEC(b); DPRINT(F("\n")); }
   inline void DDECLN(uint16_t b) { DDEC(b); DPRINT(F("\n")); }
+  inline void DDECLN(uint32_t b) { DDEC(b); DPRINT(F("\n")); }
 
 #endif
 
