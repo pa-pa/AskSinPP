@@ -506,12 +506,13 @@ class DimmerStateMachine {
   };
 
   class RampAlarm : public Alarm {
+  public:
     DimmerStateMachine& sm;
     DimmerPeerList      lst;
     uint32_t            delay, tack;
     uint8_t             destlevel;
     uint8_t             dx;
-  public:
+
     RampAlarm (DimmerStateMachine& m) : Alarm(0), sm(m), lst(0), delay(0), tack(0), destlevel(0), dx(5) {}
     void list (DimmerPeerList l) { lst=l; }
     void init (uint8_t state,DimmerPeerList l) {
@@ -575,7 +576,7 @@ class DimmerStateMachine {
 
   void updateLevel (uint8_t newlevel) {
     level = newlevel;
-    changed = true;
+//    changed = true;
   }
 
   void updateState (uint8_t next) {
@@ -642,10 +643,10 @@ public:
 
   void toggleState () {
     if( state == AS_CM_JT_ON ) {
-      setLevel(200,5,DELAY_INFINITE);
+      setLevel(200,5,0xffff);
     }
     else {
-      setLevel(0,5,DELAY_INFINITE);
+      setLevel(0,5,0xffff);
     }
   }
 
@@ -819,7 +820,14 @@ public:
   }
 
   uint8_t flags () const {
-    return delayActive() ? 0x40 : 0x00;
+    uint8_t f = delayActive() ? 0x40 : 0x00;
+    if( rampalarm.destlevel < level) {
+      f |= AS_CM_EXTSTATE_DOWN;
+    }
+    else if( rampalarm.destlevel > level) {
+      f |= AS_CM_EXTSTATE_UP;
+    }
+    return f;
   }
 };
 
@@ -840,6 +848,12 @@ public:
 
   virtual void switchState(uint8_t oldstate,uint8_t newstate) {
 //    BaseChannel::changed(true);
+  }
+
+  void firstinit () {
+    if( BaseChannel::number() > 1 ) {
+      BaseChannel::getList1().logicCombination(LOGIC_INACTIVE);
+    }
   }
 
   bool changed () const { return DimmerStateMachine::changed; }
