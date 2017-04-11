@@ -5,14 +5,10 @@
 
 /*
  * Setup defines to configure the library.
- * Note: If you are using the Eclipse Arduino IDE you will need to set the
- * defines in the project properties.
  */
-#ifndef __IN_ECLIPSE__
-  #define USE_AES
-  #define HM_DEF_KEY 0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x0a,0x0b,0x0c,0x0d,0x0e,0x0f,0x10
-  #define HM_DEF_KEY_INDEX 0
-#endif
+// #define USE_AES
+// #define HM_DEF_KEY 0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x0a,0x0b,0x0c,0x0d,0x0e,0x0f,0x10
+// #define HM_DEF_KEY_INDEX 0
 
 #include <EnableInterrupt.h>
 #include <AskSinPP.h>
@@ -54,7 +50,7 @@ using namespace as;
  * Configure the used hardware
  */
 typedef AvrSPI<10,11,12,13> RadioSPI;
-typedef AskSin<StatusLed,BatterySensor,Radio<RadioSPI,2> > Hal;
+typedef AskSin<StatusLed<4>,BatterySensor,Radio<RadioSPI,2> > Hal;
 Hal hal;
 
 class Wds100List0Data : public List0Data {
@@ -208,44 +204,20 @@ public:
 };
 
 
-MultiChannelDevice<Hal,Wds100Channel,1,Wds100List0> sdev(0x20);
+typedef MultiChannelDevice<Hal,Wds100Channel,1,Wds100List0> WeatherType;
+WeatherType sdev(0x20);
 
-
-class CfgButton : public Button {
-public:
-  CfgButton () {
-    setLongPressTime(seconds2ticks(3));
-  }
-  virtual void state (uint8_t s) {
-    uint8_t old = Button::state();
-    Button::state(s);
-    if( s == Button::released ) {
-      sdev.startPairing();
-    }
-    else if( s == longpressed ) {
-      if( old == longpressed ) {
-        sdev.reset(); // long pressed again - reset
-      }
-      else {
-        hal.led.set(StatusLed::key_long);
-      }
-    }
-  }
-};
-
-CfgButton cfgBtn;
+ConfigButton<WeatherType> cfgBtn(sdev);
 void cfgBtnISR () { cfgBtn.check(); }
 
 void setup () {
-#ifndef NDEBUG
-  Serial.begin(57600);
-  DPRINTLN(ASKSIN_PLUS_PLUS_IDENTIFIER);
-#endif
+  DINIT(57600,ASKSIN_PLUS_PLUS_IDENTIFIER);
+
   if( storage.setup(sdev.checksum()) == true ) {
     sdev.firstinit();
   }
 
-  hal.led.init(LED_PIN);
+  hal.led.init();
 
   cfgBtn.init(CONFIG_BUTTON_PIN);
   enableInterrupt(CONFIG_BUTTON_PIN,cfgBtnISR,CHANGE);
@@ -266,7 +238,7 @@ void setup () {
   hal.radio.enable();
   aclock.init();
 
-  hal.led.set(StatusLed::welcome);
+  hal.led.set(LedStates::welcome);
   // set low voltage to 2.2V
   // measure battery every 1h
   hal.battery.init(22,seconds2ticks(60UL*60),aclock);
@@ -279,6 +251,6 @@ void loop() {
   bool worked = aclock.runready();
   bool poll = sdev.pollRadio();
   if( worked == false && poll == false ) {
-    hal.activity.savePower<Sleep>(hal);
+    hal.activity.savePower<Sleep<>>(hal);
   }
 }

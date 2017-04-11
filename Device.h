@@ -226,7 +226,7 @@ public:
     msg.setRpten(); // has to be set always
     bool result = false;
     uint8_t maxsend = 6;
-    led().set(StatusLed::send);
+    led().set(LedStates::send);
     while( result == false && maxsend > 0 ) {
       DPRINT(F("<- "));
       msg.dump();
@@ -254,8 +254,8 @@ public:
         DPRINT(F("waitAck: ")); DHEX((uint8_t)result); DPRINTLN(F(""));
       }
     }
-    if( result == true ) led().set(StatusLed::ack);
-    else led().set(StatusLed::nack);
+    if( result == true ) led().set(LedStates::ack);
+    else led().set(LedStates::nack);
     return result;
   }
 
@@ -280,6 +280,7 @@ public:
   template <class ChannelType>
   void sendAck (Message& msg,ChannelType& ch) {
     msg.ackStatus().init(ch,radio().rssi());
+    ch.patchStatus(msg);
     kstore.addAuth(msg);
     send(msg,msg.from());
     ch.changed(false);
@@ -304,9 +305,13 @@ public:
   }
 
   template <class ChannelType>
-  void sendInfoActuatorStatus (const HMID& to,uint8_t count,ChannelType& ch) {
+  void sendInfoActuatorStatus (const HMID& to,uint8_t count,ChannelType& ch,bool ack=true) {
     InfoActuatorStatusMsg& pm = msg.infoActuatorStatus();
     pm.init(count,ch,radio().rssi());
+    if( ack == false ) {
+      pm.clearAck();
+    }
+    ch.patchStatus(msg);
     send(msg,to);
     ch.changed(false);
   }

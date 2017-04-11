@@ -246,6 +246,10 @@ public:
     flag |= RPTEN;
   }
 
+  void setAck () {
+    flag |= BIDI;
+  }
+
   void clearAck () {
     flag &= ~BIDI;
   }

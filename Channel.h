@@ -168,6 +168,8 @@ public:
     return false;
   }
 
+  void patchStatus (__attribute__((unused)) Message& msg) {}
+
   void configChanged () {}
 
   protected:

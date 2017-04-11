@@ -5,14 +5,10 @@
 
 /*
  * Setup defines to configure the library.
- * Note: If you are using the Eclipse Arduino IDE you will need to set the
- * defines in the project properties.
  */
-#ifndef __IN_ECLIPSE__
-  #define USE_AES
-  #define HM_DEF_KEY 0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x0a,0x0b,0x0c,0x0d,0x0e,0x0f,0x10
-  #define HM_DEF_KEY_INDEX 0
-#endif
+// #define USE_AES
+// #define HM_DEF_KEY 0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x0a,0x0b,0x0c,0x0d,0x0e,0x0f,0x10
+// #define HM_DEF_KEY_INDEX 0
 
 #include <EnableInterrupt.h>
 // #include <SPI.h>  // when we include SPI.h - we can use LibSPI class
@@ -76,7 +72,7 @@ using namespace as;
  */
 typedef AvrSPI<10,11,12,13> RadioSPI;
 //typedef LibSPI<10> RadioSPI;
-typedef AskSin<StatusLed,NoBattery,Radio<RadioSPI,2> > Hal;
+typedef AskSin<StatusLed<4>,NoBattery,Radio<RadioSPI,2> > Hal;
 Hal hal;
 
 // map number of channel to pin
@@ -91,34 +87,10 @@ uint8_t SwitchPin (uint8_t number) {
 }
 
 // setup the device with channel type and number of channels
-MultiChannelDevice<Hal,SwitchChannel<Hal,PEERS_PER_CHANNEL>,RELAY_COUNT> sdev(0x20);
+typedef MultiChannelDevice<Hal,SwitchChannel<Hal,PEERS_PER_CHANNEL>,RELAY_COUNT> SwitchType;
+SwitchType sdev(0x20);
 
-class CfgButton : public Button {
-public:
-  CfgButton () {
-    setLongPressTime(seconds2ticks(3));
-  }
-  virtual void state (uint8_t s) {
-    uint8_t old = Button::state();
-    Button::state(s);
-    if( s == Button::released ) {
-      sdev.channel(1).toggleState();
-    }
-    else if( s == longreleased ) {
-      sdev.startPairing();
-    }
-    else if( s == longpressed ) {
-      if( old == longpressed ) {
-        sdev.reset(); // long pressed again - reset
-      }
-      else {
-        hal.led.set(StatusLed::key_long);
-      }
-    }
-  }
-};
-
-CfgButton cfgBtn;
+ConfigToggleButton<SwitchType> cfgBtn(sdev);
 void cfgBtnISR () { cfgBtn.check(); }
 
 // if A0 and A1 connected
@@ -132,10 +104,8 @@ bool checkLowActive () {
 }
 
 void setup () {
-#ifndef NDEBUG
-  Serial.begin(57600);
-  DPRINTLN(ASKSIN_PLUS_PLUS_IDENTIFIER);
-#endif
+  DINIT(57600,ASKSIN_PLUS_PLUS_IDENTIFIER);
+
   // first initialize EEProm if needed
   if( storage.setup(sdev.checksum()) == true ) {
     sdev.firstinit();
@@ -146,7 +116,7 @@ void setup () {
     sdev.channel(i).lowactive(low);
   }
 
-  hal.led.init(LED_PIN);
+  hal.led.init();
 
   cfgBtn.init(CONFIG_BUTTON_PIN);
   enableInterrupt(CONFIG_BUTTON_PIN,cfgBtnISR,CHANGE);
@@ -178,7 +148,7 @@ void setup () {
 
   aclock.init();
 
-  hal.led.set(StatusLed::welcome);
+  hal.led.set(LedStates::welcome);
 
   // TODO - random delay
 }
@@ -187,6 +157,6 @@ void loop() {
   bool worked = aclock.runready();
   bool poll = sdev.pollRadio();
   if( worked == false && poll == false ) {
-    hal.activity.savePower<Idle>(hal);
+    hal.activity.savePower<Idle<>>(hal);
   }
 }

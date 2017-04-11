@@ -6,11 +6,7 @@
 #ifndef __DIMMER_H__
 #define __DIMMER_H__
 
-#include "AlarmClock.h"
-#include "Channel.h"
-#include "ChannelList.h"
-#include "Message.h"
-#include "cm.h"
+#include "MultiChannelDevice.h"
 
 #define LOGIC_INACTIVE 0
 #define LOGIC_OR 1
@@ -492,19 +488,6 @@ class DimmerStateMachine {
 #define DELAY_NO 0x00
 #define DELAY_INFINITE 0xffffffff
 
-  class StateAlarm : public Alarm {
-    DimmerStateMachine& sm;
-    DimmerPeerList      lst;
-  public:
-    StateAlarm (DimmerStateMachine& m) : Alarm(0), sm(m), lst(0) {}
-    void list (DimmerPeerList l) { lst=l; }
-    virtual void trigger (AlarmClock& clock) {
-      uint8_t next = sm.getNextState();
-      uint32_t dly = sm.getDelayForState(next,lst);
-      sm.setState(next,dly,lst);
-    }
-  };
-
   class RampAlarm : public Alarm {
   public:
     DimmerStateMachine& sm;
@@ -514,7 +497,7 @@ class DimmerStateMachine {
     uint8_t             dx;
 
     RampAlarm (DimmerStateMachine& m) : Alarm(0), sm(m), lst(0), delay(0), tack(0), destlevel(0), dx(5) {}
-    void list (DimmerPeerList l) { lst=l; }
+    void list (DimmerPeerList l) { lst=l; delay=tack=0; destlevel=sm.status(); }
     void init (uint8_t state,DimmerPeerList l) {
       uint8_t destlevel = state == AS_CM_JT_RAMPOFF ? 0 : 200;
       if( l.valid() == true ) {
@@ -525,11 +508,11 @@ class DimmerStateMachine {
     void init (uint32_t ramptime,uint8_t level,uint32_t dly,DimmerPeerList l=DimmerPeerList(0)) {
       DPRINT("Ramp/Level: ");DDEC(ramptime);DPRINT("/");DDECLN(level);
       lst=l;
-      destlevel=level;
+      destlevel = level==201 ? sm.lastonlevel : level;
       delay = dly;
+      sm.updateState(destlevel==0 ? AS_CM_JT_RAMPOFF : AS_CM_JT_RAMPON);
       uint8_t curlevel = sm.status();
       uint32_t diff;
-      sm.updateState(destlevel==0 ? AS_CM_JT_RAMPOFF : AS_CM_JT_RAMPON);
       if( curlevel > destlevel ) { // dim down
         diff = curlevel - destlevel;
       }
@@ -597,8 +580,8 @@ class DimmerStateMachine {
         updateState(next);
       }
       if ( state == AS_CM_JT_RAMPON || state == AS_CM_JT_RAMPOFF ) {
-        rampalarm.init(state,lst);
-        aclock.add(rampalarm);
+        alarm.init(state,lst);
+        aclock.add(alarm);
       }
       else {
         if (delay == DELAY_NO) {
@@ -619,16 +602,19 @@ class DimmerStateMachine {
 protected:
   uint8_t    state : 4;
   bool       changed : 1;
-  uint8_t    level;
-  StateAlarm alarm;
-  RampAlarm  rampalarm;
+  bool       toggledimup : 1;
+  uint8_t    level, lastonlevel;
+  RampAlarm  alarm;
 
 public:
-  DimmerStateMachine() : state(AS_CM_JT_NONE), changed(false), level(0), alarm(*this), rampalarm(*this) {}
+  DimmerStateMachine() : state(AS_CM_JT_NONE), changed(false), toggledimup(true), level(0), lastonlevel(200), alarm(*this) {}
   virtual ~DimmerStateMachine () {}
 
   virtual void switchState(uint8_t oldstate,uint8_t newstate) {
     DPRINT("Switch State: ");DHEX(oldstate);DPRINT(" -> ");DHEX(newstate);DPRINT("  Level: ");DHEXLN(level);
+    if( newstate == AS_CM_JT_ON ) {
+      lastonlevel = level;
+    }
   }
 
   void jumpToTarget(const DimmerPeerList& lst) {
@@ -642,8 +628,8 @@ public:
   }
 
   void toggleState () {
-    if( state == AS_CM_JT_ON ) {
-      setLevel(200,5,0xffff);
+    if( state == AS_CM_JT_OFF ) {
+      setLevel(lastonlevel,5,0xffff);
     }
     else {
       setLevel(0,5,0xffff);
@@ -740,11 +726,17 @@ public:
   void dimUp (const DimmerPeerList& lst) {
     uint8_t dx = lst.dimStep();
     level += dx;
+    if( level > lst.dimMaxLevel() )
+      level = lst.dimMaxLevel();
+    switchState(state, AS_CM_JT_ON);
   }
 
   void dimDown (const DimmerPeerList& lst) {
     uint8_t dx = lst.dimStep();
-    level -= dx;
+    level -= dx < level ? dx : level;
+    if( level < lst.dimMinLevel() )
+      level = lst.dimMinLevel();
+    switchState(state, level > lst.onMinLevel() ? AS_CM_JT_ON : AS_CM_JT_OFF);
   }
 
   void remote (const DimmerPeerList& lst,uint8_t counter) {
@@ -766,6 +758,9 @@ public:
       dimDown(lst);
       break;
     case AS_CM_ACTIONTYPE_TOGGLEDIM:
+      if( toggledimup == true ) dimUp(lst);
+      else dimDown(lst);
+      toggledimup = ! toggledimup;
       break;
     case AS_CM_ACTIONTYPE_TOGGLEDIM_TO_COUNTER:
       (counter & 0x01) == 0x01 ? dimUp(lst) : dimDown(lst);
@@ -810,9 +805,15 @@ public:
 
   void setLevel (uint8_t level, uint16_t ramp, uint16_t delay) {
     DPRINT("SetLevel: ");DHEX(level);DPRINT(" ");DHEX(ramp);DPRINT(" ");DHEXLN(delay);
-    aclock.cancel(rampalarm);
-    rampalarm.init(intTimeCvt(ramp), level, intTimeCvt(delay));
-    aclock.add(rampalarm);
+    if( ramp==0 ) {
+      updateLevel(level);
+      setState(level==0 ? AS_CM_JT_OFF : AS_CM_JT_ON, intTimeCvt(delay));
+    }
+    else {
+      aclock.cancel(alarm);
+      alarm.init(intTimeCvt(ramp), level, intTimeCvt(delay));
+      aclock.add(alarm);
+    }
   }
 
   uint8_t status () const {
@@ -821,10 +822,10 @@ public:
 
   uint8_t flags () const {
     uint8_t f = delayActive() ? 0x40 : 0x00;
-    if( rampalarm.destlevel < level) {
+    if( alarm.destlevel < level) {
       f |= AS_CM_EXTSTATE_DOWN;
     }
-    else if( rampalarm.destlevel > level) {
+    else if( alarm.destlevel > level) {
       f |= AS_CM_EXTSTATE_UP;
     }
     return f;
@@ -846,10 +847,6 @@ public:
     BaseChannel::setup(dev,number,addr);
   }
 
-  virtual void switchState(uint8_t oldstate,uint8_t newstate) {
-//    BaseChannel::changed(true);
-  }
-
   void firstinit () {
     if( BaseChannel::number() > 1 ) {
       BaseChannel::getList1().logicCombination(LOGIC_INACTIVE);
@@ -859,6 +856,13 @@ public:
   bool changed () const { return DimmerStateMachine::changed; }
 
   void changed (bool c) { DimmerStateMachine::changed = c; }
+
+  void patchStatus (Message& msg) {
+    if( msg.length() == 0x0e ) {
+      msg.length(0x0f);
+      msg.data()[3] = status();  // TODO physical value
+    }
+  }
 
   bool process (const ActionSetMsg& msg) {
     setLevel( msg.value(), msg.ramp(), msg.delay() );
@@ -897,6 +901,120 @@ public:
   }
 };
 
+// we use this table for the dimmer levels
+static const uint8_t pwmtable[32] PROGMEM = {
+    1, 1, 2, 2, 2, 3, 3, 4, 5, 6, 7, 8, 10, 11, 13, 16, 19, 23,
+    27, 32, 38, 45, 54, 64, 76, 91, 108, 128, 152, 181, 215, 255
+};
+
+template<class HalType,class ChannelType,int ChannelCount,class List0Type=List0>
+class DimmerDevice : public MultiChannelDevice<HalType,ChannelType,ChannelCount,List0Type> {
+
+  uint8_t pin;
+
+public:
+  typedef MultiChannelDevice<HalType,ChannelType,ChannelCount,List0Type> DeviceType;
+
+  DimmerDevice (uint16_t addr,uint8_t p) : DeviceType(addr), pin(p) {
+    pinMode(pin,OUTPUT);
+    analogWrite(pin,0);
+  }
+  virtual ~DimmerDevice () {}
+
+  bool pollRadio () {
+    analogWrite(pin,calcPwm());
+    return DeviceType::pollRadio();
+  }
+
+  uint8_t calcPwm () {
+    uint8_t pwm = 0;
+    uint16_t status = combineChannels();
+    if( status > 0 ) {
+      uint8_t offset = status*31/200;
+      pwm = pgm_read_word (& pwmtable[offset]);
+    }
+    //DPRINT("PWM: "); DHEXLN(pwm);
+    return pwm;
+  }
+
+  uint16_t combineChannels () {
+    uint16_t value = 0;
+    for( uint8_t i=1; i<DeviceType::channels(); ++i ) {
+      uint8_t level = DeviceType::channel(i).status();
+      switch( DeviceType::channel(i).getList1().logicCombination() ) {
+      default:
+      case LOGIC_INACTIVE:
+        break;
+      case LOGIC_OR:
+        value = value > level ? value : level;
+        break;
+      case LOGIC_AND:
+        value = value < level ? value : level;
+        break;
+      case LOGIC_XOR:
+        value = value==0 ? level : (level==0 ? value : 0);
+        break;
+      case LOGIC_NOR:
+        value = 200 - (value > level ? value : level);
+        break;
+      case LOGIC_NAND:
+        value = 200 - (value < level ? value : level);
+        break;
+      case LOGIC_ORINVERS:
+        level = 200 - level;
+        value = value > level ? value : level;
+        break;
+      case LOGIC_ANDINVERS:
+        level = 200 - level;
+        value = value < level ? value : level;
+        break;
+      case LOGIC_PLUS:
+        value += level;
+        if( value > 200 ) value = 200;
+        break;
+      case LOGIC_MINUS:
+        if( level > value ) value = 0;
+        else value -= level;
+        break;
+      case LOGIC_MUL:
+        value = value * level / 200;
+        break;
+      case LOGIC_PLUSINVERS:
+        level = 200 - level;
+        value += level;
+        if( value > 200 ) value = 200;
+        break;
+        break;
+      case LOGIC_MINUSINVERS:
+        level = 200 - level;
+        if( level > value ) value = 0;
+        else value -= level;
+        break;
+      case LOGIC_MULINVERS:
+        level = 200 - level;
+        value = value * level / 200;
+        break;
+      case LOGIC_INVERSPLUS:
+        value += level;
+        if( value > 200 ) value = 200;
+        value = 200 - value;
+        break;
+      case LOGIC_INVERSMINUS:
+        if( level > value ) value = 0;
+        else value -= level;
+        value = 200 - value;
+        break;
+      case LOGIC_INVERSMUL:
+        value = value * level / 200;
+        value = 200 - value;
+        break;
+      }
+    }
+    // DHEXLN(value);
+    return value;
+  }
+
+};
 
 }
 

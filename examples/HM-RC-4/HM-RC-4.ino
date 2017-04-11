@@ -5,14 +5,10 @@
 
 /*
  * Setup defines to configure the library.
- * Note: If you are using the Eclipse Arduino IDE you will need to set the
- * defines in the project properties.
  */
-#ifndef __IN_ECLIPSE__
-  #define USE_AES
-  #define HM_DEF_KEY 0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x0a,0x0b,0x0c,0x0d,0x0e,0x0f,0x10
-  #define HM_DEF_KEY_INDEX 0
-#endif
+// #define USE_AES
+// #define HM_DEF_KEY 0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x0a,0x0b,0x0c,0x0d,0x0e,0x0f,0x10
+// #define HM_DEF_KEY_INDEX 0
 
 #include <EnableInterrupt.h>
 #include <SPI.h>  // after including SPI Library - we can use LibSPI class
@@ -63,7 +59,7 @@ using namespace as;
  */
 // typedef AvrSPI<10,11,12,13> RadioSPI;
 typedef LibSPI<10> RadioSPI;
-class Hal : public AskSin<DualStatusLed,BatterySensor,Radio<RadioSPI,2> > {
+class Hal : public AskSin<DualStatusLed<5,4>,BatterySensor,Radio<RadioSPI,2> > {
 public:
   AlarmClock btncounter;  // extra clock to count button press events
 } hal;
@@ -187,31 +183,10 @@ public:
 };
 
 
-MultiChannelDevice<Hal,BtnChannel,4> sdev(0x20);
+typedef MultiChannelDevice<Hal,BtnChannel,4> RemoteType;
+RemoteType sdev(0x20);
 
-class CfgButton : public Button {
-public:
-  CfgButton () {
-    setLongPressTime(seconds2ticks(3));
-  }
-  virtual void state (uint8_t s) {
-    uint8_t old = Button::state();
-    Button::state(s);
-    if( s == released ) {
-      sdev.startPairing();
-    }
-    else if( s == longpressed ) {
-      if( old == longpressed ) {
-        sdev.reset(); // long pressed again - reset
-      }
-      else {
-        sdev.led().set(StatusLed::key_long);
-      }
-    }
-  }
-};
-
-CfgButton cfgBtn;
+ConfigButton<RemoteType> cfgBtn(sdev);
 void cfgBtnISR () { cfgBtn.check(); }
 
 void btn1ISR () { sdev.channel(1).pinchanged(); }
@@ -220,10 +195,8 @@ void btn3ISR () { sdev.channel(3).pinchanged(); }
 void btn4ISR () { sdev.channel(4).pinchanged(); }
 
 void setup () {
-#ifndef NDEBUG
-  Serial.begin(57600);
-  DPRINTLN(ASKSIN_PLUS_PLUS_IDENTIFIER);
-#endif
+  DINIT(57600,ASKSIN_PLUS_PLUS_IDENTIFIER);
+
   if( storage.setup(sdev.checksum()) == true ) {
     sdev.firstinit();
   }
@@ -255,8 +228,8 @@ void setup () {
   hal.radio.enable();
   aclock.init();
 
-  hal.led.init(LED_PIN2,LED_PIN);
-  hal.led.set(StatusLed::welcome);
+  hal.led.init();
+  hal.led.set(LedStates::welcome);
   // get new battery value after 50 key press
   hal.battery.init(22,50,hal.btncounter);
 }
@@ -271,6 +244,6 @@ void loop() {
   bool worked = aclock.runready() || hal.btncounter.runready();
   bool poll = sdev.pollRadio();
   if( pinchanged == false && worked == false && poll == false ) {
-    hal.activity.savePower<Sleep>(hal);
+    hal.activity.savePower<Sleep<>>(hal);
   }
 }

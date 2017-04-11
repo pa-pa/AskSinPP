@@ -7,7 +7,7 @@
 
 namespace as {
 
-void SwitchStateMachine::switchState(uint8_t oldstate,uint8_t newstate) {}
+void SwitchStateMachine::switchState(__attribute__((unused)) uint8_t oldstate,__attribute__((unused)) uint8_t newstate) {}
 
 void SwitchStateMachine::setState (uint8_t next,uint32_t delay,const SwitchPeerList& lst,uint8_t deep) {
   // check deep to prevent infinite recursion

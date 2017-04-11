@@ -18,6 +18,7 @@ namespace as {
 
 #ifdef ARDUINO_ARCH_AVR
 
+template <bool ENABLETIMER2=false>
 class Idle {
 public:
 
@@ -32,12 +33,13 @@ public:
 
   template <class Hal>
   static void powerSave (__attribute__((unused)) Hal& hal) {
-    LowPower.idle(SLEEP_FOREVER,ADC_OFF,TIMER2_OFF,TIMER1_ON,TIMER0_OFF,SPI_ON,USART0_ON,TWI_OFF);
+    LowPower.idle(SLEEP_FOREVER,ADC_OFF,ENABLETIMER2==false?TIMER2_OFF:TIMER2_ON,TIMER1_ON,TIMER0_OFF,SPI_ON,USART0_ON,TWI_OFF);
   }
 
 };
 
-class Sleep : public Idle {
+template <bool ENABLETIMER2=false>
+class Sleep : public Idle<ENABLETIMER2> {
 public:
   static uint32_t doSleep (uint32_t ticks) {
     uint32_t offset = 0;
@@ -73,7 +75,7 @@ public:
       }
       else{
         aclock.enable();
-        Idle::powerSave(hal);
+        Idle<>::powerSave(hal);
       }
     }
     else {

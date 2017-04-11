@@ -23,7 +23,7 @@ class SwitchStateMachine {
   public:
     StateAlarm(SwitchStateMachine& m) : Alarm(0), sm(m), lst(0) {}
     void list(SwitchPeerList l) {lst=l;}
-    virtual void trigger (AlarmClock& clock) {
+    virtual void trigger (__attribute__((unused)) AlarmClock& clock) {
       uint8_t next = sm.getNextState();
       uint32_t dly = sm.getDelayForState(next,lst);
       sm.setState(next,dly,lst);

@@ -27,6 +27,8 @@
   inline void DDEC(uint16_t b) {  }
   inline void DDECLN(uint16_t b) {  }
 
+  #define DINIT(baudrate,msg)
+
 #else
 
 #ifdef ARDUINO
@@ -66,6 +68,10 @@
   inline void DDEC(uint32_t b) {
     Serial.print(b,DEC);
   }
+
+  #define DINIT(baudrate,msg) \
+    Serial.begin(baudrate); \
+    DPRINTLN(msg);
 
 #else
 

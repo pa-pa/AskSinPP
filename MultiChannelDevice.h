@@ -124,7 +124,7 @@ public:
 
   void startPairing () {
     DeviceType::sendDeviceInfo();
-    DeviceType::led().set(StatusLed::pairing);
+    DeviceType::led().set(LedStates::pairing);
     DeviceType::activity().stayAwake( seconds2ticks(20) ); // 20 seconds
   }
 
@@ -162,7 +162,7 @@ public:
          DeviceType::activity().stayAwake(millis2ticks(500));
          // PAIR_SERIAL
          if( msubc == AS_CONFIG_PAIR_SERIAL && memcmp(msg.data(),DeviceType::getSerial(),10)==0 ) {
-           DeviceType::led().set(StatusLed::pairing);
+           DeviceType::led().set(LedStates::pairing);
            DeviceType::activity().stayAwake( seconds2ticks(20) ); // 20 seconds
            DeviceType::sendDeviceInfo(DeviceType::getMasterID(),msg.length());
          }
@@ -233,7 +233,8 @@ public:
          }
          // CONFIG_STATUS_REQUEST
          else if (msubc == AS_CONFIG_STATUS_REQUEST ) {
-           DeviceType::sendInfoActuatorStatus(msg.from(),msg.count(),channel(msg.command()));
+           // this is an answer to a reuqest - so we need no ack
+           DeviceType::sendInfoActuatorStatus(msg.from(),msg.count(),channel(msg.command()),false);
          }
          // CONFIG_START
          else if( msubc == AS_CONFIG_START ) {
@@ -256,7 +257,7 @@ public:
          else if( msubc == AS_CONFIG_END ) {
            if( cfgList.address() == list0.address() ) {
              DeviceType::setMasterID(list0.masterid());
-             DeviceType::led().set(StatusLed::nothing);
+             DeviceType::led().set(LedStates::nothing);
            }
            else {
              // signal list update to channel
