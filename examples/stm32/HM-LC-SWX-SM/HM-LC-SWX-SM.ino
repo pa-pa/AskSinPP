@@ -76,7 +76,6 @@ typedef MultiChannelDevice<Hal,SwitchChannel<Hal,PEERS_PER_CHANNEL>,RELAY_COUNT>
 SwitchDevice sdev(0x20);
 
 ConfigToggleButton<SwitchDevice,LOW,HIGH,INPUT_PULLDOWN> cfgBtn(sdev);
-void cfgBtnISR () { cfgBtn.check(); }
 
 void setup () {
   DINIT(57600,ASKSIN_PLUS_PLUS_IDENTIFIER);
@@ -91,10 +90,7 @@ void setup () {
     sdev.channel(i).lowactive(false);
   }
 
-  hal.led.init();
-  cfgBtn.init(CONFIG_BUTTON_PIN);
-  enableInterrupt(CONFIG_BUTTON_PIN,cfgBtnISR,CHANGE);
-  hal.radio.init();
+  buttonISR(cfgBtn,CONFIG_BUTTON_PIN);
 
   sdev.init(hal,DEVICE_ID,DEVICE_SERIAL);
   sdev.setModel(0x00,SW_MODEL);
@@ -103,17 +99,13 @@ void setup () {
   sdev.setSubType(DeviceType::Switch);
   sdev.setInfo(0x41,0x01,0x00);
 
-  hal.radio.enable();
-
-  sysclock.init();
-
-  hal.led.set(LedStates::welcome);
+  hal.init();
 
   // TODO - random delay
 }
 
 void loop() {
-  bool worked = sysclock.runready();
+  bool worked = hal.runready();
   bool poll = sdev.pollRadio();
 //  if( worked == false && poll == false ) {
 //    hal.activity.savePower<Idle>(hal);

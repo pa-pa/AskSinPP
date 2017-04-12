@@ -62,7 +62,6 @@ typedef DimmerDevice<Hal,DimmerChannel<Hal,PEERS_PER_CHANNEL>,3> DimmerType;
 DimmerType sdev(0x20,DIMMER_PIN);
 
 ConfigToggleButton<DimmerType> cfgBtn(sdev);
-void cfgBtnISR () { cfgBtn.check(); }
 
 void setup () {
   DINIT(57600,ASKSIN_PLUS_PLUS_IDENTIFIER);
@@ -72,11 +71,7 @@ void setup () {
     sdev.firstinit();
   }
 
-  hal.led.init();
-
-  cfgBtn.init(CONFIG_BUTTON_PIN);
-  enableInterrupt(CONFIG_BUTTON_PIN,cfgBtnISR,CHANGE);
-  hal.radio.init();
+  buttonISR(cfgBtn,CONFIG_BUTTON_PIN);
 
 #ifdef USE_OTA_BOOTLOADER
   sdev.init(hal,OTA_HMID_START,OTA_SERIAL_START);
@@ -89,17 +84,13 @@ void setup () {
   sdev.setSubType(DeviceType::Dimmer);
   sdev.setInfo(0x41,0x01,0x00);
 
-  hal.radio.enable();
-
-  sysclock.init();
-
-  hal.led.set(LedStates::welcome);
+  hal.init();
 
   // TODO - random delay
 }
 
 void loop() {
-  bool worked = sysclock.runready();
+  bool worked = hal.runready();
   bool poll = sdev.pollRadio();
   if( worked == false && poll == false ) {
     hal.activity.savePower<Idle<true> >(hal);

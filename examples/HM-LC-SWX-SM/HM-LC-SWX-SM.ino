@@ -91,7 +91,6 @@ typedef MultiChannelDevice<Hal,SwitchChannel<Hal,PEERS_PER_CHANNEL>,RELAY_COUNT>
 SwitchType sdev(0x20);
 
 ConfigToggleButton<SwitchType> cfgBtn(sdev);
-void cfgBtnISR () { cfgBtn.check(); }
 
 // if A0 and A1 connected
 // we use LOW for ON and HIGH for OFF
@@ -116,11 +115,7 @@ void setup () {
     sdev.channel(i).lowactive(low);
   }
 
-  hal.led.init();
-
-  cfgBtn.init(CONFIG_BUTTON_PIN);
-  enableInterrupt(CONFIG_BUTTON_PIN,cfgBtnISR,CHANGE);
-  hal.radio.init();
+  buttonISR(cfgBtn,CONFIG_BUTTON_PIN);
 
 #ifdef USE_OTA_BOOTLOADER
   sdev.init(hal,OTA_HMID_START,OTA_SERIAL_START);
@@ -144,17 +139,13 @@ void setup () {
   sdev.setSubType(DeviceType::Switch);
   sdev.setInfo(0x41,0x01,0x00);
 
-  hal.radio.enable();
-
-  sysclock.init();
-
-  hal.led.set(LedStates::welcome);
+  hal.init();
 
   // TODO - random delay
 }
 
 void loop() {
-  bool worked = sysclock.runready();
+  bool worked = hal.runready();
   bool poll = sdev.pollRadio();
   if( worked == false && poll == false ) {
     hal.activity.savePower<Idle<>>(hal);

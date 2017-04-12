@@ -391,6 +391,8 @@ public:
     if( sendtopeer == false ) {
       send(msg,getMasterID());
     }
+    // signal that we have send to peer
+    hal->sendPeer();
   }
 
   void writeList (const GenericList& list,const uint8_t* data,uint8_t length) {

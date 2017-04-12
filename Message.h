@@ -393,6 +393,14 @@ class RemoteEventMsg : public Message {
 protected:
   RemoteEventMsg() {}
 public:
+  void init(uint8_t msgcnt,uint8_t ch,uint8_t counter,bool lg,bool lowbat) {
+    uint8_t flags = lg ? 0x40 : 0x00;
+    if( lowbat == true ) {
+      flags |= 0x80; // low battery
+    }
+    Message::init(0xb,msgcnt,0x40, Message::BIDI,(ch & 0x3f) | flags,counter);
+  }
+
   Peer peer () const { return Peer(from(),command() & 0x3f); }
   uint8_t counter () const { return subcommand(); }
   bool isLong () const { return (command() & 0x40) == 0x40; }

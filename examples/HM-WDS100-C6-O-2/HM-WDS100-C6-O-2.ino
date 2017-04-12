@@ -50,8 +50,16 @@ using namespace as;
  * Configure the used hardware
  */
 typedef AvrSPI<10,11,12,13> RadioSPI;
-typedef AskSin<StatusLed<4>,BatterySensor,Radio<RadioSPI,2> > Hal;
-Hal hal;
+typedef AskSin<StatusLed<4>,BatterySensor,Radio<RadioSPI,2> > BaseHal;
+class Hal : public BaseHal {
+public:
+  void init () {
+    BaseHal::init();
+    // set low voltage to 2.2V
+    // measure battery every 1h
+    battery.init(22,seconds2ticks(60UL*60),sysclock);
+  }
+} hal;
 
 class Wds100List0Data : public List0Data {
   uint8_t LiveModeRx        : 1;   // 0x01 - 01
@@ -208,7 +216,6 @@ typedef MultiChannelDevice<Hal,Wds100Channel,1,Wds100List0> WeatherType;
 WeatherType sdev(0x20);
 
 ConfigButton<WeatherType> cfgBtn(sdev);
-void cfgBtnISR () { cfgBtn.check(); }
 
 void setup () {
   DINIT(57600,ASKSIN_PLUS_PLUS_IDENTIFIER);
@@ -217,11 +224,7 @@ void setup () {
     sdev.firstinit();
   }
 
-  hal.led.init();
-
-  cfgBtn.init(CONFIG_BUTTON_PIN);
-  enableInterrupt(CONFIG_BUTTON_PIN,cfgBtnISR,CHANGE);
-  hal.radio.init();
+  buttonISR(cfgBtn,CONFIG_BUTTON_PIN);
 
 #ifdef USE_OTA_BOOTLOADER
   sdev.init(hal,OTA_HMID_START,OTA_SERIAL_START);
@@ -235,20 +238,14 @@ void setup () {
   sdev.setSubType(DeviceType::THSensor);
   sdev.setInfo(0x03,0x01,0x00);
 
-  hal.radio.enable();
-  sysclock.init();
-
-  hal.led.set(LedStates::welcome);
-  // set low voltage to 2.2V
-  // measure battery every 1h
-  hal.battery.init(22,seconds2ticks(60UL*60),sysclock);
+  hal.init();
 
   // add channel 1 to timer to send event
   sysclock.add(sdev.channel(1));
 }
 
 void loop() {
-  bool worked = sysclock.runready();
+  bool worked = hal.runready();
   bool poll = sdev.pollRadio();
   if( worked == false && poll == false ) {
     hal.activity.savePower<Sleep<>>(hal);

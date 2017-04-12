@@ -61,8 +61,21 @@ using namespace as;
  * Configure the used hardware
  */
 typedef AvrSPI<10,11,12,13> RadioSPI;
-typedef AskSin<StatusLed<4>,BatterySensor,Radio<RadioSPI,2> > Hal;
-Hal hal;
+typedef AskSin<StatusLed<4>,BatterySensor,Radio<RadioSPI,2> > BaseHal;
+class Hal : public BaseHal {
+public:
+  void init () {
+    BaseHal::init();
+    // set low voltage to 2.2V
+    // measure battery every 1h
+    //battery.init(BATTERY_LOW,seconds2ticks(60UL*60));
+    // init for external measurement
+    //battery.init(BATTERY_LOW,seconds2ticks(60UL*60),refvoltage,divider);
+    // UniversalSensor setup
+    battery.init(BATTERY_LOW,seconds2ticks(60UL*60),sysclock);
+    battery.critical(BATTERY_CRITICAL);
+  }
+} hal;
 
 // Create an SFE_TSL2561 object, here called "light":
 TSL2561 light;
@@ -279,7 +292,6 @@ MotionType sdev(0x20);
 void motionISR () { sdev.channel(1).motionDetected(); }
 
 ConfigButton<MotionType> cfgBtn(sdev);
-void cfgBtnISR () { cfgBtn.check(); }
 
 void setup () {
   DINIT(57600,ASKSIN_PLUS_PLUS_IDENTIFIER);
@@ -298,11 +310,7 @@ void setup () {
   light.setTiming(0,2); //gain,time);
   light.setPowerUp();
 
-  hal.led.init();
-
-  cfgBtn.init(CONFIG_BUTTON_PIN);
-  enableInterrupt(CONFIG_BUTTON_PIN,cfgBtnISR,CHANGE);
-  hal.radio.init();
+  buttonISR(cfgBtn,CONFIG_BUTTON_PIN);
 
 #ifdef USE_OTA_BOOTLOADER
   sdev.init(hal,OTA_HMID_START,OTA_SERIAL_START);
@@ -316,22 +324,11 @@ void setup () {
   sdev.setSubType(DeviceType::MotionDetector);
   sdev.setInfo(0x01,0x01,0x00);
 
-  hal.radio.enable();
-  sysclock.init();
-
-  hal.led.set(LedStates::welcome);
-  // set low voltage to 2.2V
-  // measure battery every 1h
-  //battery.init(BATTERY_LOW,seconds2ticks(60UL*60));
-  // init for external measurement
-  //battery.init(BATTERY_LOW,seconds2ticks(60UL*60),refvoltage,divider);
-  // UniversalSensor setup
-  hal.battery.init(BATTERY_LOW,seconds2ticks(60UL*60),sysclock);
-  hal.battery.critical(BATTERY_CRITICAL);
+  hal.init();
 }
 
 void loop() {
-  bool worked = sysclock.runready();
+  bool worked = hal.runready();
   bool poll = sdev.pollRadio();
   if( worked == false && poll == false ) {
     // deep discharge protection

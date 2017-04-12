@@ -17,6 +17,7 @@
 #include <LowPower.h>
 
 #include <MultiChannelDevice.h>
+#include <Remote.h>
 
 // define this to read the device id, serial and device type from bootloader section
 // #define USE_OTA_BOOTLOADER
@@ -59,140 +60,31 @@ using namespace as;
  */
 // typedef AvrSPI<10,11,12,13> RadioSPI;
 typedef LibSPI<10> RadioSPI;
-class Hal : public AskSin<DualStatusLed<5,4>,BatterySensor,Radio<RadioSPI,2> > {
+typedef AskSin<DualStatusLed<5,4>,BatterySensor,Radio<RadioSPI,2> > HalBase;
+class Hal : public HalBase {
+  // extra clock to count button press events
+  AlarmClock btncounter;
 public:
-  AlarmClock btncounter;  // extra clock to count button press events
+  void init () {
+    HalBase::init();
+    // get new battery value after 50 key press
+    battery.init(22,50,btncounter);
+  }
+
+  void sendPeer () {
+    --btncounter;
+  }
+
+  bool runready () {
+    return HalBase::runready() || btncounter.runready();
+  }
 } hal;
 
 
-class BtnList1Data {
-public:
-  uint8_t Unused1          : 4;     // 0x04
-  uint8_t LongPressTime    : 4;     // 0x04
-  uint8_t AesActive        : 1;     // 0x08, s:0, e:1
-  uint8_t DoublePressTime  : 4;     // 0x09
-  uint8_t Unused2          : 4;     // 0x09
-
-  static uint8_t getOffset(uint8_t reg) {
-    switch (reg) {
-      case 0x04: return 0;
-      case 0x08: return 1;
-      case 0x09: return 2;
-      default: break;
-    }
-    return 0xff;
-  }
-
-  static uint8_t getRegister(uint8_t offset) {
-    switch (offset) {
-      case 0:  return 0x04;
-      case 1:  return 0x08;
-      case 2:  return 0x09;
-      default: break;
-    }
-    return 0xff;
-  }
-};
-
-class BtnList1 : public ChannelList<BtnList1Data> {
-public:
-  BtnList1(uint16_t a) : ChannelList(a) {}
-
-  uint8_t longPressTime () const { return getByte(0,0xf0,4); }
-  bool longPressTime (uint8_t value) const { return setByte(0,value,0xf0,4); }
-
-  bool aesActive () const { return isBitSet(1,0x01); }
-  bool aesActive (bool s) const { return setBit(1,0x01,s); }
-
-  uint8_t doublePressTime () const { return getByte(2,0x0f,0); }
-  bool doublePressTime (uint8_t value) const { return setByte(2,value,0x0f,0); }
-
-
-  void defaults () {
-    longPressTime(1);
-    aesActive(false);
-    doublePressTime(0);
-  }
-};
-
-class BtnEventMsg : public Message {
-public:
-  void init(uint8_t msgcnt,uint8_t ch,uint8_t counter,bool lg,bool lowbat) {
-    uint8_t flags = lg ? 0x40 : 0x00;
-    if( lowbat == true ) {
-      flags |= 0x80; // low battery
-    }
-    Message::init(0xb,msgcnt,0x40, Message::BIDI,(ch & 0x3f) | flags,counter);
-  }
-};
-
-
-
-class BtnChannel : public Channel<Hal,BtnList1,EmptyList,List4,PEERS_PER_CHANNEL>, public Button {
-
-private:
-  uint8_t       repeatcnt;
-  volatile bool isr;
-
-public:
-  BtnChannel () : Channel(), repeatcnt(0), isr(false) {}
-  virtual ~BtnChannel () {}
-
-  Button& button () { return *(Button*)this; }
-
-  uint8_t status () const {
-    return 0;
-  }
-
-  uint8_t flags () const {
-    return 0;
-  }
-
-  virtual void state(uint8_t s) {
-    DHEX(number());
-    Button::state(s);
-    if( s == released ) {
-      BtnEventMsg& msg = (BtnEventMsg&)device().message();
-      msg.init(device().nextcount(),number(),repeatcnt++,false,hal.battery.low());
-      device().sendPeerEvent(msg,*this);
-      --hal.btncounter;
-    }
-    else if( s == longpressed ) {
-      BtnEventMsg& msg = (BtnEventMsg&)device().message();
-      msg.init(device().nextcount(),number(),repeatcnt,true,hal.battery.low());
-      device().sendPeerEvent(msg,*this);
-      --hal.btncounter;
-    }
-    else if( s == longreleased ) {
-      repeatcnt++;
-    }
-  }
-
-  void pinchanged () {
-    isr = true;
-  }
-
-  bool checkpin () {
-    bool result = isr;
-    if( isr == true ) {
-      isr = false;
-      Button::check();
-    }
-    return result;
-  }
-};
-
-
-typedef MultiChannelDevice<Hal,BtnChannel,4> RemoteType;
+typedef MultiChannelDevice<Hal,RemoteChannel<Hal,PEERS_PER_CHANNEL>,4> RemoteType;
 RemoteType sdev(0x20);
 
 ConfigButton<RemoteType> cfgBtn(sdev);
-void cfgBtnISR () { cfgBtn.check(); }
-
-void btn1ISR () { sdev.channel(1).pinchanged(); }
-void btn2ISR () { sdev.channel(2).pinchanged(); }
-void btn3ISR () { sdev.channel(3).pinchanged(); }
-void btn4ISR () { sdev.channel(4).pinchanged(); }
 
 void setup () {
   DINIT(57600,ASKSIN_PLUS_PLUS_IDENTIFIER);
@@ -201,18 +93,12 @@ void setup () {
     sdev.firstinit();
   }
 
-  sdev.channel(1).button().init(BTN1_PIN);
-  sdev.channel(2).button().init(BTN2_PIN);
-  sdev.channel(3).button().init(BTN3_PIN);
-  sdev.channel(4).button().init(BTN4_PIN);
-  enableInterrupt(BTN1_PIN,btn1ISR,CHANGE);
-  enableInterrupt(BTN2_PIN,btn2ISR,CHANGE);
-  enableInterrupt(BTN3_PIN,btn3ISR,CHANGE);
-  enableInterrupt(BTN4_PIN,btn4ISR,CHANGE);
+  remoteISR(sdev,1,BTN1_PIN);
+  remoteISR(sdev,2,BTN2_PIN);
+  remoteISR(sdev,3,BTN3_PIN);
+  remoteISR(sdev,4,BTN4_PIN);
 
-  cfgBtn.init(CONFIG_BUTTON_PIN);
-  enableInterrupt(CONFIG_BUTTON_PIN,cfgBtnISR,CHANGE);
-  hal.radio.init();
+  buttonISR(cfgBtn,CONFIG_BUTTON_PIN);
 
 #ifdef USE_OTA_BOOTLOADER
   sdev.init(hal,OTA_HMID_START,OTA_SERIAL_START);
@@ -225,13 +111,7 @@ void setup () {
   sdev.setSubType(DeviceType::Remote);
   sdev.setInfo(0x04,0x00,0x00);
 
-  hal.radio.enable();
-  sysclock.init();
-
-  hal.led.init();
-  hal.led.set(LedStates::welcome);
-  // get new battery value after 50 key press
-  hal.battery.init(22,50,hal.btncounter);
+  hal.init();
 }
 
 void loop() {
@@ -241,7 +121,7 @@ void loop() {
       pinchanged = true;
     }
   }
-  bool worked = sysclock.runready() || hal.btncounter.runready();
+  bool worked = hal.runready();
   bool poll = sdev.pollRadio();
   if( pinchanged == false && worked == false && poll == false ) {
     hal.activity.savePower<Sleep<>>(hal);

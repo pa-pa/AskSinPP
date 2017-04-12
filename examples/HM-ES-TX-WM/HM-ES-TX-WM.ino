@@ -387,7 +387,6 @@ void meterISR () {
 }
 
 ConfigButton<MeterType> cfgBtn(sdev);
-void cfgBtnISR () { cfgBtn.check(); }
 
 void setup () {
   DINIT(57600,ASKSIN_PLUS_PLUS_IDENTIFIER);
@@ -396,11 +395,7 @@ void setup () {
     sdev.firstinit();
   }
 
-  hal.led.init();
-
-  cfgBtn.init(CONFIG_BUTTON_PIN);
-  enableInterrupt(CONFIG_BUTTON_PIN,cfgBtnISR,CHANGE);
-  hal.radio.init();
+  buttonISR(cfgBtn,CONFIG_BUTTON_PIN);
 
 #ifdef USE_OTA_BOOTLOADER
   sdev.init(hal,OTA_HMID_START,OTA_SERIAL_START);
@@ -413,22 +408,19 @@ void setup () {
   sdev.setSubType(DeviceType::PowerMeter);
   sdev.setInfo(0x03,0x01,0x00);
 
-  hal.radio.enable();
-  sysclock.init();
+  hal.init();
 
-  gasISR.attach();
-
-  hal.led.set(LedStates::welcome);
   // set low voltage to 2.2V
   // measure battery every 1h
   battery.init(22,seconds2ticks(60UL*60),sysclock);
 
+  gasISR.attach();
   // add channel 1 to timer to send event
   sysclock.add(sdev.channel(1));
 }
 
 void loop() {
-  bool worked = sysclock.runready();
+  bool worked = hal.runready();
   bool poll = sdev.pollRadio();
   if( worked == false && poll == false ) {
     hal.activity.savePower<Sleep<> >(hal);

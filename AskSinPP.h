@@ -43,6 +43,22 @@ public:
   RadioType   radio;
   Activity    activity;
 
+  void init () {
+    led.init();
+    radio.init();
+    radio.enable();
+    // start the system timer
+    sysclock.init();
+    // signal start to user
+    led.set(LedStates::welcome);
+  }
+
+  bool runready () {
+    return sysclock.runready();
+  }
+
+  void sendPeer () {}
+
   static void pgm_read(uint8_t* dest,uint16_t adr,uint8_t size) {
     for( int i=0; i<size; ++i, ++dest ) {
       *dest = pgm_read_byte(adr + i);
