@@ -368,7 +368,7 @@ public:
   void debounce () {
     detach();
     tick = millis2ticks(millis);
-    aclock.add(*this);
+    sysclock.add(*this);
   }
 
   virtual void trigger (AlarmClock& clock) {
@@ -414,21 +414,21 @@ void setup () {
   sdev.setInfo(0x03,0x01,0x00);
 
   hal.radio.enable();
-  aclock.init();
+  sysclock.init();
 
   gasISR.attach();
 
   hal.led.set(LedStates::welcome);
   // set low voltage to 2.2V
   // measure battery every 1h
-  battery.init(22,seconds2ticks(60UL*60),aclock);
+  battery.init(22,seconds2ticks(60UL*60),sysclock);
 
   // add channel 1 to timer to send event
-  aclock.add(sdev.channel(1));
+  sysclock.add(sdev.channel(1));
 }
 
 void loop() {
-  bool worked = aclock.runready();
+  bool worked = sysclock.runready();
   bool poll = sdev.pollRadio();
   if( worked == false && poll == false ) {
     hal.activity.savePower<Sleep<> >(hal);

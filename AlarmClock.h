@@ -79,7 +79,7 @@ public:
 
 };
 
-extern AlarmClock aclock;
+extern AlarmClock sysclock;
 
 }
 

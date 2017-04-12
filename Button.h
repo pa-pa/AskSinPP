@@ -127,9 +127,9 @@ public:
         break;
       }
       if( nexttick != 0 ) {
-        aclock.cancel(*this);
+        sysclock.cancel(*this);
         tick = nexttick;
-        aclock.add(*this);
+        sysclock.add(*this);
       }
       if( nextstate != state () ) {
         state(nextstate);

@@ -226,7 +226,7 @@ void setup () {
   sdev.setInfo(0x04,0x00,0x00);
 
   hal.radio.enable();
-  aclock.init();
+  sysclock.init();
 
   hal.led.init();
   hal.led.set(LedStates::welcome);
@@ -241,7 +241,7 @@ void loop() {
       pinchanged = true;
     }
   }
-  bool worked = aclock.runready() || hal.btncounter.runready();
+  bool worked = sysclock.runready() || hal.btncounter.runready();
   bool poll = sdev.pollRadio();
   if( pinchanged == false && worked == false && poll == false ) {
     hal.activity.savePower<Sleep<>>(hal);

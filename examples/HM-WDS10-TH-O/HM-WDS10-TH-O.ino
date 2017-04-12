@@ -107,7 +107,7 @@ public:
 
   void setup(Device<Hal>* dev,uint8_t number,uint16_t addr) {
     Channel::setup(dev,number,addr);
-    aclock.add(*this);
+    sysclock.add(*this);
   }
 
   uint8_t status () const {
@@ -153,13 +153,13 @@ void setup () {
 
   hal.radio.enable();
 
-  aclock.init();
+  sysclock.init();
 
   hal.led.set(LedStates::welcome);
 }
 
 void loop() {
-  bool worked = aclock.runready();
+  bool worked = sysclock.runready();
   bool poll = sdev.pollRadio();
   if( worked == false && poll == false ) {
     hal.activity.savePower<Sleep<>>(hal);

@@ -146,7 +146,7 @@ void setup () {
 
   hal.radio.enable();
 
-  aclock.init();
+  sysclock.init();
 
   hal.led.set(LedStates::welcome);
 
@@ -154,7 +154,7 @@ void setup () {
 }
 
 void loop() {
-  bool worked = aclock.runready();
+  bool worked = sysclock.runready();
   bool poll = sdev.pollRadio();
   if( worked == false && poll == false ) {
     hal.activity.savePower<Idle<>>(hal);

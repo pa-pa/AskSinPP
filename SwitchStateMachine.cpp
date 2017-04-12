@@ -13,7 +13,7 @@ void SwitchStateMachine::setState (uint8_t next,uint32_t delay,const SwitchPeerL
   // check deep to prevent infinite recursion
   if( next != AS_CM_JT_NONE && deep < 4) {
     // first cancel possible running alarm
-    aclock.cancel(alarm);
+    sysclock.cancel(alarm);
     // if state is different
     if (state != next) {
       switchState(state, next);
@@ -28,7 +28,7 @@ void SwitchStateMachine::setState (uint8_t next,uint32_t delay,const SwitchPeerL
     else if (delay != DELAY_INFINITE) {
       alarm.list(lst);
       alarm.set(delay);
-      aclock.add(alarm);
+      sysclock.add(alarm);
     }
   }
 }

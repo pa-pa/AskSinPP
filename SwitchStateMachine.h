@@ -110,7 +110,7 @@ public:
     return DELAY_NO;
   }
 
-  bool delayActive () const { return aclock.get(alarm) > 0; }
+  bool delayActive () const { return sysclock.get(alarm) > 0; }
 
   // get timer count in ticks
   static uint32_t byteTimeCvt(uint8_t tTime) {

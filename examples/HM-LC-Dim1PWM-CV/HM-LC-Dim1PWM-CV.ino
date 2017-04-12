@@ -16,7 +16,6 @@
 #include <TimerOne.h>
 #include <LowPower.h>
 
-#include <MultiChannelDevice.h>
 #include <Dimmer.h>
 
 // define this to read the device id, serial and device type from bootloader section
@@ -92,7 +91,7 @@ void setup () {
 
   hal.radio.enable();
 
-  aclock.init();
+  sysclock.init();
 
   hal.led.set(LedStates::welcome);
 
@@ -100,7 +99,7 @@ void setup () {
 }
 
 void loop() {
-  bool worked = aclock.runready();
+  bool worked = sysclock.runready();
   bool poll = sdev.pollRadio();
   if( worked == false && poll == false ) {
     hal.activity.savePower<Idle<true> >(hal);

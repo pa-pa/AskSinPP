@@ -196,7 +196,7 @@ private:
 
 public:
   MotionChannel () : Channel(), Alarm(0), counter(0), quiet(*this), cycle(*this) {
-    aclock.add(cycle);
+    sysclock.add(cycle);
     pinMode(PIR_PIN,INPUT);
     pirInterruptOn();
   }
@@ -249,7 +249,7 @@ public:
       // start timer to end quiet interval
       quiet.tick = getMinInterval();
       quiet.enabled = true;
-      aclock.add(quiet);
+      sysclock.add(quiet);
       // blink led
       if( hal.led.active() == false ) {
         hal.led.ledOn( centis2ticks(getList1().ledOntime()) / 2);
@@ -266,9 +266,9 @@ public:
   // runs in interrupt
   void motionDetected () {
     // cancel may not needed but anyway
-    aclock.cancel(*this);
+    sysclock.cancel(*this);
     // activate motion message handler
-    aclock.add(*this);
+    sysclock.add(*this);
     }
 };
 
@@ -317,7 +317,7 @@ void setup () {
   sdev.setInfo(0x01,0x01,0x00);
 
   hal.radio.enable();
-  aclock.init();
+  sysclock.init();
 
   hal.led.set(LedStates::welcome);
   // set low voltage to 2.2V
@@ -326,12 +326,12 @@ void setup () {
   // init for external measurement
   //battery.init(BATTERY_LOW,seconds2ticks(60UL*60),refvoltage,divider);
   // UniversalSensor setup
-  hal.battery.init(BATTERY_LOW,seconds2ticks(60UL*60),aclock);
+  hal.battery.init(BATTERY_LOW,seconds2ticks(60UL*60),sysclock);
   hal.battery.critical(BATTERY_CRITICAL);
 }
 
 void loop() {
-  bool worked = aclock.runready();
+  bool worked = sysclock.runready();
   bool poll = sdev.pollRadio();
   if( worked == false && poll == false ) {
     // deep discharge protection

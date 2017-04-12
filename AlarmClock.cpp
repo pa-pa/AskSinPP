@@ -10,10 +10,10 @@
 
 namespace as {
 
-AlarmClock aclock;
+AlarmClock sysclock;
 
 void callback(void) {
-  --aclock;
+  --sysclock;
 }
 
 void AlarmClock::init() {

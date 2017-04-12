@@ -574,14 +574,14 @@ class DimmerStateMachine {
     // check deep to prevent infinite recursion
     if( next != AS_CM_JT_NONE && deep < 4) {
       // first cancel possible running alarm
-      aclock.cancel(alarm);
+      sysclock.cancel(alarm);
       // if state is different
       if (state != next) {
         updateState(next);
       }
       if ( state == AS_CM_JT_RAMPON || state == AS_CM_JT_RAMPOFF ) {
         alarm.init(state,lst);
-        aclock.add(alarm);
+        sysclock.add(alarm);
       }
       else {
         if (delay == DELAY_NO) {
@@ -593,7 +593,7 @@ class DimmerStateMachine {
         else if (delay != DELAY_INFINITE) {
           alarm.list(lst);
           alarm.set(delay);
-          aclock.add(alarm);
+          sysclock.add(alarm);
         }
       }
     }
@@ -700,7 +700,7 @@ public:
     return DELAY_NO;
   }
 
-  bool delayActive () const { return aclock.get(alarm) > 0; }
+  bool delayActive () const { return sysclock.get(alarm) > 0; }
 
   // get timer count in ticks
   static uint32_t byteTimeCvt(uint8_t tTime) {
@@ -810,9 +810,9 @@ public:
       setState(level==0 ? AS_CM_JT_OFF : AS_CM_JT_ON, intTimeCvt(delay));
     }
     else {
-      aclock.cancel(alarm);
+      sysclock.cancel(alarm);
       alarm.init(intTimeCvt(ramp), level, intTimeCvt(delay));
-      aclock.add(alarm);
+      sysclock.add(alarm);
     }
   }
 

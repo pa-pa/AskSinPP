@@ -27,12 +27,12 @@ public:
   static const BlinkPattern dual2[8] PROGMEM;
 };
 
-template <uint8_t LEDPIN>
 class Led : public Alarm, public LedStates {
 private:
   BlinkPattern current;
   uint8_t step;   // current step in pattern
   uint8_t repeat; // current repeat of the pattern
+  uint8_t pin;
 
   void copyPattern (Mode stat,const BlinkPattern* patt) {
     memcpy_P(&current,patt+stat,sizeof(BlinkPattern));
@@ -45,33 +45,34 @@ private:
   }
 
 public:
-  Led () : Alarm(0), step(0), repeat(0) {
+  Led () : Alarm(0), step(0), repeat(0), pin(0) {
     async(true);
   }
   virtual ~Led() {}
 
-  void init () {
-    pinMode(LEDPIN,OUTPUT);
+  void init (uint8_t p) {
+    pin = p;
+    pinMode(pin,OUTPUT);
     ledOff();
   }
 
   void set(Mode stat,const BlinkPattern* patt) {
-    aclock.cancel(*this);
+    sysclock.cancel(*this);
     ledOff();
     copyPattern(stat,patt);
     if( current.length > 0 ) {
       step = 0;
       repeat = 0;
-      next(aclock);
+      next(sysclock);
     }
   }
 
   void ledOff () {
-    digitalWrite(LEDPIN,LOW);
+    digitalWrite(pin,LOW);
   }
 
   void ledOn () {
-    digitalWrite(LEDPIN,HIGH);
+    digitalWrite(pin,HIGH);
   }
 
   void ledOn (uint8_t ticks) {
@@ -82,7 +83,7 @@ public:
       current.pattern[1] = 0;
       // start the pattern
       step = repeat = 0;
-      next(aclock);
+      next(sysclock);
     }
   }
 
@@ -110,14 +111,12 @@ public:
 template<uint8_t LEDPIN1>
 class StatusLed : public LedStates {
 
-public:
-
-  Led<LEDPIN1> led1;
+  Led led1;
 
 public:
   StatusLed () {}
 
-  void init () {  led1.init(); }
+  void init () {  led1.init(LEDPIN1); }
   bool active () const { return led1.active(); }
   void ledOn (uint8_t ticks) { led1.ledOn(ticks); }
   void set(Mode stat) { led1.set(stat,single); }
@@ -126,11 +125,11 @@ public:
 template <uint8_t LEDPIN1,uint8_t LEDPIN2>
 class DualStatusLed : public LedStates  {
 private:
-  Led<LEDPIN1> led1;
-  Led<LEDPIN2> led2;
+  Led led1;
+  Led led2;
 public:
   DualStatusLed () {}
-  void init () { led1.init(); led2.init(); }
+  void init () { led1.init(LEDPIN1); led2.init(LEDPIN2); }
   bool active () const { return led1.active() || led2.active(); }
   void ledOn (uint8_t ticks) { led1.ledOn(ticks); led2.ledOn(ticks); }
   void set(Mode stat) { led1.set(stat,dual1); led2.set(stat,dual2); }

@@ -58,16 +58,16 @@ public:
 int main () {
 
   Ping ping;
-  as::aclock.add(ping);
+  as::sysclock.add(ping);
   OnOff oo;
-  as::aclock.add(oo);
+  as::sysclock.add(oo);
 
   sm.setLevel(200,0x41,0x83);
   
   while( 1 ) {
     usleep(100000);
-	  --as::aclock;
-	  as::aclock.runready();
+	  --as::sysclock;
+	  as::sysclock.runready();
   }
   return 0;
 }

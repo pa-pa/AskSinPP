@@ -23,7 +23,7 @@ class Idle {
 public:
 
   static void waitSerial () {
-//      DPRINT(F("Go sleep - ")); DHEXLN((uint16_t)aclock.next());
+//      DPRINT(F("Go sleep - ")); DHEXLN((uint16_t)sysclock.next());
       Serial.flush();
       while (!(UCSR0A & (1 << UDRE0))) {  // Wait for empty transmit buffer
         UCSR0A |= 1 << TXC0;  // mark transmission not complete
@@ -63,23 +63,23 @@ public:
 
   template <class Hal>
   static void powerSave (Hal& hal) {
-    aclock.disable();
-    uint32_t ticks = aclock.next();
-    if( aclock.isready() == false ) {
+    sysclock.disable();
+    uint32_t ticks = sysclock.next();
+    if( sysclock.isready() == false ) {
       if( ticks == 0 || ticks > millis2ticks(500) ) {
         hal.radio.setIdle();
         uint32_t offset = doSleep(ticks);
         hal.radio.wakeup();
-        aclock.correct(offset);
-        aclock.enable();
+        sysclock.correct(offset);
+        sysclock.enable();
       }
       else{
-        aclock.enable();
+        sysclock.enable();
         Idle<>::powerSave(hal);
       }
     }
     else {
-      aclock.enable();
+      sysclock.enable();
     }
   }
 };
@@ -104,12 +104,12 @@ public:
 
   // do not sleep for time in ticks
   void stayAwake (uint32_t time) {
-    uint32_t old = aclock.get(*this);
+    uint32_t old = sysclock.get(*this);
     if( old < time ) {
       awake = true;
-      aclock.cancel(*this);
+      sysclock.cancel(*this);
       tick = time;
-      aclock.add(*this);
+      sysclock.add(*this);
     }
   }
 
