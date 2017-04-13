@@ -611,7 +611,7 @@ public:
   virtual ~DimmerStateMachine () {}
 
   virtual void switchState(uint8_t oldstate,uint8_t newstate) {
-    DPRINT("Switch State: ");DHEX(oldstate);DPRINT(" -> ");DHEX(newstate);DPRINT("  Level: ");DHEXLN(level);
+    DPRINT("Dimmer State: ");DHEX(oldstate);DPRINT(" -> ");DHEX(newstate);DPRINT("  Level: ");DHEXLN(level);
     if( newstate == AS_CM_JT_ON ) {
       lastonlevel = level;
     }
@@ -847,12 +847,6 @@ public:
     BaseChannel::setup(dev,number,addr);
   }
 
-  void firstinit () {
-    if( BaseChannel::number() > 1 ) {
-      BaseChannel::getList1().logicCombination(LOGIC_INACTIVE);
-    }
-  }
-
   bool changed () const { return DimmerStateMachine::changed; }
 
   void changed (bool c) { DimmerStateMachine::changed = c; }
@@ -915,13 +909,25 @@ class DimmerDevice : public MultiChannelDevice<HalType,ChannelType,ChannelCount,
 public:
   typedef MultiChannelDevice<HalType,ChannelType,ChannelCount,List0Type> DeviceType;
 
-  DimmerDevice (uint16_t addr,uint8_t p) : DeviceType(addr), pin(p) {
+  DimmerDevice (uint16_t addr) : DeviceType(addr), pin(0) {}
+  virtual ~DimmerDevice () {}
+
+  void firstinit () {
+    DeviceType::firstinit();
+    DeviceType::channel(1).getList1().logicCombination(LOGIC_OR);
+    for( uint8_t i=2; i<=DeviceType::channels(); ++i ) {
+      DeviceType::channel(i).getList1().logicCombination(LOGIC_INACTIVE);
+    }
+  }
+
+  void initPwm (uint8_t p) {
+    pin = p;
     pinMode(pin,OUTPUT);
     analogWrite(pin,0);
   }
-  virtual ~DimmerDevice () {}
 
   bool pollRadio () {
+    // DPRINT("Pin ");DHEX(pin);DPRINT("  Val ");DHEXLN(calcPwm());
     analogWrite(pin,calcPwm());
     return DeviceType::pollRadio();
   }

@@ -59,7 +59,7 @@ Hal hal;
 
 // setup the device with channel type and number of channels
 typedef DimmerDevice<Hal,DimmerChannel<Hal,PEERS_PER_CHANNEL>,3> DimmerType;
-DimmerType sdev(0x20,DIMMER_PIN);
+DimmerType sdev(0x20);
 
 ConfigToggleButton<DimmerType> cfgBtn(sdev);
 
@@ -85,7 +85,7 @@ void setup () {
   sdev.setInfo(0x41,0x01,0x00);
 
   hal.init();
-
+  sdev.initPwm(DIMMER_PIN);
   // TODO - random delay
 }
 
