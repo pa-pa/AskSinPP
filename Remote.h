@@ -119,9 +119,12 @@ public:
   }
 };
 
-#define remoteISR(device,chan,pin) class device##chan##ISRHandler { public: static void isr () { device.channel(chan).pinchanged(); } }; \
-  device.channel(chan).button().init(pin); \
-  enableInterrupt(pin,device##chan##ISRHandler::isr,CHANGE);
+#define remoteISR(device,chan,pin) class device##chan##ISRHandler { \
+  public: \
+  static void isr () { device.channel(chan).pinchanged(); } \
+}; \
+device.channel(chan).button().init(pin); \
+enableInterrupt(pin,device##chan##ISRHandler::isr,CHANGE);
 
 }
 

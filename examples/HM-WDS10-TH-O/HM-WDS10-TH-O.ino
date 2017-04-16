@@ -51,14 +51,14 @@ using namespace as;
  * Configure the used hardware
  */
 typedef AvrSPI<10,11,12,13> RadioSPI;
-typedef AskSin<StatusLed<4>,BatterySensor,Radio<RadioSPI,2> > BaseHal;
+typedef AskSin<StatusLed<4>,BatterySensor<22,19>,Radio<RadioSPI,2> > BaseHal;
 class Hal : public BaseHal {
 public:
   void init () {
     BaseHal::init();
     // set low voltage to 2.2V
     // measure battery every 1h
-    battery.init(22,seconds2ticks(60UL*60),sysclock);
+    battery.init(seconds2ticks(60UL*60),sysclock);
   }
 } hal;
 

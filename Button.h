@@ -201,9 +201,12 @@ public:
   }
 };
 
-#define buttonISR(btn,pin) class btn##ISRHandler { public: static void isr () { btn.check(); } }; \
-  btn.init(pin); \
-  enableInterrupt(pin,btn##ISRHandler::isr,CHANGE);
+#define buttonISR(btn,pin) class btn##ISRHandler { \
+  public: \
+  static void isr () { btn.check(); } \
+}; \
+btn.init(pin); \
+enableInterrupt(pin,btn##ISRHandler::isr,CHANGE);
 
 }
 

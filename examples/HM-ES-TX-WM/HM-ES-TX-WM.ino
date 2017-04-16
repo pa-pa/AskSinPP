@@ -54,7 +54,7 @@ using namespace as;
  * Configure the used hardware
  */
 typedef AvrSPI<10,11,12,13> RadioSPI;
-typedef AskSin<StatusLed<4>,NoBattery,Radio<RadioSPI,2> > Hal;
+typedef AskSin<StatusLed<4>,BatterySensor<22,19>,Radio<RadioSPI,2> > Hal;
 Hal hal;
 
 class MeterList0Data : public List0Data {
@@ -201,8 +201,6 @@ public:
   }
 };
 
-BatterySensor battery;
-
 class GasPowerEventMsg : public Message {
 public:
   void init(uint8_t msgcnt,bool boot,uint32_t counter,uint32_t power) {
@@ -270,7 +268,7 @@ public:
   }
 
   uint8_t flags () const {
-    return battery.low() ? 0x80 : 0x00;
+    return hal.battery.low() ? 0x80 : 0x00;
   }
 
   void next () {
@@ -412,7 +410,7 @@ void setup () {
 
   // set low voltage to 2.2V
   // measure battery every 1h
-  battery.init(22,seconds2ticks(60UL*60),sysclock);
+  hal.battery.init(seconds2ticks(60UL*60),sysclock);
 
   gasISR.attach();
   // add channel 1 to timer to send event

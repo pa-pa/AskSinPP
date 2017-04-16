@@ -60,7 +60,7 @@ using namespace as;
  */
 // typedef AvrSPI<10,11,12,13> RadioSPI;
 typedef LibSPI<10> RadioSPI;
-typedef AskSin<DualStatusLed<5,4>,BatterySensor,Radio<RadioSPI,2> > HalBase;
+typedef AskSin<DualStatusLed<5,4>,BatterySensor<22,19>,Radio<RadioSPI,2> > HalBase;
 class Hal : public HalBase {
   // extra clock to count button press events
   AlarmClock btncounter;
@@ -68,7 +68,7 @@ public:
   void init () {
     HalBase::init();
     // get new battery value after 50 key press
-    battery.init(22,50,btncounter);
+    battery.init(50,btncounter);
   }
 
   void sendPeer () {

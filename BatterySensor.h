@@ -28,7 +28,6 @@
 
 namespace as {
 
-
 class NoBattery {
 public:
   uint8_t current () { return 0; }
@@ -53,15 +52,14 @@ public:
 /**
  * Use internal bandgap reference to measure battery voltage
  */
+template <uint8_t LOWVALUE=22,uint8_t CRITICALVALUE=19>
 class BatterySensor : public Alarm {
 
-  uint8_t  m_LowValue;
   uint8_t  m_LastValue;
-  uint8_t  m_CriticalValue;
   uint32_t m_Period;
 
 public:
-  BatterySensor () : Alarm(0), m_LowValue(0), m_LastValue(0), m_CriticalValue(0xff), m_Period(0) {
+  BatterySensor () : Alarm(0), m_LastValue(0), m_Period(0) {
 #ifdef ARDUINO_ARCH_STM32F1
     adc_reg_map *regs = ADC1->regs;
     regs->CR2 |= ADC_CR2_TSVREFE;    // enable VREFINT and temp sensor
@@ -80,20 +78,15 @@ public:
     return m_LastValue;
   }
 
-  void critical (uint8_t value) {
-    m_CriticalValue = value;
-  }
-
   bool critical () {
-    return m_LastValue < m_CriticalValue;
+    return m_LastValue < CRITICALVALUE;
   }
 
   bool low () {
-    return m_LastValue < m_LowValue;
+    return m_LastValue < LOWVALUE;
   }
 
-  void init(uint8_t low,uint32_t period,AlarmClock& clock) {
-    m_LowValue = low;
+  void init(uint32_t period,AlarmClock& clock) {
     m_LastValue = voltage();
     m_Period = period;
     tick = m_Period;
@@ -128,21 +121,22 @@ public:
 /**
  * Measure battery voltage as used on the universal sensor board.
  */
-class BatterySensorUni : public BatterySensor {
+template <uint8_t LOWVALUE=22,uint8_t CRITICALVALUE=19>
+class BatterySensorUni : public BatterySensor<LOWVALUE,CRITICALVALUE> {
   uint8_t  m_SensePin; // A1
   uint8_t  m_ActivationPin; // D7
   uint8_t  m_Factor; // 57 = 470k + 100k / 10
 public:
 
-  BatterySensorUni (uint8_t sens,uint8_t activation) : BatterySensor(),
+  BatterySensorUni (uint8_t sens,uint8_t activation) : BatterySensor<LOWVALUE,CRITICALVALUE>(),
   m_SensePin(sens), m_ActivationPin(activation), m_Factor(57) {}
   virtual ~BatterySensorUni () {}
 
-  void init( uint8_t low,uint32_t period,AlarmClock& clock,uint8_t factor=57) {
+  void init(uint32_t period,AlarmClock& clock,uint8_t factor=57) {
     m_Factor=factor;
     pinMode(m_SensePin, INPUT);
     pinMode(m_ActivationPin, INPUT);
-    BatterySensor::init(low,period,clock);
+    BatterySensor<LOWVALUE,CRITICALVALUE>::init(period,clock);
   }
 
   virtual uint8_t voltage () {
@@ -167,14 +161,15 @@ public:
  * Measure on analog pin
  * See https://github.com/rlogiacco/BatterySense for setup
  */
-class BatterySensorExt : public BatterySensor {
+template <uint8_t LOWVALUE=22,uint8_t CRITICALVALUE=19>
+class BatterySensorExt : public BatterySensor<LOWVALUE,CRITICALVALUE> {
   uint8_t  m_SensePin;
   uint8_t  m_ActivationPin;
   uint8_t  m_DividerRatio;
   uint16_t m_RefVoltage;
 public:
 
-  BatterySensorExt (uint8_t sens,uint8_t activation=0xff) : BatterySensor(),
+  BatterySensorExt (uint8_t sens,uint8_t activation=0xff) : BatterySensor<LOWVALUE,CRITICALVALUE>(),
     m_SensePin(sens), m_ActivationPin(activation), m_DividerRatio(2), m_RefVoltage(3300) {}
   virtual ~BatterySensorExt () {}
 
@@ -185,14 +180,14 @@ public:
     if (m_ActivationPin < 0xFF) {
       pinMode(m_ActivationPin, OUTPUT);
     }
-    BatterySensor::init(low,period,clock);
+    BatterySensor<LOWVALUE,CRITICALVALUE>::init(period,clock);
   }
 
 
   virtual uint8_t voltage () {
     if (m_ActivationPin != 0xFF) {
         digitalWrite(m_ActivationPin, HIGH);
-        delayMicroseconds(10); // copes with slow switching activation circuits
+        _delay_us(10); // copes with slow switching activation circuits
       }
       analogRead(m_SensePin);
       _delay_ms(2); // allow the ADC to stabilize
