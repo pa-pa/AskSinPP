@@ -32,6 +32,13 @@ public:
 
 };
 
+class Idle2 : public Idle {
+public:
+  static void powerSave () {
+    LowPower.idle(SLEEP_FOREVER,ADC_OFF,TIMER2_ON,TIMER1_ON,TIMER0_OFF,SPI_ON,USART0_ON,TWI_OFF);
+  }
+};
+
 class Sleep : public Idle {
 public:
   static uint32_t doSleep (uint32_t ticks) {

@@ -121,6 +121,6 @@ void loop() {
   bool worked = aclock.runready();
   bool poll = sdev.pollRadio();
   if( worked == false && poll == false ) {
-//    activity.savePower<Idle>();
+    activity.savePower<Idle2>();
   }
 }
