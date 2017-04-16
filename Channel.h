@@ -169,6 +169,8 @@ public:
     return false;
   }
 
+  void patchStatus (Message& msg) {}
+
   void configChanged () {}
 
   protected:

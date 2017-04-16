@@ -28,6 +28,8 @@
   inline void DDECLN(uint8_t b) {  }
   inline void DDEC(uint16_t b) {  }
   inline void DDECLN(uint16_t b) {  }
+  inline void DDEC(uint32_t b) {  }
+  inline void DDECLN(uint32_t b) {  }
 
 #else
 
@@ -75,6 +77,10 @@
     Serial.print(b,DEC);
   }
   inline void DDECLN(uint16_t b) { DDEC(b); DPRINT(F("\n")); }
+  inline void DDEC(uint32_t b) {
+    Serial.print(b,DEC);
+  }
+  inline void DDECLN(uint32_t b) { DDEC(b); DPRINT(F("\n")); }
 
 #endif
 

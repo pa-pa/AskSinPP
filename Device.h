@@ -287,6 +287,7 @@ public:
   void sendInfoActuatorStatus (const HMID& to,uint8_t count,ChannelType& ch) {
     InfoActuatorStatusMsg& pm = msg.infoActuatorStatus();
     pm.init(count,ch,radio->rssi());
+    ch.patchStatus(msg);
     send(msg,to);
     ch.changed(false);
   }
