@@ -69,6 +69,10 @@ public:
     return crc;
   }
 
+  List0Type& getList0 () {
+    return list0;
+  }
+
   void channels (uint8_t num) {
     numChannels = min(num,ChannelCount);
   }
