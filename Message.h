@@ -239,7 +239,17 @@ public:
   void dump () const {
     DHEX(length());
     DPRINT(F(" "));
-    DHEX(buffer(),length());
+    DHEX(count());
+    DPRINT(F(" "));
+    DHEX(flags());
+    DPRINT(F(" "));
+    DHEX(type());
+    DPRINT(F(" "));
+    from().dump();
+    DPRINT(F(" "));
+    to().dump();
+    DPRINT(F(" "));
+    DHEX(buffer()+9,length()-9);
   }
 
   void setRpten () {
