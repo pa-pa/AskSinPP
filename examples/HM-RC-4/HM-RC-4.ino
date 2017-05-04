@@ -50,7 +50,7 @@
 
 
 // number of available peers per channel
-#define PEERS_PER_CHANNEL 6
+#define PEERS_PER_CHANNEL 10
 
 // all library classes are placed in the namespace 'as'
 using namespace as;
@@ -88,6 +88,7 @@ ConfigButton<RemoteType> cfgBtn(sdev);
 
 void setup () {
   DINIT(57600,ASKSIN_PLUS_PLUS_IDENTIFIER);
+  sdev.dumpSize();
 
   if( storage.setup(sdev.checksum()) == true ) {
     sdev.firstinit();

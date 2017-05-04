@@ -6,34 +6,28 @@
 #ifndef __DEBUG_H__
 #define __DEBUG_H__
 
+#ifdef ARDUINO
+  #include "Arduino.h"
+#endif
+
 // #define NDEBUG
 
 #ifdef NDEBUG
 
-  template <class T>
-  inline void DPRINT(T str) { }
-  template <class T>
-  inline void DPRINTLN(T str) {  }
-  inline void DHEX(uint8_t b) {  }
-  inline void DHEX(const uint8_t* b,uint8_t l) {  }
-  inline void DHEXLN(uint8_t b) {  }
-  inline void DHEX(uint16_t b) {  }
-  inline void DHEXLN(uint16_t b) {  }
-  inline void DHEX(uint32_t b) {  }
-  inline void DHEXLN(uint32_t b) {  }
+  #include <stdint.h>
 
-  inline void DDEC(uint8_t b) {  }
-  inline void DDECLN(uint8_t b) {  }
-  inline void DDEC(uint16_t b) {  }
-  inline void DDECLN(uint16_t b) {  }
+  #define DPRINT(str)
+  #define DPRINTLN(str)
+  #define DHEX(b...)
+  #define DHEXLN(b)
+  #define DDEC(b)
+  #define DDECLN(b)
 
   #define DINIT(baudrate,msg)
 
 #else
 
 #ifdef ARDUINO
-  #include "Arduino.h"
-
   template <class T>
   inline void DPRINT(T str) { Serial.print(str); }
   template <class T>

@@ -44,7 +44,7 @@
 #define DIMMER_PIN 3
 
 // number of available peers per channel
-#define PEERS_PER_CHANNEL 2
+#define PEERS_PER_CHANNEL 4
 
 
 // all library classes are placed in the namespace 'as'
@@ -65,6 +65,7 @@ ConfigToggleButton<DimmerType> cfgBtn(sdev);
 
 void setup () {
   DINIT(57600,ASKSIN_PLUS_PLUS_IDENTIFIER);
+  sdev.dumpSize();
 
   // first initialize EEProm if needed
   if( storage.setup(sdev.checksum()) == true ) {

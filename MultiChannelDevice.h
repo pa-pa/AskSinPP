@@ -42,6 +42,12 @@ public:
   }
   virtual ~MultiChannelDevice () {}
 
+  void dumpSize () {
+    ChannelType ch = channel(channels());
+    uint16_t addr = ch.address() + ch.size();
+    DPRINT("Address Space: ");DDEC(DeviceType::keystore().address());DPRINT(" - ");DDECLN(addr);
+  }
+
   uint16_t checksum () {
     uint16_t crc = 0;
     // size of keystore data
@@ -141,11 +147,25 @@ public:
     for( uint8_t i=1; i<=channels(); ++i ) {
       ChannelType& ch = channel(i);
       if( ch.changed() == true ) {
+        _delay_ms(100); // TODO use STATUSINFO_MINDELAY
         DeviceType::sendInfoActuatorStatus(DeviceType::getMasterID(),DeviceType::nextcount(),ch);
         worked = true;
       }
     }
     return worked;
+  }
+
+  bool validSignature(Message& msg) {
+    return DeviceType::requestSignature(msg);
+  }
+
+  bool validSignature(uint8_t ch,Message& msg) {
+#ifdef USE_AES
+    if( ch==0 || (hasChannel(ch)==true && channel(ch).getList1().aesActive()==true) ) {
+      return validSignature(msg);
+    }
+#endif
+    return true;
   }
 
    void process(Message& msg) {
@@ -175,11 +195,8 @@ public:
            const ConfigPeerAddMsg& pm = msg.configPeerAdd();
            bool success = false;
            if( hasChannel(pm.channel()) == true ) {
-             ChannelType& ch = channel(pm.channel());
-#ifdef USE_AES
-             if( ch.getList1().aesActive() == false || DeviceType::requestSignature(msg) == true )
-#endif
-             {
+             if( validSignature(pm.channel(),msg) == true ) {
+               ChannelType& ch = channel(pm.channel());
                if( pm.peers() == 1 ) {
                  success = DeviceType::addPeer(ch,pm.peer1());
                }
@@ -201,11 +218,8 @@ public:
            const ConfigPeerRemoveMsg& pm = msg.configPeerRemove();
            bool success = false;
            if( hasChannel(pm.channel()) == true ) {
-             ChannelType& ch = channel(pm.channel());
-#ifdef USE_AES
-             if( ch.getList1().aesActive() == false || DeviceType::requestSignature(msg) == true )
-#endif
-             {
+             if( validSignature(pm.channel(),msg) == true ) {
+               ChannelType& ch = channel(pm.channel());
                success = ch.deletepeer(pm.peer1());
                if( pm.peers() == 2 ) {
                  success &= ch.deletepeer(pm.peer2());
@@ -243,18 +257,14 @@ public:
          // CONFIG_START
          else if( msubc == AS_CONFIG_START ) {
            const ConfigStartMsg& pm = msg.configStart();
-#ifdef USE_AES
-           ChannelType& ch = channel(pm.channel());
-           if( ch.getList1().aesActive() == true && DeviceType::requestSignature(msg) == false ) {
-             DeviceType::sendNack(msg);
-           }
-           else
-#endif
-           {
+           if( validSignature(pm.channel(),msg) == true ) {
              cfgChannel = pm.channel();
              cfgList = findList(cfgChannel,pm.peer(),pm.list());
              // TODO setup alarm to disable after 2000ms
              DeviceType::sendAck(msg);
+           }
+           else {
+             DeviceType::sendNack(msg);
            }
          }
          // CONFIG_END
@@ -274,18 +284,14 @@ public:
          }
          else if( msubc == AS_CONFIG_WRITE_INDEX ) {
            const ConfigWriteIndexMsg& pm = msg.configWriteIndex();
-#ifdef USE_AES
-           ChannelType& ch = channel(pm.channel());
-           if( ch.getList1().aesActive() == true && DeviceType::requestSignature(msg) == false ) {
-             DeviceType::sendNack(msg);
-           }
-           else
-#endif
-           {
+           if( validSignature(pm.channel(),msg)==true ) {
              if( cfgChannel == pm.channel() && cfgList.valid() == true ) {
                DeviceType::writeList(cfgList,pm.data(),pm.datasize());
              }
              DeviceType::sendAck(msg);
+           }
+           else {
+             DeviceType::sendNack(msg);
            }
            DeviceType::activity().stayAwake(millis2ticks(500));
          }
@@ -301,10 +307,7 @@ public:
        }
        else if( mtype == AS_MESSAGE_ACTION ) {
          if ( mcomm == AS_ACTION_RESET || mcomm == AS_ACTION_ENTER_BOOTLOADER ) {
-#ifdef USE_AES
-           if( DeviceType::requestSignature(msg) == true )
-#endif
-           {
+           if( validSignature(msg) == true ) {
              DeviceType::sendAck(msg);
              if( mcomm == AS_ACTION_ENTER_BOOTLOADER ) {
                bootloader();
@@ -317,29 +320,28 @@ public:
          else {
            bool ack=false;
            const ActionMsg& pm = msg.action();
-           ChannelType& ch = channel(pm.channel());
-#ifdef USE_AES
-           if( ch.getList1().aesActive() == false || DeviceType::requestSignature(msg) == true )
-#endif
-           {
-             switch( mcomm ) {
-             case AS_ACTION_INHIBIT_OFF:
-               ch.inhibit(false);
-               ack = true;
-               break;
-             case AS_ACTION_INHIBIT_ON:
-               ch.inhibit(true);
-               ack = true;
-               break;
-             case AS_ACTION_SET:
-               if( ch.inhibit() == false ) {
-                 ack = ch.process(msg.actionSet());
+           if( hasChannel(pm.channel())==true ) {
+             ChannelType& ch = channel(pm.channel());
+             if( validSignature(pm.channel(),msg)==true ) {
+               switch( mcomm ) {
+               case AS_ACTION_INHIBIT_OFF:
+                 ch.inhibit(false);
+                 ack = true;
+                 break;
+               case AS_ACTION_INHIBIT_ON:
+                 ch.inhibit(true);
+                 ack = true;
+                 break;
+               case AS_ACTION_SET:
+                 if( ch.inhibit() == false ) {
+                   ack = ch.process(msg.actionSet());
+                 }
+                 break;
                }
-               break;
              }
+             if( ack == true ) DeviceType::sendAck(msg,ch);
            }
-           if( ack == true ) DeviceType::sendAck(msg,ch);
-           else DeviceType::sendNack(msg);
+           if( ack==false)  DeviceType::sendNack(msg);
          }
        }
        else if( mtype == AS_MESSAGE_HAVE_DATA ) {
@@ -354,10 +356,7 @@ public:
          if( cdx != 0 ) {
            ChannelType& ch = channel(cdx);
            if( ch.inhibit() == false ) {
-#ifdef USE_AES
-             if( ch.getList1().aesActive() == false || DeviceType::requestSignature(msg) == true )
-#endif
-             {
+             if( validSignature(cdx,msg)==true ) {
                switch( mtype ) {
                case AS_MESSAGE_REMOTE_EVENT:
                  ack = ch.process(pm);
@@ -374,7 +373,7 @@ public:
        }
 #ifdef USE_AES
        else if (mtype == AS_MESSAGE_KEY_EXCHANGE ) {
-         if( DeviceType::requestSignature(msg) == true ) {
+         if( validSignature(msg) == true ) {
            if( DeviceType::keystore().exchange(msg.aesExchange())==true ) DeviceType::sendAck(msg);
            else DeviceType::sendNack(msg);
          }

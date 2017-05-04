@@ -435,12 +435,6 @@ public:
     ssl.jtRampOff(AS_CM_JT_OFF);
     ssl = lg();
     ssl.actionType(AS_CM_ACTIONTYPE_DOWNDIM);
-//    ssl.jtOn(AS_CM_JT_OFFDELAY);
-//    ssl.jtOff(AS_CM_JT_OFF);
-//    ssl.jtDlyOn(AS_CM_JT_RAMPOFF);
-//    ssl.jtDlyOff(AS_CM_JT_RAMPOFF);
-//    ssl.jtRampOn(AS_CM_JT_RAMPOFF);
-//    ssl.jtRampOff(AS_CM_JT_OFF);
   }
 
   void even() {
@@ -454,12 +448,6 @@ public:
     ssl.jtRampOff(AS_CM_JT_RAMPON);
     ssl = lg();
     ssl.actionType(AS_CM_ACTIONTYPE_UPDIM);
-//    ssl.jtOn(AS_CM_JT_ON);
-//    ssl.jtOff(AS_CM_JT_ONDELAY);
-//    ssl.jtDlyOn(AS_CM_JT_RAMPON);
-//    ssl.jtDlyOff(AS_CM_JT_RAMPON);
-//    ssl.jtRampOn(AS_CM_JT_ON);
-//    ssl.jtRampOff(AS_CM_JT_RAMPON);
   }
 
   void single() {
@@ -473,12 +461,6 @@ public:
     ssl.jtRampOff(AS_CM_JT_OFF);
     ssl = lg();
     ssl.actionType(AS_CM_ACTIONTYPE_TOGGLEDIM_TO_COUNTER);
-//    ssl.jtOn(AS_CM_JT_OFFDELAY);
-//    ssl.jtOff(AS_CM_JT_ONDELAY);
-//    ssl.jtDlyOn(AS_CM_JT_RAMPON);
-//    ssl.jtDlyOff(AS_CM_JT_RAMPOFF);
-//    ssl.jtRampOn(AS_CM_JT_ON);
-//    ssl.jtRampOff(AS_CM_JT_OFF);
   }
 };
 
@@ -506,7 +488,7 @@ class DimmerStateMachine {
       init(sm.getDelayForState(state,l),destlevel,l.valid() ? 0 : DELAY_INFINITE,l);
     }
     void init (uint32_t ramptime,uint8_t level,uint32_t dly,DimmerPeerList l=DimmerPeerList(0)) {
-      DPRINT("Ramp/Level: ");DDEC(ramptime);DPRINT("/");DDECLN(level);
+      // DPRINT("Ramp/Level: ");DDEC(ramptime);DPRINT("/");DDECLN(level);
       lst=l;
       destlevel = level==201 ? sm.lastonlevel : level;
       delay = dly;
@@ -527,11 +509,11 @@ class DimmerStateMachine {
         tack = 1;
         dx = uint8_t(diff / (ramptime > 0 ? ramptime : 1));
       }
-      DPRINT("Dx/Tack: ");DDEC(dx);DPRINT("/");DDECLN(tack);
+//      DPRINT("Dx/Tack: ");DDEC(dx);DPRINT("/");DDECLN(tack);
     }
     virtual void trigger (AlarmClock& clock) {
       uint8_t curlevel = sm.status();
-      DHEX(curlevel);DPRINT("  ");DHEXLN(destlevel);
+      // DHEX(curlevel);DPRINT("  ");DHEXLN(destlevel);
       if( sm.status() != destlevel ) {
         if( curlevel > destlevel ) { // dim down
           uint8_t rest = curlevel - destlevel;
@@ -610,8 +592,8 @@ public:
   DimmerStateMachine() : state(AS_CM_JT_NONE), changed(false), toggledimup(true), level(0), lastonlevel(200), alarm(*this) {}
   virtual ~DimmerStateMachine () {}
 
-  virtual void switchState(uint8_t oldstate,uint8_t newstate) {
-    DPRINT("Dimmer State: ");DHEX(oldstate);DPRINT(" -> ");DHEX(newstate);DPRINT("  Level: ");DHEXLN(level);
+  virtual void switchState(__attribute__ ((unused)) uint8_t oldstate,uint8_t newstate) {
+    // DPRINT("Dimmer State: ");DHEX(oldstate);DPRINT(" -> ");DHEX(newstate);DPRINT("  Level: ");DHEXLN(level);
     if( newstate == AS_CM_JT_ON ) {
       lastonlevel = level;
     }
@@ -619,6 +601,7 @@ public:
 
   void jumpToTarget(const DimmerPeerList& lst) {
     uint8_t next = getJumpTarget(state,lst);
+    // DPRINT("Jmp: ");DHEX(state);DPRINT(" - ");DHEXLN(next);
     if( next != AS_CM_JT_NONE ) {
       // get delay
       uint32_t dly = getDelayForState(next,lst);
@@ -725,18 +708,24 @@ public:
 
   void dimUp (const DimmerPeerList& lst) {
     uint8_t dx = lst.dimStep();
-    level += dx;
-    if( level > lst.dimMaxLevel() )
-      level = lst.dimMaxLevel();
-    switchState(state, AS_CM_JT_ON);
+    uint8_t newlevel = level+dx;
+    if( newlevel > lst.dimMaxLevel() ) {
+      newlevel = lst.dimMaxLevel();
+    }
+    updateState(AS_CM_JT_RAMPON);
+    updateLevel(newlevel);
+    updateState(AS_CM_JT_ON);
   }
 
   void dimDown (const DimmerPeerList& lst) {
     uint8_t dx = lst.dimStep();
-    level -= dx < level ? dx : level;
-    if( level < lst.dimMinLevel() )
-      level = lst.dimMinLevel();
-    switchState(state, level > lst.onMinLevel() ? AS_CM_JT_ON : AS_CM_JT_OFF);
+    uint8_t newlevel = level - (dx < level ? dx : level);
+    if( newlevel < lst.dimMinLevel() ) {
+      newlevel = lst.dimMinLevel();
+    }
+    updateState(newlevel > lst.onMinLevel() ? AS_CM_JT_RAMPON : AS_CM_JT_RAMPOFF);
+    updateLevel(newlevel);
+    updateState(newlevel > lst.onMinLevel() ? AS_CM_JT_ON : AS_CM_JT_OFF);
   }
 
   void remote (const DimmerPeerList& lst,uint8_t counter) {
@@ -804,8 +793,9 @@ public:
   }
 
   void setLevel (uint8_t level, uint16_t ramp, uint16_t delay) {
-    DPRINT("SetLevel: ");DHEX(level);DPRINT(" ");DHEX(ramp);DPRINT(" ");DHEXLN(delay);
+    // DPRINT("SetLevel: ");DHEX(level);DPRINT(" ");DHEX(ramp);DPRINT(" ");DHEXLN(delay);
     if( ramp==0 ) {
+      alarm.destlevel=level;
       updateLevel(level);
       setState(level==0 ? AS_CM_JT_OFF : AS_CM_JT_ON, intTimeCvt(delay));
     }
@@ -832,6 +822,7 @@ public:
   }
 };
 
+static uint8_t physical(0);
 
 template <class HalType,int PeerCount>
 class DimmerChannel : public Channel<HalType,DimmerList1,DimmerList3,EmptyList,PeerCount>, public DimmerStateMachine {
@@ -854,7 +845,7 @@ public:
   void patchStatus (Message& msg) {
     if( msg.length() == 0x0e ) {
       msg.length(0x0f);
-      msg.data()[3] = status();  // TODO physical value
+      msg.data()[3] = physical;
     }
   }
 
@@ -923,7 +914,14 @@ public:
   void initPwm (uint8_t p) {
     pin = p;
     pinMode(pin,OUTPUT);
-    analogWrite(pin,0);
+    for( uint8_t i=1; i<=DeviceType::channels(); ++i ) {
+      if( DeviceType::channel(i).getList1().powerUpAction() == true ) {
+        DeviceType::channel(i).setLevel(200,5,0xffff);
+      }
+      else {
+        DeviceType::channel(i).setLevel(0,5,0xffff);
+      }
+    }
   }
 
   bool pollRadio () {
@@ -935,6 +933,7 @@ public:
   uint8_t calcPwm () {
     uint8_t pwm = 0;
     uint16_t status = combineChannels();
+    physical  = (uint8_t)status;
     if( status > 0 ) {
       uint8_t offset = status*31/200;
       pwm = pgm_read_word (& pwmtable[offset]);
