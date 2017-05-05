@@ -14,6 +14,7 @@
 #define _CC_H
 
 #include "Message.h"
+#include "AlarmClock.h"
 
 #ifdef ARDUINO_ARCH_AVR
   #include <util/delay.h>
@@ -333,6 +334,26 @@ class Radio {
     ((Radio<SPIType,GDO0>*)instance)->handleInt();
   }
 
+  class MinSendTimeout : public Alarm {
+    volatile bool wait;
+  public:
+    MinSendTimeout () : Alarm(0), wait(false) { async(true); }
+    virtual ~MinSendTimeout () {}
+    void waitTimeout () {
+      // wait until time out over
+      while( wait==true ) _delay_us(1);
+      set(millis2ticks(100));
+      // signal new wait cycle
+      wait = true;
+      // add to system clock
+      sysclock.add(*this);
+    }
+    virtual void trigger(__attribute__ ((unused)) AlarmClock& clock) {
+      // signal wait cycle over
+      wait = false;
+    }
+  } timeout;
+
 private:
   SPIType spi;
 
@@ -529,6 +550,8 @@ public:   //--------------------------------------------------------------------
 
 protected:
   uint8_t sndData(uint8_t *buf, uint8_t size, uint8_t burst) {
+
+    timeout.waitTimeout();
 
     sending = true;
 

@@ -10,7 +10,7 @@
 
 namespace as {
 
-#define TICKS_PER_SECOND 10UL
+#define TICKS_PER_SECOND 100UL
 
 #define seconds2ticks(tm) ( tm * TICKS_PER_SECOND )
 #define ticks2seconds(tm) ( tm / TICKS_PER_SECOND )

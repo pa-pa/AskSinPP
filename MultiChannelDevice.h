@@ -147,7 +147,6 @@ public:
     for( uint8_t i=1; i<=channels(); ++i ) {
       ChannelType& ch = channel(i);
       if( ch.changed() == true ) {
-        _delay_ms(100); // TODO use STATUSINFO_MINDELAY
         DeviceType::sendInfoActuatorStatus(DeviceType::getMasterID(),DeviceType::nextcount(),ch);
         worked = true;
       }
