@@ -74,15 +74,15 @@ public:
     m_LastValue = voltage();
   }
 
-  uint8_t current () {
+  uint8_t current () const{
     return m_LastValue;
   }
 
-  bool critical () {
+  bool critical () const {
     return m_LastValue < CRITICALVALUE;
   }
 
-  bool low () {
+  bool low () const {
     return m_LastValue < LOWVALUE;
   }
 

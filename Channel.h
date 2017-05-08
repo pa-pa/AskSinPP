@@ -35,6 +35,8 @@ public:
 
   DeviceType& device () { return *dev; }
 
+  const DeviceType& device () const { return *dev; }
+
   uint8_t number () const { return num; }
 
   uint16_t address () const { return addr; }

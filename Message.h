@@ -164,6 +164,10 @@ public:
     return fromID;
   }
 
+  HMID& from () {
+    return fromID;
+  }
+
   void to(const HMID& hmid) {
     toID = hmid;
   }
@@ -584,6 +588,14 @@ public:
     *(buf+13) = subtype;
     memcpy(buf+14,devinfo,3);
   }
+  void fill(uint8_t firmversion,uint8_t subtype) {
+    uint8_t* buf = data();
+    *buf = firmversion;
+    *(buf+13) = subtype;
+  }
+  uint8_t* serial () { return data() + 3; }
+  uint8_t* model () { return data() + 1; }
+  uint8_t* info () { return data() + 14; }
 };
 
 class SerialInfoMsg : public Message {
@@ -596,6 +608,7 @@ public:
     uint8_t* buf = data();
     memcpy(buf+3,serial,10);
   }
+  uint8_t* serial () { return data() + 3; }
 };
 
 }

@@ -3,12 +3,16 @@
 // 2016-10-31 papa Creative Commons - http://creativecommons.org/licenses/by-nc-sa/3.0/de/
 //- -----------------------------------------------------------------------------------------------------------------------
 
-/*
- * Setup defines to configure the library.
- */
-// #define USE_AES
-// #define HM_DEF_KEY 0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x0a,0x0b,0x0c,0x0d,0x0e,0x0f,0x10
-// #define HM_DEF_KEY_INDEX 0
+// define this to read the device id, serial and device type from bootloader section
+// #define USE_OTA_BOOTLOADER
+
+// define all device properties
+#define DEVICE_ID HMID(0x78,0x90,0x12)
+#define DEVICE_SERIAL "papa333333"
+#define DEVICE_MODEL  0x00,0x08
+#define DEVICE_FIRMWARE 0x11
+#define DEVICE_TYPE DeviceType::Remote
+#define DEVICE_INFO 0x04,0x00,0x00
 
 #include <EnableInterrupt.h>
 #include <SPI.h>  // after including SPI Library - we can use LibSPI class
@@ -19,19 +23,6 @@
 #include <MultiChannelDevice.h>
 #include <Remote.h>
 
-// define this to read the device id, serial and device type from bootloader section
-// #define USE_OTA_BOOTLOADER
-
-#ifdef USE_OTA_BOOTLOADER
-  #define OTA_MODEL_START  0x7ff0 // start address of 2 byte model id in bootloader
-  #define OTA_SERIAL_START 0x7ff2 // start address of 10 byte serial number in bootloader
-  #define OTA_HMID_START   0x7ffc // start address of 3 byte device id in bootloader
-#else
-  // device ID
-  #define DEVICE_ID HMID(0x78,0x90,0x12)
-  // serial number
-  #define DEVICE_SERIAL "papa333333"
-#endif
 
 // we use a Pro Mini
 // Arduino pin for the LED
@@ -58,15 +49,17 @@ using namespace as;
 /**
  * Configure the used hardware
  */
-// typedef AvrSPI<10,11,12,13> RadioSPI;
-typedef LibSPI<10> RadioSPI;
-typedef AskSin<DualStatusLed<5,4>,BatterySensor<22,19>,Radio<RadioSPI,2> > HalBase;
-class Hal : public HalBase {
+typedef LibSPI<10> SPIType;
+typedef Radio<SPIType,2> RadioType;
+typedef DualStatusLed<5,4> LedType;
+typedef BatterySensor<22,19> BatteryType;
+typedef AskSin<LedType,BatteryType,RadioType> HalType;
+class Hal : public HalType {
   // extra clock to count button press events
   AlarmClock btncounter;
 public:
   void init () {
-    HalBase::init();
+    HalType::init();
     // get new battery value after 50 key press
     battery.init(50,btncounter);
   }
@@ -76,23 +69,20 @@ public:
   }
 
   bool runready () {
-    return HalBase::runready() || btncounter.runready();
+    return HalType::runready() || btncounter.runready();
   }
-} hal;
+};
 
+typedef RemoteChannel<Hal,PEERS_PER_CHANNEL> ChannelType;
+typedef MultiChannelDevice<Hal,ChannelType,4> RemoteType;
 
-typedef MultiChannelDevice<Hal,RemoteChannel<Hal,PEERS_PER_CHANNEL>,4> RemoteType;
+Hal hal;
 RemoteType sdev(0x20);
-
 ConfigButton<RemoteType> cfgBtn(sdev);
 
 void setup () {
   DINIT(57600,ASKSIN_PLUS_PLUS_IDENTIFIER);
-  sdev.dumpSize();
-
-  if( storage.setup(sdev.checksum()) == true ) {
-    sdev.firstinit();
-  }
+  sdev.init(hal);
 
   remoteISR(sdev,1,BTN1_PIN);
   remoteISR(sdev,2,BTN2_PIN);
@@ -100,19 +90,6 @@ void setup () {
   remoteISR(sdev,4,BTN4_PIN);
 
   buttonISR(cfgBtn,CONFIG_BUTTON_PIN);
-
-#ifdef USE_OTA_BOOTLOADER
-  sdev.init(hal,OTA_HMID_START,OTA_SERIAL_START);
-  sdev.setModel(OTA_MODEL_START);
-#else
-  sdev.init(hal,DEVICE_ID,DEVICE_SERIAL);
-  sdev.setModel(0x00,0x08);
-#endif
-  sdev.setFirmwareVersion(0x11);
-  sdev.setSubType(DeviceType::Remote);
-  sdev.setInfo(0x04,0x00,0x00);
-
-  hal.init();
 }
 
 void loop() {

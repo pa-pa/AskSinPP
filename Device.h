@@ -14,6 +14,10 @@
 #include "Radio.h"
 #include "Led.h"
 
+#define OTA_MODEL_START  0x7ff0 // start address of 2 byte model id in bootloader
+#define OTA_SERIAL_START 0x7ff2 // start address of 10 byte serial number in bootloader
+#define OTA_HMID_START   0x7ffc // start address of 3 byte device id in bootloader
+
 namespace as {
 
 class DeviceType {
@@ -53,17 +57,9 @@ public:
   typedef typename HalType::RadioType RadioType;
 
 private:
-  HMID  devid;
-  HMID  master;
-  char serial[11];
-
-  uint8_t firmversion;
-  uint8_t model[2];
-  uint8_t subtype;
-  uint8_t devinfo[3];
-
   HalType* hal;
-  uint8_t msgcount;
+  List0&   list0;
+  uint8_t  msgcount;
 
   HMID    lastdev;
   uint8_t lastmsg;
@@ -74,13 +70,14 @@ protected:
 
 
 public:
-  Device (uint16_t addr) : firmversion(0), subtype(0), hal(0), msgcount(0), lastmsg(0), kstore(addr) {
+  Device (uint16_t addr,List0& l) : hal(0), list0(l), msgcount(0), lastmsg(0), kstore(addr) {
     // TODO init seed
   }
   virtual ~Device () {}
 
   LedType& led ()  { return hal->led; }
   BatteryType& battery ()  { return hal->battery; }
+  const BatteryType& battery () const { return hal->battery; }
   RadioType& radio () { return hal->radio; }
   KeyStore& keystore () { return this->kstore; }
   Activity& activity () { return hal->activity; }
@@ -101,64 +98,44 @@ public:
     hal = &h;
   }
 
-  void setFirmwareVersion (uint8_t v) {
-    firmversion = v;
+  void getDeviceID (HMID& id) {
+#ifdef USE_OTA_BOOTLOADER
+    HalType::pgm_read((uint8_t*)&id,OTA_HMID_START,sizeof(id));
+#else
+    id = DEVICE_ID;
+#endif
   }
 
-  void setModel (uint8_t m1, uint8_t m2) {
-    model[0] = m1;
-    model[1] = m2;
+  void getDeviceSerial (uint8_t* serial) {
+#ifdef USE_OTA_BOOTLOADER
+    HalType::pgm_read((uint8_t*)serial,OTA_SERIAL_START,10);
+#else
+    memcpy(serial,DEVICE_SERIAL,10);
+#endif
   }
 
-  const uint8_t* getModel () const {
-    return model;
+  bool isDeviceSerial (const uint8_t* serial) {
+    uint8_t tmp[10];
+    getDeviceSerial(tmp);
+    return memcmp(tmp,serial,10)==0;
   }
 
-  void setModel (uint16_t address) {
-    HalType::pgm_read(model,address,sizeof(model));
+  void getDeviceModel (uint8_t* model) {
+#ifdef USE_OTA_BOOTLOADER
+    HalType::pgm_read(model,OTA_MODEL_START,2);
+#else
+    uint8_t dm[2] = {DEVICE_MODEL};
+    memcpy(model,dm,sizeof(dm));
+#endif
   }
 
-  void setSubType (uint8_t st) {
-    subtype = st;
+  void getDeviceInfo (uint8_t* info) {
+    uint8_t di[3] = {DEVICE_INFO};
+    memcpy(info,di,sizeof(di));
   }
 
-  void setInfo (uint8_t i1, uint8_t i2, uint8_t i3) {
-    devinfo[0] = i1;
-    devinfo[1] = i2;
-    devinfo[2] = i3;
-  }
-
-  void setMasterID (const HMID& id) {
-    master = id;
-  }
-
-  const HMID& getMasterID () const {
-    return master;
-  }
-
-  void setDeviceID (const HMID& id) {
-    devid=id;
-  }
-
-  void setDeviceID (uint16_t address) {
-    HalType::pgm_read((uint8_t*)&devid,address,sizeof(devid));
-  }
-
-  const HMID& getDeviceID () const {
-    return devid;
-  }
-
-  void setSerial (const char* ser) {
-    memcpy(serial,ser,10);
-    serial[10] = 0;
-  }
-
-  void setSerial (uint16_t address) {
-    HalType::pgm_read((uint8_t*)serial,address,10);
-  }
-
-  const char* getSerial () const {
-    return serial;
+  HMID getMasterID () {
+    return list0.masterid();
   }
 
   template <class ChannelType>
@@ -222,7 +199,7 @@ public:
 
   bool send(Message& msg,const HMID& to) {
     msg.to(to);
-    msg.from(devid);
+    getDeviceID(msg.from());
     msg.setRpten(); // has to be set always
     bool result = false;
     uint8_t maxsend = 6;
@@ -293,14 +270,17 @@ public:
   void sendDeviceInfo (const HMID& to,uint8_t count) {
     DeviceInfoMsg& pm = msg.deviceInfo();
     pm.init(to,count);
-    pm.fill(firmversion,model,serial,subtype,devinfo);
+    pm.fill(DEVICE_FIRMWARE,DEVICE_TYPE);
+    getDeviceModel(pm.model());
+    getDeviceSerial(pm.serial());
+    getDeviceInfo(pm.info());
     send(msg,to);
   }
 
   void sendSerialInfo (const HMID& to,uint8_t count) {
     SerialInfoMsg& pm = msg.serialInfo();
     pm.init(to,count);
-    pm.fill(serial);
+    getDeviceSerial(pm.serial());
     send(msg,to);
   }
 

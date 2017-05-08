@@ -3,12 +3,21 @@
 // 2017-03-20 papa Creative Commons - http://creativecommons.org/licenses/by-nc-sa/3.0/de/
 //- -----------------------------------------------------------------------------------------------------------------------
 
-/*
- * Setup defines to configure the library.
- */
-// #define USE_AES
-// #define HM_DEF_KEY 0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x0a,0x0b,0x0c,0x0d,0x0e,0x0f,0x10
-// #define HM_DEF_KEY_INDEX 0
+// define this to read the device id, serial and device type from bootloader section
+// #define USE_OTA_BOOTLOADER
+
+// number of relays - possible values 1,2,4
+// will map to HM-LC-SW1-SM, HM-LC-SW2-SM, HM-LC-SW4-SM
+#define RELAY_COUNT 4
+
+// define all device properties
+#define DEVICE_ID HMID(0x12,0x34,0x56)
+#define DEVICE_SERIAL "papa000000"
+//#define DEVICE_MODEL  0x00,(REALY_COUNT==2 ? 0x0a : (REALY_COUNT==4 ? 0x03 : 0x02))
+#define DEVICE_MODEL  0x00,0x03
+#define DEVICE_FIRMWARE 0x16
+#define DEVICE_TYPE DeviceType::Switch
+#define DEVICE_INFO 0x41,0x01,0x00
 
 #include <SPI.h>    // when we include SPI.h - we can use LibSPI class
 #include <EEPROM.h> // the EEPROM library contains Flash Access Methods
@@ -17,22 +26,6 @@
 #include <MultiChannelDevice.h>
 #include <SwitchChannel.h>
 
-// number of relays - possible values 1,2,4
-// will map to HM-LC-SW1-SM, HM-LC-SW2-SM, HM-LC-SW4-SM
-#define RELAY_COUNT 4
-
-// define model is matching the number of relays
-#if RELAY_COUNT == 2
-  #define SW_MODEL 0x0a
-#elif RELAY_COUNT == 4
-  #define SW_MODEL 0x03
-#else
-  #define SW_MODEL 0x02
-#endif
-// device ID
-#define DEVICE_ID HMID(0x12,0x34,0x56)
-// serial number
-#define DEVICE_SERIAL "papa000000"
 
 // use builtin led
 #define LED_PIN LED_BUILTIN
@@ -79,27 +72,14 @@ ConfigToggleButton<SwitchDevice,LOW,HIGH,INPUT_PULLDOWN> cfgBtn(sdev);
 
 void setup () {
   DINIT(57600,ASKSIN_PLUS_PLUS_IDENTIFIER);
+  sdev.init(hal);
 
-  // first initialize EEProm if needed
-  if( storage.setup(sdev.checksum()) == true ) {
-    sdev.firstinit();
-    storage.store();
-  }
   // this will also trigger powerUpAction handling
   for( uint8_t i=1; i<=sdev.channels(); ++i ) {
     sdev.channel(i).lowactive(false);
   }
 
   buttonISR(cfgBtn,CONFIG_BUTTON_PIN);
-
-  sdev.init(hal,DEVICE_ID,DEVICE_SERIAL);
-  sdev.setModel(0x00,SW_MODEL);
-
-  sdev.setFirmwareVersion(0x16);
-  sdev.setSubType(DeviceType::Switch);
-  sdev.setInfo(0x41,0x01,0x00);
-
-  hal.init();
 
   // TODO - random delay
 }

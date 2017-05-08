@@ -33,7 +33,7 @@ public:
 
   typedef Device<HalType> DeviceType;
 
-  MultiChannelDevice (uint16_t addr) : Device<HalType>(addr), list0(addr + DeviceType::keystore().size()), numChannels(ChannelCount), cfgChannel(0xff) {
+  MultiChannelDevice (uint16_t addr) : Device<HalType>(addr,list0), list0(addr + DeviceType::keystore().size()), numChannels(ChannelCount), cfgChannel(0xff) {
     addr = list0.address() + list0.size();
     for( uint8_t i=0; i<channels(); ++i ) {
       devchannels[i].setup(this,i+1,addr);
@@ -44,8 +44,7 @@ public:
 
   void dumpSize () {
     ChannelType ch = channel(channels());
-    uint16_t addr = ch.address() + ch.size();
-    DPRINT("Address Space: ");DDEC(DeviceType::keystore().address());DPRINT(" - ");DDECLN(addr);
+    DPRINT("Address Space: ");DDEC(DeviceType::keystore().address());DPRINT(" - ");DDECLN((uint16_t)(ch.address() + ch.size()));
   }
 
   uint16_t checksum () {
@@ -91,23 +90,16 @@ public:
     return number != 0 && number <= channels();
   }
 
-  void init (HalType& hal,const HMID& id,const char* serial) {
-    DeviceType::keystore().init();
-    // read master id from flash
-    DeviceType::setHal(hal);
-    DeviceType::setMasterID(list0.masterid());
-    DeviceType::setDeviceID(id);
-    DeviceType::setSerial(serial);
-  }
-
-  void init (HalType& hal,uint16_t idaddr, uint16_t serialaddr) {
+  void init (HalType& hal) {
+    dumpSize();
+    // first initialize EEProm if needed
+    if( storage.setup(checksum()) == true ) {
+      firstinit();
+      storage.store();
+    }
     DeviceType::keystore().init();
     DeviceType::setHal(hal);
-    // read master id from flash
-    DeviceType::setMasterID(list0.masterid());
-    // read id & serial from bootloader
-    DeviceType::setDeviceID(idaddr);
-    DeviceType::setSerial(serialaddr);
+    hal.init();
   }
 
   void firstinit () {
@@ -168,7 +160,9 @@ public:
   }
 
    void process(Message& msg) {
-     if( msg.to() == DeviceType::getDeviceID() || (msg.to() == HMID::boardcast && DeviceType::isBoardcastMsg(msg))) {
+     HMID devid;
+     DeviceType::getDeviceID(devid);
+     if( msg.to() == devid || (msg.to() == HMID::boardcast && DeviceType::isBoardcastMsg(msg))) {
        DPRINT(F("-> "));
        msg.dump();
        // ignore repeated messages
@@ -184,7 +178,7 @@ public:
        if( mtype == AS_MESSAGE_CONFIG ) {
          DeviceType::activity().stayAwake(millis2ticks(500));
          // PAIR_SERIAL
-         if( msubc == AS_CONFIG_PAIR_SERIAL && memcmp(msg.data(),DeviceType::getSerial(),10)==0 ) {
+         if( msubc == AS_CONFIG_PAIR_SERIAL && DeviceType::isDeviceSerial(msg.data())==true ) {
            DeviceType::led().set(LedStates::pairing);
            DeviceType::activity().stayAwake( seconds2ticks(20) ); // 20 seconds
            DeviceType::sendDeviceInfo(DeviceType::getMasterID(),msg.length());
@@ -269,7 +263,6 @@ public:
          // CONFIG_END
          else if( msubc == AS_CONFIG_END ) {
            if( cfgList.address() == list0.address() ) {
-             DeviceType::setMasterID(list0.masterid());
              DeviceType::led().set(LedStates::nothing);
            }
            else {

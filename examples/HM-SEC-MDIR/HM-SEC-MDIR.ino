@@ -3,12 +3,16 @@
 // 2016-10-31 papa Creative Commons - http://creativecommons.org/licenses/by-nc-sa/3.0/de/
 //- -----------------------------------------------------------------------------------------------------------------------
 
-/*
- * Setup defines to configure the library.
- */
-// #define USE_AES
-// #define HM_DEF_KEY 0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x0a,0x0b,0x0c,0x0d,0x0e,0x0f,0x10
-// #define HM_DEF_KEY_INDEX 0
+// define this to read the device id, serial and device type from bootloader section
+// #define USE_OTA_BOOTLOADER
+
+// define all device properties
+#define DEVICE_ID HMID(0x56,0x78,0x90)
+#define DEVICE_SERIAL "papa222222"
+#define DEVICE_MODEL  0x00,0x4a
+#define DEVICE_FIRMWARE 0x16
+#define DEVICE_TYPE DeviceType::MotionDetector
+#define DEVICE_INFO 0x01,0x01,0x00
 
 #include <EnableInterrupt.h>
 #include <AskSinPP.h>
@@ -21,19 +25,6 @@
 #include <TSL2561.h>
 #include <Wire.h>
 
-// define this to read the device id, serial and device type from bootloader section
-// #define USE_OTA_BOOTLOADER
-
-#ifdef USE_OTA_BOOTLOADER
-  #define OTA_MODEL_START  0x7ff0 // start address of 2 byte model id in bootloader
-  #define OTA_SERIAL_START 0x7ff2 // start address of 10 byte serial number in bootloader
-  #define OTA_HMID_START   0x7ffc // start address of 3 byte device id in bootloader
-#else
-  // device ID
-  #define DEVICE_ID HMID(0x56,0x78,0x90)
-  // serial number
-  #define DEVICE_SERIAL "papa222222"
-#endif
 
 // we use a Pro Mini
 // Arduino pin for the LED
@@ -55,8 +46,11 @@ using namespace as;
 /**
  * Configure the used hardware
  */
-typedef AvrSPI<10,11,12,13> RadioSPI;
-typedef AskSin<StatusLed<4>,BatterySensor<22,19>,Radio<RadioSPI,2> > BaseHal;
+typedef AvrSPI<10,11,12,13> SPIType;
+typedef Radio<SPIType,2> RadioType;
+typedef StatusLed<4> LedType;
+typedef BatterySensor<22,19> BatteryType;
+typedef AskSin<LedType,BatteryType,RadioType> BaseHal;
 class Hal : public BaseHal {
 public:
   void init () {
@@ -156,7 +150,7 @@ class MotionChannel : public Channel<Hal,MotionList1,EmptyList,List4,PEERS_PER_C
     MotionChannel& channel;
     QuietMode (MotionChannel& c) : Alarm(0), enabled(false), motion(false), channel(c) {}
     virtual ~QuietMode () {}
-    virtual void trigger (AlarmClock& clock) {
+    virtual void trigger (__attribute__ ((unused)) AlarmClock& clock) {
       DPRINTLN(F("minInterval End"));
       enabled = false;
       if( motion == true ) {
@@ -246,7 +240,7 @@ public:
   }
 
   // this runs synch to application
-  virtual void trigger (AlarmClock& clock) {
+  virtual void trigger (__attribute__ ((unused)) AlarmClock& clock) {
     if( quiet.enabled == false ) {
       DPRINTLN(F("Motion"));
       // start timer to end quiet interval
@@ -285,10 +279,7 @@ ConfigButton<MotionType> cfgBtn(sdev);
 
 void setup () {
   DINIT(57600,ASKSIN_PLUS_PLUS_IDENTIFIER);
-
-  if( storage.setup(sdev.checksum()) == true ) {
-    sdev.firstinit();
-  }
+  sdev.init(hal);
 
   light.begin();
   // If gain = false (0), device is set to low gain (1X)
@@ -301,20 +292,6 @@ void setup () {
   light.setPowerUp();
 
   buttonISR(cfgBtn,CONFIG_BUTTON_PIN);
-
-#ifdef USE_OTA_BOOTLOADER
-  sdev.init(hal,OTA_HMID_START,OTA_SERIAL_START);
-  sdev.setModel(OTA_MODEL_START);
-#else
-  sdev.init(hal,DEVICE_ID,DEVICE_SERIAL);
-  sdev.setModel(0x00,0x4a);
-#endif
-  sdev.setFirmwareVersion(0x16);
-  // TODO check sub type and infos
-  sdev.setSubType(DeviceType::MotionDetector);
-  sdev.setInfo(0x01,0x01,0x00);
-
-  hal.init();
 }
 
 void loop() {

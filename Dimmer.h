@@ -911,7 +911,8 @@ public:
     }
   }
 
-  void initPwm (uint8_t p) {
+  void init (HalType& hal,uint8_t p) {
+    DeviceType::init(hal);
     pin = p;
     pinMode(pin,OUTPUT);
     for( uint8_t i=1; i<=DeviceType::channels(); ++i ) {

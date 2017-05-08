@@ -3,12 +3,16 @@
 // 2016-10-31 papa Creative Commons - http://creativecommons.org/licenses/by-nc-sa/3.0/de/
 //- -----------------------------------------------------------------------------------------------------------------------
 
-/*
- * Setup defines to configure the library.
- */
-// #define USE_AES
-// #define HM_DEF_KEY 0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x0a,0x0b,0x0c,0x0d,0x0e,0x0f,0x10
-// #define HM_DEF_KEY_INDEX 0
+// define this to read the device id, serial and device type from bootloader section
+// #define USE_OTA_BOOTLOADER
+
+// define all device properties
+#define DEVICE_ID HMID(0x09,0x21,0x43)
+#define DEVICE_SERIAL "papa666666"
+#define DEVICE_MODEL  0x00,0xae
+#define DEVICE_FIRMWARE 0x11
+#define DEVICE_TYPE DeviceType::THSensor
+#define DEVICE_INFO 0x03,0x01,0x00
 
 #include <EnableInterrupt.h>
 #include <AskSinPP.h>
@@ -16,21 +20,7 @@
 #include <LowPower.h>
 
 #include <MultiChannelDevice.h>
-#include <BatterySensor.h>
 
-// define this to read the device id, serial and device type from bootloader section
-// #define USE_OTA_BOOTLOADER
-
-#ifdef USE_OTA_BOOTLOADER
-  #define OTA_MODEL_START  0x7ff0 // start address of 2 byte model id in bootloader
-  #define OTA_SERIAL_START 0x7ff2 // start address of 10 byte serial number in bootloader
-  #define OTA_HMID_START   0x7ffc // start address of 3 byte device id in bootloader
-#else
-  // device ID
-  #define DEVICE_ID HMID(0x09,0x21,0x43)
-  // serial number
-  #define DEVICE_SERIAL "papa666666"
-#endif
 
 // we use a Pro Mini
 // Arduino pin for the LED
@@ -49,13 +39,15 @@ using namespace as;
 /**
  * Configure the used hardware
  */
-typedef AvrSPI<10,11,12,13> RadioSPI;
-typedef AskSin<StatusLed<4>,BatterySensor<22,19>,Radio<RadioSPI,2> > BaseHal;
+typedef AvrSPI<10,11,12,13> SPIType;
+typedef Radio<SPIType,2> RadioType;
+typedef StatusLed<4> LedType;
+typedef BatterySensor<22,19> BatteryType;
+typedef AskSin<LedType,BatteryType,RadioType> BaseHal;
 class Hal : public BaseHal {
 public:
   void init () {
     BaseHal::init();
-    // set low voltage to 2.2V
     // measure battery every 1h
     battery.init(seconds2ticks(60UL*60),sysclock);
   }
@@ -92,9 +84,11 @@ class Wds100List0 : public ChannelList<Wds100List0Data> {
 public:
   Wds100List0(uint16_t a) : ChannelList(a) {}
 
+  operator List0& () const { return *(List0*)this; }
+
   // from List0
-  HMID masterid () { return HMID(getByte(1),getByte(2),getByte(3)); }
-  void masterid (const HMID& mid) { setByte(1,mid.id0()); setByte(2,mid.id1()); setByte(3,mid.id2()); };
+  HMID masterid () { return ((List0*)this)->masterid(); }
+  void masterid (const HMID& mid) { ((List0*)this)->masterid(mid); }
 
   bool liveModeRx () const { return getByte(sizeof(List0Data) + 0); }
   bool liveModeRx (bool value) const { return setByte(sizeof(List0Data) + 0,value); }
@@ -219,27 +213,8 @@ ConfigButton<WeatherType> cfgBtn(sdev);
 
 void setup () {
   DINIT(57600,ASKSIN_PLUS_PLUS_IDENTIFIER);
-
-  if( storage.setup(sdev.checksum()) == true ) {
-    sdev.firstinit();
-  }
-
+  sdev.init(hal);
   buttonISR(cfgBtn,CONFIG_BUTTON_PIN);
-
-#ifdef USE_OTA_BOOTLOADER
-  sdev.init(hal,OTA_HMID_START,OTA_SERIAL_START);
-  sdev.setModel(OTA_MODEL_START);
-#else
-  sdev.init(hal,DEVICE_ID,DEVICE_SERIAL);
-  sdev.setModel(0x00,0xae);
-#endif
-  // TODO check with version to use
-  sdev.setFirmwareVersion(0x11);
-  sdev.setSubType(DeviceType::THSensor);
-  sdev.setInfo(0x03,0x01,0x00);
-
-  hal.init();
-
   // add channel 1 to timer to send event
   sysclock.add(sdev.channel(1));
 }
