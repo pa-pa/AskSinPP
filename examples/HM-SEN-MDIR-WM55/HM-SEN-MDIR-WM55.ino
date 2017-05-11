@@ -56,7 +56,6 @@ class Hal : public BaseHal {
 public:
   void init () {
     BaseHal::init();
-    // set low voltage to 2.2V
     // measure battery every 1h
     battery.init(seconds2ticks(60UL*60),sysclock);
   }
@@ -114,7 +113,10 @@ public:
   }
 };
 
-uint8_t measureBrightness () { return 0x00; }
+uint8_t measureBrightness () {
+  DPRINTLN("measure light");
+  return 0x00;
+}
 
 typedef RemoteChannel<Hal,PEERS_PER_BTNCHANNEL> BtnChannel;
 typedef MotionChannel<Hal,PEERS_PER_PIRCHANNEL> PirChannel;
