@@ -140,7 +140,7 @@ public:
     //enable TOV2 interrupt
     TIMSK2  = (1<<TOIE2);
 #else
-  #error "RTC not supported"
+  #warning "RTC not supported"
 #endif
   }
 };
