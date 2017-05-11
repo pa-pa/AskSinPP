@@ -3,49 +3,21 @@
 // 2016-10-31 papa Creative Commons - http://creativecommons.org/licenses/by-nc-sa/3.0/de/
 //- -----------------------------------------------------------------------------------------------------------------------
 
-#ifdef ARDUINO_ARCH_AVR
-  #include "TimerOne.h"
-#endif
 #include "AlarmClock.h"
 
 namespace as {
 
-AlarmClock sysclock;
+SysClock sysclock;
+RTC rtc;
+
+#ifdef ARDUINO_ARCH_AVR
+ISR(TIMER2_OVF_vect) {
+  --rtc;
+}
+#endif
 
 void callback(void) {
   --sysclock;
-}
-
-void AlarmClock::init() {
-#ifdef ARDUINO_ARCH_AVR
-  // use TimeOne on AVR
-  Timer1.initialize(1000000 / TICKS_PER_SECOND); // initialize timer1, and set a 1/10 second period
-#endif
-#ifdef ARDUINO_ARCH_STM32F1
-  // Setup Timer2 on ARM
-  Timer2.setMode(TIMER_CH2,TIMER_OUTPUT_COMPARE);
-  Timer2.setPeriod(1000000 / TICKS_PER_SECOND); // in microseconds
-  Timer2.setCompare(TIMER_CH2, 1); // overflow might be small
-#endif
-  enable();
-}
-
-void AlarmClock::disable () {
-#ifdef ARDUINO_ARCH_AVR
-  Timer1.detachInterrupt();
-#endif
-#ifdef ARDUINO_ARCH_STM32F1
-  Timer2.detachInterrupt(TIMER_CH2);
-#endif
-}
-
-void AlarmClock::enable () {
-#ifdef ARDUINO_ARCH_AVR
-  Timer1.attachInterrupt(callback);
-#endif
-#ifdef ARDUINO_ARCH_STM32F1
-  Timer2.attachInterrupt(TIMER_CH2,callback);
-#endif
 }
 
 void AlarmClock::cancel(Alarm& item) {

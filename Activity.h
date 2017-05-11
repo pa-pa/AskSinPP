@@ -44,18 +44,38 @@ public:
   static uint32_t doSleep (uint32_t ticks) {
     uint32_t offset = 0;
     if( ticks == 0 ) {
-      LowPower.powerDown(SLEEP_FOREVER,ADC_OFF,BOD_OFF);
+      if( ENABLETIMER2 == false ) {
+        LowPower.powerDown(SLEEP_FOREVER,ADC_OFF,BOD_OFF);
+      }
+      else {
+        LowPower.powerExtStandby(SLEEP_FOREVER,ADC_OFF,BOD_OFF,TIMER2_ON);
+      }
     }
     else if( ticks > seconds2ticks(8) ) {
-      LowPower.powerDown(SLEEP_8S,ADC_OFF,BOD_OFF);
+      if( ENABLETIMER2 == false ) {
+        LowPower.powerDown(SLEEP_8S,ADC_OFF,BOD_OFF);
+      }
+      else {
+        LowPower.powerExtStandby(SLEEP_8S,ADC_OFF,BOD_OFF,TIMER2_ON);
+      }
       offset = seconds2ticks(8);
     }
     else if (ticks > seconds2ticks(1) ) {
-      LowPower.powerDown(SLEEP_1S,ADC_OFF,BOD_OFF);
+      if( ENABLETIMER2 == false ) {
+        LowPower.powerDown(SLEEP_1S,ADC_OFF,BOD_OFF);
+      }
+      else {
+        LowPower.powerExtStandby(SLEEP_1S,ADC_OFF,BOD_OFF,TIMER2_ON);
+      }
       offset = seconds2ticks(1);
     }
     else if (ticks > millis2ticks(500) ) {
-      LowPower.powerDown(SLEEP_500MS,ADC_OFF,BOD_OFF);
+      if( ENABLETIMER2 == false ) {
+        LowPower.powerDown(SLEEP_500MS,ADC_OFF,BOD_OFF);
+      }
+      else {
+        LowPower.powerExtStandby(SLEEP_500MS,ADC_OFF,BOD_OFF,TIMER2_ON);
+      }
       offset = millis2ticks(500);
     }
     return offset;
@@ -75,7 +95,7 @@ public:
       }
       else{
         sysclock.enable();
-        Idle<>::powerSave(hal);
+        Idle<ENABLETIMER2>::powerSave(hal);
       }
     }
     else {
