@@ -126,6 +126,14 @@ public:
 device.channel(chan).button().init(pin); \
 enableInterrupt(pin,device##chan##ISRHandler::isr,CHANGE);
 
+#define remoteChannelISR(chan,pin) class __##pin##ISRHandler { \
+    public: \
+    static void isr () { chan.pinchanged(); } \
+  }; \
+  chan.button().init(pin); \
+  enableInterrupt(pin,__##pin##ISRHandler::isr,CHANGE);
+
+
 }
 
 #endif

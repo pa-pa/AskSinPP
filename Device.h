@@ -138,47 +138,6 @@ public:
     return list0.masterid();
   }
 
-  template <class ChannelType>
-  bool addPeer (ChannelType& ch,const Peer& p) {
-    ch.deletepeer(p);
-    uint8_t pidx = ch.findpeer();
-    if( pidx != 0xff ) {
-      ch.peer(pidx,p);
-      ch.getList3(pidx).single();
-      return true;
-    }
-    return false;
-  }
-
-  template <class ChannelType>
-  bool addPeer(ChannelType& ch,const Peer& p1, const Peer& p2) {
-    ch.deletepeer(p1);
-    ch.deletepeer(p2);
-    uint8_t pidx1 = ch.findpeer();
-    if( pidx1 != 0xff ) {
-      ch.peer(pidx1,p1);
-      uint8_t pidx2 = ch.findpeer();
-      if( pidx2 != 0xff ) {
-        ch.peer(pidx2,p2);
-        if( p1.odd() == true ) {
-          ch.getList3(pidx1).odd();
-          ch.getList3(pidx2).even();
-        }
-        else {
-          ch.getList3(pidx2).odd();
-          ch.getList3(pidx1).even();
-        }
-        return true;
-      }
-      else {
-        // free already stored data
-        ch.peer(pidx1,Peer());
-      }
-    }
-    return false;
-  }
-
-
   bool pollRadio () {
     uint8_t num = radio().read(msg);
     if( num > 0 ) {

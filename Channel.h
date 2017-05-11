@@ -51,6 +51,8 @@ public:
 
   bool inhibit () const { return inhi; }
 
+  bool aesActive () const { return getList1().aesActive(); }
+
   void setup(Device<HalType>* dev,uint8_t number,uint16_t addr) {
     this->dev = dev;
     this->num = number;
@@ -75,8 +77,46 @@ public:
   }
 
 
-  bool peer (uint8_t idx,const Peer& p) const {
-    return storage.setData(peerAddress(idx),p);
+  bool peer (const Peer& p) {
+    deletepeer(p);
+    uint8_t pidx = findpeer();
+    if( pidx != 0xff ) {
+      storage.setData(peerAddress(pidx),p);
+      getList3(pidx).single();
+      return true;
+    }
+    return false;
+  }
+
+  bool peer (const Peer& p1,const Peer& p2) const {
+    deletepeer(p1);
+    deletepeer(p2);
+    uint8_t pidx1 = findpeer();
+    if( pidx1 != 0xff ) {
+      storage.setData(peerAddress(pidx1),p1);
+      uint8_t pidx2 = findpeer();
+      if( pidx2 != 0xff ) {
+        storage.setData(peerAddress(pidx2),p2);
+        if( p1.odd() == true ) {
+          getList3(pidx1).odd();
+          getList3(pidx2).even();
+        }
+        else {
+          getList3(pidx2).odd();
+          getList3(pidx1).even();
+        }
+        return true;
+      }
+      else {
+        // free already stored data
+        deletepeer(p1);
+      }
+    }
+    return false;
+  }
+
+  bool deletepeer (uint8_t idx) const {
+    return storage.setData(peerAddress(idx),Peer());
   }
 
   uint8_t findpeer () const {
@@ -88,10 +128,10 @@ public:
     return 0xff;
   }
 
-  bool deletepeer (const Peer& p) {
+  bool deletepeer (const Peer& p) const {
     for( uint8_t i=0; i<peers(); ++i ) {
       if( peer(i) == p ) {
-        peer(i,Peer());
+        deletepeer(i);
       }
     }
     return true;
@@ -186,6 +226,96 @@ public:
     return 0x00;
   }
 };
+
+
+
+template <class HalType>
+class VirtBaseChannel {
+public:
+  VirtBaseChannel () {}
+  virtual ~VirtBaseChannel () {}
+
+  virtual void setup(Device<HalType>* dev,uint8_t number,uint16_t addr) = 0;
+  virtual uint16_t size () const = 0;
+  virtual Device<HalType>& device () = 0;
+  virtual const Device<HalType>& device () const = 0;
+  virtual uint8_t number () const = 0;
+  virtual uint16_t address () const = 0;
+  virtual uint8_t peers () const = 0;
+  virtual bool changed () const = 0;
+  virtual void changed (bool c) = 0;
+  virtual void inhibit (bool value) = 0;
+  virtual bool inhibit () const = 0;
+  virtual bool aesActive () const = 0;
+  virtual Peer peer (uint8_t idx) const = 0;
+  virtual bool peer (const Peer& p) = 0;
+  virtual bool peer (const Peer& p1,const Peer& p2) = 0;
+  virtual uint8_t findpeer () const = 0;
+  virtual bool deletepeer (const Peer& p) = 0;
+  virtual void firstinit () = 0;
+
+  virtual bool process (const ActionSetMsg& msg) = 0;
+  virtual bool process (const RemoteEventMsg& msg) = 0;
+  virtual bool process (const SensorEventMsg& msg) = 0;
+  virtual uint8_t status () const = 0;
+  virtual uint8_t flags () const = 0;
+
+  virtual void patchStatus (Message& msg) = 0;
+  virtual void configChanged () = 0;
+
+  virtual GenericList getList1 () const = 0;
+  virtual GenericList getList3 (const Peer& p) const = 0;
+  virtual GenericList getList4 (const Peer& p) const = 0;
+  virtual bool hasList3 () const = 0;
+  virtual bool hasList4 () const = 0;
+
+};
+
+template <class HalType,class ChannelType>
+class VirtChannel : public VirtBaseChannel<HalType> {
+  ChannelType ch;
+public:
+  VirtChannel () {}
+  virtual ~VirtChannel () {}
+
+  operator ChannelType& () { return ch; }
+
+  virtual void setup(Device<HalType>* dev,uint8_t number,uint16_t addr) { ch.setup(dev,number,addr); }
+  virtual uint16_t size () const { return ch.size(); }
+  virtual Device<HalType>& device () { return ch.device(); }
+  virtual const Device<HalType>& device () const { return ch.device(); }
+  virtual uint8_t number () const { return ch.number(); }
+  virtual uint16_t address () const { return ch.address(); }
+  virtual uint8_t peers () const { return ch.peers(); }
+  virtual bool changed () const { return ch.changed(); }
+  virtual void changed (bool c) { ch.changed(c); }
+  virtual void inhibit (bool value) { ch.inhibit(value); }
+  virtual bool inhibit () const { return ch.inhibit(); }
+  virtual bool aesActive () const { return ch.aesActive(); }
+  virtual Peer peer (uint8_t idx) const { return ch.peer(idx); }
+  virtual bool peer (const Peer& p) { return ch.peer(p); }
+  virtual bool peer (const Peer& p1,const Peer& p2) { return ch.peer(p1,p2); }
+  virtual uint8_t findpeer () const { return ch.findpeer(); }
+  virtual bool deletepeer (const Peer& p) { return ch.deletepeer(p); }
+  virtual void firstinit () { ch.firstinit(); }
+
+  virtual bool process (const ActionSetMsg& msg) { return ch.process(msg); }
+  virtual bool process (const RemoteEventMsg& msg) { return ch.process(msg); }
+  virtual bool process (const SensorEventMsg& msg) { return ch.process(msg); }
+  virtual uint8_t status () const { return ch.status(); }
+  virtual uint8_t flags () const { return ch.flags(); }
+
+  virtual void patchStatus (Message& msg) { ch.patchStatus(msg); }
+  virtual void configChanged () { ch.configChanged(); }
+
+  virtual GenericList getList1 () const { return ch.getList1(); }
+  virtual GenericList getList3 (const Peer& p) const { return ch.getList3(p); }
+  virtual GenericList getList4 (const Peer& p) const { return ch.getList4(p); }
+  virtual bool hasList3 () const { return ChannelType::hasList3(); }
+  virtual bool hasList4 () const { return ChannelType::hasList4(); }
+};
+
+
 
 }
 

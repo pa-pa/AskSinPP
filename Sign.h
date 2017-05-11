@@ -139,9 +139,9 @@ public:
 
 #define AES_KEY_SIZE 0
 
-class KeyStore {
+class KeyStore : public BaseList {
 public:
-  KeyStore(uint16_t a) {}
+  KeyStore(uint16_t a) : BaseList(a) {}
 
   // return space needed in Storage
   static uint16_t size () {

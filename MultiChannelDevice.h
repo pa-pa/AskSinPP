@@ -20,30 +20,40 @@ namespace as {
 
 void(* resetFunc) (void) = 0;
 
-template <class HalType,class ChannelType,int ChannelCount,class List0Type=List0>
-class MultiChannelDevice : public Device<HalType> {
 
-  List0Type   list0;
-  ChannelType devchannels[ChannelCount];
-  uint8_t     numChannels;
-  uint8_t     cfgChannel;
-  GenericList cfgList;
+template <class HalType,class ChannelType,int ChannelCount,class List0Type=List0>
+class ChannelDevice : public Device<HalType> {
+
+  List0Type    list0;
+  ChannelType* devchannels[ChannelCount];
+  uint8_t      numChannels;
+  uint8_t      cfgChannel;
+  GenericList  cfgList;
 
 public:
 
   typedef Device<HalType> DeviceType;
 
-  MultiChannelDevice (uint16_t addr) : Device<HalType>(addr,list0), list0(addr + DeviceType::keystore().size()), numChannels(ChannelCount), cfgChannel(0xff) {
-    addr = list0.address() + list0.size();
-    for( uint8_t i=0; i<channels(); ++i ) {
-      devchannels[i].setup(this,i+1,addr);
-      addr += devchannels[i].size();
+  ChannelDevice (uint16_t addr) : Device<HalType>(addr,list0), list0(addr + DeviceType::keystore().size()), numChannels(ChannelCount), cfgChannel(0xff) {}
+
+  virtual ~ChannelDevice () {}
+
+  void registerChannel(ChannelType& ch,uint8_t num) {
+    if( num >= 1 && num <= ChannelCount) {
+      devchannels[num-1] = &ch;
     }
   }
-  virtual ~MultiChannelDevice () {}
+
+  void layoutChannels () {
+    uint16_t addr = list0.address() + list0.size();
+    for( uint8_t i=0; i<channels(); ++i ) {
+      devchannels[i]->setup(this,i+1,addr);
+      addr += devchannels[i]->size();
+    }
+  }
 
   void dumpSize () {
-    ChannelType ch = channel(channels());
+    ChannelType& ch = channel(channels());
     DPRINT("Address Space: ");DDEC(DeviceType::keystore().address());DPRINT(" - ");DDECLN((uint16_t)(ch.address() + ch.size()));
   }
 
@@ -56,21 +66,26 @@ public:
       crc = HalType::crc16(crc,list0.getRegister(i));
     }
     // add number of channels
-    crc = HalType::crc16(crc,ChannelCount);
-    // add register list 1
-    for( uint8_t i=0; i<ChannelType::List1::size(); ++i ) {
-      crc = HalType::crc16(crc,ChannelType::List1::getRegister(i));
+    for( uint8_t c=1; c<=channels(); ++c ) {
+      ChannelType& ch = channel(c);
+      // add register list 1
+      GenericList l = ch.getList1();
+      for( uint8_t i=0; i<l.getSize(); ++i ) {
+        crc = HalType::crc16(crc,l.getRegister(i));
+      }
+      // add register list 3
+      l = ch.getList3(0);
+      for( uint8_t i=0; i<l.getSize(); ++i ) {
+        crc = HalType::crc16(crc,l.getRegister(i));
+      }
+      // add register list 4
+      l = ch.getList4(0);
+      for( uint8_t i=0; i<l.getSize(); ++i ) {
+        crc = HalType::crc16(crc,l.getRegister(i));
+      }
+      // add number of peers
+      crc = HalType::crc16(crc,ch.peers());
     }
-    // add register list 3
-    for( uint8_t i=0; i<ChannelType::List3::size(); ++i ) {
-      crc = HalType::crc16(crc,ChannelType::List3::getRegister(i));
-    }
-    // add register list 4
-    for( uint8_t i=0; i<ChannelType::List4::size(); ++i ) {
-      crc = HalType::crc16(crc,ChannelType::List4::getRegister(i));
-    }
-    // add number of peers
-    crc = HalType::crc16(crc,channel(1).peers());
     return crc;
   }
 
@@ -91,6 +106,7 @@ public:
   }
 
   void init (HalType& hal) {
+    layoutChannels();
     dumpSize();
     // first initialize EEProm if needed
     if( storage.setup(checksum()) == true ) {
@@ -106,7 +122,7 @@ public:
     DeviceType::keystore().defaults(); // init aes key infrastructure
     list0.defaults();
     for( uint8_t i=0; i<channels(); ++i ) {
-      devchannels[i].firstinit();
+      devchannels[i]->firstinit();
     }
   }
 
@@ -131,7 +147,7 @@ public:
   }
 
   ChannelType& channel(uint8_t ch) {
-    return devchannels[ch-1];
+    return *devchannels[ch-1];
   }
 
   bool pollRadio () {
@@ -147,12 +163,15 @@ public:
   }
 
   bool validSignature(Message& msg) {
+#ifdef USE_AES
     return DeviceType::requestSignature(msg);
+#endif
+    return true;
   }
 
   bool validSignature(uint8_t ch,Message& msg) {
 #ifdef USE_AES
-    if( ch==0 || (hasChannel(ch)==true && channel(ch).getList1().aesActive()==true) ) {
+    if( ch==0 || (hasChannel(ch)==true && channel(ch).aesActive()==true) ) {
       return validSignature(msg);
     }
 #endif
@@ -191,10 +210,10 @@ public:
              if( validSignature(pm.channel(),msg) == true ) {
                ChannelType& ch = channel(pm.channel());
                if( pm.peers() == 1 ) {
-                 success = DeviceType::addPeer(ch,pm.peer1());
+                 success = ch.peer(pm.peer1());
                }
                else {
-                 success = DeviceType::addPeer(ch,pm.peer1(),pm.peer2());
+                 success = ch.peer(pm.peer1(),pm.peer2());
                }
              }
            }
@@ -403,9 +422,9 @@ public:
       ChannelType& c = channel(ch);
       if (numlist == 1) {
         return c.getList1();
-      } else if (ChannelType::hasList3() && numlist == 3) {
+      } else if (c.hasList3() && numlist == 3) {
         return c.getList3(peer);
-      } else if (ChannelType::hasList4() && numlist == 4) {
+      } else if (c.hasList4() && numlist == 4) {
         return c.getList4(peer);
       }
     }
@@ -418,6 +437,25 @@ public:
        DeviceType::sendPeerEvent(msg,ch);
      }
    }
+};
+
+
+template <class HalType,class ChannelType,int ChannelCount,class List0Type=List0>
+class MultiChannelDevice : public ChannelDevice<HalType,ChannelType,ChannelCount,List0Type> {
+
+  ChannelType cdata[ChannelCount];
+
+public:
+
+  typedef ChannelDevice<HalType,ChannelType,ChannelCount,List0Type> DeviceType;
+
+  MultiChannelDevice (uint16_t addr) : ChannelDevice<HalType,ChannelType,ChannelCount,List0Type>(addr) {
+    for( uint8_t i=0; i<ChannelCount; ++i ) {
+      DeviceType::registerChannel(cdata[i], i+1);
+    }
+  }
+
+  virtual ~MultiChannelDevice () {}
 };
 
 }
