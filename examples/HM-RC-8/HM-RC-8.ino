@@ -4,18 +4,17 @@
 //- -----------------------------------------------------------------------------------------------------------------------
 
 // define this to read the device id, serial and device type from bootloader section
-#define USE_OTA_BOOTLOADER
+// #define USE_OTA_BOOTLOADER
 
 // define all device properties
-#define DEVICE_ID HMID(0x78,0x90,0x12)
-#define DEVICE_SERIAL "papa333333"
-#define DEVICE_MODEL  0x00,0x08
-#define DEVICE_FIRMWARE 0x11
+#define DEVICE_ID HMID(0x00,0xda,0x00)
+#define DEVICE_SERIAL "HMRC00da00"
+#define DEVICE_MODEL  0x00,0xda
+#define DEVICE_FIRMWARE 0x01
 #define DEVICE_TYPE DeviceType::Remote
-#define DEVICE_INFO 0x04,0x00,0x00
+#define DEVICE_INFO 0x08,0x00,0x00
 
 #include <EnableInterrupt.h>
-#include <SPI.h>  // after including SPI Library - we can use LibSPI class
 #include <AskSinPP.h>
 #include <TimerOne.h>
 #include <LowPower.h>
@@ -26,18 +25,21 @@
 
 // we use a Pro Mini
 // Arduino pin for the LED
-// D4 == PIN 4 on Pro Mini
-#define LED_PIN 4
-#define LED_PIN2 5
+// D4/D5 == PIN 4/5
+#define LED_GREEN 4
+#define LED_RED 5
 // Arduino pin for the config button
-// B0 == PIN 8 on Pro Mini
+// B0 == PIN 8
 #define CONFIG_BUTTON_PIN 8
 // Arduino pins for the buttons
-// A0,A1,A2,A3 == PIN 14,15,16,17 on Pro Mini
-#define BTN1_PIN 14
-#define BTN2_PIN 15
-#define BTN3_PIN 16
-#define BTN4_PIN 17
+#define BTN01_PIN 14  // PC0
+#define BTN02_PIN 3   // PD3
+#define BTN03_PIN 15  // PC1
+#define BTN04_PIN 7   // PD7
+#define BTN05_PIN 9   // PB1
+#define BTN06_PIN 6   // PD6
+#define BTN07_PIN 16  // PC2
+#define BTN08_PIN 17  // PC3
 
 
 // number of available peers per channel
@@ -49,9 +51,9 @@ using namespace as;
 /**
  * Configure the used hardware
  */
-typedef LibSPI<10> SPIType;
+typedef AvrSPI<10,11,12,13> SPIType;
 typedef Radio<SPIType,2> RadioType;
-typedef DualStatusLed<5,4> LedType;
+typedef DualStatusLed<LED_RED,LED_GREEN> LedType;
 typedef BatterySensor<22,19> BatteryType;
 typedef AskSin<LedType,BatteryType,RadioType> HalType;
 class Hal : public HalType {
@@ -74,7 +76,7 @@ public:
 };
 
 typedef RemoteChannel<Hal,PEERS_PER_CHANNEL> ChannelType;
-typedef MultiChannelDevice<Hal,ChannelType,4> RemoteType;
+typedef MultiChannelDevice<Hal,ChannelType,8> RemoteType;
 
 Hal hal;
 RemoteType sdev(0x20);
@@ -84,10 +86,14 @@ void setup () {
   DINIT(57600,ASKSIN_PLUS_PLUS_IDENTIFIER);
   sdev.init(hal);
 
-  remoteISR(sdev,1,BTN1_PIN);
-  remoteISR(sdev,2,BTN2_PIN);
-  remoteISR(sdev,3,BTN3_PIN);
-  remoteISR(sdev,4,BTN4_PIN);
+  remoteISR(sdev,1,BTN01_PIN);
+  remoteISR(sdev,2,BTN02_PIN);
+  remoteISR(sdev,3,BTN03_PIN);
+  remoteISR(sdev,4,BTN04_PIN);
+  remoteISR(sdev,5,BTN05_PIN);
+  remoteISR(sdev,6,BTN06_PIN);
+  remoteISR(sdev,7,BTN07_PIN);
+  remoteISR(sdev,8,BTN08_PIN);
 
   buttonISR(cfgBtn,CONFIG_BUTTON_PIN);
 }
