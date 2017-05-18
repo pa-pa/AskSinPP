@@ -17,12 +17,15 @@ namespace as {
 class Storage {
 
 #ifdef ARDUINO_ARCH_STM32F1
- #ifdef MCU_STM32F103CB
-  #define FlashPageSize 0x400
-  #define FlashStartAddress 0x0801fc00  // Page127 -
- #else
-  #error Unknown CPU type
- #endif
+  #if MCU_STM32F103CB
+    #define FlashPageSize 0x400
+    #define FlashStartAddress 0x0801fc00  // Page127
+  #elif defined(MCU_STM32F103C8)
+    #define FlashPageSize 0x400
+    #define FlashStartAddress 0x0800fc00  // Page63
+  #else
+    #error Unknown CPU type
+  #endif
 
   // we mirror 1 Flash Page into RAM
   uint8_t data[FlashPageSize];

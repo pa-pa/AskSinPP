@@ -18,6 +18,7 @@ public:
   uint8_t Unused1          : 4;     // 0x04
   uint8_t LongPressTime    : 4;     // 0x04
   uint8_t AesActive        : 1;     // 0x08, s:0, e:1
+  uint8_t Unused3          : 7;
   uint8_t DoublePressTime  : 4;     // 0x09
   uint8_t Unused2          : 4;     // 0x09
 

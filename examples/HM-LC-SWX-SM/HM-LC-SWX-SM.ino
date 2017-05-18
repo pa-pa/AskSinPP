@@ -16,7 +16,7 @@
 #define DEVICE_MODEL  0x00,(REALY_COUNT==2 ? 0x0a : (REALY_COUNT==4 ? 0x03 : 0x02))
 #define DEVICE_FIRMWARE 0x16
 #define DEVICE_TYPE DeviceType::Switch
-#define DEVICE_INFO 0x41,0x01,0x00
+#define DEVICE_INFO 0x04,0x01,0x00
 
 #include <EnableInterrupt.h>
 #include <AskSinPP.h>

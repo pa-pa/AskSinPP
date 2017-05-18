@@ -116,6 +116,7 @@ public:
     DeviceType::keystore().init();
     DeviceType::setHal(hal);
     hal.init();
+    this->configChanged();
   }
 
   void firstinit () {
@@ -273,7 +274,7 @@ public:
              cfgChannel = pm.channel();
              cfgList = findList(cfgChannel,pm.peer(),pm.list());
              // TODO setup alarm to disable after 2000ms
-             DeviceType::sendAck(msg);
+             DeviceType::sendAck(msg,Message::CFG);
            }
            else {
              DeviceType::sendNack(msg);
@@ -283,6 +284,7 @@ public:
          else if( msubc == AS_CONFIG_END ) {
            if( cfgList.address() == list0.address() ) {
              DeviceType::led().set(LedStates::nothing);
+             this->configChanged();
            }
            else {
              // signal list update to channel
@@ -291,7 +293,7 @@ public:
            cfgChannel = 0xff;
            storage.store();
            // TODO cancel alarm
-           DeviceType::sendAck(msg);
+           DeviceType::sendAck(msg,Message::WKMEUP);
          }
          else if( msubc == AS_CONFIG_WRITE_INDEX ) {
            const ConfigWriteIndexMsg& pm = msg.configWriteIndex();
@@ -299,7 +301,7 @@ public:
              if( cfgChannel == pm.channel() && cfgList.valid() == true ) {
                DeviceType::writeList(cfgList,pm.data(),pm.datasize());
              }
-             DeviceType::sendAck(msg);
+             DeviceType::sendAck(msg,Message::CFG);
            }
            else {
              DeviceType::sendNack(msg);

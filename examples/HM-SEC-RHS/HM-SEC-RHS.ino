@@ -49,7 +49,7 @@ typedef AvrSPI<10,11,12,13> SPIType;
 typedef Radio<SPIType,2> RadioType;
 typedef DualStatusLed<LED2_PIN,LED1_PIN> LedType;
 typedef BatterySensor<22,19> BatteryType;
-typedef AskSin<LedType,BatteryType,RadioType,Sleep<false>> BaseHal;
+typedef AskSin<LedType,BatteryType,RadioType> BaseHal;
 class Hal : public BaseHal {
 public:
   void init () {
@@ -233,7 +233,6 @@ public:
       if( newstate != state || sabotage != sab ) {
         state = newstate;
         sabotage = sab;
-//        BaseChannel::changed(true);
         SensorEventMsg& msg = (SensorEventMsg&)BaseChannel::device().message();
         msg.init(BaseChannel::device().nextcount(),BaseChannel::number(),state,BaseChannel::device().battery().low());
         // TODO sabotage ???
@@ -245,37 +244,50 @@ public:
 };
 
 
-typedef MultiChannelDevice<Hal,RHSChannel<Hal,PEERS_PER_CHANNEL>,1,RHSList0> RHSType;
+class RHSType : public MultiChannelDevice<Hal,RHSChannel<Hal,PEERS_PER_CHANNEL>,1,RHSList0> {
+  #define CYCLETIME seconds2ticks(60UL*60*24) // at least one message per day
+  class CycleInfoAlarm : public Alarm {
+    RHSType& dev;
+  public:
+    CycleInfoAlarm (RHSType& d) : Alarm (CYCLETIME), dev(d) {}
+    virtual ~CycleInfoAlarm () {}
+
+    void trigger (AlarmClock& clock)  {
+      set(CYCLETIME);
+      clock.add(*this);
+      dev.channel(1).changed(true); // force StatusInfoMessage to central
+    }
+  } cycle;
+public:
+  typedef MultiChannelDevice<Hal,RHSChannel<Hal,PEERS_PER_CHANNEL>,1,RHSList0> DevType;
+  RHSType(uint16_t addr) : DevType(addr), cycle(*this) {}
+  virtual ~RHSType () {}
+
+  virtual void configChanged () {
+    // activate cycle info message
+    if( DevType::getList0().cycleInfoMsg() == true ) {
+      DPRINTLN("Activate Cycle Msg");
+      sysclock.cancel(cycle);
+      cycle.set(CYCLETIME);
+      sysclock.add(cycle);
+    }
+    else {
+      DPRINTLN("Deactivate Cycle Msg");
+      sysclock.cancel(cycle);
+    }
+  }
+};
 RHSType sdev(0x20);
 
 ConfigButton<RHSType> cfgBtn(sdev);
-
-
-#define CYCLETIME seconds2ticks(60*60) // a message every hour
-class CycleInfoAlarm : public Alarm {
-public:
-  CycleInfoAlarm () : Alarm (CYCLETIME) {}
-  virtual ~CycleInfoAlarm () {}
-
-  void trigger (AlarmClock& clock)  {
-    set(CYCLETIME);
-    clock.add(*this);
-    sdev.channel(1).changed(true); // force StatusInfoMessage to central
-  }
-};
-CycleInfoAlarm cycleAlarm;
 
 void setup () {
   DINIT(57600,ASKSIN_PLUS_PLUS_IDENTIFIER);
   sdev.init(hal);
   buttonISR(cfgBtn,CONFIG_BUTTON_PIN);
-  channelISR(sdev.channel(1),SENS1_PIN,CHANGE);
-  channelISR(sdev.channel(1),SENS2_PIN,CHANGE);
-  channelISR(sdev.channel(1),SABOTAGE_PIN,CHANGE);
-  // activate cycle info message
-  if( sdev.getList0().cycleInfoMsg() == true ) {
-    sysclock.add(cycleAlarm);
-  }
+  channelISR(sdev.channel(1),SENS1_PIN,INPUT_PULLUP,CHANGE);
+  channelISR(sdev.channel(1),SENS2_PIN,INPUT_PULLUP,CHANGE);
+  channelISR(sdev.channel(1),SABOTAGE_PIN,INPUT_PULLUP,CHANGE);
 }
 
 void loop() {

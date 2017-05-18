@@ -237,8 +237,6 @@ public:
 
   virtual void setup(Device<HalType>* dev,uint8_t number,uint16_t addr) = 0;
   virtual uint16_t size () const = 0;
-  virtual Device<HalType>& device () = 0;
-  virtual const Device<HalType>& device () const = 0;
   virtual uint8_t number () const = 0;
   virtual uint16_t address () const = 0;
   virtual uint8_t peers () const = 0;
@@ -250,7 +248,6 @@ public:
   virtual Peer peer (uint8_t idx) const = 0;
   virtual bool peer (const Peer& p) = 0;
   virtual bool peer (const Peer& p1,const Peer& p2) = 0;
-  virtual uint8_t findpeer () const = 0;
   virtual bool deletepeer (const Peer& p) = 0;
   virtual void firstinit () = 0;
 
@@ -282,8 +279,6 @@ public:
 
   virtual void setup(Device<HalType>* dev,uint8_t number,uint16_t addr) { ch.setup(dev,number,addr); }
   virtual uint16_t size () const { return ch.size(); }
-  virtual Device<HalType>& device () { return ch.device(); }
-  virtual const Device<HalType>& device () const { return ch.device(); }
   virtual uint8_t number () const { return ch.number(); }
   virtual uint16_t address () const { return ch.address(); }
   virtual uint8_t peers () const { return ch.peers(); }
@@ -295,7 +290,6 @@ public:
   virtual Peer peer (uint8_t idx) const { return ch.peer(idx); }
   virtual bool peer (const Peer& p) { return ch.peer(p); }
   virtual bool peer (const Peer& p1,const Peer& p2) { return ch.peer(p1,p2); }
-  virtual uint8_t findpeer () const { return ch.findpeer(); }
   virtual bool deletepeer (const Peer& p) { return ch.deletepeer(p); }
   virtual void firstinit () { ch.firstinit(); }
 
@@ -315,6 +309,12 @@ public:
   virtual bool hasList4 () const { return ChannelType::hasList4(); }
 };
 
+#define channelISR(chan,pin,mode,type) class __##pin##ISRHandler { \
+    public: \
+    static void isr () { chan.handleISR(); } \
+  }; \
+  pinMode(pin,mode); \
+  enableInterrupt(pin,__##pin##ISRHandler::isr,type);
 
 
 }

@@ -12,7 +12,7 @@
 #define DEVICE_MODEL  0x00,0x67
 #define DEVICE_FIRMWARE 0x25
 #define DEVICE_TYPE DeviceType::Dimmer
-#define DEVICE_INFO 0x41,0x01,0x00
+#define DEVICE_INFO 0x03,0x01,0x00
 
 #include <EnableInterrupt.h>
 #include <AskSinPP.h>

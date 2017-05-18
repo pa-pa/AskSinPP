@@ -108,7 +108,7 @@ public:
 
 class Activity : public Alarm {
 
-  bool  awake;
+  volatile bool  awake;
 
 public:
 

@@ -17,7 +17,7 @@
 #define DEVICE_MODEL  0x00,0x03
 #define DEVICE_FIRMWARE 0x16
 #define DEVICE_TYPE DeviceType::Switch
-#define DEVICE_INFO 0x41,0x01,0x00
+#define DEVICE_INFO 0x04,0x01,0x00
 
 #include <SPI.h>    // when we include SPI.h - we can use LibSPI class
 #include <EEPROM.h> // the EEPROM library contains Flash Access Methods

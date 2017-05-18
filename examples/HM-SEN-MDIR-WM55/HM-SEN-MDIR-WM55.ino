@@ -12,7 +12,7 @@
 #define DEVICE_MODEL  0x00,0xdb
 #define DEVICE_FIRMWARE 0x0b
 #define DEVICE_TYPE DeviceType::MotionDetector
-#define DEVICE_INFO 0x01,0x01,0x00
+#define DEVICE_INFO 0x03,0x01,0x00
 
 #include <EnableInterrupt.h>
 #include <AskSinPP.h>

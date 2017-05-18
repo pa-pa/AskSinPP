@@ -14,6 +14,7 @@
 #include "Radio.h"
 #include "Led.h"
 
+#define OTA_CONFIG_START 0x7fe0 // start address of 16 byte config data in bootloader
 #define OTA_MODEL_START  0x7ff0 // start address of 2 byte model id in bootloader
 #define OTA_SERIAL_START 0x7ff2 // start address of 10 byte serial number in bootloader
 #define OTA_HMID_START   0x7ffc // start address of 3 byte device id in bootloader
@@ -98,6 +99,21 @@ public:
     hal = &h;
   }
 
+  uint8_t getConfigByte (uint8_t offset) {
+    uint8_t data=0;
+#ifdef USE_OTA_BOOTLOADER
+    if( offset < 16 ) {
+      HalType::pgm_read(&data,OTA_CONFIG_START+offset,1);
+    }
+#elif defined(DEVICE_CONFIG)
+    uint8_t tmp[] = {DEVICE_CONFIG};
+    if( offset < sizeof(tmp) ) {
+      data = tmp[offset];
+    }
+#endif
+    return data;
+  }
+
   void getDeviceID (HMID& id) {
 #ifdef USE_OTA_BOOTLOADER
     HalType::pgm_read((uint8_t*)&id,OTA_HMID_START,sizeof(id));
@@ -150,6 +166,8 @@ public:
     return ++msgcount;
   }
 
+  virtual void configChanged () {}
+
   virtual void process(__attribute__((unused)) Message& msg) {}
 
   bool isBoardcastMsg(Message msg) {
@@ -182,7 +200,7 @@ public:
             result = response.isAck();
             // we request wakeup
             // we got the fag to stay awake
-            if( msg.isWakeMeUp() /*response.isKeepAwake()*/ ) {
+            if( msg.isWakeMeUp() || response.isKeepAwake() ) {
               activity().stayAwake(millis2ticks(500));
             }
           }
