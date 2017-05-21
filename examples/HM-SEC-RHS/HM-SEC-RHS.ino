@@ -15,6 +15,8 @@
 #define DEVICE_INFO 0x01,0x01,0x00
 #define DEVICE_CONFIG
 
+// 24 0030 4D455130323134373633 80 910101
+
 #include <EnableInterrupt.h>
 #include <AskSinPP.h>
 #include <TimerOne.h>
@@ -190,13 +192,13 @@ template <class HALTYPE,int PEERCOUNT>
 class RHSChannel : public Channel<HALTYPE,RHSList1,EmptyList,List4,PEERCOUNT>, Alarm {
 
   volatile bool isr;
-  uint8_t state;
+  uint8_t state, count;
   bool sabotage;
 
 public:
   typedef Channel<HALTYPE,RHSList1,EmptyList,List4,PEERCOUNT> BaseChannel;
 
-  RHSChannel () : BaseChannel(), Alarm(DEBOUNCETIME), isr(false), state(CLOSED_STATE), sabotage(false) {}
+  RHSChannel () : BaseChannel(), Alarm(DEBOUNCETIME), isr(false), state(CLOSED_STATE), count(0), sabotage(false) {}
   virtual ~RHSChannel () {}
 
   uint8_t status () const {
@@ -234,7 +236,7 @@ public:
         state = newstate;
         sabotage = sab;
         SensorEventMsg& msg = (SensorEventMsg&)BaseChannel::device().message();
-        msg.init(BaseChannel::device().nextcount(),BaseChannel::number(),state,BaseChannel::device().battery().low());
+        msg.init(BaseChannel::device().nextcount(),BaseChannel::number(),count++,state,BaseChannel::device().battery().low());
         // TODO sabotage ???
         BaseChannel::device().sendPeerEvent(msg,*this);
       }
