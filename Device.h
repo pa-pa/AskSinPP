@@ -154,6 +154,10 @@ public:
     return list0.masterid();
   }
 
+  const List0& getList0 () {
+    return list0;
+  }
+
   bool pollRadio () {
     uint8_t num = radio().read(msg);
     if( num > 0 ) {

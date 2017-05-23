@@ -56,7 +56,6 @@ class Hal : public BaseHal {
 public:
   void init () {
     BaseHal::init();
-    // set low voltage to 2.2V
     // measure battery every 1h
     battery.init(seconds2ticks(60UL*60),sysclock);
   }
@@ -155,6 +154,12 @@ uint8_t RHSList1Data::avrRegister[] = {0x08,0x20,0x21,0x22,0x30};
 #define TILTED_MSG 3
 #define TILTED_STATE 100
 
+#define NoPos 0
+#define PosA  1
+#define PosB  2
+#define PosC  3
+
+
 class RHSList1 : public ChannelList<RHSList1Data> {
 public:
    RHSList1(uint16_t a) : ChannelList(a) {}
@@ -190,7 +195,9 @@ public:
 
 template <class HALTYPE,int PEERCOUNT>
 class RHSChannel : public Channel<HALTYPE,RHSList1,EmptyList,List4,PEERCOUNT>, Alarm {
-
+  // pin mapping can be changed by bootloader config data
+  // map pins to pos    00   01   10   11
+  uint8_t posmap[4] = {PosA,PosB,PosC,NoPos};
   volatile bool isr;
   uint8_t state, count;
   bool sabotage;
@@ -198,15 +205,22 @@ class RHSChannel : public Channel<HALTYPE,RHSList1,EmptyList,List4,PEERCOUNT>, A
 public:
   typedef Channel<HALTYPE,RHSList1,EmptyList,List4,PEERCOUNT> BaseChannel;
 
-  RHSChannel () : BaseChannel(), Alarm(DEBOUNCETIME), isr(false), state(CLOSED_STATE), count(0), sabotage(false) {}
+  RHSChannel () : BaseChannel(), Alarm(DEBOUNCETIME), isr(false), state(NO_MSG), count(0), sabotage(false) {}
   virtual ~RHSChannel () {}
+
+  void setup(Device<HALTYPE>* dev,uint8_t number,uint16_t addr) {
+    BaseChannel::setup(dev,number,addr);
+    // TODO try to read pin to position mapping from bootloader
+  }
 
   uint8_t status () const {
     return state;
   }
 
   uint8_t flags () const {
-    return BaseChannel::device().battery().low() ? 0x80 : 0x00;
+    uint8_t flags = sabotage ? (0x07<<1) : 0x00;
+    flags |= this->device().battery().low() ? 0x80 : 0x00;
+    return flags;
   }
 
   void handleISR () {
@@ -219,26 +233,34 @@ public:
 
   void trigger (__attribute__ ((unused)) AlarmClock& clock)  {
     if( isr == true ) {
-      uint8_t newstate = CLOSED_STATE;
-      uint8_t p1 = digitalRead(SENS1_PIN);
-      uint8_t p2 = digitalRead(SENS2_PIN);
-      if( p1 == HIGH && p2 == HIGH) {
-        newstate = CLOSED_STATE;
+      uint8_t newstate = state;
+      uint8_t pinstate = digitalRead(SENS2_PIN) << 1 | digitalRead(SENS1_PIN);
+      uint8_t pos = posmap[pinstate & 0x03];
+      switch( pos ) {
+      case PosA:
+        newstate = this->getList1().msgForPosA();
+        break;
+      case PosB:
+        newstate = this->getList1().msgForPosB();
+        break;
+      case PosC:
+        newstate = this->getList1().msgForPosC();
+        break;
+      default:
+        break;
       }
-      else if( p1 == LOW && p2 == HIGH ) {
-        newstate = OPEN_STATE;
-      }
-      else if( p1 == HIGH && p2 == LOW ) {
-        newstate = TILTED_STATE;
-      }
-      bool sab = digitalRead(SABOTAGE_PIN) == LOW;
-      if( newstate != state || sabotage != sab ) {
+
+      if( newstate != state ) {
         state = newstate;
-        sabotage = sab;
         SensorEventMsg& msg = (SensorEventMsg&)BaseChannel::device().message();
-        msg.init(BaseChannel::device().nextcount(),BaseChannel::number(),count++,state,BaseChannel::device().battery().low());
-        // TODO sabotage ???
-        BaseChannel::device().sendPeerEvent(msg,*this);
+        msg.init(this->device().nextcount(),this->number(),count++,state,this->device().battery().low());
+        this->device().sendPeerEvent(msg,*this);
+      }
+
+      bool sab = digitalRead(SABOTAGE_PIN) == LOW;
+      if( sabotage != sab && ((const RHSList0&)this->device().getList0()).sabotageMsg() == true ) {
+        sabotage = sab;
+        this->changed(true); // trigger StatusInfoMessage to central
       }
       isr = false;
     }
@@ -279,8 +301,8 @@ public:
     }
   }
 };
-RHSType sdev(0x20);
 
+RHSType sdev(0x20);
 ConfigButton<RHSType> cfgBtn(sdev);
 
 void setup () {
@@ -290,6 +312,8 @@ void setup () {
   channelISR(sdev.channel(1),SENS1_PIN,INPUT_PULLUP,CHANGE);
   channelISR(sdev.channel(1),SENS2_PIN,INPUT_PULLUP,CHANGE);
   channelISR(sdev.channel(1),SABOTAGE_PIN,INPUT_PULLUP,CHANGE);
+  // trigger first send of state
+  sdev.channel(1).handleISR();
 }
 
 void loop() {
