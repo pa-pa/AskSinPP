@@ -196,8 +196,8 @@ public:
 template <class HALTYPE,int PEERCOUNT>
 class RHSChannel : public Channel<HALTYPE,RHSList1,EmptyList,List4,PEERCOUNT>, Alarm {
   // pin mapping can be changed by bootloader config data
-  // map pins to pos    00   01   10   11
-  uint8_t posmap[4] = {PosA,PosB,PosC,NoPos};
+  // map pins to pos     00   01   10   11
+  uint8_t posmap[4] = {NoPos,PosC,PosB,PosA};
   volatile bool isr;
   uint8_t state, count;
   bool sabotage;
@@ -205,7 +205,7 @@ class RHSChannel : public Channel<HALTYPE,RHSList1,EmptyList,List4,PEERCOUNT>, A
 public:
   typedef Channel<HALTYPE,RHSList1,EmptyList,List4,PEERCOUNT> BaseChannel;
 
-  RHSChannel () : BaseChannel(), Alarm(DEBOUNCETIME), isr(false), state(NO_MSG), count(0), sabotage(false) {}
+  RHSChannel () : BaseChannel(), Alarm(DEBOUNCETIME), isr(false), state(CLOSED_STATE), count(0), sabotage(false) {}
   virtual ~RHSChannel () {}
 
   void setup(Device<HALTYPE>* dev,uint8_t number,uint16_t addr) {
@@ -218,7 +218,7 @@ public:
   }
 
   uint8_t flags () const {
-    uint8_t flags = sabotage ? (0x07<<1) : 0x00;
+    uint8_t flags = sabotage ? 0x02 : 0x00;
     flags |= this->device().battery().low() ? 0x80 : 0x00;
     return flags;
   }
@@ -236,19 +236,24 @@ public:
       uint8_t newstate = state;
       uint8_t pinstate = digitalRead(SENS2_PIN) << 1 | digitalRead(SENS1_PIN);
       uint8_t pos = posmap[pinstate & 0x03];
+      uint8_t msg = NO_MSG;
       switch( pos ) {
       case PosA:
-        newstate = this->getList1().msgForPosA();
+        msg = this->getList1().msgForPosA();
         break;
       case PosB:
-        newstate = this->getList1().msgForPosB();
+        msg = this->getList1().msgForPosB();
         break;
       case PosC:
-        newstate = this->getList1().msgForPosC();
+        msg = this->getList1().msgForPosC();
         break;
       default:
         break;
       }
+
+      if( msg == CLOSED_MSG) newstate = CLOSED_STATE;
+      else if( msg == OPEN_MSG) newstate = OPEN_STATE;
+      if( msg == TILTED_MSG) newstate = TILTED_STATE;
 
       if( newstate != state ) {
         state = newstate;
