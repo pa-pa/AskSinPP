@@ -43,40 +43,24 @@ class Sleep : public Idle<ENABLETIMER2> {
 public:
   static uint32_t doSleep (uint32_t ticks) {
     uint32_t offset = 0;
-    if( ticks == 0 ) {
-      if( ENABLETIMER2 == false ) {
-        LowPower.powerDown(SLEEP_FOREVER,ADC_OFF,BOD_OFF);
-      }
-      else {
-        LowPower.powerExtStandby(SLEEP_FOREVER,ADC_OFF,BOD_OFF,TIMER2_ON);
-      }
+    period_t sleeptime = SLEEP_FOREVER;
+
+    if( ticks > seconds2ticks(8) ) { offset = seconds2ticks(8); sleeptime = SLEEP_8S; }
+    else if( ticks > seconds2ticks(4) )  { offset = seconds2ticks(4);  sleeptime = SLEEP_4S; }
+    else if( ticks > seconds2ticks(2) )  { offset = seconds2ticks(2);  sleeptime = SLEEP_2S; }
+    else if( ticks > seconds2ticks(1) )  { offset = seconds2ticks(1);  sleeptime = SLEEP_1S; }
+    else if( ticks > millis2ticks(500) ) { offset = millis2ticks(500); sleeptime = SLEEP_500MS; }
+    else if( ticks > millis2ticks(250) ) { offset = millis2ticks(250); sleeptime = SLEEP_250MS; }
+    else if( ticks > millis2ticks(120) ) { offset = millis2ticks(120); sleeptime = SLEEP_120MS; }
+    else if( ticks > millis2ticks(60)  ) { offset = millis2ticks(60);  sleeptime = SLEEP_60MS; }
+    else if( ticks > millis2ticks(30)  ) { offset = millis2ticks(30);  sleeptime = SLEEP_30MS; }
+    else if( ticks > millis2ticks(15)  ) { offset = millis2ticks(15);  sleeptime = SLEEP_15MS; }
+
+    if( ENABLETIMER2 == false ) {
+      LowPower.powerDown(sleeptime,ADC_OFF,BOD_OFF);
     }
-    else if( ticks > seconds2ticks(8) ) {
-      if( ENABLETIMER2 == false ) {
-        LowPower.powerDown(SLEEP_8S,ADC_OFF,BOD_OFF);
-      }
-      else {
-        LowPower.powerExtStandby(SLEEP_8S,ADC_OFF,BOD_OFF,TIMER2_ON);
-      }
-      offset = seconds2ticks(8);
-    }
-    else if (ticks > seconds2ticks(1) ) {
-      if( ENABLETIMER2 == false ) {
-        LowPower.powerDown(SLEEP_1S,ADC_OFF,BOD_OFF);
-      }
-      else {
-        LowPower.powerExtStandby(SLEEP_1S,ADC_OFF,BOD_OFF,TIMER2_ON);
-      }
-      offset = seconds2ticks(1);
-    }
-    else if (ticks > millis2ticks(500) ) {
-      if( ENABLETIMER2 == false ) {
-        LowPower.powerDown(SLEEP_500MS,ADC_OFF,BOD_OFF);
-      }
-      else {
-        LowPower.powerExtStandby(SLEEP_500MS,ADC_OFF,BOD_OFF,TIMER2_ON);
-      }
-      offset = millis2ticks(500);
+    else {
+      LowPower.powerExtStandby(sleeptime,ADC_OFF,BOD_OFF,TIMER2_ON);
     }
     return offset;
   }
@@ -86,10 +70,9 @@ public:
     sysclock.disable();
     uint32_t ticks = sysclock.next();
     if( sysclock.isready() == false ) {
-      if( ticks == 0 || ticks > millis2ticks(500) ) {
+      if( ticks == 0 || ticks > millis2ticks(15) ) {
         hal.radio.setIdle();
         uint32_t offset = doSleep(ticks);
-        hal.radio.wakeup();
         sysclock.correct(offset);
         sysclock.enable();
       }
@@ -140,6 +123,10 @@ public:
       Saver::waitSerial();
 #endif
       Saver::powerSave(hal);
+    }
+    else {
+      // ensure radio is up and running
+      hal.radio.wakeup();
     }
   }
 

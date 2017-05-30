@@ -359,25 +359,32 @@ private:
 
   uint8_t rss;                                      // signal strength
   uint8_t lqi;                                      // link quality
-  volatile uint8_t intread : 7;
+  volatile uint8_t intread : 6;
+  volatile bool idle       : 1;
   volatile bool sending    : 1;
   Message buffer;
   Message sbuffer;
 
 public:   //---------------------------------------------------------------------------------------------------------
   void setIdle () {
-    uint8_t cnt = 0xff;
-    while(cnt-- && (spi.strobe(CC1101_SIDLE) & 0x70) != 0) {
-      _delay_us(10);
+    if( idle == false ) {
+      uint8_t cnt = 0xff;
+      while(cnt-- && (spi.strobe(CC1101_SIDLE) & 0x70) != 0) {
+        _delay_us(10);
+      }
+      spi.strobe(CC1101_SPWD);                            // enter power down state
+      idle = true;
     }
-    spi.strobe(CC1101_SPWD);                            // enter power down state
   }
 
   void wakeup () {
-    spi.ping();
+    if( idle == true ) {
+      spi.ping();
+      idle = false;
+    }
   }
 
-  Radio () : rss(0), lqi(0), intread(0), sending(false) {}
+  Radio () : rss(0), lqi(0), intread(0), idle(false), sending(false) {}
 
   void init () {
     // ensure ISR if off before we start to init CC1101
@@ -550,9 +557,8 @@ public:   //--------------------------------------------------------------------
 
 protected:
   uint8_t sndData(uint8_t *buf, uint8_t size, uint8_t burst) {
-
     timeout.waitTimeout();
-
+    wakeup();
     sending = true;
 
     // Going from RX to TX does not work if there was a reception less than 0.5
@@ -587,6 +593,7 @@ protected:
   }
 
   uint8_t rcvData(uint8_t *buf, uint8_t size) {
+    wakeup();
     static uint8_t packetBytes = 0;
     uint8_t rxBytes = 0;
     uint8_t fifoBytes = spi.readReg(CC1101_RXBYTES, CC1101_STATUS);             // how many bytes are in the buffer
