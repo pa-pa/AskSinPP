@@ -15,6 +15,8 @@
 #define DEVICE_INFO 0x01,0x01,0x00
 #define DEVICE_CONFIG
 
+#define MODE_POLL
+
 // 24 0030 4D455130323134373633 80 910101
 
 #include <EnableInterrupt.h>
@@ -194,10 +196,10 @@ public:
 #define DEBOUNCETIME millis2ticks(200)
 
 template <class HALTYPE,int PEERCOUNT>
-class RHSChannel : public Channel<HALTYPE,RHSList1,EmptyList,List4,PEERCOUNT>, Alarm {
+class RHSChannel : public Channel<HALTYPE,RHSList1,EmptyList,List4,PEERCOUNT>, public Alarm {
   // pin mapping can be changed by bootloader config data
   // map pins to pos     00   01   10   11
-  uint8_t posmap[4] = {NoPos,PosC,PosB,PosA};
+  uint8_t posmap[4] = {PosA,PosC,PosB,PosA};
   volatile bool isr;
   uint8_t state, count;
   bool sabotage;
@@ -205,7 +207,7 @@ class RHSChannel : public Channel<HALTYPE,RHSList1,EmptyList,List4,PEERCOUNT>, A
 public:
   typedef Channel<HALTYPE,RHSList1,EmptyList,List4,PEERCOUNT> BaseChannel;
 
-  RHSChannel () : BaseChannel(), Alarm(DEBOUNCETIME), isr(false), state(CLOSED_STATE), count(0), sabotage(false) {}
+  RHSChannel () : BaseChannel(), Alarm(DEBOUNCETIME), isr(false), state(255), count(0), sabotage(false) {}
   virtual ~RHSChannel () {}
 
   void setup(Device<HALTYPE>* dev,uint8_t number,uint16_t addr) {
@@ -231,10 +233,28 @@ public:
     }
   }
 
+  uint8_t readPin(uint8_t pinnr) {
+    uint8_t value=0;
+#ifdef MODE_POLL
+    pinMode(pinnr,INPUT_PULLUP);
+    value = digitalRead(pinnr);
+    pinMode(pinnr,OUTPUT);
+    digitalWrite(pinnr,LOW);
+#else
+    value = digitalRead(pinnr);
+#endif
+    return value;
+  }
+
   void trigger (__attribute__ ((unused)) AlarmClock& clock)  {
+#ifdef MODE_POLL
+    set(seconds2ticks(1));
+    clock.add(*this);
+#else
     if( isr == true ) {
+#endif
       uint8_t newstate = state;
-      uint8_t pinstate = digitalRead(SENS2_PIN) << 1 | digitalRead(SENS1_PIN);
+      uint8_t pinstate = readPin(SENS2_PIN) << 1 | readPin(SENS1_PIN);
       uint8_t pos = posmap[pinstate & 0x03];
       uint8_t msg = NO_MSG;
       switch( pos ) {
@@ -262,13 +282,16 @@ public:
         this->device().sendPeerEvent(msg,*this);
       }
 
-      bool sab = digitalRead(SABOTAGE_PIN) == LOW;
+      bool sab = readPin(SABOTAGE_PIN) == LOW;
       if( sabotage != sab && ((const RHSList0&)this->device().getList0()).sabotageMsg() == true ) {
         sabotage = sab;
         this->changed(true); // trigger StatusInfoMessage to central
       }
+#ifdef MODE_POLL
+#else
       isr = false;
     }
+#endif
   }
 };
 
@@ -314,11 +337,17 @@ void setup () {
   DINIT(57600,ASKSIN_PLUS_PLUS_IDENTIFIER);
   sdev.init(hal);
   buttonISR(cfgBtn,CONFIG_BUTTON_PIN);
+#ifdef MODE_POLL
+  // start polling
+  sdev.channel(1).set(millis2ticks(100));
+  sysclock.add(sdev.channel(1));
+#else
   channelISR(sdev.channel(1),SENS1_PIN,INPUT_PULLUP,CHANGE);
   channelISR(sdev.channel(1),SENS2_PIN,INPUT_PULLUP,CHANGE);
   channelISR(sdev.channel(1),SABOTAGE_PIN,INPUT_PULLUP,CHANGE);
   // trigger first send of state
   sdev.channel(1).handleISR();
+#endif
 }
 
 void loop() {
