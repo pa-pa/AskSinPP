@@ -73,21 +73,12 @@ uint8_t SwitchPin (uint8_t number) {
   return RELAY1_PIN;
 }
 
-// if A0 and A1 connected
-// we use LOW for ON and HIGH for OFF
-bool checkLowActive () {
-  pinMode(14,OUTPUT); // A0
-  pinMode(15,INPUT);  // A1
-  digitalWrite(15,HIGH);
-  digitalWrite(14,LOW);
-  return digitalRead(15) == LOW;
-}
-
 void setup () {
   DINIT(57600,ASKSIN_PLUS_PLUS_IDENTIFIER);
   sdev.init(hal);
 
-  bool low = checkLowActive();
+  bool low = sdev.getConfigByte(0x00) != 0;
+  DPRINT("Invert ");low ? DPRINTLN("active") : DPRINTLN("disabled");
   for( uint8_t i=1; i<=sdev.channels(); ++i ) {
     sdev.channel(i).lowactive(low);
   }

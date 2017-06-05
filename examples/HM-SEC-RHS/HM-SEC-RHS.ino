@@ -6,6 +6,13 @@
 // define this to read the device id, serial and device type from bootloader section
 // #define USE_OTA_BOOTLOADER
 
+#define CFG_STEPUP_BYTE 0x00
+#define CFG_STEPUP_OFF  0x00
+#define CFG_STEPUP_ON   0x01
+
+#define CFG_BAT_LOW_BYTE 0x01
+#define CFG_BAT_CRITICAL_BYTE 0x02
+
 // define all device properties
 #define DEVICE_ID HMID(0x09,0x56,0x34)
 #define DEVICE_SERIAL "papa222111"
@@ -13,7 +20,7 @@
 #define DEVICE_FIRMWARE 0x18
 #define DEVICE_TYPE DeviceType::ThreeStateSensor
 #define DEVICE_INFO 0x01,0x01,0x00
-#define DEVICE_CONFIG
+#define DEVICE_CONFIG CFG_STEPUP_OFF,22,19
 
 #define MODE_POLL
 
@@ -35,7 +42,6 @@
 // B0 == PIN 8 on Pro Mini
 #define CONFIG_BUTTON_PIN 8
 
-
 #define SENS1_PIN 14
 #define SENS2_PIN 15
 #define SABOTAGE_PIN 16
@@ -46,14 +52,33 @@
 // all library classes are placed in the namespace 'as'
 using namespace as;
 
+class BatSensor : public BatterySensorUni<3000> {
+  bool m_Extern;
+public:
+  // sense pin = A3 = 17, activation pin = D7 = 7
+  BatSensor () : BatterySensorUni(17,7), m_Extern(false) {}
+  virtual ~BatSensor () {}
+
+  void hasStepUp (bool value) {
+    m_Extern = value;
+    voltage();
+  }
+
+  virtual uint8_t voltage () {
+    if( m_Extern == true ) {
+      return BatterySensorUni<3000>::voltage();
+    }
+    return BatterySensor::voltage();
+  }
+};
+
 /**
  * Configure the used hardware
  */
 typedef AvrSPI<10,11,12,13> SPIType;
 typedef Radio<SPIType,2> RadioType;
 typedef DualStatusLed<LED2_PIN,LED1_PIN> LedType;
-typedef BatterySensor<22,19> BatteryType;
-typedef AskSin<LedType,BatteryType,RadioType> BaseHal;
+typedef AskSin<LedType,BatSensor,RadioType> BaseHal;
 class Hal : public BaseHal {
 public:
   void init () {
@@ -317,7 +342,7 @@ public:
 
   virtual void configChanged () {
     // activate cycle info message
-    if( DevType::getList0().cycleInfoMsg() == true ) {
+    if( this->getList0().cycleInfoMsg() == true ) {
       DPRINTLN("Activate Cycle Msg");
       sysclock.cancel(cycle);
       cycle.set(CYCLETIME);
@@ -327,6 +352,15 @@ public:
       DPRINTLN("Deactivate Cycle Msg");
       sysclock.cancel(cycle);
     }
+    // set battery low/critical values
+    battery().low(getConfigByte(CFG_BAT_LOW_BYTE));
+    battery().critical(getConfigByte(CFG_BAT_CRITICAL_BYTE));
+    // set the battery mode
+    if( getConfigByte(CFG_STEPUP_BYTE) == CFG_STEPUP_ON ) {
+      DPRINTLN("Use StepUp");
+      battery().hasStepUp(true);
+    }
+
   }
 };
 

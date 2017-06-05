@@ -52,8 +52,7 @@ using namespace as;
 typedef LibSPI<10> SPIType;
 typedef Radio<SPIType,2> RadioType;
 typedef DualStatusLed<5,4> LedType;
-typedef BatterySensor<22,19> BatteryType;
-typedef AskSin<LedType,BatteryType,RadioType> HalType;
+typedef AskSin<LedType,BatterySensor,RadioType> HalType;
 class Hal : public HalType {
   // extra clock to count button press events
   AlarmClock btncounter;
@@ -62,6 +61,8 @@ public:
     HalType::init();
     // get new battery value after 50 key press
     battery.init(50,btncounter);
+    battery.low(22);
+    battery.critical(19);
   }
 
   void sendPeer () {

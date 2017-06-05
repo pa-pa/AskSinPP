@@ -44,14 +44,15 @@ using namespace as;
 typedef AvrSPI<10,11,12,13> SPIType;
 typedef Radio<SPIType,2> RadioType;
 typedef StatusLed<4> LedType;
-typedef BatterySensor<22,19> BatteryType;
-typedef AskSin<LedType,BatteryType,RadioType> BaseHal;
+typedef AskSin<LedType,BatterySensor,RadioType> BaseHal;
 class Hal : public BaseHal {
 public:
   void init () {
     BaseHal::init();
     // measure battery every 1h
     battery.init(seconds2ticks(60UL*60),sysclock);
+    battery.low(22);
+    battery.critical(19);
   }
 } hal;
 

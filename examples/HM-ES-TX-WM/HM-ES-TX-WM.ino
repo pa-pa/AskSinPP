@@ -47,8 +47,7 @@ using namespace as;
 typedef AvrSPI<10,11,12,13> SPIType;
 typedef Radio<SPIType,2> RadioType;
 typedef StatusLed<4> LedType;
-typedef BatterySensor<22,19> BatteryType;
-typedef AskSin<LedType,BatteryType,RadioType> HalType;
+typedef AskSin<LedType,BatterySensor,RadioType> HalType;
 
 class MeterList0Data : public List0Data {
   uint8_t LocalResetDisbale : 1;   // 0x18 - 24
@@ -389,9 +388,11 @@ void setup () {
 
   buttonISR(cfgBtn,CONFIG_BUTTON_PIN);
 
-  // set low voltage to 2.2V
   // measure battery every 1h
   hal.battery.init(seconds2ticks(60UL*60),sysclock);
+  // set low voltage to 2.2V
+  hal.battery.low(22);
+  hal.battery.critical(19);
 
   gasISR.attach();
   // add channel 1 to timer to send event
