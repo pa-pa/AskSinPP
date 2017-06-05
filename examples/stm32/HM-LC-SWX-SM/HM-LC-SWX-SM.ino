@@ -6,18 +6,23 @@
 // define this to read the device id, serial and device type from bootloader section
 // #define USE_OTA_BOOTLOADER
 
-// number of relays - possible values 1,2,4
-// will map to HM-LC-SW1-SM, HM-LC-SW2-SM, HM-LC-SW4-SM
-#define RELAY_COUNT 4
+// number of relays by defining the device
+#define HM_LC_SW1_SM 0x00,0x02
+#define HM_LC_SW2_SM 0x00,0x0a
+#define HM_LC_SW4_SM 0x00,0x03
+
+#define CFG_LOWACTIVE_BYTE 0x00
+#define CFG_LOWACTIVE_ON   0x01
+#define CFG_LOWACTIVE_OFF  0x00
 
 // define all device properties
 #define DEVICE_ID HMID(0x12,0x34,0x56)
 #define DEVICE_SERIAL "papa000000"
-//#define DEVICE_MODEL  0x00,(REALY_COUNT==2 ? 0x0a : (REALY_COUNT==4 ? 0x03 : 0x02))
-#define DEVICE_MODEL  0x00,0x03
+#define DEVICE_MODEL  HM_LC_SW4_SM
 #define DEVICE_FIRMWARE 0x16
 #define DEVICE_TYPE DeviceType::Switch
 #define DEVICE_INFO 0x04,0x01,0x00
+#define DEVICE_CONFIG CFG_LOWACTIVE_OFF
 
 #include <SPI.h>    // when we include SPI.h - we can use LibSPI class
 #include <EEPROM.h> // the EEPROM library contains Flash Access Methods
@@ -65,7 +70,7 @@ uint8_t SwitchPin (uint8_t number) {
 }
 
 // setup the device with channel type and number of channels
-typedef MultiChannelDevice<Hal,SwitchChannel<Hal,PEERS_PER_CHANNEL>,RELAY_COUNT> SwitchDevice;
+typedef MultiChannelDevice<Hal,SwitchChannel<Hal,PEERS_PER_CHANNEL>,4> SwitchDevice;
 SwitchDevice sdev(0x20);
 
 ConfigToggleButton<SwitchDevice,LOW,HIGH,INPUT_PULLDOWN> cfgBtn(sdev);
@@ -75,8 +80,10 @@ void setup () {
   sdev.init(hal);
 
   // this will also trigger powerUpAction handling
+  bool low = sdev.getConfigByte(CFG_LOWACTIVE_BYTE);
+  DPRINT("Invert ");low ? DPRINTLN("active") : DPRINTLN("disabled");
   for( uint8_t i=1; i<=sdev.channels(); ++i ) {
-    sdev.channel(i).lowactive(false);
+    sdev.channel(i).lowactive(low);
   }
 
   buttonISR(cfgBtn,CONFIG_BUTTON_PIN);
