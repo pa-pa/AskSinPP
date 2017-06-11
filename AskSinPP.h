@@ -6,9 +6,9 @@
 #ifndef __ASKSINPP_h__
 #define __ASKSINPP_h__
 
-#define ASKSIN_PLUS_PLUS_VERSION "1.0.5"
+#define ASKSIN_PLUS_PLUS_VERSION "1.0.6"
 
-#define ASKSIN_PLUS_PLUS_IDENTIFIER F("AskSin++ V" ASKSIN_PLUS_PLUS_VERSION)
+#define ASKSIN_PLUS_PLUS_IDENTIFIER F("AskSin++ V" ASKSIN_PLUS_PLUS_VERSION " (" __DATE__ " " __TIME__ ")")
 
 #ifdef ARDUINO_ARCH_STM32F1
   #define _delay_us(us) delayMicroseconds(us)
