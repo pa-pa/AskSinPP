@@ -129,15 +129,15 @@ public:
 /**
  * Measure battery voltage as used on the universal sensor board.
  */
-template <uint16_t VCC=3300>
+template <uint8_t SENSPIN,uint8_t ACTIVATIONPIN,uint16_t VCC=3300>
 class BatterySensorUni : public BatterySensor {
   uint8_t  m_SensePin; // A1
   uint8_t  m_ActivationPin; // D7
   uint8_t  m_Factor; // 57 = 470k + 100k / 10
 public:
 
-  BatterySensorUni (uint8_t sens,uint8_t activation) : BatterySensor (),
-  m_SensePin(sens), m_ActivationPin(activation), m_Factor(57) {}
+  BatterySensorUni () : BatterySensor (),
+  m_SensePin(SENSPIN), m_ActivationPin(ACTIVATIONPIN), m_Factor(57) {}
   virtual ~BatterySensorUni () {}
 
   void init(uint32_t period,AlarmClock& clock,uint8_t factor=57) {

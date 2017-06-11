@@ -34,7 +34,7 @@ public:
 
   typedef Device<HalType> DeviceType;
 
-  ChannelDevice (uint16_t addr) : Device<HalType>(addr,list0), list0(addr + DeviceType::keystore().size()), numChannels(ChannelCount), cfgChannel(0xff) {}
+  ChannelDevice (uint16_t addr) : Device<HalType>(addr,list0), list0(addr + this->keystore().size()), numChannels(ChannelCount), cfgChannel(0xff) {}
 
   virtual ~ChannelDevice () {}
 
@@ -54,7 +54,7 @@ public:
 
   void dumpSize () {
     ChannelType& ch = channel(channels());
-    DPRINT("Address Space: ");DDEC(DeviceType::keystore().address());DPRINT(" - ");DDECLN((uint16_t)(ch.address() + ch.size()));
+    DPRINT("Address Space: ");DDEC(this->keystore().address());DPRINT(" - ");DDECLN((uint16_t)(ch.address() + ch.size()));
   }
 
   uint16_t checksum () {
@@ -93,6 +93,12 @@ public:
     return list0;
   }
 
+  void getDeviceInfo (uint8_t* info) {
+    DeviceType::getDeviceInfo(info);
+    // patch real channel count into device info
+    *info = channels();
+  }
+
   void channels (uint8_t num) {
     numChannels = min(num,ChannelCount);
   }
@@ -113,14 +119,14 @@ public:
       firstinit();
       storage.store();
     }
-    DeviceType::keystore().init();
-    DeviceType::setHal(hal);
+    this->keystore().init();
+    this->setHal(hal);
     hal.init();
     this->configChanged();
   }
 
   void firstinit () {
-    DeviceType::keystore().defaults(); // init aes key infrastructure
+    this->keystore().defaults(); // init aes key infrastructure
     list0.defaults();
     for( uint8_t i=0; i<channels(); ++i ) {
       devchannels[i]->firstinit();
@@ -142,9 +148,9 @@ public:
   }
 
   void startPairing () {
-    DeviceType::sendDeviceInfo();
-    DeviceType::led().set(LedStates::pairing);
-    DeviceType::activity().stayAwake( seconds2ticks(20) ); // 20 seconds
+    this->sendDeviceInfo();
+    this->led().set(LedStates::pairing);
+    this->activity().stayAwake( seconds2ticks(20) ); // 20 seconds
   }
 
   ChannelType& channel(uint8_t ch) {
@@ -156,24 +162,38 @@ public:
     for( uint8_t i=1; i<=channels(); ++i ) {
       ChannelType& ch = channel(i);
       if( ch.changed() == true ) {
-        DeviceType::sendInfoActuatorStatus(DeviceType::getMasterID(),DeviceType::nextcount(),ch);
+        this->sendInfoActuatorStatus(this->getMasterID(),this->nextcount(),ch);
         worked = true;
       }
     }
     return worked;
   }
 
+  bool aesActive () {
+    if( getList0().aesActive() == true ) {
+      return true;
+    }
+    for( uint8_t i=1; i<=channels(); ++i) {
+      if( channel(i).aesActive() == true ) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   bool validSignature(Message& msg) {
 #ifdef USE_AES
-    return DeviceType::requestSignature(msg);
+    if( aesActive() == true ) {
+      return this->requestSignature(msg);
+    }
 #endif
     return true;
   }
 
   bool validSignature(uint8_t ch,Message& msg) {
 #ifdef USE_AES
-    if( ch==0 || (hasChannel(ch)==true && channel(ch).aesActive()==true) ) {
-      return validSignature(msg);
+    if( (ch==0 && aesActive()) || (hasChannel(ch)==true && channel(ch).aesActive()==true) ) {
+      return this->requestSignature(msg);
     }
 #endif
     return true;
@@ -181,14 +201,14 @@ public:
 
    void process(Message& msg) {
      HMID devid;
-     DeviceType::getDeviceID(devid);
-     if( msg.to() == devid || (msg.to() == HMID::boardcast && DeviceType::isBoardcastMsg(msg))) {
+     this->getDeviceID(devid);
+     if( msg.to() == devid || (msg.to() == HMID::boardcast && this->isBoardcastMsg(msg))) {
        DPRINT(F("-> "));
        msg.dump();
        // ignore repeated messages
-       if( DeviceType::isRepeat(msg) == true ) {
+       if( this->isRepeat(msg) == true ) {
          if( msg.ackRequired() == true ) {
-           DeviceType::sendNack(msg);
+           this->sendNack(msg);
          }
          return;
        }
@@ -196,12 +216,12 @@ public:
        uint8_t mcomm = msg.command();
        uint8_t msubc = msg.subcommand();
        if( mtype == AS_MESSAGE_CONFIG ) {
-         DeviceType::activity().stayAwake(millis2ticks(500));
+         this->activity().stayAwake(millis2ticks(500));
          // PAIR_SERIAL
-         if( msubc == AS_CONFIG_PAIR_SERIAL && DeviceType::isDeviceSerial(msg.data())==true ) {
-           DeviceType::led().set(LedStates::pairing);
-           DeviceType::activity().stayAwake( seconds2ticks(20) ); // 20 seconds
-           DeviceType::sendDeviceInfo(DeviceType::getMasterID(),msg.length());
+         if( msubc == AS_CONFIG_PAIR_SERIAL && this->isDeviceSerial(msg.data())==true ) {
+           this->led().set(LedStates::pairing);
+           this->activity().stayAwake( seconds2ticks(20) ); // 20 seconds
+           this->sendDeviceInfo(this->getMasterID(),msg.length());
          }
          // CONFIG_PEER_ADD
          else if ( msubc == AS_CONFIG_PEER_ADD ) {
@@ -220,10 +240,10 @@ public:
            }
            if( success == true ) {
              storage.store();
-             DeviceType::sendAck(msg);
+             this->sendAck(msg);
            }
            else {
-             DeviceType::sendNack(msg);
+             this->sendNack(msg);
            }
          }
          // CONFIG_PEER_REMOVE
@@ -241,17 +261,17 @@ public:
            }
            if( success == true ) {
              storage.store();
-             DeviceType::sendAck(msg);
+             this->sendAck(msg);
            }
            else {
-             DeviceType::sendNack(msg);
+             this->sendNack(msg);
            }
          }
          // CONFIG_PEER_LIST_REQ
          else if( msubc == AS_CONFIG_PEER_LIST_REQ ) {
            const ConfigPeerListReqMsg& pm = msg.configPeerListReq();
            if( hasChannel(pm.channel()) == true ) {
-             DeviceType::sendInfoPeerList(msg.from(),msg.count(),channel(pm.channel()));
+             this->sendInfoPeerList(msg.from(),msg.count(),channel(pm.channel()));
            }
          }
          // CONFIG_PARAM_REQ
@@ -259,13 +279,13 @@ public:
            const ConfigParamReqMsg& pm = msg.configParamReq();
            GenericList gl = findList(pm.channel(),pm.peer(),pm.list());
            if( gl.valid() == true ) {
-             DeviceType::sendInfoParamResponsePairs(msg.from(),msg.count(),gl);
+             this->sendInfoParamResponsePairs(msg.from(),msg.count(),gl);
            }
          }
          // CONFIG_STATUS_REQUEST
          else if (msubc == AS_CONFIG_STATUS_REQUEST ) {
            // this is an answer to a reuqest - so we need no ack
-           DeviceType::sendInfoActuatorStatus(msg.from(),msg.count(),channel(msg.command()),false);
+           this->sendInfoActuatorStatus(msg.from(),msg.count(),channel(msg.command()),false);
          }
          // CONFIG_START
          else if( msubc == AS_CONFIG_START ) {
@@ -274,16 +294,16 @@ public:
              cfgChannel = pm.channel();
              cfgList = findList(cfgChannel,pm.peer(),pm.list());
              // TODO setup alarm to disable after 2000ms
-             DeviceType::sendAck(msg,Message::CFG);
+             this->sendAck(msg,Message::CFG);
            }
            else {
-             DeviceType::sendNack(msg);
+             this->sendNack(msg);
            }
          }
          // CONFIG_END
          else if( msubc == AS_CONFIG_END ) {
            if( cfgList.address() == list0.address() ) {
-             DeviceType::led().set(LedStates::nothing);
+             this->led().set(LedStates::nothing);
              this->configChanged();
            }
            else {
@@ -293,35 +313,35 @@ public:
            cfgChannel = 0xff;
            storage.store();
            // TODO cancel alarm
-           DeviceType::sendAck(msg,Message::WKMEUP);
+           this->sendAck(msg,Message::WKMEUP);
          }
          else if( msubc == AS_CONFIG_WRITE_INDEX ) {
            const ConfigWriteIndexMsg& pm = msg.configWriteIndex();
            if( validSignature(pm.channel(),msg)==true ) {
              if( cfgChannel == pm.channel() && cfgList.valid() == true ) {
-               DeviceType::writeList(cfgList,pm.data(),pm.datasize());
+               this->writeList(cfgList,pm.data(),pm.datasize());
              }
-             DeviceType::sendAck(msg,Message::CFG);
+             this->sendAck(msg,Message::CFG);
            }
            else {
-             DeviceType::sendNack(msg);
+             this->sendNack(msg);
            }
-           DeviceType::activity().stayAwake(millis2ticks(500));
+           this->activity().stayAwake(millis2ticks(500));
          }
          else if( msubc == AS_CONFIG_SERIAL_REQ ) {
-           DeviceType::sendSerialInfo(msg.from(),msg.count());
+           this->sendSerialInfo(msg.from(),msg.count());
          }
          // default - send Nack if answer is requested
          else {
            if( msg.ackRequired() == true ) {
-             DeviceType::sendNack(msg);
+             this->sendNack(msg);
            }
          }
        }
        else if( mtype == AS_MESSAGE_ACTION ) {
          if ( mcomm == AS_ACTION_RESET || mcomm == AS_ACTION_ENTER_BOOTLOADER ) {
            if( validSignature(msg) == true ) {
-             DeviceType::sendAck(msg);
+             this->sendAck(msg);
              if( mcomm == AS_ACTION_ENTER_BOOTLOADER ) {
                bootloader();
              }
@@ -352,15 +372,15 @@ public:
                  break;
                }
              }
-             if( ack == true ) DeviceType::sendAck(msg,ch);
+             if( ack == true ) this->sendAck(msg,ch);
            }
-           if( ack==false)  DeviceType::sendNack(msg);
+           if( ack==false) this->sendNack(msg);
          }
        }
        else if( mtype == AS_MESSAGE_HAVE_DATA ) {
          DPRINTLN(F("HAVE DATA"));
-         DeviceType::activity().stayAwake(millis2ticks(500));
-         DeviceType::sendAck(msg);
+         this->activity().stayAwake(millis2ticks(500));
+         this->sendAck(msg);
        }
        else if (mtype == AS_MESSAGE_REMOTE_EVENT || mtype == AS_MESSAGE_SENSOR_EVENT) {
          const RemoteEventMsg& pm = msg.remoteEvent();
@@ -387,15 +407,15 @@ public:
 #ifdef USE_AES
        else if (mtype == AS_MESSAGE_KEY_EXCHANGE ) {
          if( validSignature(msg) == true ) {
-           if( DeviceType::keystore().exchange(msg.aesExchange())==true ) DeviceType::sendAck(msg);
-           else DeviceType::sendNack(msg);
+           if( this->keystore().exchange(msg.aesExchange())==true ) this->sendAck(msg);
+           else this->sendNack(msg);
          }
        }
 #endif
        // default - send Nack if answer is requested
        else {
          if( msg.ackRequired() == true ) {
-           DeviceType::sendNack(msg);
+           this->sendNack(msg);
          }
        }
      }
@@ -453,7 +473,7 @@ public:
 
   MultiChannelDevice (uint16_t addr) : ChannelDevice<HalType,ChannelType,ChannelCount,List0Type>(addr) {
     for( uint8_t i=0; i<ChannelCount; ++i ) {
-      DeviceType::registerChannel(cdata[i], i+1);
+      this->registerChannel(cdata[i], i+1);
     }
   }
 

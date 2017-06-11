@@ -98,6 +98,7 @@ public:
   // from List0
   HMID masterid () { return ((List0*)this)->masterid(); }
   void masterid (const HMID& mid) { ((List0*)this)->masterid(mid); }
+  bool aesActive() const { return ((List0*)this)->aesActive(); }
 
   bool cycleInfoMsg () const { return getByte(sizeof(List0Data) + 0); }
   bool cycleInfoMsg (bool value) const { return setByte(sizeof(List0Data) + 0,value); }

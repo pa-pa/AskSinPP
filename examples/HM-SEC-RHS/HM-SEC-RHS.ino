@@ -52,11 +52,11 @@
 // all library classes are placed in the namespace 'as'
 using namespace as;
 
-class BatSensor : public BatterySensorUni<3000> {
+class BatSensor : public BatterySensorUni<17,7,3000> {
   bool m_Extern;
 public:
   // sense pin = A3 = 17, activation pin = D7 = 7
-  BatSensor () : BatterySensorUni(17,7), m_Extern(false) {}
+  BatSensor () : BatterySensorUni(), m_Extern(false) {}
   virtual ~BatSensor () {}
 
   void hasStepUp (bool value) {
@@ -66,7 +66,7 @@ public:
 
   virtual uint8_t voltage () {
     if( m_Extern == true ) {
-      return BatterySensorUni<3000>::voltage();
+      return BatterySensorUni<17,7,3000>::voltage();
     }
     return BatterySensor::voltage();
   }
@@ -125,6 +125,7 @@ public:
   // from List0
   HMID masterid () { return ((List0*)this)->masterid(); }
   void masterid (const HMID& mid) { ((List0*)this)->masterid(mid); }
+  bool aesActive() const { return ((List0*)this)->aesActive(); }
 
   bool cycleInfoMsg () const { return getByte(sizeof(List0Data) + 0); }
   bool cycleInfoMsg (bool value) const { return setByte(sizeof(List0Data) + 0,value); }
