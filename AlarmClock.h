@@ -130,9 +130,11 @@ public:
     //Enable asynchronous mode
     ASSR  = (1<<AS2);
     //set initial counter value
-    TCNT2=0;
+    TCNT2 = 0;
+    // mode normal
+    TCCR2A = 0;
     //set prescaller 128
-    TCCR2B = (1<<CS22)|(1<<CS00);
+    TCCR2B = (1<<CS22)|(1<<CS20);
     //wait for registers update
     while (ASSR & ((1<<TCN2UB)|(1<<TCR2BUB)));
     //clear interrupt flags
