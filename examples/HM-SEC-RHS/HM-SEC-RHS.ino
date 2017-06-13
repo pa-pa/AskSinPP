@@ -225,7 +225,7 @@ template <class HALTYPE,int PEERCOUNT>
 class RHSChannel : public Channel<HALTYPE,RHSList1,EmptyList,List4,PEERCOUNT>, public Alarm {
   // pin mapping can be changed by bootloader config data
   // map pins to pos     00   01   10   11
-  uint8_t posmap[4] = {PosA,PosC,PosB,PosA};
+  uint8_t posmap[4] = {PosB,PosC,PosA,PosB};
   volatile bool isr;
   uint8_t state, count;
   bool sabotage;
