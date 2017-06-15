@@ -21,6 +21,7 @@
 
 #include <MultiChannelDevice.h>
 
+#include <Sensirion.h>
 
 // we use a Pro Mini
 // Arduino pin for the LED
@@ -49,10 +50,16 @@ class Hal : public BaseHal {
 public:
   void init () {
     BaseHal::init();
+    // init real time clock - 1 tick per second
+    rtc.init();
     // measure battery every 1h
-    battery.init(seconds2ticks(60UL*60),sysclock);
+    battery.init(60UL*60,rtc);
     battery.low(22);
     battery.critical(19);
+  }
+
+  bool runready () {
+    return rtc.runready() || BaseHal::runready();
   }
 } hal;
 
@@ -64,7 +71,7 @@ public:
     if( batlow == true ) {
       t1 |= 0x80; // set bat low bit
     }
-    Message::init(0xc,msgcnt,0x70,Message::BIDI,t1,t2);
+    Message::init(0xc,msgcnt,0x70,BIDI|WKMEUP,t1,t2);
     pload[0] = humidity;
   }
 };
@@ -72,44 +79,71 @@ public:
 class WeatherChannel : public Channel<Hal,List1,EmptyList,List4,PEERS_PER_CHANNEL>, public Alarm {
 
   WeatherEventMsg msg;
-  uint8_t         msgcnt;
   int16_t         temp;
   uint8_t         humidity;
 
+  Sensirion       sht10;
+  uint16_t        millis;
+
 public:
-  WeatherChannel () : Channel(), Alarm(5), msgcnt(0), temp(0), humidity(50) {}
+  WeatherChannel () : Channel(), Alarm(5), temp(0), humidity(0), millis(0) {}
   virtual ~WeatherChannel () {}
 
-  virtual void trigger (AlarmClock& clock) {
-    // reactivate for next measure
-    tick = delay();
-    clock.add(*this);
-    DPRINT("Measure...\n");
-    measure();
+  virtual void trigger (__attribute__ ((unused)) AlarmClock& clock) {
+    // wait also for the millis
+    if( millis != 0 ) {
+      tick = millis2ticks(millis);
+      millis = 0; // reset millis
+      async(false);
+      sysclock.add(*this); // millis with sysclock
+    }
+    else {
+      // reactivate for next measure
+      HMID id;
+      device().getDeviceID(id);
+      uint8_t msgcnt = device().nextcount();
+      uint32_t nextsend = delay(id,msgcnt);
+      tick = nextsend / 1000; // seconds to wait
+      millis = nextsend % 1000; // millis to wait
+      async(millis != 0);
+      rtc.add(*this); // we wait first for the seconds with rtc
 
-    msg.init(msgcnt,temp,humidity,false);
-    device().sendPeerEvent(msg,*this);
+      measure();
+      msg.init(msgcnt,temp,humidity,false);
+      device().sendPeerEvent(msg,*this);
+    }
   }
 
   // here we do the measurement
   void measure () {
-    static int16_t tdx = -7;
-    static int8_t  hdx = 1;
-    temp += tdx;
-    humidity += hdx;
-    if( temp >= 40*10 || temp <= -15*10 ) tdx = -tdx;
-    if( humidity == 99 || humidity == 5) hdx = -hdx;
+    DPRINT("Measure...\n");
+    uint16_t rawData;
+    if ( sht10.measTemp(&rawData)== 0) {
+      float t = sht10.calcTemp(rawData);
+      temp = t * 10;
+      if( sht10.measHumi(&rawData)== 0 ) {
+        humidity = sht10.calcHumi(rawData, t);
+      }
+    }
   }
 
   // here we calc when to send next value
-  uint32_t delay () {
-    // for testing we use delay of 5sec
-    return seconds2ticks(5);
+  uint32_t delay (const HMID& id,uint8_t msgcnt) {
+    uint32_t value = ((uint32_t)id) << 8 | msgcnt;
+    value = (value * 1103515245 + 12345) >> 16;
+    value = (value & 0xFF) + 480;
+    value *= 250; // * 250ms
+
+    DDEC(value / 1000);DPRINT(".");DDECLN(value % 1000);
+
+    return value;
   }
 
   void setup(Device<Hal>* dev,uint8_t number,uint16_t addr) {
     Channel::setup(dev,number,addr);
-    sysclock.add(*this);
+    rtc.add(*this);
+    sht10.config(A4,A5);
+    sht10.writeSR(LOW_RES);
   }
 
   uint8_t status () const {
@@ -138,6 +172,6 @@ void loop() {
   bool worked = hal.runready();
   bool poll = sdev.pollRadio();
   if( worked == false && poll == false ) {
-    hal.activity.savePower<Sleep<>>(hal);
+    hal.activity.savePower<Sleep<true>>(hal);
   }
 }
