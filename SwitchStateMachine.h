@@ -23,7 +23,7 @@ class SwitchStateMachine {
   public:
     StateAlarm(SwitchStateMachine& m) : Alarm(0), sm(m), lst(0) {}
     void list(SwitchPeerList l) {lst=l;}
-    virtual void trigger (AlarmClock& clock) {
+    virtual void trigger (__attribute__((unused)) AlarmClock& clock) {
       uint8_t next = sm.getNextState();
       uint32_t dly = sm.getDelayForState(next,lst);
       sm.setState(next,dly,lst);
@@ -110,7 +110,7 @@ public:
     return DELAY_NO;
   }
 
-  bool delayActive () const { return aclock.get(alarm) > 0; }
+  bool delayActive () const { return sysclock.get(alarm) > 0; }
 
   // get timer count in ticks
   static uint32_t byteTimeCvt(uint8_t tTime) {

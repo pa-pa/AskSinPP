@@ -12,33 +12,50 @@
 #include <Led.h>
 #include <Activity.h>
 
+#ifdef ARDUINO_ARCH_AVR
 #include <avr/wdt.h>
+#endif
 
 namespace as {
 
 void(* resetFunc) (void) = 0;
 
-template <class HalType,class ChannelType,int ChannelCount,class List0Type=List0>
-class MultiChannelDevice : public Device<HalType> {
 
-  List0Type   list0;
-  ChannelType devchannels[ChannelCount];
-  uint8_t     numChannels;
-  uint8_t     cfgChannel;
-  GenericList cfgList;
+template <class HalType,class ChannelType,int ChannelCount,class List0Type=List0>
+class ChannelDevice : public Device<HalType> {
+
+  List0Type    list0;
+  ChannelType* devchannels[ChannelCount];
+  uint8_t      numChannels;
+  uint8_t      cfgChannel;
+  GenericList  cfgList;
 
 public:
 
   typedef Device<HalType> DeviceType;
 
-  MultiChannelDevice (uint16_t addr) : Device<HalType>(addr), list0(addr + DeviceType::keystore().size()), numChannels(ChannelCount), cfgChannel(0xff) {
-    addr = list0.address() + list0.size();
-    for( uint8_t i=0; i<channels(); ++i ) {
-      devchannels[i].setup(this,i+1,addr);
-      addr += devchannels[i].size();
+  ChannelDevice (uint16_t addr) : Device<HalType>(addr,list0), list0(addr + this->keystore().size()), numChannels(ChannelCount), cfgChannel(0xff) {}
+
+  virtual ~ChannelDevice () {}
+
+  void registerChannel(ChannelType& ch,uint8_t num) {
+    if( num >= 1 && num <= ChannelCount) {
+      devchannels[num-1] = &ch;
     }
   }
-  virtual ~MultiChannelDevice () {}
+
+  void layoutChannels () {
+    uint16_t addr = list0.address() + list0.size();
+    for( uint8_t i=0; i<channels(); ++i ) {
+      devchannels[i]->setup(this,i+1,addr);
+      addr += devchannels[i]->size();
+    }
+  }
+
+  void dumpSize () {
+    ChannelType& ch = channel(channels());
+    DPRINT("Address Space: ");DDEC(this->keystore().address());DPRINT(" - ");DDECLN((uint16_t)(ch.address() + ch.size()));
+  }
 
   uint16_t checksum () {
     uint16_t crc = 0;
@@ -49,22 +66,37 @@ public:
       crc = HalType::crc16(crc,list0.getRegister(i));
     }
     // add number of channels
-    crc = HalType::crc16(crc,ChannelCount);
-    // add register list 1
-    for( uint8_t i=0; i<ChannelType::List1::size(); ++i ) {
-      crc = HalType::crc16(crc,ChannelType::List1::getRegister(i));
+    for( uint8_t c=1; c<=channels(); ++c ) {
+      ChannelType& ch = channel(c);
+      // add register list 1
+      GenericList l = ch.getList1();
+      for( uint8_t i=0; i<l.getSize(); ++i ) {
+        crc = HalType::crc16(crc,l.getRegister(i));
+      }
+      // add register list 3
+      l = ch.getList3(0);
+      for( uint8_t i=0; i<l.getSize(); ++i ) {
+        crc = HalType::crc16(crc,l.getRegister(i));
+      }
+      // add register list 4
+      l = ch.getList4(0);
+      for( uint8_t i=0; i<l.getSize(); ++i ) {
+        crc = HalType::crc16(crc,l.getRegister(i));
+      }
+      // add number of peers
+      crc = HalType::crc16(crc,ch.peers());
     }
-    // add register list 3
-    for( uint8_t i=0; i<ChannelType::List3::size(); ++i ) {
-      crc = HalType::crc16(crc,ChannelType::List3::getRegister(i));
-    }
-    // add register list 4
-    for( uint8_t i=0; i<ChannelType::List4::size(); ++i ) {
-      crc = HalType::crc16(crc,ChannelType::List4::getRegister(i));
-    }
-    // add number of peers
-    crc = HalType::crc16(crc,channel(1).peers());
     return crc;
+  }
+
+  List0Type& getList0 () {
+    return list0;
+  }
+
+  void getDeviceInfo (uint8_t* info) {
+    DeviceType::getDeviceInfo(info);
+    // patch real channel count into device info
+    *info = channels();
   }
 
   void channels (uint8_t num) {
@@ -79,30 +111,25 @@ public:
     return number != 0 && number <= channels();
   }
 
-  void init (HalType& hal,const HMID& id,const char* serial) {
-    DeviceType::keystore().init();
-    // read master id from flash
-    DeviceType::setHal(hal);
-    DeviceType::setMasterID(list0.masterid());
-    DeviceType::setDeviceID(id);
-    DeviceType::setSerial(serial);
-  }
-
-  void init (HalType& hal,uint16_t idaddr, uint16_t serialaddr) {
-    DeviceType::keystore().init();
-    DeviceType::setHal(hal);
-    // read master id from flash
-    DeviceType::setMasterID(list0.masterid());
-    // read id & serial from bootloader
-    DeviceType::setDeviceID(idaddr);
-    DeviceType::setSerial(serialaddr);
+  void init (HalType& hal) {
+    layoutChannels();
+    dumpSize();
+    // first initialize EEProm if needed
+    if( storage.setup(checksum()) == true ) {
+      firstinit();
+      storage.store();
+    }
+    this->keystore().init();
+    this->setHal(hal);
+    hal.init();
+    this->configChanged();
   }
 
   void firstinit () {
-    DeviceType::keystore().defaults(); // init aes key infrastructure
+    this->keystore().defaults(); // init aes key infrastructure
     list0.defaults();
     for( uint8_t i=0; i<channels(); ++i ) {
-      devchannels[i].firstinit();
+      devchannels[i]->firstinit();
     }
   }
 
@@ -114,18 +141,20 @@ public:
 
   void bootloader () {
     DPRINTLN(F("BOOTLOADER"));
+#ifdef ARDUINO_ARCH_AVR
     wdt_enable(WDTO_250MS);
     while(1);
+#endif
   }
 
   void startPairing () {
-    DeviceType::sendDeviceInfo();
-    DeviceType::led().set(StatusLed::pairing);
-    DeviceType::activity().stayAwake( seconds2ticks(20) ); // 20 seconds
+    this->sendDeviceInfo();
+    this->led().set(LedStates::pairing);
+    this->activity().stayAwake( seconds2ticks(20) ); // 20 seconds
   }
 
   ChannelType& channel(uint8_t ch) {
-    return devchannels[ch-1];
+    return *devchannels[ch-1];
   }
 
   bool pollRadio () {
@@ -133,21 +162,53 @@ public:
     for( uint8_t i=1; i<=channels(); ++i ) {
       ChannelType& ch = channel(i);
       if( ch.changed() == true ) {
-        DeviceType::sendInfoActuatorStatus(DeviceType::getMasterID(),DeviceType::nextcount(),ch);
+        this->sendInfoActuatorStatus(this->getMasterID(),this->nextcount(),ch);
         worked = true;
       }
     }
     return worked;
   }
 
+  bool aesActive () {
+    if( getList0().aesActive() == true ) {
+      return true;
+    }
+    for( uint8_t i=1; i<=channels(); ++i) {
+      if( channel(i).aesActive() == true ) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  bool validSignature(Message& msg) {
+#ifdef USE_AES
+    if( aesActive() == true ) {
+      return this->requestSignature(msg);
+    }
+#endif
+    return true;
+  }
+
+  bool validSignature(uint8_t ch,Message& msg) {
+#ifdef USE_AES
+    if( (ch==0 && aesActive()) || (hasChannel(ch)==true && channel(ch).aesActive()==true) ) {
+      return this->requestSignature(msg);
+    }
+#endif
+    return true;
+  }
+
    void process(Message& msg) {
-     if( msg.to() == DeviceType::getDeviceID() || (msg.to() == HMID::boardcast && DeviceType::isBoardcastMsg(msg))) {
+     HMID devid;
+     this->getDeviceID(devid);
+     if( msg.to() == devid || (msg.to() == HMID::boardcast && this->isBoardcastMsg(msg))) {
        DPRINT(F("-> "));
        msg.dump();
        // ignore repeated messages
-       if( DeviceType::isRepeat(msg) == true ) {
+       if( this->isRepeat(msg) == true ) {
          if( msg.ackRequired() == true ) {
-           DeviceType::sendNack(msg);
+           this->sendNack(msg);
          }
          return;
        }
@@ -155,56 +216,62 @@ public:
        uint8_t mcomm = msg.command();
        uint8_t msubc = msg.subcommand();
        if( mtype == AS_MESSAGE_CONFIG ) {
-         DeviceType::activity().stayAwake(millis2ticks(500));
+         this->activity().stayAwake(millis2ticks(500));
          // PAIR_SERIAL
-         if( msubc == AS_CONFIG_PAIR_SERIAL && memcmp(msg.data(),DeviceType::getSerial(),10)==0 ) {
-           DeviceType::led().set(StatusLed::pairing);
-           DeviceType::activity().stayAwake( seconds2ticks(20) ); // 20 seconds
-           DeviceType::sendDeviceInfo(DeviceType::getMasterID(),msg.length());
+         if( msubc == AS_CONFIG_PAIR_SERIAL && this->isDeviceSerial(msg.data())==true ) {
+           this->led().set(LedStates::pairing);
+           this->activity().stayAwake( seconds2ticks(20) ); // 20 seconds
+           this->sendDeviceInfo(this->getMasterID(),msg.length());
          }
          // CONFIG_PEER_ADD
          else if ( msubc == AS_CONFIG_PEER_ADD ) {
            const ConfigPeerAddMsg& pm = msg.configPeerAdd();
            bool success = false;
            if( hasChannel(pm.channel()) == true ) {
-             ChannelType& ch = channel(pm.channel());
-#ifdef USE_AES
-             if( ch.getList1().aesActive() == false || DeviceType::requestSignature(msg) == true )
-#endif
-             {
+             if( validSignature(pm.channel(),msg) == true ) {
+               ChannelType& ch = channel(pm.channel());
                if( pm.peers() == 1 ) {
-                 success = DeviceType::addPeer(ch,pm.peer1());
+                 success = ch.peer(pm.peer1());
                }
                else {
-                 success = DeviceType::addPeer(ch,pm.peer1(),pm.peer2());
+                 success = ch.peer(pm.peer1(),pm.peer2());
                }
              }
            }
-           success == true ? DeviceType::sendAck(msg) : DeviceType::sendNack(msg);
+           if( success == true ) {
+             storage.store();
+             this->sendAck(msg);
+           }
+           else {
+             this->sendNack(msg);
+           }
          }
          // CONFIG_PEER_REMOVE
          else if ( msubc == AS_CONFIG_PEER_REMOVE ) {
            const ConfigPeerRemoveMsg& pm = msg.configPeerRemove();
            bool success = false;
            if( hasChannel(pm.channel()) == true ) {
-             ChannelType& ch = channel(pm.channel());
-#ifdef USE_AES
-             if( ch.getList1().aesActive() == false || DeviceType::requestSignature(msg) == true )
-#endif
-             {
+             if( validSignature(pm.channel(),msg) == true ) {
+               ChannelType& ch = channel(pm.channel());
                success = ch.deletepeer(pm.peer1());
                if( pm.peers() == 2 ) {
                  success &= ch.deletepeer(pm.peer2());
                }
              }
            }
-           success == true ? DeviceType::sendAck(msg) : DeviceType::sendNack(msg);
+           if( success == true ) {
+             storage.store();
+             this->sendAck(msg);
+           }
+           else {
+             this->sendNack(msg);
+           }
          }
          // CONFIG_PEER_LIST_REQ
          else if( msubc == AS_CONFIG_PEER_LIST_REQ ) {
            const ConfigPeerListReqMsg& pm = msg.configPeerListReq();
            if( hasChannel(pm.channel()) == true ) {
-             DeviceType::sendInfoPeerList(msg.from(),msg.count(),channel(pm.channel()));
+             this->sendInfoPeerList(msg.from(),msg.count(),channel(pm.channel()));
            }
          }
          // CONFIG_PARAM_REQ
@@ -212,78 +279,69 @@ public:
            const ConfigParamReqMsg& pm = msg.configParamReq();
            GenericList gl = findList(pm.channel(),pm.peer(),pm.list());
            if( gl.valid() == true ) {
-             DeviceType::sendInfoParamResponsePairs(msg.from(),msg.count(),gl);
+             this->sendInfoParamResponsePairs(msg.from(),msg.count(),gl);
            }
          }
          // CONFIG_STATUS_REQUEST
          else if (msubc == AS_CONFIG_STATUS_REQUEST ) {
-           DeviceType::sendInfoActuatorStatus(msg.from(),msg.count(),channel(msg.command()));
+           // this is an answer to a reuqest - so we need no ack
+           this->sendInfoActuatorStatus(msg.from(),msg.count(),channel(msg.command()),false);
          }
          // CONFIG_START
          else if( msubc == AS_CONFIG_START ) {
            const ConfigStartMsg& pm = msg.configStart();
-#ifdef USE_AES
-           ChannelType& ch = channel(pm.channel());
-           if( ch.getList1().aesActive() == true && DeviceType::requestSignature(msg) == false ) {
-             DeviceType::sendNack(msg);
-           }
-           else
-#endif
-           {
+           if( validSignature(pm.channel(),msg) == true ) {
              cfgChannel = pm.channel();
              cfgList = findList(cfgChannel,pm.peer(),pm.list());
              // TODO setup alarm to disable after 2000ms
-             DeviceType::sendAck(msg);
+             this->sendAck(msg,Message::CFG);
+           }
+           else {
+             this->sendNack(msg);
            }
          }
          // CONFIG_END
          else if( msubc == AS_CONFIG_END ) {
            if( cfgList.address() == list0.address() ) {
-             DeviceType::setMasterID(list0.masterid());
-             DeviceType::led().set(StatusLed::nothing);
+             this->led().set(LedStates::nothing);
+             this->configChanged();
            }
            else {
              // signal list update to channel
              channel(cfgChannel).configChanged();
            }
            cfgChannel = 0xff;
+           storage.store();
            // TODO cancel alarm
-           DeviceType::sendAck(msg);
+           this->sendAck(msg,Message::WKMEUP);
          }
          else if( msubc == AS_CONFIG_WRITE_INDEX ) {
            const ConfigWriteIndexMsg& pm = msg.configWriteIndex();
-#ifdef USE_AES
-           ChannelType& ch = channel(pm.channel());
-           if( ch.getList1().aesActive() == true && DeviceType::requestSignature(msg) == false ) {
-             DeviceType::sendNack(msg);
-           }
-           else
-#endif
-           {
+           if( validSignature(pm.channel(),msg)==true ) {
              if( cfgChannel == pm.channel() && cfgList.valid() == true ) {
-               DeviceType::writeList(cfgList,pm.data(),pm.datasize());
+               this->writeList(cfgList,pm.data(),pm.datasize());
              }
-             DeviceType::sendAck(msg);
+             this->sendAck(msg,Message::CFG);
            }
-           DeviceType::activity().stayAwake(millis2ticks(500));
+           else {
+             this->sendNack(msg);
+           }
+           this->activity().stayAwake(millis2ticks(500));
          }
          else if( msubc == AS_CONFIG_SERIAL_REQ ) {
-           DeviceType::sendSerialInfo(msg.from(),msg.count());
+           this->sendSerialInfo(msg.from(),msg.count());
          }
          // default - send Nack if answer is requested
          else {
            if( msg.ackRequired() == true ) {
-             DeviceType::sendNack(msg);
+             this->sendNack(msg);
            }
          }
        }
        else if( mtype == AS_MESSAGE_ACTION ) {
          if ( mcomm == AS_ACTION_RESET || mcomm == AS_ACTION_ENTER_BOOTLOADER ) {
-#ifdef USE_AES
-           if( DeviceType::requestSignature(msg) == true )
-#endif
-           {
-             DeviceType::sendAck(msg);
+           if( validSignature(msg) == true ) {
+             this->sendAck(msg);
              if( mcomm == AS_ACTION_ENTER_BOOTLOADER ) {
                bootloader();
              }
@@ -295,35 +353,34 @@ public:
          else {
            bool ack=false;
            const ActionMsg& pm = msg.action();
-           ChannelType& ch = channel(pm.channel());
-#ifdef USE_AES
-           if( ch.getList1().aesActive() == false || DeviceType::requestSignature(msg) == true )
-#endif
-           {
-             switch( mcomm ) {
-             case AS_ACTION_INHIBIT_OFF:
-               ch.inhibit(false);
-               ack = true;
-               break;
-             case AS_ACTION_INHIBIT_ON:
-               ch.inhibit(true);
-               ack = true;
-               break;
-             case AS_ACTION_SET:
-               if( ch.inhibit() == false ) {
-                 ack = ch.process(msg.actionSet());
+           if( hasChannel(pm.channel())==true ) {
+             ChannelType& ch = channel(pm.channel());
+             if( validSignature(pm.channel(),msg)==true ) {
+               switch( mcomm ) {
+               case AS_ACTION_INHIBIT_OFF:
+                 ch.inhibit(false);
+                 ack = true;
+                 break;
+               case AS_ACTION_INHIBIT_ON:
+                 ch.inhibit(true);
+                 ack = true;
+                 break;
+               case AS_ACTION_SET:
+                 if( ch.inhibit() == false ) {
+                   ack = ch.process(msg.actionSet());
+                 }
+                 break;
                }
-               break;
              }
+             if( ack == true ) this->sendAck(msg,ch);
            }
-           if( ack == true ) DeviceType::sendAck(msg,ch);
-           else DeviceType::sendNack(msg);
+           if( ack==false) this->sendNack(msg);
          }
        }
        else if( mtype == AS_MESSAGE_HAVE_DATA ) {
          DPRINTLN(F("HAVE DATA"));
-         DeviceType::activity().stayAwake(millis2ticks(500));
-         DeviceType::sendAck(msg);
+         this->activity().stayAwake(millis2ticks(500));
+         this->sendAck(msg);
        }
        else if (mtype == AS_MESSAGE_REMOTE_EVENT || mtype == AS_MESSAGE_SENSOR_EVENT) {
          const RemoteEventMsg& pm = msg.remoteEvent();
@@ -332,10 +389,7 @@ public:
          if( cdx != 0 ) {
            ChannelType& ch = channel(cdx);
            if( ch.inhibit() == false ) {
-#ifdef USE_AES
-             if( ch.getList1().aesActive() == false || DeviceType::requestSignature(msg) == true )
-#endif
-             {
+             if( validSignature(cdx,msg)==true ) {
                switch( mtype ) {
                case AS_MESSAGE_REMOTE_EVENT:
                  ack = ch.process(pm);
@@ -352,16 +406,16 @@ public:
        }
 #ifdef USE_AES
        else if (mtype == AS_MESSAGE_KEY_EXCHANGE ) {
-         if( DeviceType::requestSignature(msg) == true ) {
-           if( DeviceType::keystore().exchange(msg.aesExchange())==true ) DeviceType::sendAck(msg);
-           else DeviceType::sendNack(msg);
+         if( validSignature(msg) == true ) {
+           if( this->keystore().exchange(msg.aesExchange())==true ) this->sendAck(msg);
+           else this->sendNack(msg);
          }
        }
 #endif
        // default - send Nack if answer is requested
        else {
          if( msg.ackRequired() == true ) {
-           DeviceType::sendNack(msg);
+           this->sendNack(msg);
          }
        }
      }
@@ -390,9 +444,9 @@ public:
       ChannelType& c = channel(ch);
       if (numlist == 1) {
         return c.getList1();
-      } else if (ChannelType::hasList3() && numlist == 3) {
+      } else if (c.hasList3() && numlist == 3) {
         return c.getList3(peer);
-      } else if (ChannelType::hasList4() && numlist == 4) {
+      } else if (c.hasList4() && numlist == 4) {
         return c.getList4(peer);
       }
     }
@@ -405,6 +459,25 @@ public:
        DeviceType::sendPeerEvent(msg,ch);
      }
    }
+};
+
+
+template <class HalType,class ChannelType,int ChannelCount,class List0Type=List0>
+class MultiChannelDevice : public ChannelDevice<HalType,ChannelType,ChannelCount,List0Type> {
+
+  ChannelType cdata[ChannelCount];
+
+public:
+
+  typedef ChannelDevice<HalType,ChannelType,ChannelCount,List0Type> DeviceType;
+
+  MultiChannelDevice (uint16_t addr) : ChannelDevice<HalType,ChannelType,ChannelCount,List0Type>(addr) {
+    for( uint8_t i=0; i<ChannelCount; ++i ) {
+      this->registerChannel(cdata[i], i+1);
+    }
+  }
+
+  virtual ~MultiChannelDevice () {}
 };
 
 }

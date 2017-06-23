@@ -212,6 +212,7 @@ public:
     setByte(2,mid.id1());
     setByte(3,mid.id2());
   };
+  bool aesActive () const { return false; }
 
   void defaults () {
     setByte(0,0x01);

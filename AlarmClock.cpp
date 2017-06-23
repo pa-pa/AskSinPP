@@ -3,29 +3,21 @@
 // 2016-10-31 papa Creative Commons - http://creativecommons.org/licenses/by-nc-sa/3.0/de/
 //- -----------------------------------------------------------------------------------------------------------------------
 
-#include "TimerOne.h"
 #include "AlarmClock.h"
 
 namespace as {
 
-AlarmClock aclock;
+SysClock sysclock;
+RTC rtc;
+
+#ifdef ARDUINO_ARCH_AVR
+ISR(TIMER2_OVF_vect) {
+  --rtc;
+}
+#endif
 
 void callback(void) {
-  --aclock;
-}
-
-void AlarmClock::init() {
-  Timer1.initialize(1000000 / TICKS_PER_SECOND); // initialize timer1, and set a 1/10 second period
-  //Timer1.attachInterrupt(callback); // attaches callback() as a timer overflow interrupt
-  enable();
-}
-
-void AlarmClock::disable () {
-  Timer1.detachInterrupt();
-}
-
-void AlarmClock::enable () {
-  Timer1.attachInterrupt(callback);
+  --sysclock;
 }
 
 void AlarmClock::cancel(Alarm& item) {

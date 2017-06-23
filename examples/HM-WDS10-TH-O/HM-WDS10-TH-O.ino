@@ -3,16 +3,16 @@
 // 2016-10-31 papa Creative Commons - http://creativecommons.org/licenses/by-nc-sa/3.0/de/
 //- -----------------------------------------------------------------------------------------------------------------------
 
-/*
- * Setup defines to configure the library.
- * Note: If you are using the Eclipse Arduino IDE you will need to set the
- * defines in the project properties.
- */
-#ifndef __IN_ECLIPSE__
-  #define USE_AES
-  #define HM_DEF_KEY 0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x0a,0x0b,0x0c,0x0d,0x0e,0x0f,0x10
-  #define HM_DEF_KEY_INDEX 0
-#endif
+// define this to read the device id, serial and device type from bootloader section
+// #define USE_OTA_BOOTLOADER
+
+// define all device properties
+#define DEVICE_ID HMID(0x34,0x56,0x78)
+#define DEVICE_SERIAL "papa111111"
+#define DEVICE_MODEL  0x00,0x3d
+#define DEVICE_FIRMWARE 0x10
+#define DEVICE_TYPE DeviceType::THSensor
+#define DEVICE_INFO 0x01,0x01,0x00
 
 #include <EnableInterrupt.h>
 #include <AskSinPP.h>
@@ -21,19 +21,7 @@
 
 #include <MultiChannelDevice.h>
 
-// define this to read the device id, serial and device type from bootloader section
-// #define USE_OTA_BOOTLOADER
-
-#ifdef USE_OTA_BOOTLOADER
-  #define OTA_MODEL_START  0x7ff0 // start address of 2 byte model id in bootloader
-  #define OTA_SERIAL_START 0x7ff2 // start address of 10 byte serial number in bootloader
-  #define OTA_HMID_START   0x7ffc // start address of 3 byte device id in bootloader
-#else
-  // device ID
-  #define DEVICE_ID HMID(0x34,0x56,0x78)
-  // serial number
-  #define DEVICE_SERIAL "papa111111"
-#endif
+#include <Sensirion.h>
 
 // we use a Pro Mini
 // Arduino pin for the LED
@@ -54,9 +42,26 @@ using namespace as;
 /**
  * Configure the used hardware
  */
-typedef AvrSPI<10,11,12,13> RadioSPI;
-typedef AskSin<StatusLed,BatterySensor,Radio<RadioSPI,2> > Hal;
-Hal hal;
+typedef AvrSPI<10,11,12,13> SPIType;
+typedef Radio<SPIType,2> RadioType;
+typedef StatusLed<4> LedType;
+typedef AskSin<LedType,BatterySensor,RadioType> BaseHal;
+class Hal : public BaseHal {
+public:
+  void init () {
+    BaseHal::init();
+    // init real time clock - 1 tick per second
+    rtc.init();
+    // measure battery every 1h
+    battery.init(60UL*60,rtc);
+    battery.low(22);
+    battery.critical(19);
+  }
+
+  bool runready () {
+    return rtc.runready() || BaseHal::runready();
+  }
+} hal;
 
 class WeatherEventMsg : public Message {
 public:
@@ -66,7 +71,7 @@ public:
     if( batlow == true ) {
       t1 |= 0x80; // set bat low bit
     }
-    Message::init(0xc,msgcnt,0x70,Message::BIDI,t1,t2);
+    Message::init(0xc,msgcnt,0x70,BIDI|WKMEUP,t1,t2);
     pload[0] = humidity;
   }
 };
@@ -74,44 +79,71 @@ public:
 class WeatherChannel : public Channel<Hal,List1,EmptyList,List4,PEERS_PER_CHANNEL>, public Alarm {
 
   WeatherEventMsg msg;
-  uint8_t         msgcnt;
   int16_t         temp;
   uint8_t         humidity;
 
+  Sensirion       sht10;
+  uint16_t        millis;
+
 public:
-  WeatherChannel () : Channel(), Alarm(5), msgcnt(0), temp(0), humidity(50) {}
+  WeatherChannel () : Channel(), Alarm(5), temp(0), humidity(0), millis(0) {}
   virtual ~WeatherChannel () {}
 
-  virtual void trigger (AlarmClock& clock) {
-    // reactivate for next measure
-    tick = delay();
-    clock.add(*this);
-    DPRINT("Measure...\n");
-    measure();
+  virtual void trigger (__attribute__ ((unused)) AlarmClock& clock) {
+    // wait also for the millis
+    if( millis != 0 ) {
+      tick = millis2ticks(millis);
+      millis = 0; // reset millis
+      async(false);
+      sysclock.add(*this); // millis with sysclock
+    }
+    else {
+      // reactivate for next measure
+      HMID id;
+      device().getDeviceID(id);
+      uint8_t msgcnt = device().nextcount();
+      uint32_t nextsend = delay(id,msgcnt);
+      tick = nextsend / 1000; // seconds to wait
+      millis = nextsend % 1000; // millis to wait
+      async(millis != 0);
+      rtc.add(*this); // we wait first for the seconds with rtc
 
-    msg.init(msgcnt,temp,humidity,false);
-    device().sendPeerEvent(msg,*this);
+      measure();
+      msg.init(msgcnt,temp,humidity,false);
+      device().sendPeerEvent(msg,*this);
+    }
   }
 
   // here we do the measurement
   void measure () {
-    static int16_t tdx = -7;
-    static int8_t  hdx = 1;
-    temp += tdx;
-    humidity += hdx;
-    if( temp >= 40*10 || temp <= -15*10 ) tdx = -tdx;
-    if( humidity == 99 || humidity == 5) hdx = -hdx;
+    DPRINT("Measure...\n");
+    uint16_t rawData;
+    if ( sht10.measTemp(&rawData)== 0) {
+      float t = sht10.calcTemp(rawData);
+      temp = t * 10;
+      if( sht10.measHumi(&rawData)== 0 ) {
+        humidity = sht10.calcHumi(rawData, t);
+      }
+    }
   }
 
   // here we calc when to send next value
-  uint32_t delay () {
-    // for testing we use delay of 5sec
-    return seconds2ticks(5);
+  uint32_t delay (const HMID& id,uint8_t msgcnt) {
+    uint32_t value = ((uint32_t)id) << 8 | msgcnt;
+    value = (value * 1103515245 + 12345) >> 16;
+    value = (value & 0xFF) + 480;
+    value *= 250; // * 250ms
+
+    DDEC(value / 1000);DPRINT(".");DDECLN(value % 1000);
+
+    return value;
   }
 
   void setup(Device<Hal>* dev,uint8_t number,uint16_t addr) {
     Channel::setup(dev,number,addr);
-    aclock.add(*this);
+    rtc.add(*this);
+    sht10.config(A4,A5);
+    sht10.writeSR(LOW_RES);
   }
 
   uint8_t status () const {
@@ -125,70 +157,21 @@ public:
 };
 
 
-MultiChannelDevice<Hal,WeatherChannel,1> sdev(0x20);
+typedef MultiChannelDevice<Hal,WeatherChannel,1> WeatherType;
+WeatherType sdev(0x20);
 
-class CfgButton : public Button {
-public:
-  CfgButton () {
-    setLongPressTime(seconds2ticks(3));
-  }
-  virtual void state (uint8_t s) {
-    uint8_t old = Button::state();
-    Button::state(s);
-    if( s == Button::released ) {
-      sdev.startPairing();
-    }
-    else if( s == longpressed ) {
-      if( old == longpressed ) {
-        sdev.reset(); // long pressed again - reset
-      }
-      else {
-        hal.led.set(StatusLed::key_long);
-      }
-    }
-  }
-};
-
-CfgButton cfgBtn;
-void cfgBtnISR () { cfgBtn.check(); }
+ConfigButton<WeatherType> cfgBtn(sdev);
 
 void setup () {
-#ifndef NDEBUG
-  Serial.begin(57600);
-  DPRINTLN(ASKSIN_PLUS_PLUS_IDENTIFIER);
-#endif
-  if( storage.setup(sdev.checksum()) == true ) {
-    sdev.firstinit();
-  }
-
-  hal.led.init(LED_PIN);
-
-  cfgBtn.init(CONFIG_BUTTON_PIN);
-  enableInterrupt(CONFIG_BUTTON_PIN,cfgBtnISR,CHANGE);
-  hal.radio.init();
-
-#ifdef USE_OTA_BOOTLOADER
-  sdev.init(hal,OTA_HMID_START,OTA_SERIAL_START);
-  sdev.setModel(OTA_MODEL_START);
-#else
-  sdev.init(hal,DEVICE_ID,DEVICE_SERIAL);
-  sdev.setModel(0x00,0x3d);
-#endif
-  sdev.setFirmwareVersion(0x10);
-  sdev.setSubType(DeviceType::THSensor);
-  sdev.setInfo(0x03,0x01,0x00);
-
-  hal.radio.enable();
-
-  aclock.init();
-
-  hal.led.set(StatusLed::welcome);
+  DINIT(57600,ASKSIN_PLUS_PLUS_IDENTIFIER);
+  sdev.init(hal);
+  buttonISR(cfgBtn,CONFIG_BUTTON_PIN);
 }
 
 void loop() {
-  bool worked = aclock.runready();
+  bool worked = hal.runready();
   bool poll = sdev.pollRadio();
   if( worked == false && poll == false ) {
-    hal.activity.savePower<Sleep>(hal);
+    hal.activity.savePower<Sleep<true>>(hal);
   }
 }

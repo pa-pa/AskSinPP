@@ -3,16 +3,16 @@
 // 2016-10-31 papa Creative Commons - http://creativecommons.org/licenses/by-nc-sa/3.0/de/
 //- -----------------------------------------------------------------------------------------------------------------------
 
-/*
- * Setup defines to configure the library.
- * Note: If you are using the Eclipse Arduino IDE you will need to set the
- * defines in the project properties.
- */
-#ifndef __IN_ECLIPSE__
-  #define USE_AES
-  #define HM_DEF_KEY 0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x0a,0x0b,0x0c,0x0d,0x0e,0x0f,0x10
-  #define HM_DEF_KEY_INDEX 0
-#endif
+// define this to read the device id, serial and device type from bootloader section
+// #define USE_OTA_BOOTLOADER
+
+// define all device properties
+#define DEVICE_ID HMID(0x90,0x12,0x34)
+#define DEVICE_SERIAL "papa555555"
+#define DEVICE_MODEL  0x00,0xde
+#define DEVICE_FIRMWARE 0x11
+#define DEVICE_TYPE DeviceType::PowerMeter
+#define DEVICE_INFO 0x02,0x01,0x00
 
 #include <EnableInterrupt.h>
 #include <AskSinPP.h>
@@ -21,19 +21,6 @@
 
 #include <MultiChannelDevice.h>
 
-// define this to read the device id, serial and device type from bootloader section
-// #define USE_OTA_BOOTLOADER
-
-#ifdef USE_OTA_BOOTLOADER
-  #define OTA_MODEL_START  0x7ff0 // start address of 2 byte model id in bootloader
-  #define OTA_SERIAL_START 0x7ff2 // start address of 10 byte serial number in bootloader
-  #define OTA_HMID_START   0x7ffc // start address of 3 byte device id in bootloader
-#else
-  // device ID
-  #define DEVICE_ID HMID(0x90,0x12,0x34)
-  // serial number
-  #define DEVICE_SERIAL "papa555555"
-#endif
 
 // we use a Pro Mini
 // Arduino pin for the LED
@@ -57,9 +44,10 @@ using namespace as;
 /**
  * Configure the used hardware
  */
-typedef AvrSPI<10,11,12,13> RadioSPI;
-typedef AskSin<StatusLed,NoBattery,Radio<RadioSPI,2> > Hal;
-Hal hal;
+typedef AvrSPI<10,11,12,13> SPIType;
+typedef Radio<SPIType,2> RadioType;
+typedef StatusLed<4> LedType;
+typedef AskSin<LedType,BatterySensor,RadioType> HalType;
 
 class MeterList0Data : public List0Data {
   uint8_t LocalResetDisbale : 1;   // 0x18 - 24
@@ -69,6 +57,7 @@ class MeterList0Data : public List0Data {
   uint8_t MeterProtocolMode : 8;   // 0x26 - 38
   uint8_t SamplesPerCycle   : 8;   // 0x27 - 39
 
+public:
   static uint8_t getOffset(uint8_t reg) {
     switch (reg) {
       case 0x18: return sizeof(List0Data) + 0;
@@ -100,9 +89,12 @@ class MeterList0 : public ChannelList<MeterList0Data> {
 public:
   MeterList0(uint16_t a) : ChannelList(a) {}
 
+  operator List0& () const { return *(List0*)this; }
+
   // from List0
-  HMID masterid () { return HMID(getByte(1),getByte(2),getByte(3)); }
-  void masterid (const HMID& mid) { setByte(1,mid.id0()); setByte(2,mid.id1()); setByte(3,mid.id2()); };
+  HMID masterid () { return ((List0*)this)->masterid(); }
+  void masterid (const HMID& mid) { ((List0*)this)->masterid(mid); }
+  bool aesActive() const { return ((List0*)this)->aesActive(); }
 
   bool localResetDisable () const { return isBitSet(sizeof(List0Data) + 0,0x01); }
   bool localResetDisable (bool value) const { return setBit(sizeof(List0Data) + 0,0x01,value); }
@@ -204,8 +196,6 @@ public:
   }
 };
 
-BatterySensor battery;
-
 class GasPowerEventMsg : public Message {
 public:
   void init(uint8_t msgcnt,bool boot,uint32_t counter,uint32_t power) {
@@ -253,7 +243,7 @@ public:
   }
 };
 
-class MeterChannel : public Channel<Hal,MeterList1,EmptyList,List4,PEERS_PER_CHANNEL>, public Alarm {
+class MeterChannel : public Channel<HalType,MeterList1,EmptyList,List4,PEERS_PER_CHANNEL>, public Alarm {
 
   const uint32_t maxVal = 838860700;
   uint64_t counterSum;
@@ -273,14 +263,14 @@ public:
   }
 
   uint8_t flags () const {
-    return battery.low() ? 0x80 : 0x00;
+    return device().battery().low() ? 0x80 : 0x00;
   }
 
   void next () {
     // only count rotations/flashes and calculate real value when sending, to prevent inaccuracy
     counter++;
 
-    hal.led.ledOn(millis2ticks(300));
+    device().led().ledOn(millis2ticks(300));
     
     #ifndef NDEBUG
       DHEXLN(counter);
@@ -338,8 +328,10 @@ public:
   }
 };
 
+typedef MultiChannelDevice<HalType,MeterChannel,2,MeterList0> MeterType;
 
-MultiChannelDevice<Hal,MeterChannel,2> sdev(0x20);
+HalType hal;
+MeterType sdev(0x20);
 
 template <uint8_t pin, void (*isr)(), uint16_t millis>
 class ISRWrapper : public Alarm {
@@ -371,10 +363,10 @@ public:
   void debounce () {
     detach();
     tick = millis2ticks(millis);
-    aclock.add(*this);
+    sysclock.add(*this);
   }
 
-  virtual void trigger (AlarmClock& clock) {
+  virtual void trigger (__attribute__ ((unused)) AlarmClock& clock) {
     attach();
   }
 };
@@ -389,76 +381,29 @@ void meterISR () {
   }
 }
 
-
-class CfgButton : public Button {
-public:
-  CfgButton () {
-    setLongPressTime(seconds2ticks(3));
-  }
-  virtual void state (uint8_t s) {
-    uint8_t old = Button::state();
-    Button::state(s);
-    if( s == Button::released ) {
-      sdev.startPairing();
-    }
-    else if( s == longpressed ) {
-      if( old == longpressed ) {
-        sdev.reset(); // long pressed again - reset
-      }
-      else {
-        hal.led.set(StatusLed::key_long);
-      }
-    }
-  }
-};
-
-CfgButton cfgBtn;
-void cfgBtnISR () { cfgBtn.check(); }
+ConfigButton<MeterType> cfgBtn(sdev);
 
 void setup () {
-#ifndef NDEBUG
-  Serial.begin(57600);
-  DPRINTLN(ASKSIN_PLUS_PLUS_IDENTIFIER);
-#endif
-  if( storage.setup(sdev.checksum()) == true ) {
-    sdev.firstinit();
-  }
+  DINIT(57600,ASKSIN_PLUS_PLUS_IDENTIFIER);
+  sdev.init(hal);
 
-  hal.led.init(LED_PIN);
+  buttonISR(cfgBtn,CONFIG_BUTTON_PIN);
 
-  cfgBtn.init(CONFIG_BUTTON_PIN);
-  enableInterrupt(CONFIG_BUTTON_PIN,cfgBtnISR,CHANGE);
-  hal.radio.init();
-
-#ifdef USE_OTA_BOOTLOADER
-  sdev.init(hal,OTA_HMID_START,OTA_SERIAL_START);
-  sdev.setModel(OTA_MODEL_START);
-#else
-  sdev.init(hal,DEVICE_ID,DEVICE_SERIAL);
-  sdev.setModel(0x00,0xde);
-#endif
-  sdev.setFirmwareVersion(0x11);
-  sdev.setSubType(DeviceType::PowerMeter);
-  sdev.setInfo(0x03,0x01,0x00);
-
-  hal.radio.enable();
-  aclock.init();
+  // measure battery every 1h
+  hal.battery.init(seconds2ticks(60UL*60),sysclock);
+  // set low voltage to 2.2V
+  hal.battery.low(22);
+  hal.battery.critical(19);
 
   gasISR.attach();
-
-  hal.led.set(StatusLed::welcome);
-  // set low voltage to 2.2V
-  // measure battery every 1h
-  battery.init(22,seconds2ticks(60UL*60),aclock);
-
   // add channel 1 to timer to send event
-  aclock.add(sdev.channel(1));
+  sysclock.add(sdev.channel(1));
 }
 
 void loop() {
-  bool worked = aclock.runready();
+  bool worked = hal.runready();
   bool poll = sdev.pollRadio();
   if( worked == false && poll == false ) {
-    hal.activity.savePower<Sleep>(hal);
+    hal.activity.savePower<Sleep<> >(hal);
   }
 }

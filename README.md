@@ -1,7 +1,7 @@
 
-#Please use V1 Branch for your devices. The master branch is currently not stable#
+# Please use V1 Branch for your devices. The master branch is currently not stable
 
-#AskSin++#
+# AskSin++
 
 C++ implementation of the AskSin protocol
 

@@ -14,6 +14,11 @@
 #include "Radio.h"
 #include "Led.h"
 
+#define OTA_CONFIG_START 0x7fe0 // start address of 16 byte config data in bootloader
+#define OTA_MODEL_START  0x7ff0 // start address of 2 byte model id in bootloader
+#define OTA_SERIAL_START 0x7ff2 // start address of 10 byte serial number in bootloader
+#define OTA_HMID_START   0x7ffc // start address of 3 byte device id in bootloader
+
 namespace as {
 
 class DeviceType {
@@ -53,17 +58,9 @@ public:
   typedef typename HalType::RadioType RadioType;
 
 private:
-  HMID  devid;
-  HMID  master;
-  char serial[11];
-
-  uint8_t firmversion;
-  uint8_t model[2];
-  uint8_t subtype;
-  uint8_t devinfo[3];
-
   HalType* hal;
-  uint8_t msgcount;
+  List0&   list0;
+  uint8_t  msgcount;
 
   HMID    lastdev;
   uint8_t lastmsg;
@@ -74,13 +71,14 @@ protected:
 
 
 public:
-  Device (uint16_t addr) : firmversion(0), subtype(0), hal(0), msgcount(0), lastmsg(0), kstore(addr) {
+  Device (uint16_t addr,List0& l) : hal(0), list0(l), msgcount(0), lastmsg(0), kstore(addr) {
     // TODO init seed
   }
   virtual ~Device () {}
 
   LedType& led ()  { return hal->led; }
   BatteryType& battery ()  { return hal->battery; }
+  const BatteryType& battery () const { return hal->battery; }
   RadioType& radio () { return hal->radio; }
   KeyStore& keystore () { return this->kstore; }
   Activity& activity () { return hal->activity; }
@@ -101,106 +99,64 @@ public:
     hal = &h;
   }
 
-  void setFirmwareVersion (uint8_t v) {
-    firmversion = v;
-  }
-
-  void setModel (uint8_t m1, uint8_t m2) {
-    model[0] = m1;
-    model[1] = m2;
-  }
-
-  const uint8_t* getModel () const {
-    return model;
-  }
-
-  void setModel (uint16_t address) {
-    HalType::pgm_read(model,address,sizeof(model));
-  }
-
-  void setSubType (uint8_t st) {
-    subtype = st;
-  }
-
-  void setInfo (uint8_t i1, uint8_t i2, uint8_t i3) {
-    devinfo[0] = i1;
-    devinfo[1] = i2;
-    devinfo[2] = i3;
-  }
-
-  void setMasterID (const HMID& id) {
-    master = id;
-  }
-
-  const HMID& getMasterID () const {
-    return master;
-  }
-
-  void setDeviceID (const HMID& id) {
-    devid=id;
-  }
-
-  void setDeviceID (uint16_t address) {
-    HalType::pgm_read((uint8_t*)&devid,address,sizeof(devid));
-  }
-
-  const HMID& getDeviceID () const {
-    return devid;
-  }
-
-  void setSerial (const char* ser) {
-    memcpy(serial,ser,10);
-    serial[10] = 0;
-  }
-
-  void setSerial (uint16_t address) {
-    HalType::pgm_read((uint8_t*)serial,address,10);
-  }
-
-  const char* getSerial () const {
-    return serial;
-  }
-
-  template <class ChannelType>
-  bool addPeer (ChannelType& ch,const Peer& p) {
-    ch.deletepeer(p);
-    uint8_t pidx = ch.findpeer();
-    if( pidx != 0xff ) {
-      ch.peer(pidx,p);
-      ch.getList3(pidx).single();
-      return true;
+  uint8_t getConfigByte (uint8_t offset) {
+    uint8_t data=0;
+#ifdef USE_OTA_BOOTLOADER
+    if( offset < 16 ) {
+      HalType::pgm_read(&data,OTA_CONFIG_START+offset,1);
     }
-    return false;
-  }
-
-  template <class ChannelType>
-  bool addPeer(ChannelType& ch,const Peer& p1, const Peer& p2) {
-    ch.deletepeer(p1);
-    ch.deletepeer(p2);
-    uint8_t pidx1 = ch.findpeer();
-    if( pidx1 != 0xff ) {
-      ch.peer(pidx1,p1);
-      uint8_t pidx2 = ch.findpeer();
-      if( pidx2 != 0xff ) {
-        ch.peer(pidx2,p2);
-        if( p1.odd() == true ) {
-          ch.getList3(pidx1).odd();
-          ch.getList3(pidx2).even();
-        }
-        else {
-          ch.getList3(pidx2).odd();
-          ch.getList3(pidx1).even();
-        }
-        return true;
-      }
-      else {
-        // free already stored data
-        ch.peer(pidx1,Peer());
-      }
+#elif defined(DEVICE_CONFIG)
+    uint8_t tmp[] = {DEVICE_CONFIG};
+    if( offset < sizeof(tmp) ) {
+      data = tmp[offset];
     }
-    return false;
+#endif
+    return data;
   }
 
+  void getDeviceID (HMID& id) {
+#ifdef USE_OTA_BOOTLOADER
+    HalType::pgm_read((uint8_t*)&id,OTA_HMID_START,sizeof(id));
+#else
+    id = DEVICE_ID;
+#endif
+  }
+
+  void getDeviceSerial (uint8_t* serial) {
+#ifdef USE_OTA_BOOTLOADER
+    HalType::pgm_read((uint8_t*)serial,OTA_SERIAL_START,10);
+#else
+    memcpy(serial,DEVICE_SERIAL,10);
+#endif
+  }
+
+  bool isDeviceSerial (const uint8_t* serial) {
+    uint8_t tmp[10];
+    getDeviceSerial(tmp);
+    return memcmp(tmp,serial,10)==0;
+  }
+
+  void getDeviceModel (uint8_t* model) {
+#ifdef USE_OTA_BOOTLOADER
+    HalType::pgm_read(model,OTA_MODEL_START,2);
+#else
+    uint8_t dm[2] = {DEVICE_MODEL};
+    memcpy(model,dm,sizeof(dm));
+#endif
+  }
+
+  void getDeviceInfo (uint8_t* info) {
+    uint8_t di[3] = {DEVICE_INFO};
+    memcpy(info,di,sizeof(di));
+  }
+
+  HMID getMasterID () {
+    return list0.masterid();
+  }
+
+  const List0& getList0 () {
+    return list0;
+  }
 
   bool pollRadio () {
     uint8_t num = radio().read(msg);
@@ -214,6 +170,8 @@ public:
     return ++msgcount;
   }
 
+  virtual void configChanged () {}
+
   virtual void process(__attribute__((unused)) Message& msg) {}
 
   bool isBoardcastMsg(Message msg) {
@@ -222,11 +180,11 @@ public:
 
   bool send(Message& msg,const HMID& to) {
     msg.to(to);
-    msg.from(devid);
+    getDeviceID(msg.from());
     msg.setRpten(); // has to be set always
     bool result = false;
     uint8_t maxsend = 6;
-    led().set(StatusLed::send);
+    led().set(LedStates::send);
     while( result == false && maxsend > 0 ) {
       DPRINT(F("<- "));
       msg.dump();
@@ -246,7 +204,7 @@ public:
             result = response.isAck();
             // we request wakeup
             // we got the fag to stay awake
-            if( msg.isWakeMeUp() /*response.isKeepAwake()*/ ) {
+            if( msg.isWakeMeUp() || response.isKeepAwake() ) {
               activity().stayAwake(millis2ticks(500));
             }
           }
@@ -254,8 +212,8 @@ public:
         DPRINT(F("waitAck: ")); DHEX((uint8_t)result); DPRINTLN(F(""));
       }
     }
-    if( result == true ) led().set(StatusLed::ack);
-    else led().set(StatusLed::nack);
+    if( result == true ) led().set(LedStates::ack);
+    else led().set(LedStates::nack);
     return result;
   }
 
@@ -280,6 +238,7 @@ public:
   template <class ChannelType>
   void sendAck (Message& msg,ChannelType& ch) {
     msg.ackStatus().init(ch,radio().rssi());
+    ch.patchStatus(msg);
     kstore.addAuth(msg);
     send(msg,msg.from());
     ch.changed(false);
@@ -292,21 +251,28 @@ public:
   void sendDeviceInfo (const HMID& to,uint8_t count) {
     DeviceInfoMsg& pm = msg.deviceInfo();
     pm.init(to,count);
-    pm.fill(firmversion,model,serial,subtype,devinfo);
+    pm.fill(DEVICE_FIRMWARE,DEVICE_TYPE);
+    getDeviceModel(pm.model());
+    getDeviceSerial(pm.serial());
+    getDeviceInfo(pm.info());
     send(msg,to);
   }
 
   void sendSerialInfo (const HMID& to,uint8_t count) {
     SerialInfoMsg& pm = msg.serialInfo();
     pm.init(to,count);
-    pm.fill(serial);
+    getDeviceSerial(pm.serial());
     send(msg,to);
   }
 
   template <class ChannelType>
-  void sendInfoActuatorStatus (const HMID& to,uint8_t count,ChannelType& ch) {
+  void sendInfoActuatorStatus (const HMID& to,uint8_t count,ChannelType& ch,bool ack=true) {
     InfoActuatorStatusMsg& pm = msg.infoActuatorStatus();
     pm.init(count,ch,radio().rssi());
+    if( ack == false ) {
+      pm.clearAck();
+    }
+    ch.patchStatus(msg);
     send(msg,to);
     ch.changed(false);
   }
@@ -386,6 +352,8 @@ public:
     if( sendtopeer == false ) {
       send(msg,getMasterID());
     }
+    // signal that we have send to peer
+    hal->sendPeer();
   }
 
   void writeList (const GenericList& list,const uint8_t* data,uint8_t length) {

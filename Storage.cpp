@@ -16,6 +16,7 @@ bool Storage::setup (uint16_t checksum) {
   getData(0x0,(uint8_t*)&mem,4);
   uint32_t magic = 0xCAFE0000 | checksum;
   if(magic != mem) {
+    DHEXLN(mem);
     DPRINT(F("Init Storage: "));
     DHEXLN(magic);
     // init eeprom

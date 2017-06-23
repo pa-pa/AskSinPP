@@ -7,6 +7,7 @@
 #define __HMID_H__
 
 #include "Atomic.h"
+#include "Debug.h"
 
 namespace as {
 
@@ -49,6 +50,16 @@ public:
   uint8_t id0 () const { return id[0]; };
   uint8_t id1 () const { return id[1]; };
   uint8_t id2 () const { return id[2]; };
+
+  operator uint32_t () const {
+    return (uint32_t)id[0] << 16 | (uint16_t)id[1] << 8 | id[2];
+  }
+
+  void dump () const {
+    DHEX(id0());
+    DHEX(id1());
+    DHEX(id2());
+  }
 
   static HMID boardcast;
 };

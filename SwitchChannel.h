@@ -38,7 +38,7 @@ public:
     pinMode(p,OUTPUT);
   }
 
-  virtual void switchState(uint8_t oldstate,uint8_t newstate) {
+  virtual void switchState(__attribute__((unused)) uint8_t oldstate,uint8_t newstate) {
     uint8_t pin = SwitchPin(BaseChannel::number());
     if( newstate == AS_CM_JT_ON ) {
       digitalWrite(pin,lowact ? LOW : HIGH);

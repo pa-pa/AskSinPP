@@ -26,6 +26,8 @@
  * 
  */
 
+#ifdef ARDUINO_ARCH_AVR
+
 #include <avr/io.h>
 #define OPTIMIZE_SMALL_A
 
@@ -78,5 +80,7 @@ gf256mul:
 	dec r25
 	brne 1b
 	ret
+
+#endif
 
 #endif

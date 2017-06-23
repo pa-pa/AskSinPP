@@ -164,6 +164,10 @@ public:
     return fromID;
   }
 
+  HMID& from () {
+    return fromID;
+  }
+
   void to(const HMID& hmid) {
     toID = hmid;
   }
@@ -239,11 +243,25 @@ public:
   void dump () const {
     DHEX(length());
     DPRINT(F(" "));
-    DHEX(buffer(),length());
+    DHEX(count());
+    DPRINT(F(" "));
+    DHEX(flags());
+    DPRINT(F(" "));
+    DHEX(type());
+    DPRINT(F(" "));
+    from().dump();
+    DPRINT(F(" "));
+    to().dump();
+    DPRINT(F(" "));
+    DHEX(buffer()+9,length()-9);
   }
 
   void setRpten () {
     flag |= RPTEN;
+  }
+
+  void setAck () {
+    flag |= BIDI;
   }
 
   void clearAck () {
@@ -349,7 +367,8 @@ protected:
 public:
   const Peer& peer1 () const { return *((const Peer*)data()); }
   Peer peer2 () const { return Peer(peer1(),*(data()+sizeof(Peer))); }
-  uint8_t peers () const { return *(data()+sizeof(Peer))!=0 ? 2 : 1; }
+  // if both channels are the same then we peer single mode
+  uint8_t peers () const { return *(data()+sizeof(Peer)) == *(data()+sizeof(Peer)-1) ? 1 : 2; }
 };
 
 class ConfigPeerRemoveMsg : public ConfigPeerAddMsg {
@@ -389,6 +408,14 @@ class RemoteEventMsg : public Message {
 protected:
   RemoteEventMsg() {}
 public:
+  void init(uint8_t msgcnt,uint8_t ch,uint8_t counter,bool lg,bool lowbat) {
+    uint8_t flags = lg ? 0x40 : 0x00;
+    if( lowbat == true ) {
+      flags |= 0x80; // low battery
+    }
+    Message::init(0xb,msgcnt,0x40, BIDI|WKMEUP,(ch & 0x3f) | flags,counter);
+  }
+
   Peer peer () const { return Peer(from(),command() & 0x3f); }
   uint8_t counter () const { return subcommand(); }
   bool isLong () const { return (command() & 0x40) == 0x40; }
@@ -398,6 +425,11 @@ class SensorEventMsg : public RemoteEventMsg {
 protected:
   SensorEventMsg() {}
 public:
+  void init(uint8_t msgcnt,uint8_t ch,uint8_t counter,uint8_t value,bool lowbat) {
+    uint8_t flags = lowbat ? 0x80 : 0x00;
+    Message::init(0xd,msgcnt,0x41, BIDI|WKMEUP,(ch & 0x3f) | flags,counter);
+    *data() = value;
+  }
   uint8_t value () const { return *data(); }
 };
 
@@ -414,6 +446,13 @@ protected:
 public:
   uint8_t channel () const { return subcommand(); }
   uint8_t value () const { return *data(); }
+  uint16_t ramp () const {
+    uint16_t value = 0;
+    if( datasize() >= 3) {
+      value = (*(data()+1) << 8) + *(data()+2);
+    }
+    return value;
+  }
   uint16_t delay () const {
     uint16_t dly = 0xffff;
     if( datasize() >= 5) {
@@ -555,6 +594,14 @@ public:
     *(buf+13) = subtype;
     memcpy(buf+14,devinfo,3);
   }
+  void fill(uint8_t firmversion,uint8_t subtype) {
+    uint8_t* buf = data();
+    *buf = firmversion;
+    *(buf+13) = subtype;
+  }
+  uint8_t* serial () { return data() + 3; }
+  uint8_t* model () { return data() + 1; }
+  uint8_t* info () { return data() + 14; }
 };
 
 class SerialInfoMsg : public Message {
@@ -567,6 +614,7 @@ public:
     uint8_t* buf = data();
     memcpy(buf+3,serial,10);
   }
+  uint8_t* serial () { return data() + 3; }
 };
 
 }

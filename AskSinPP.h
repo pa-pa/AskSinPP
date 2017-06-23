@@ -6,9 +6,17 @@
 #ifndef __ASKSINPP_h__
 #define __ASKSINPP_h__
 
-#define ASKSIN_PLUS_PLUS_VERSION "1.0.1"
+#define ASKSIN_PLUS_PLUS_VERSION "1.0.6"
 
-#define ASKSIN_PLUS_PLUS_IDENTIFIER F("AskSin++ V" ASKSIN_PLUS_PLUS_VERSION)
+#define ASKSIN_PLUS_PLUS_IDENTIFIER F("AskSin++ V" ASKSIN_PLUS_PLUS_VERSION " (" __DATE__ " " __TIME__ ")")
+
+#ifdef ARDUINO_ARCH_STM32F1
+  #define _delay_us(us) delayMicroseconds(us)
+  inline void _delay_ms(uint32_t ms) { do { delayMicroseconds(1000); } while( (--ms) > 0); }
+
+  #define enableInterrupt(pin,handler,mode) attachInterrupt(pin,handler,mode)
+  #define disableInterrupt(pin) detachInterrupt(pin)
+#endif
 
 
 #include <Debug.h>
@@ -19,6 +27,7 @@
 #include <Button.h>
 #include <Radio.h>
 #include <BatterySensor.h>
+
 
 namespace as {
 
@@ -33,6 +42,22 @@ public:
   BatteryType battery;
   RadioType   radio;
   Activity    activity;
+
+  void init () {
+    led.init();
+    radio.init();
+    radio.enable();
+    // start the system timer
+    sysclock.init();
+    // signal start to user
+    led.set(LedStates::welcome);
+  }
+
+  bool runready () {
+    return sysclock.runready();
+  }
+
+  void sendPeer () {}
 
   static void pgm_read(uint8_t* dest,uint16_t adr,uint8_t size) {
     for( int i=0; i<size; ++i, ++dest ) {

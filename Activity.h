@@ -9,16 +9,21 @@
 #include <Debug.h>
 #include <AlarmClock.h>
 #include <Radio.h>
-#include <LowPower.h>
 
+#ifdef ARDUINO_ARCH_AVR
+#include <LowPower.h>
+#endif
 
 namespace as {
 
+#ifdef ARDUINO_ARCH_AVR
+
+template <bool ENABLETIMER2=false>
 class Idle {
 public:
 
   static void waitSerial () {
-//      DPRINT(F("Go sleep - ")); DHEXLN((uint16_t)aclock.next());
+//      DPRINT(F("Go sleep - ")); DHEXLN((uint16_t)sysclock.next());
       Serial.flush();
       while (!(UCSR0A & (1 << UDRE0))) {  // Wait for empty transmit buffer
         UCSR0A |= 1 << TXC0;  // mark transmission not complete
@@ -28,59 +33,65 @@ public:
 
   template <class Hal>
   static void powerSave (__attribute__((unused)) Hal& hal) {
-    LowPower.idle(SLEEP_FOREVER,ADC_OFF,TIMER2_OFF,TIMER1_ON,TIMER0_OFF,SPI_ON,USART0_ON,TWI_OFF);
+    LowPower.idle(SLEEP_FOREVER,ADC_OFF,ENABLETIMER2==false?TIMER2_OFF:TIMER2_ON,TIMER1_ON,TIMER0_OFF,SPI_ON,USART0_ON,TWI_OFF);
   }
 
 };
 
-class Sleep : public Idle {
+template <bool ENABLETIMER2=false>
+class Sleep : public Idle<ENABLETIMER2> {
 public:
   static uint32_t doSleep (uint32_t ticks) {
     uint32_t offset = 0;
-    if( ticks == 0 ) {
-      LowPower.powerDown(SLEEP_FOREVER,ADC_OFF,BOD_OFF);
+    period_t sleeptime = SLEEP_FOREVER;
+
+    if( ticks > seconds2ticks(8) ) { offset = seconds2ticks(8); sleeptime = SLEEP_8S; }
+    else if( ticks > seconds2ticks(4) )  { offset = seconds2ticks(4);  sleeptime = SLEEP_4S; }
+    else if( ticks > seconds2ticks(2) )  { offset = seconds2ticks(2);  sleeptime = SLEEP_2S; }
+    else if( ticks > seconds2ticks(1) )  { offset = seconds2ticks(1);  sleeptime = SLEEP_1S; }
+    else if( ticks > millis2ticks(500) ) { offset = millis2ticks(500); sleeptime = SLEEP_500MS; }
+    else if( ticks > millis2ticks(250) ) { offset = millis2ticks(250); sleeptime = SLEEP_250MS; }
+    else if( ticks > millis2ticks(120) ) { offset = millis2ticks(120); sleeptime = SLEEP_120MS; }
+    else if( ticks > millis2ticks(60)  ) { offset = millis2ticks(60);  sleeptime = SLEEP_60MS; }
+    else if( ticks > millis2ticks(30)  ) { offset = millis2ticks(30);  sleeptime = SLEEP_30MS; }
+    else if( ticks > millis2ticks(15)  ) { offset = millis2ticks(15);  sleeptime = SLEEP_15MS; }
+
+    if( ENABLETIMER2 == false ) {
+      LowPower.powerDown(sleeptime,ADC_OFF,BOD_OFF);
     }
-    else if( ticks > seconds2ticks(8) ) {
-      LowPower.powerDown(SLEEP_8S,ADC_OFF,BOD_OFF);
-      offset = seconds2ticks(8);
-    }
-    else if (ticks > seconds2ticks(1) ) {
-      LowPower.powerDown(SLEEP_1S,ADC_OFF,BOD_OFF);
-      offset = seconds2ticks(1);
-    }
-    else if (ticks > millis2ticks(500) ) {
-      LowPower.powerDown(SLEEP_500MS,ADC_OFF,BOD_OFF);
-      offset = millis2ticks(500);
+    else {
+      LowPower.powerExtStandby(sleeptime,ADC_OFF,BOD_OFF,TIMER2_ON);
     }
     return offset;
   }
 
   template <class Hal>
   static void powerSave (Hal& hal) {
-    aclock.disable();
-    uint32_t ticks = aclock.next();
-    if( aclock.isready() == false ) {
-      if( ticks == 0 || ticks > millis2ticks(500) ) {
+    sysclock.disable();
+    uint32_t ticks = sysclock.next();
+    if( sysclock.isready() == false ) {
+      if( ticks == 0 || ticks > millis2ticks(15) ) {
         hal.radio.setIdle();
         uint32_t offset = doSleep(ticks);
-        hal.radio.wakeup();
-        aclock.correct(offset);
-        aclock.enable();
+        sysclock.correct(offset);
+        sysclock.enable();
       }
       else{
-        aclock.enable();
-        Idle::powerSave(hal);
+        sysclock.enable();
+        Idle<ENABLETIMER2>::powerSave(hal);
       }
     }
     else {
-      aclock.enable();
+      sysclock.enable();
     }
   }
 };
 
+#endif
+
 class Activity : public Alarm {
 
-  bool  awake;
+  volatile bool  awake;
 
 public:
 
@@ -96,12 +107,12 @@ public:
 
   // do not sleep for time in ticks
   void stayAwake (uint32_t time) {
-    uint32_t old = aclock.get(*this);
+    uint32_t old = sysclock.get(*this);
     if( old < time ) {
       awake = true;
-      aclock.cancel(*this);
+      sysclock.cancel(*this);
       tick = time;
-      aclock.add(*this);
+      sysclock.add(*this);
     }
   }
 
@@ -113,13 +124,19 @@ public:
 #endif
       Saver::powerSave(hal);
     }
+    else {
+      // ensure radio is up and running
+      hal.radio.wakeup();
+    }
   }
 
   template <class Hal>
   void sleepForever (Hal& hal) {
     hal.radio.setIdle();
     while( true ) {
+#ifdef ARDUINO_ARCH_AVR
       LowPower.powerDown(SLEEP_FOREVER,ADC_OFF,BOD_OFF);
+#endif
     }
   }
 
