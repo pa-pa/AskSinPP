@@ -367,8 +367,12 @@ protected:
 public:
   const Peer& peer1 () const { return *((const Peer*)data()); }
   Peer peer2 () const { return Peer(peer1(),*(data()+sizeof(Peer))); }
-  // if both channels are the same then we peer single mode
-  uint8_t peers () const { return *(data()+sizeof(Peer)) == *(data()+sizeof(Peer)-1) ? 1 : 2; }
+  // if channel of peer2 == 0 or
+  // both channels are the same then we peer single mode
+  uint8_t peers () const {
+    Peer p2 = peer2();
+    return (p2.channel() == 0) || (p2 == peer1()) ? 1 : 2;
+  }
 };
 
 class ConfigPeerRemoveMsg : public ConfigPeerAddMsg {
