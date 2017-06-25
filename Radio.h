@@ -359,9 +359,9 @@ private:
 
   uint8_t rss;                                      // signal strength
   uint8_t lqi;                                      // link quality
-  volatile uint8_t intread : 6;
-  volatile bool idle       : 1;
-  volatile bool sending    : 1;
+  volatile uint8_t intread;
+  volatile bool idle;
+  volatile bool sending;
   Message buffer;
   Message sbuffer;
 
@@ -486,6 +486,7 @@ public:   //--------------------------------------------------------------------
     if( intread == 0 )
       return 0;
 
+    intread = 0;
     uint8_t len = rcvData(buffer.buffer(),buffer.buffersize());
     if( len > 0 ) {
       buffer.length(len);
@@ -494,10 +495,7 @@ public:   //--------------------------------------------------------------------
       // copy buffer to message
       memcpy(msg.buffer(),buffer.buffer(),len);
     }
-    else {
-      // nothing to read - wait for next interrupt
-      intread = 0;
-    }
+
     msg.length(len);
     // reset buffer
     buffer.clear();
@@ -529,8 +527,9 @@ public:   //--------------------------------------------------------------------
 
   bool readAck (const Message& msg) {
     if( intread == 0 )
-      return 0;
+      return false;
 
+    intread = 0;
     bool ack=false;
     uint8_t len = rcvData(buffer.buffer(),buffer.buffersize());
     if( len > 0 ) {
@@ -543,10 +542,6 @@ public:   //--------------------------------------------------------------------
            (buffer.count() == msg.count());
       // reset buffer
       buffer.clear();
-    }
-    else {
-      // nothing to read - wait for next interrupt
-      intread = 0;
     }
     return ack;
   }
