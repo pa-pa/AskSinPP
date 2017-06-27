@@ -372,6 +372,7 @@ public:   //--------------------------------------------------------------------
       while(cnt-- && (spi.strobe(CC1101_SIDLE) & 0x70) != 0) {
         _delay_us(10);
       }
+      spi.strobe(CC1101_SFRX);
       spi.strobe(CC1101_SPWD);                            // enter power down state
       idle = true;
     }
@@ -380,6 +381,7 @@ public:   //--------------------------------------------------------------------
   void wakeup () {
     if( idle == true ) {
       spi.ping();
+      flushrx();
       idle = false;
     }
   }
@@ -414,26 +416,26 @@ public:   //--------------------------------------------------------------------
       CC1101_FIFOTHR,   0x0D,                         // 0 ADC retention, 0 close in RX, TX FIFO = 9 / RX FIFO = 56 byte
       CC1101_SYNC1,     0xE9,                         // Sync word
       CC1101_SYNC0,     0xCA,
-      CC1101_PKTLEN,    0x3D,                         // packet length 61
+      CC1101_PKTLEN,    MaxDataLen+1,                           // packet length MaxDataLen+1
       CC1101_PKTCTRL1,  0x0C,                         // PQT = 0, CRC auto flush = 1, append status = 1, no address check
       CC1101_FSCTRL1,   0x06,                         // frequency synthesizer control
 
       // 868.299866 MHz
-      //CC1101_FREQ2,     0x21,
-      //CC1101_FREQ1,     0x65,
-      //CC1101_FREQ0,     0x6A,
-
-      // 868.2895508
       CC1101_FREQ2,     0x21,
       CC1101_FREQ1,     0x65,
-      CC1101_FREQ0,     0x50,
+      CC1101_FREQ0,     0x6A,
+
+      // 868.2895508
+      //CC1101_FREQ2,     0x21,
+      //CC1101_FREQ1,     0x65,
+      //CC1101_FREQ0,     0x50,
 
       CC1101_MDMCFG4,  0xC8,
       CC1101_MDMCFG3,  0x93,
       CC1101_MDMCFG2,  0x03,
       CC1101_DEVIATN,  0x34,                          // 19.042969 kHz
       CC1101_MCSM2,    0x01,
-  //    CC1101_MCSM1,    0x30,  // (default)                  // always go into IDLE
+      CC1101_MCSM1,    0x33,
       CC1101_MCSM0,    0x18,
       CC1101_FOCCFG,   0x16,
       CC1101_AGCCTRL2, 0x43,
@@ -457,7 +459,7 @@ public:   //--------------------------------------------------------------------
     }
     DPRINT(F("3"));
     spi.writeReg(CC1101_PATABLE, PA_MaxPower);                        // configure PATABLE
-    spi.strobe(CC1101_SRX);                                 // flush the RX buffer
+    flushrx();
     spi.strobe(CC1101_SWORRST);                               // reset real time clock
     DPRINTLN(F(" - ready"));
   }
@@ -466,7 +468,6 @@ public:   //--------------------------------------------------------------------
     if( sending == false ) {
       // DPRINTLN("*");
       intread = 1;
-      spi.strobe(CC1101_SRX); // ensure to RX state
     }
   }
 
@@ -576,9 +577,9 @@ protected:
 
     spi.strobe(CC1101_STX);                                 // send a burst
 
-    for(uint8_t i = 0; i < 200; i++) {  // after sending out all bytes the chip should go automatically in IDLE mode
-      if( spi.readReg(CC1101_MARCSTATE, CC1101_STATUS) == MARCSTATE_IDLE)
-        break;                                    //now in IDLE mode, good
+    for(uint8_t i = 0; i < 200; i++) {  // after sending out all bytes the chip should go automatically in RX mode
+      if( spi.readReg(CC1101_MARCSTATE, CC1101_STATUS) == MARCSTATE_RX)
+        break;                                    //now in RX mode, good
       _delay_us(10);
     }
 
@@ -588,61 +589,31 @@ protected:
   }
 
   uint8_t rcvData(uint8_t *buf, uint8_t size) {
-    wakeup();
-    static uint8_t packetBytes = 0;
+    uint8_t packetBytes = 0;
     uint8_t rxBytes = 0;
     uint8_t fifoBytes = spi.readReg(CC1101_RXBYTES, CC1101_STATUS);             // how many bytes are in the buffer
     // DPRINT("RX FIFO: ");DHEXLN(fifoBytes);
     // overflow detected - flush the FIFO
-    if( (fifoBytes & 0x80) == 0x80 ) {
-      // DPRINTLN("RX FIFO: overflow");
-      flushrx();
-      fifoBytes = 0;
-      packetBytes = 0;
-    }
-    // any byte waiting in FIFO
-    if ( fifoBytes > 0 ) {
-      // check if we start a new packet
-      if( packetBytes == 0 ) {
-        packetBytes = spi.readReg(CC1101_RXFIFO, CC1101_CONFIG); // read packet length
-        // DPRINT("Start Packet: ");DHEXLN(packetBytes);
-      }
+    if( fifoBytes > 0 && (fifoBytes & 0x80) != 0x80 ) {
+      packetBytes = spi.readReg(CC1101_RXFIFO, CC1101_CONFIG); // read packet length
+      // DPRINT("Start Packet: ");DHEXLN(packetBytes);
       // check that packet fits into the buffer
-      if (packetBytes > size) {                         // if packet is too long
-        // DPRINTLN("Packet too big");
-        packetBytes = 0;                                  // discard packet
-        flushrx();
-      }
-      else {
-        fifoBytes = spi.readReg(CC1101_RXBYTES, CC1101_STATUS); // how many bytes are in the buffer
-        // DPRINT("Packet: ");DHEX(packetBytes);DPRINT("  FIFO: ");DHEXLN(fifoBytes);
-        // overflow detected - flush the FIFO
-        if( (fifoBytes & 0x80) == 0x80 ) {
-          // DPRINTLN("RX FIFO: overflow");
-          flushrx();
-          fifoBytes = 0;
-          packetBytes = 0;
-        }
-        else if( packetBytes <= fifoBytes ) { // check that we can read the complete packet
-          spi.readBurst(buf, CC1101_RXFIFO, packetBytes);          // read data packet
-          rss = spi.readReg(CC1101_RXFIFO, CC1101_CONFIG);         // read RSSI
-          if (rss >= 128) rss = 255 - rss;
-          rss /= 2; rss += 72;
-          uint8_t val = spi.readReg(CC1101_RXFIFO, CC1101_CONFIG); // read LQI and CRC_OK
-          lqi = val & 0x7F;
-          if( (val & 0x80) == 0x80 ) { // check crc_ok
-            // DPRINTLN("CRC OK");
-            rxBytes = packetBytes;
-          }
-          else {
-            flushrx();
-          }
-          packetBytes = 0; // packet was read - reset packet byte counter
+      if (packetBytes <= size) {
+        spi.readBurst(buf, CC1101_RXFIFO, packetBytes);          // read data packet
+        rss = spi.readReg(CC1101_RXFIFO, CC1101_CONFIG);         // read RSSI
+        if (rss >= 128) rss = 255 - rss;
+        rss /= 2; rss += 72;
+        uint8_t val = spi.readReg(CC1101_RXFIFO, CC1101_CONFIG); // read LQI and CRC_OK
+        lqi = val & 0x7F;
+        if( (val & 0x80) == 0x80 ) { // check crc_ok
+          // DPRINTLN("CRC OK");
+          rxBytes = packetBytes;
         }
       }
     }
   //  DPRINT("-> ");
   //  DHEX(buf,buf[0]);
+    flushrx();
     return rxBytes; // return number of byte in buffer
   }
 
@@ -650,7 +621,6 @@ protected:
     spi.strobe(CC1101_SIDLE);                               // enter IDLE state
     spi.strobe(CC1101_SFRX);                                // flush Rx FIFO
     spi.strobe(CC1101_SRX);                                 // back to RX state
-    spi.strobe(CC1101_SWORRST);                               // reset real time clock
   }
 
 };
