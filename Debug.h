@@ -94,7 +94,6 @@
     for( int i=0; i<l; i++, b++) {
       DHEX(*b); DPRINT(F(" "));
     }
-    DPRINT(F("\n"));
   }
   inline void DHEXLN(uint8_t b) { DHEX(b); DPRINT(F("\n")); }
   inline void DHEXLN(uint16_t b) { DHEX(b); DPRINT(F("\n")); }
@@ -102,6 +101,7 @@
   inline void DDECLN(uint8_t b) { DDEC(b); DPRINT(F("\n")); }
   inline void DDECLN(uint16_t b) { DDEC(b); DPRINT(F("\n")); }
   inline void DDECLN(uint32_t b) { DDEC(b); DPRINT(F("\n")); }
+  inline void DHEXLN(const uint8_t* b,uint8_t l) { DHEX(b,l); DPRINT(F("\n")); }
 
 #endif
 
