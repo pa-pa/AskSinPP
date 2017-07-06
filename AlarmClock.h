@@ -119,9 +119,10 @@ extern SysClock sysclock;
 
 
 class RTC : public AlarmClock {
+  uint8_t ovrfl;
 public:
 
-  RTC () {}
+  RTC () : ovrfl(0) {}
 
   void init () {
 #ifdef ARDUINO_ARCH_AVR
@@ -144,6 +145,17 @@ public:
 #else
   #warning "RTC not supported"
 #endif
+  }
+
+  uint16_t getCounter (bool resetovrflow) {
+    if( resetovrflow == true ) {
+      ovrfl = 0;
+    }
+    return (256 * ovrfl) + TCNT2;
+  }
+
+  void overflow () {
+    ovrfl++;
   }
 };
 
