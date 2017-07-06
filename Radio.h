@@ -371,9 +371,7 @@ private:
 
   uint8_t rss;                                      // signal strength
   uint8_t lqi;                                      // link quality
-  volatile uint8_t intread;
   volatile bool idle;
-  volatile bool sending;
   Message buffer;
 
 public:   //---------------------------------------------------------------------------------------------------------
@@ -397,7 +395,7 @@ public:   //--------------------------------------------------------------------
     }
   }
 
-  Radio () : rss(0), lqi(0), intread(0), idle(false), sending(false) {}
+  Radio () : rss(0), lqi(0), idle(false) {}
 
   void init () {
     // ensure ISR if off before we start to init CC1101
@@ -476,10 +474,7 @@ public:   //--------------------------------------------------------------------
   }
 
   void handleInt () {
-    if( sending == false ) {
-      // DPRINTLN("*");
-      intread = 1;
-    }
+    // DPRINTLN("*");
   }
 
   uint8_t getGDO0 () {
@@ -495,10 +490,10 @@ public:   //--------------------------------------------------------------------
 
   // read the message form the internal buffer, if any
   uint8_t read (Message& msg) {
-    if( intread == 0 )
+    // nothing waiting - return
+    if( getGDO0() == 1 )
       return 0;
 
-    intread = 0;
     uint8_t len = rcvData(buffer.buffer(),buffer.buffersize());
     if( len > 0 ) {
       buffer.length(len);
@@ -538,10 +533,10 @@ public:   //--------------------------------------------------------------------
   }
 
   bool readAck (const Message& msg) {
-    if( intread == 0 )
+    // nothing waiting - return
+    if( getGDO0() == 1 )
       return false;
 
-    intread = 0;
     bool ack=false;
     uint8_t len = rcvData(buffer.buffer(),buffer.buffersize());
     if( len > 0 ) {
@@ -566,7 +561,6 @@ protected:
   uint8_t sndData(uint8_t *buf, uint8_t size, uint8_t burst) {
     timeout.waitTimeout();
     wakeup();
-    sending = true;
 
     // Going from RX to TX does not work if there was a reception less than 0.5
     // sec ago. Due to CCA? Using IDLE helps to shorten this period(?)
@@ -593,8 +587,6 @@ protected:
         break;                                    //now in RX mode, good
       _delay_us(10);
     }
-
-    sending = false;
 
     return true;
   }
