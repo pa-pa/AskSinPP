@@ -371,6 +371,7 @@ private:
 
   uint8_t rss;                                      // signal strength
   uint8_t lqi;                                      // link quality
+  volatile uint8_t intread;
   volatile bool idle;
   Message buffer;
 
@@ -395,7 +396,7 @@ public:   //--------------------------------------------------------------------
     }
   }
 
-  Radio () : rss(0), lqi(0), idle(false) {}
+  Radio () : rss(0), lqi(0), intread(0), idle(false) {}
 
   void init () {
     // ensure ISR if off before we start to init CC1101
@@ -475,6 +476,7 @@ public:   //--------------------------------------------------------------------
 
   void handleInt () {
     // DPRINTLN("*");
+    intread = 1;
   }
 
   uint8_t getGDO0 () {
@@ -490,10 +492,10 @@ public:   //--------------------------------------------------------------------
 
   // read the message form the internal buffer, if any
   uint8_t read (Message& msg) {
-    // nothing waiting - return
-    if( getGDO0() == 1 )
+    if( intread == 0 )
       return 0;
 
+    intread = 0;
     uint8_t len = rcvData(buffer.buffer(),buffer.buffersize());
     if( len > 0 ) {
       buffer.length(len);
@@ -533,10 +535,10 @@ public:   //--------------------------------------------------------------------
   }
 
   bool readAck (const Message& msg) {
-    // nothing waiting - return
-    if( getGDO0() == 1 )
+    if( intread == 0 )
       return false;
 
+    intread = 0;
     bool ack=false;
     uint8_t len = rcvData(buffer.buffer(),buffer.buffersize());
     if( len > 0 ) {
