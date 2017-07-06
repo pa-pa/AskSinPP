@@ -61,7 +61,7 @@ public:
     DHEX(id2());
   }
 
-  static HMID boardcast;
+  static HMID broadcast;
 };
 
 }

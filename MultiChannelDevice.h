@@ -202,7 +202,7 @@ public:
    void process(Message& msg) {
      HMID devid;
      this->getDeviceID(devid);
-     if( msg.to() == devid || (msg.to() == HMID::boardcast && this->isBoardcastMsg(msg))) {
+     if( msg.to() == devid || (msg.to() == HMID::broadcast && this->isBoardcastMsg(msg))) {
        DPRINT(F("-> "));
        msg.dump();
        // ignore repeated messages
@@ -294,7 +294,7 @@ public:
              cfgChannel = pm.channel();
              cfgList = findList(cfgChannel,pm.peer(),pm.list());
              // TODO setup alarm to disable after 2000ms
-             this->sendAck(msg,Message::CFG);
+             this->sendAck(msg);
            }
            else {
              this->sendNack(msg);
@@ -321,7 +321,7 @@ public:
              if( cfgChannel == pm.channel() && cfgList.valid() == true ) {
                this->writeList(cfgList,pm.data(),pm.datasize());
              }
-             this->sendAck(msg,Message::CFG);
+             this->sendAck(msg);
            }
            else {
              this->sendNack(msg);

@@ -348,6 +348,18 @@ class Radio {
       // add to system clock
       sysclock.add(*this);
     }
+
+    void setTimeout () {
+      // cancel possible old timeout
+      sysclock.cancel(*this);
+      // set to 100ms
+      set(millis2ticks(100));
+      // signal new wait cycle
+      wait = true;
+      // add to system clock
+      sysclock.add(*this);
+    }
+
     virtual void trigger(__attribute__ ((unused)) AlarmClock& clock) {
       // signal wait cycle over
       wait = false;
@@ -363,7 +375,6 @@ private:
   volatile bool idle;
   volatile bool sending;
   Message buffer;
-  Message sbuffer;
 
 public:   //---------------------------------------------------------------------------------------------------------
   void setIdle () {
@@ -520,10 +531,10 @@ public:   //--------------------------------------------------------------------
 
   // simple send the message
   bool write (const Message& msg, uint8_t burst) {
-    memcpy(sbuffer.buffer(),msg.buffer(),msg.length());
-    sbuffer.length(msg.length());
-    sbuffer.encode();
-    return sndData(sbuffer.buffer(),sbuffer.length(),burst);
+    memcpy(buffer.buffer(),msg.buffer(),msg.length());
+    buffer.length(msg.length());
+    buffer.encode();
+    return sndData(buffer.buffer(),buffer.length(),burst);
   }
 
   bool readAck (const Message& msg) {
@@ -609,6 +620,12 @@ protected:
           // DPRINTLN("CRC OK");
           rxBytes = packetBytes;
         }
+        else {
+          DPRINTLN("CRC Failed");
+        }
+      }
+      else {
+        DPRINT("Packet too big: ");DDECLN(packetBytes);
       }
     }
   //  DPRINT("-> ");

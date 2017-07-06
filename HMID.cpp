@@ -6,5 +6,5 @@
 #include "HMID.h"
 
 namespace as {
-HMID HMID::boardcast;
+HMID HMID::broadcast;
 }

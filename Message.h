@@ -12,7 +12,7 @@
 #include "Debug.h"
 
 //#define MaxDataLen   60						// maximum length of received bytes
-#define MaxDataLen   25
+#define MaxDataLen   50
 
 namespace as {
 
@@ -51,7 +51,7 @@ public:
   enum Flags {
     WKUP = 0x01,   // send initially to keep the device awake
     WKMEUP = 0x02, // awake - hurry up to send messages
-    CFG = 0x04,    // Device in Config mode
+    BCAST = 0x04,  // Device in Config mode
     BURST = 0x10,  // set if burst is required by device
     BIDI = 0x20,   // response is expected
     RPTED = 0x40,  // repeated (repeater operation)
@@ -170,6 +170,12 @@ public:
 
   void to(const HMID& hmid) {
     toID = hmid;
+    if( hmid == HMID::broadcast ) {
+      flag |= BCAST;
+    }
+    else {
+      flag &= ~BCAST;
+    }
   }
 
   const HMID& to () const {
@@ -280,6 +286,10 @@ public:
 
   void setWakeMeUp () {
     flag |= WKMEUP;
+  }
+
+  void setBroadcast () {
+    flag |= BCAST;
   }
 
   bool isRepeated () const {
