@@ -428,6 +428,7 @@ public:   //--------------------------------------------------------------------
       CC1101_SYNC0,     0xCA,
       CC1101_PKTLEN,    MaxDataLen+1,                           // packet length MaxDataLen+1
       CC1101_PKTCTRL1,  0x0C,                         // PQT = 0, CRC auto flush = 1, append status = 1, no address check
+      CC1101_PKTCTRL0,  0x45,
       CC1101_FSCTRL1,   0x06,                         // frequency synthesizer control
 
       // 868.299866 MHz
@@ -443,6 +444,7 @@ public:   //--------------------------------------------------------------------
       CC1101_MDMCFG4,  0xC8,
       CC1101_MDMCFG3,  0x93,
       CC1101_MDMCFG2,  0x03,
+      CC1101_MDMCFG1,  0x22,
       CC1101_DEVIATN,  0x34,                          // 19.042969 kHz
       CC1101_MCSM2,    0x01,
       CC1101_MCSM1,    0x33,
@@ -455,6 +457,8 @@ public:   //--------------------------------------------------------------------
       CC1101_FREND1,  0x56,
       CC1101_FSCAL1,  0x00,
       CC1101_FSCAL0,  0x11,
+      CC1101_FSTEST,  0x59,
+      CC1101_TEST2,   0x81,
       CC1101_TEST1,   0x35,
       CC1101_PATABLE, 0xC3,
     };
