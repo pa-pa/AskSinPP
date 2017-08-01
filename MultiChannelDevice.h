@@ -281,10 +281,13 @@ public:
            if( gl.valid() == true ) {
              this->sendInfoParamResponsePairs(msg.from(),msg.count(),gl);
            }
+           else {
+             this->sendNack(msg);
+           }
          }
          // CONFIG_STATUS_REQUEST
          else if (msubc == AS_CONFIG_STATUS_REQUEST ) {
-           // this is an answer to a reuqest - so we need no ack
+           // this is an answer to a request - so we need no ack
            this->sendInfoActuatorStatus(msg.from(),msg.count(),channel(msg.command()),false);
          }
          // CONFIG_START
