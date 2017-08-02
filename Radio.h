@@ -426,7 +426,7 @@ public:   //--------------------------------------------------------------------
       CC1101_FIFOTHR,   0x0D,                         // 0 ADC retention, 0 close in RX, TX FIFO = 9 / RX FIFO = 56 byte
       CC1101_SYNC1,     0xE9,                         // Sync word
       CC1101_SYNC0,     0xCA,
-      CC1101_PKTLEN,    MaxDataLen+1,                           // packet length MaxDataLen+1
+      CC1101_PKTLEN,    0x3D,                         // packet length has to be set to 61
       CC1101_PKTCTRL1,  0x0C,                         // PQT = 0, CRC auto flush = 1, append status = 1, no address check
       CC1101_PKTCTRL0,  0x45,
       CC1101_FSCTRL1,   0x06,                         // frequency synthesizer control
