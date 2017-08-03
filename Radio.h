@@ -420,14 +420,14 @@ public:   //--------------------------------------------------------------------
 
     // define init settings for TRX868
     static const uint8_t initVal[] PROGMEM = {
-      CC1101_IOCFG2,    0x2E, //                        // non inverted GDO2, high impedance tri state
-  //    CC1101_IOCFG1,    0x2E, // (default)                  // low output drive strength, non inverted GD=1, high impedance tri state
-      CC1101_IOCFG0,    0x06, // packet CRC ok                // disable temperature sensor, non inverted GDO0,
+      CC1101_IOCFG2,    0x2E, //                      // non inverted GDO2, high impedance tri state
+      CC1101_IOCFG1,    0x2E, // (default)            // low output drive strength, non inverted GD=1, high impedance tri state
+      CC1101_IOCFG0,    0x06, // packet CRC ok        // disable temperature sensor, non inverted GDO0,
       CC1101_FIFOTHR,   0x0D,                         // 0 ADC retention, 0 close in RX, TX FIFO = 9 / RX FIFO = 56 byte
       CC1101_SYNC1,     0xE9,                         // Sync word
       CC1101_SYNC0,     0xCA,
       CC1101_PKTLEN,    0x3D,                         // packet length has to be set to 61
-      CC1101_PKTCTRL1,  0x0C,                         // PQT = 0, CRC auto flush = 1, append status = 1, no address check
+      CC1101_PKTCTRL1,  0x04,                         // PQT = 0, CRC auto flush = 0, append status = 1, no address check
       CC1101_PKTCTRL0,  0x45,
       CC1101_FSCTRL1,   0x06,                         // frequency synthesizer control
 
@@ -499,6 +499,7 @@ public:   //--------------------------------------------------------------------
     if( intread == 0 )
       return 0;
 
+    intread = 0;
     uint8_t len = rcvData(buffer.buffer(),buffer.buffersize());
     if( len > 0 ) {
       buffer.length(len);
@@ -506,9 +507,6 @@ public:   //--------------------------------------------------------------------
       buffer.decode();
       // copy buffer to message
       memcpy(msg.buffer(),buffer.buffer(),len);
-    }
-    else {
-      intread = 0;
     }
 
     msg.length(len);
@@ -544,6 +542,7 @@ public:   //--------------------------------------------------------------------
     if( intread == 0 )
       return false;
 
+    intread = 0;
     bool ack=false;
     uint8_t len = rcvData(buffer.buffer(),buffer.buffersize());
     if( len > 0 ) {
@@ -557,9 +556,6 @@ public:   //--------------------------------------------------------------------
       // reset buffer
       buffer.clear();
     }
-    else {
-      intread = 0;
-    }
     return ack;
   }
 
@@ -572,14 +568,19 @@ protected:
     timeout.waitTimeout();
     wakeup();
 
+    // Going from RX to TX does not work if there was a reception less than 0.5
+    // sec ago. Due to CCA? Using IDLE helps to shorten this period(?)
+    spi.strobe(CC1101_SIDLE);                               // go to idle mode
+    spi.strobe(CC1101_SFTX );                               // flush TX buffer
+
     uint8_t i=200;
     do {
       spi.strobe(CC1101_STX);
       _delay_us(10);
       if( --i == 0 ) {
         // can not enter TX state - reset fifo
-        spi.strobe(CC1101_SFTX  );
         spi.strobe(CC1101_SIDLE );
+        spi.strobe(CC1101_SFTX  );
         spi.strobe(CC1101_SNOP );
         // back to RX mode
         do { spi.strobe(CC1101_SRX);
@@ -630,26 +631,14 @@ protected:
         else {
           DPRINTLN("CRC Failed");
         }
-        do { spi.strobe(CC1101_SRX); }
-        while (spi.readReg(CC1101_MARCSTATE, CC1101_STATUS) != MARCSTATE_RX);
       }
       else {
         DPRINT("Packet too big: ");DDECLN(packetBytes);
-        flushrx();
       }
     }
   //  DPRINT("-> ");
   //  DHEX(buf,buf[0]);
-
-    switch(spi.readReg(CC1101_MARCSTATE, CC1101_STATUS)) {
-      case MARCSTATE_RXFIFO_OFLOW:
-        spi.strobe(CC1101_SFRX);
-      case MARCSTATE_IDLE:
-        spi.strobe(CC1101_SIDLE);
-        spi.strobe(CC1101_SNOP);
-        spi.strobe(CC1101_SRX);
-        break;
-    }
+    flushrx();
     return rxBytes; // return number of byte in buffer
   }
 
