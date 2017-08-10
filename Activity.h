@@ -87,6 +87,51 @@ public:
   }
 };
 
+class SleepRTC : public Idle<true> {
+public:
+  static uint32_t doSleep (uint32_t ticks) {
+    uint32_t offset = 0;
+    period_t sleeptime = SLEEP_FOREVER;
+
+    if( ticks > seconds2ticks(1) ) { sleeptime = SLEEP_FOREVER; }
+    else if( ticks > millis2ticks(500) ) { sleeptime = SLEEP_500MS; }
+    else if( ticks > millis2ticks(250) ) { sleeptime = SLEEP_250MS; }
+    else if( ticks > millis2ticks(120) ) { sleeptime = SLEEP_120MS; }
+    else if( ticks > millis2ticks(60)  ) { sleeptime = SLEEP_60MS; }
+    else if( ticks > millis2ticks(30)  ) { sleeptime = SLEEP_30MS; }
+    else if( ticks > millis2ticks(15)  ) { sleeptime = SLEEP_15MS; }
+
+    uint16_t c1 = rtc.getCounter(true);
+    LowPower.powerExtStandby(sleeptime,ADC_OFF,BOD_OFF,TIMER2_ON);
+    uint16_t c2 = rtc.getCounter(false);
+    offset = (c2 - c1) * seconds2ticks(1) / 256;
+    // DHEX(ticks);DPRINT("  ");DHEX(c1);DPRINT(":");DHEX(c2);DPRINT("  ");DHEXLN(offset);
+
+    return min(ticks,offset);
+  }
+
+  template <class Hal>
+  static void powerSave (Hal& hal) {
+    sysclock.disable();
+    uint32_t ticks = sysclock.next();
+    if( sysclock.isready() == false ) {
+      if( ticks == 0 || ticks > millis2ticks(15) ) {
+        hal.radio.setIdle();
+        uint32_t offset = doSleep(ticks);
+        sysclock.correct(offset);
+        sysclock.enable();
+      }
+      else{
+        sysclock.enable();
+        Idle<true>::powerSave(hal);
+      }
+    }
+    else {
+      sysclock.enable();
+    }
+  }
+};
+
 #endif
 
 class Activity : public Alarm {

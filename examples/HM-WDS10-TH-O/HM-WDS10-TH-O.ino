@@ -71,7 +71,7 @@ public:
     if( batlow == true ) {
       t1 |= 0x80; // set bat low bit
     }
-    Message::init(0xc,msgcnt,0x70,BIDI|WKMEUP,t1,t2);
+    Message::init(0xc,msgcnt,0x70,BIDI,t1,t2);
     pload[0] = humidity;
   }
 };
@@ -94,23 +94,22 @@ public:
     if( millis != 0 ) {
       tick = millis2ticks(millis);
       millis = 0; // reset millis
-      async(false);
       sysclock.add(*this); // millis with sysclock
     }
     else {
+      uint8_t msgcnt = device().nextcount();
+      measure();
+      msg.init(msgcnt,temp,humidity,device().battery().low());
+      device().sendPeerEvent(msg,*this);
+//      device().send(msg,device().getMasterID());
+
       // reactivate for next measure
       HMID id;
       device().getDeviceID(id);
-      uint8_t msgcnt = device().nextcount();
       uint32_t nextsend = delay(id,msgcnt);
       tick = nextsend / 1000; // seconds to wait
       millis = nextsend % 1000; // millis to wait
-      async(millis != 0);
-      rtc.add(*this); // we wait first for the seconds with rtc
-
-      measure();
-      msg.init(msgcnt,temp,humidity,false);
-      device().sendPeerEvent(msg,*this);
+      rtc.add(*this);
     }
   }
 
@@ -132,7 +131,7 @@ public:
     uint32_t value = ((uint32_t)id) << 8 | msgcnt;
     value = (value * 1103515245 + 12345) >> 16;
     value = (value & 0xFF) + 480;
-    value *= 250; // * 250ms
+    value *= 250;
 
     DDEC(value / 1000);DPRINT(".");DDECLN(value % 1000);
 
@@ -172,6 +171,6 @@ void loop() {
   bool worked = hal.runready();
   bool poll = sdev.pollRadio();
   if( worked == false && poll == false ) {
-    hal.activity.savePower<Sleep<true>>(hal);
+    hal.activity.savePower<SleepRTC>(hal);
   }
 }

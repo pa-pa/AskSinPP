@@ -12,6 +12,7 @@ RTC rtc;
 
 #ifdef ARDUINO_ARCH_AVR
 ISR(TIMER2_OVF_vect) {
+  rtc.overflow();
   --rtc;
 }
 #endif

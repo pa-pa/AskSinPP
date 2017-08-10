@@ -192,7 +192,7 @@ public:
       result = radio().write(msg,msg.burstRequired());
       if( result == true && msg.ackRequired() == true && to.valid() == true ) {
         Message response;
-        if( (result=waitResponse(msg,response,30)) ) { // 300ms
+        if( (result=waitResponse(msg,response,60)) ) { // 600ms
   #ifdef USE_AES
           if( response.isChallengeAes() == true ) {
             AesChallengeMsg& cm = response.aesChallenge();

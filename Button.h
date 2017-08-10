@@ -52,8 +52,8 @@ public:
   }
 
   virtual void trigger(AlarmClock& clock) {
-    uint8_t nextstate = invalid;
-    uint8_t nexttick = 0;
+    uint8_t  nextstate = invalid;
+    uint16_t nexttick = 0;
     switch ( state() ) {
     case released:
     case longreleased:
@@ -110,8 +110,8 @@ public:
     uint8_t ps = digitalRead(pin);
     if( pinstate != ps ) {
       pinstate = ps;
-      uint8_t nexttick = 0;
-      uint8_t nextstate = state();
+      uint16_t nexttick = 0;
+      uint8_t  nextstate = state();
       switch ( state() ) {
       case none:
         nextstate = debounce;
