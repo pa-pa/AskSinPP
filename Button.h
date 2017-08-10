@@ -185,7 +185,18 @@ public:
     uint8_t old = ButtonType::state();
     ButtonType::state(s);
     if( s == ButtonType::released ) {
-      device.channel(1).toggleState();
+      RemoteEventMsg& msg = (RemoteEventMsg&)device.message();
+      HMID self;
+      device.getDeviceID(self);
+      uint8_t cnt = device.nextcount();
+      msg.init(cnt,1,cnt,false,false);
+      msg.to(self);
+      msg.from(self);
+      if( device.channel(1).process(msg) == false ) {
+        DPRINTLN("No self peer - use toggleState");
+        // no self peer - use old toggle code
+        device.channel(1).toggleState();
+      }
     }
     else if( s == ButtonType::longreleased ) {
       device.startPairing();
