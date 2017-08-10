@@ -156,6 +156,9 @@ public:
   ChannelType& channel(uint8_t ch) {
     return *devchannels[ch-1];
   }
+  void flushFIFO(){
+	  DeviceType::flushFIFO();
+  }
 
   bool pollRadio () {
     bool worked = DeviceType::pollRadio();
