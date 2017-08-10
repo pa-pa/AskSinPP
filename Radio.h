@@ -619,9 +619,11 @@ protected:
       // check that packet fits into the buffer
       if (packetBytes <= size) {
         spi.readBurst(buf, CC1101_RXFIFO, packetBytes);          // read data packet
-        rss = spi.readReg(CC1101_RXFIFO, CC1101_CONFIG);         // read RSSI
-        if (rss >= 128) rss = 255 - rss;
-        rss /= 2; rss += 72;
+        int16_t rssidec = spi.readReg(CC1101_RXFIFO, CC1101_CONFIG);         // read RSSI
+        if( rssidec >= 128 ) {
+          rssidec -= 256;
+        }
+        rss = (uint8_t)-((rssidec / 2) - 72);
         uint8_t val = spi.readReg(CC1101_RXFIFO, CC1101_CONFIG); // read LQI and CRC_OK
         lqi = val & 0x7F;
         if( (val & 0x80) == 0x80 ) { // check crc_ok
