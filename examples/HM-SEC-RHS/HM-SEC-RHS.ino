@@ -246,7 +246,7 @@ public:
   }
 
   uint8_t flags () const {
-    uint8_t flags = sabotage ? 0x02 : 0x00;
+    uint8_t flags = sabotage ? 0x0E : 0x00;
     flags |= this->device().battery().low() ? 0x80 : 0x00;
     return flags;
   }
