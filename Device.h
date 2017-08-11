@@ -157,9 +157,6 @@ public:
   const List0& getList0 () {
     return list0;
   }
-  void flushFIFO(){
-	  radio().flushFIFO();
-  }
 
   bool pollRadio () {
     uint8_t num = radio().read(msg);
