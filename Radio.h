@@ -562,6 +562,13 @@ public:   //--------------------------------------------------------------------
   uint8_t rssi () const {
     return rss;
   }
+  
+  void flushrx () {
+    spi.strobe(CC1101_SFRX);                                // flush Rx FIFO
+    spi.strobe(CC1101_SIDLE);                               // enter IDLE state
+    spi.strobe(CC1101_SNOP);
+    spi.strobe(CC1101_SRX);                                 // back to RX state
+  }
 
 protected:
   uint8_t sndData(uint8_t *buf, uint8_t size, uint8_t burst) {
@@ -643,14 +650,6 @@ protected:
     flushrx();
     return rxBytes; // return number of byte in buffer
   }
-
-  void flushrx () {
-    spi.strobe(CC1101_SFRX);                                // flush Rx FIFO
-    spi.strobe(CC1101_SIDLE);                               // enter IDLE state
-    spi.strobe(CC1101_SNOP);
-    spi.strobe(CC1101_SRX);                                 // back to RX state
-  }
-
 };
 
 }
