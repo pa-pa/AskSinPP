@@ -184,7 +184,10 @@ public:
       }
       MotionEventMsg& msg = (MotionEventMsg&)ChannelType::device().message();
       msg.init(ChannelType::device().nextcount(),ChannelType::number(),++counter,status(),ChannelType::getList1().minInterval());
+	  
+	  pirInterruptOff();
       ChannelType::device().sendPeerEvent(msg,*this);
+	  pirInterruptOn();
     }
     else if ( ChannelType::getList1().captureWithinInterval() == true ) {
       // we have had a motion during quiet interval
