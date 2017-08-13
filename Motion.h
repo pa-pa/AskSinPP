@@ -191,12 +191,7 @@ public:
       msg.init(ChannelType::device().nextcount(),ChannelType::number(),++counter,status(),ChannelType::getList1().minInterval());
       ChannelType::device().sendPeerEvent(msg,*this);
     }
-    else if ( ChannelType::getList1().captureWithinInterval() == true ) {
-	  // reset state timer because motion will be send when interval is over
-	  sysclock.cancel(cycle);
-	  cycle.set(LIGHTCYCLE);
-	  sysclock.add(cycle);
-		
+    else if ( ChannelType::getList1().captureWithinInterval() == true ) {	
       // we have had a motion during quiet interval
       quiet.motion = true;
     }
