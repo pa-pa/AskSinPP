@@ -174,7 +174,9 @@ public:
   virtual void trigger (__attribute__ ((unused)) AlarmClock& clock) {
     if( quiet.enabled == false ) {
 	  // reset state timer because motion will be send now
+	  sysclock.cancel(cycle);
 	  cycle.set(LIGHTCYCLE);
+	  sysclock.add(cycle);
 	  
       DPRINTLN(F("Motion"));
       // start timer to end quiet interval
@@ -191,7 +193,9 @@ public:
     }
     else if ( ChannelType::getList1().captureWithinInterval() == true ) {
 	  // reset state timer because motion will be send when interval is over
+	  sysclock.cancel(cycle);
 	  cycle.set(LIGHTCYCLE);
+	  sysclock.add(cycle);
 		
       // we have had a motion during quiet interval
       quiet.motion = true;
