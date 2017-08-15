@@ -31,7 +31,8 @@
 #define CONFIG_BUTTON_PIN 8
 // Arduino pin for the counter impulse
 // A0 == PIN 14 on Pro Mini
-#define INPUT_PIN 3
+#define COUNTER1_PIN 14
+#define COUNTER2_PIN 15
 // we send the counter every 3 minutes
 #define MSG_CYCLE seconds2ticks(3*60)
 
@@ -198,7 +199,7 @@ public:
 
 class GasPowerEventMsg : public Message {
 public:
-  void init(uint8_t msgcnt,bool boot,uint32_t counter,uint32_t power) {
+  void init(uint8_t msgcnt,bool boot,const uint64_t& counter,const uint32_t& power) {
     uint8_t cnt1 = (counter >> 24) & 0x7f;
     if( boot == true ) {
       cnt1 |= 0x80;
@@ -214,7 +215,7 @@ public:
 
 class GasPowerEventCycleMsg : public GasPowerEventMsg {
 public:
-  void init(uint8_t msgcnt,bool boot,uint32_t counter,uint32_t power) {
+  void init(uint8_t msgcnt,bool boot,const uint64_t& counter,const uint32_t& power) {
     GasPowerEventMsg::init(msgcnt,boot,counter,power);
     typ = 0x53;
   }
@@ -222,7 +223,7 @@ public:
 
 class PowerEventMsg : public Message {
 public:
-  void init(uint8_t msgcnt,bool boot,uint32_t counter,uint32_t power) {
+  void init(uint8_t msgcnt,bool boot,const uint64_t& counter,const uint32_t& power) {
     uint8_t cnt1 = (counter >> 16) & 0x7f;
     if( boot == true ) {
       cnt1 |= 0x80;
@@ -237,20 +238,49 @@ public:
 
 class PowerEventCycleMsg : public PowerEventMsg {
 public:
-  void init(uint8_t msgcnt,bool boot,uint32_t counter,uint32_t power) {
+  void init(uint8_t msgcnt,bool boot,const uint64_t& counter,const uint32_t& power) {
     PowerEventMsg::init(msgcnt,boot,counter,power);
     typ = 0x5e;
   }
 };
 
+class IECEventMsg : public Message {
+public:
+  void init(uint8_t msgcnt,uint8_t channel,const uint64_t& counter,const uint32_t& power,bool lowbat) {
+    uint8_t cnt1 = channel & 0x3f;
+    if( lowbat == true ) {
+      cnt1 |= 0x40;
+    }
+    Message::init(0x15,msgcnt,0x61,BIDI|WKMEUP,cnt1,0x00);
+    pload[0] = (counter >> 32) & 0xff;
+    pload[1] = (counter >> 24) & 0xff;
+    pload[2] = (counter >> 16) & 0xff;
+    pload[3] = (counter >>  8) & 0xff;
+    pload[4] = counter & 0xff;
+    pload[5] = 0x00; //
+    pload[6] = (power >> 24) & 0xff;
+    pload[7] = (power >> 16) & 0xff;
+    pload[8] = (power >>  8) & 0xff;
+    pload[9] = power & 0xff;
+  }
+};
+
+class IECEventCycleMsg : public IECEventMsg {
+public:
+  void init(uint8_t msgcnt,uint8_t channel,const uint64_t& counter,const uint32_t& power,bool lowbat) {
+    IECEventMsg::init(msgcnt,channel,counter,power,lowbat);
+    typ = 0x60;
+  }
+};
+
 class MeterChannel : public Channel<HalType,MeterList1,EmptyList,List4,PEERS_PER_CHANNEL>, public Alarm {
 
-  const uint32_t maxVal = 838860700;
-  uint64_t counterSum;
+  const uint32_t    maxVal = 838860700;
+  uint64_t          counterSum;
   volatile uint32_t counter; // declare as volatile because of usage withing interrupt
-  Message     msg;
-  uint8_t     msgcnt;
-  bool        boot;
+  Message           msg;
+  uint8_t           msgcnt;
+  bool              boot;
   
 private:
 
@@ -282,15 +312,22 @@ public:
     clock.add(*this);
 
     uint32_t consumptionSum;
-    uint32_t actualConsumption;
+    uint32_t actualConsumption=0;
 
     MeterList1 l1 = getList1();
     uint8_t metertype = l1.meterType(); // cache metertype to reduce eeprom access
+    if( metertype == 0 ) {
+      return;
+    }
 
     // copy value, to be consistent during calculation (counter may change when an interrupt is triggered)
-    uint32_t c = counter;
-    counter = 0;
-    counterSum = counterSum + c;
+    uint32_t c;
+    ATOMIC_BLOCK( ATOMIC_RESTORESTATE )
+    {
+      c = counter;
+      counter = 0;
+    }
+    counterSum += c;
     
     uint16_t sigs = 1;
     switch( metertype ) {
@@ -318,6 +355,9 @@ public:
       // calculate consumption whithin the last MSG_CYCLE period
       actualConsumption = (60 * 100000 * c) / (sigs * (MSG_CYCLE / seconds2ticks(60)));
       ((PowerEventCycleMsg&)msg).init(msgcnt++,boot,consumptionSum,actualConsumption);
+      break;
+    case 8:
+      ((IECEventCycleMsg&)msg).init(msgcnt++,number(),counterSum,actualConsumption,device().battery().low());
       break;
     default:
       break;
@@ -370,13 +410,24 @@ public:
     attach();
   }
 };
-void meterISR();
-ISRWrapper<INPUT_PIN,meterISR,200> gasISR;
-void meterISR () {
-  gasISR.debounce();
-  if( gasISR.checkstate() ) {
-    if( gasISR.state() == LOW ) {
+void counter1ISR();
+ISRWrapper<COUNTER1_PIN,counter1ISR,200> c1ISR;
+void counter1ISR () {
+  c1ISR.debounce();
+  if( c1ISR.checkstate() ) {
+    if( c1ISR.state() == LOW ) {
       sdev.channel(1).next();
+    }
+  }
+}
+
+void counter2ISR();
+ISRWrapper<COUNTER2_PIN,counter2ISR,200> c2ISR;
+void counter2ISR () {
+  c2ISR.debounce();
+  if( c2ISR.checkstate() ) {
+    if( c2ISR.state() == LOW ) {
+      sdev.channel(2).next();
     }
   }
 }
@@ -395,9 +446,11 @@ void setup () {
   hal.battery.low(22);
   hal.battery.critical(19);
 
-  gasISR.attach();
+  c1ISR.attach();
+  c2ISR.attach();
   // add channel 1 to timer to send event
   sysclock.add(sdev.channel(1));
+  sysclock.add(sdev.channel(2));
 }
 
 void loop() {
