@@ -173,10 +173,10 @@ public:
   // this runs synch to application
   virtual void trigger (__attribute__ ((unused)) AlarmClock& clock) {
     if( quiet.enabled == false ) {
-	  // reset state timer because motion will be send now
-	  sysclock.cancel(cycle);
-	  cycle.set(LIGHTCYCLE);
-	  sysclock.add(cycle);
+  	  // reset state timer because motion will be send now
+	    sysclock.cancel(cycle);
+	    cycle.set(LIGHTCYCLE);
+	    sysclock.add(cycle);
 	  
       DPRINTLN(F("Motion"));
       // start timer to end quiet interval
@@ -190,9 +190,9 @@ public:
       MotionEventMsg& msg = (MotionEventMsg&)ChannelType::device().message();
       msg.init(ChannelType::device().nextcount(),ChannelType::number(),++counter,status(),ChannelType::getList1().minInterval());
 	  
-	  pirInterruptOff();
+	    pirInterruptOff();
       ChannelType::device().sendPeerEvent(msg,*this);
-	  pirInterruptOn();
+	    pirInterruptOn();
     }
     else if ( ChannelType::getList1().captureWithinInterval() == true ) {	
       // we have had a motion during quiet interval
