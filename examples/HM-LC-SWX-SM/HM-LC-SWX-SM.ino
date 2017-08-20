@@ -128,6 +128,8 @@ void setup () {
       sdev.channel(i).peer(ipeer);
     }
   }
+  // delay next send by random time
+  hal.waitTimeout((rand() % 3500)+1000);
 }
 
 void loop() {
