@@ -416,6 +416,7 @@ private:
   uint8_t rss;                                      // signal strength
   uint8_t lqi;                                      // link quality
   volatile uint8_t intread;
+  volatile uint8_t m_inttx;
   volatile bool idle;
   Message buffer;
 
@@ -543,6 +544,17 @@ public:   //--------------------------------------------------------------------
 
   void handleInt () {
     // DPRINTLN("*");
+	if(m_inttx == 1){
+		m_inttx = 0;
+		/*
+		// used at HM-PB-6-WM55 after sending
+		spi.strobe(CC1101_SIDLE);
+		spi.strobe(CC1101_SFRX);
+		spi.strobe(CC1101_SRX);
+		*/
+		return;
+	}
+	
     intread = 1;
   }
 
@@ -627,10 +639,9 @@ public:   //--------------------------------------------------------------------
   }
   
   void flushrx () {
+	spi.strobe(CC1101_SIDLE);
+	spi.strobe(CC1101_SNOP);
     spi.strobe(CC1101_SFRX);                                // flush Rx FIFO
-    spi.strobe(CC1101_SIDLE);                               // enter IDLE state
-    spi.strobe(CC1101_SNOP);
-    spi.strobe(CC1101_SRX);                                 // back to RX state
   }
 
 protected:
@@ -640,7 +651,7 @@ protected:
 
     // Going from RX to TX does not work if there was a reception less than 0.5
     // sec ago. Due to CCA? Using IDLE helps to shorten this period(?)
-    spi.strobe(CC1101_SIDLE);                               // go to idle mode
+	_delay_us(150);
     spi.strobe(CC1101_SFTX );                               // flush TX buffer
 
     uint8_t i=200;
@@ -660,20 +671,23 @@ protected:
     }
     while(spi.readReg(CC1101_MARCSTATE, CC1101_STATUS) != MARCSTATE_TX);
 
-    _delay_ms(10);
     if (burst) {         // BURST-bit set?
-      _delay_ms(350);    // according to ELV, devices get activated every 300ms, so send burst for 360ms
+	  spi.strobe(CC1101_STX);
+      _delay_ms(360);    // according to ELV, devices get activated every 300ms, so send burst for 360ms
     }
 
+	
+	// wait for GDO0 go low after tx
+	m_inttx = 1;
+	// write bytecount to send
     spi.writeReg(CC1101_TXFIFO, size);
     spi.writeBurst(CC1101_TXFIFO, buf, size);           // write in TX FIFO
 
-    for(uint8_t i = 0; i < 200; i++) {  // after sending out all bytes the chip should go automatically in RX mode
-      if( spi.readReg(CC1101_MARCSTATE, CC1101_STATUS) == MARCSTATE_RX)
-        break;                                    //now in RX mode, good
-      _delay_us(10);
-    }
-
+	flushrx();
+	
+	if(!burst){
+		spi.strobe(CC1101_STX); // send bytes
+	}
     return true;
   }
 
@@ -710,7 +724,10 @@ protected:
     }
   //  DPRINT("-> ");
   //  DHEX(buf,buf[0]);
+	spi.strobe(CC1101_SFRX);
+	_delay_us(190);
     flushrx();
+	spi.strobe(CC1101_SRX);
     return rxBytes; // return number of byte in buffer
   }
 };
