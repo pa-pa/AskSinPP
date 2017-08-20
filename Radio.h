@@ -192,6 +192,36 @@ public:
     waitMiso();
     deselect();
   }
+  
+  uint8_t reset() {
+	// Set SCLK = 1 and SI = 0, to avoid potential problems with pin control mode
+	digitalWrite(SCLK,HIGH);
+	digitalWrite(MOSI,LOW);
+	
+	// Strobe CSn low / high
+	select();
+	
+	// Automatic POR 
+	// If the chip has had sufficient time for the crystal oscillator to stabilize after the power-on-reset the SO pin
+	// will go low immediately after taking CSn low. If CSn is taken low before reset is completed the
+	// SO pin will first go high, indicating that the crystal oscillator is not stabilized, before going low
+	waitMiso();
+	deselect();
+	
+	// Hold CSn high for at least 40μs relative to pulling CSn low
+	_delay_us(50);
+	
+	// Pull CSn low and wait for SO to go low (CHIP_RDYn).
+	select();
+	waitMiso();
+	
+	// Issue the SRES strobe on the SI line
+	uint8_t ret = send(CC1101_SRES);
+	
+	// When SO goes low again, reset is complete and the chip is in the IDLE state.
+	waitMiso();
+	deselect();
+  }
 
   uint8_t strobe(uint8_t cmd) {
     select();                                     // select CC1101
@@ -269,6 +299,20 @@ public:
     SPI.transfer(0); // ????
     deselect();
     SPI.endTransaction();
+  }
+  
+  uint8_t reset() {
+	deselect();                                   // some deselect and selects to init the TRX868modul
+    _delay_us(5);
+    select();
+    _delay_us(10);
+    deselect();
+    _delay_us(41);
+
+    uint8_t ret = strobe(CC1101_SRES);                                // send reset
+	_delay_ms(10);
+	
+	return ret;
   }
 
   uint8_t strobe(uint8_t cmd) {
@@ -418,16 +462,9 @@ public:   //--------------------------------------------------------------------
     spi.init();                                     // init the hardware to get access to the RF modul
     pinMode(GDO0,INPUT);
 
-    DPRINT(F("1"));
-    spi.deselect();                                   // some deselect and selects to init the TRX868modul
-    _delay_us(5);
-    spi.select();
-    _delay_us(10);
-    spi.deselect();
-    _delay_us(41);
-
-    spi.strobe(CC1101_SRES);                                // send reset
-    _delay_ms(10);
+    DPRINTLN(F("1"));
+    
+	spi.reset();
 
     // define init settings for TRX868
     static const uint8_t initVal[] PROGMEM = {
