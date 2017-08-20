@@ -192,36 +192,6 @@ public:
     waitMiso();
     deselect();
   }
-  
-  uint8_t reset() {
-	// Set SCLK = 1 and SI = 0, to avoid potential problems with pin control mode
-	digitalWrite(SCLK,HIGH);
-	digitalWrite(MOSI,LOW);
-	
-	// Strobe CSn low / high
-	select();
-	
-	// Automatic POR 
-	// If the chip has had sufficient time for the crystal oscillator to stabilize after the power-on-reset the SO pin
-	// will go low immediately after taking CSn low. If CSn is taken low before reset is completed the
-	// SO pin will first go high, indicating that the crystal oscillator is not stabilized, before going low
-	waitMiso();
-	deselect();
-	
-	// Hold CSn high for at least 40μs relative to pulling CSn low
-	_delay_us(50);
-	
-	// Pull CSn low and wait for SO to go low (CHIP_RDYn).
-	select();
-	waitMiso();
-	
-	// Issue the SRES strobe on the SI line
-	uint8_t ret = send(CC1101_SRES);
-	
-	// When SO goes low again, reset is complete and the chip is in the IDLE state.
-	waitMiso();
-	deselect();
-  }
 
   uint8_t strobe(uint8_t cmd) {
     select();                                     // select CC1101
@@ -299,20 +269,6 @@ public:
     SPI.transfer(0); // ????
     deselect();
     SPI.endTransaction();
-  }
-  
-  uint8_t reset() {
-	deselect();                                   // some deselect and selects to init the TRX868modul
-    _delay_us(5);
-    select();
-    _delay_us(10);
-    deselect();
-    _delay_us(41);
-
-    uint8_t ret = strobe(CC1101_SRES);                                // send reset
-	_delay_ms(10);
-	
-	return ret;
   }
 
   uint8_t strobe(uint8_t cmd) {
@@ -427,7 +383,7 @@ private:
   uint8_t rss;                                      // signal strength
   uint8_t lqi;                                      // link quality
   volatile uint8_t intread;
-  volatile uint8_t m_inttx;
+  volatile uint8_t sending;
   volatile bool idle;
   Message buffer;
 
@@ -452,7 +408,7 @@ public:   //--------------------------------------------------------------------
     }
   }
 
-  Radio () : rss(0), lqi(0), intread(0), idle(false) {}
+  Radio () : rss(0), lqi(0), intread(0), sending(0), idle(false) {}
 
   void init () {
     // ensure ISR if off before we start to init CC1101
@@ -463,9 +419,16 @@ public:   //--------------------------------------------------------------------
     spi.init();                                     // init the hardware to get access to the RF modul
     pinMode(GDO0,INPUT);
 
-    DPRINTLN(F("1"));
-    
-	spi.reset();
+    DPRINT(F("1"));
+    spi.deselect();                                   // some deselect and selects to init the TRX868modul
+    _delay_us(5);
+    spi.select();
+    _delay_us(10);
+    spi.deselect();
+    _delay_us(41);
+
+    spi.strobe(CC1101_SRES);                                // send reset
+    _delay_ms(10);
 
     // define init settings for TRX868
     static const uint8_t initVal[] PROGMEM = {
@@ -528,45 +491,35 @@ public:   //--------------------------------------------------------------------
   }
   
   // writes register and validates it like ELV does when initializing 
-  bool writeRegister(uint8_t regAddr, uint8_t val){
-	uint8_t retries = 2;
-	uint8_t val_read = 0;
-	bool success = false;
+  bool writeRegister(uint8_t regAddr, uint8_t val) {
+  	uint8_t retries = 2;
+	  uint8_t val_read = 0;
+	  bool success = false;
 	
-	do {
-		spi.writeReg(regAddr, val);
-		val_read = spi.readReg(regAddr, CC1101_CONFIG);
-		if(val_read == val) {
-			success = true;
-		}
-		else {
-			retries--;
-		}
-	}
-	while(success == false && retries > 0);
+	  do {
+		  spi.writeReg(regAddr, val);
+		  val_read = spi.readReg(regAddr, CC1101_CONFIG);
+		  if(val_read == val) {
+			  success = true;
+		  }
+		  else {
+			  retries--;
+		  }
+	  }
+	  while(success == false && retries > 0);
 	
-	if(success == false) {
-		DPRINT("Error at "); DHEX(regAddr);
-		DPRINT(" expected: "); DHEX(val); DPRINT(" read: "); DHEXLN(val_read);
-	}
-	
-	return success;
+	  if(success == false) {
+		  DPRINT("Error at "); DHEX(regAddr);
+		  DPRINT(" expected: "); DHEX(val); DPRINT(" read: "); DHEXLN(val_read);
+	  }
+	  return success;
   }
 
   void handleInt () {
     // DPRINTLN("*");
-	if(m_inttx == 1){
-		m_inttx = 0;
-		/*
-		// used at HM-PB-6-WM55 after sending
-		spi.strobe(CC1101_SIDLE);
-		spi.strobe(CC1101_SFRX);
-		spi.strobe(CC1101_SRX);
-		*/
-		return;
-	}
-	
-    intread = 1;
+	  if(sending == 0){
+	    intread = 1;
+	  }
   }
 
   uint8_t getGDO0 () {
@@ -650,19 +603,20 @@ public:   //--------------------------------------------------------------------
   }
   
   void flushrx () {
-	spi.strobe(CC1101_SIDLE);
-	spi.strobe(CC1101_SNOP);
     spi.strobe(CC1101_SFRX);                                // flush Rx FIFO
+    spi.strobe(CC1101_SIDLE);                               // enter IDLE state
+    spi.strobe(CC1101_SNOP);
+    spi.strobe(CC1101_SRX);                                 // back to RX state
   }
 
 protected:
   uint8_t sndData(uint8_t *buf, uint8_t size, uint8_t burst) {
     timeout.waitTimeout();
     wakeup();
-
+    sending = 1;
     // Going from RX to TX does not work if there was a reception less than 0.5
     // sec ago. Due to CCA? Using IDLE helps to shorten this period(?)
-	_delay_us(150);
+    spi.strobe(CC1101_SIDLE);                               // go to idle mode
     spi.strobe(CC1101_SFTX );                               // flush TX buffer
 
     uint8_t i=200;
@@ -677,28 +631,26 @@ protected:
         // back to RX mode
         do { spi.strobe(CC1101_SRX);
         } while (spi.readReg(CC1101_MARCSTATE, CC1101_STATUS) != MARCSTATE_RX);
+        sending = 0;
         return false;
       }
     }
     while(spi.readReg(CC1101_MARCSTATE, CC1101_STATUS) != MARCSTATE_TX);
 
+    _delay_ms(10);
     if (burst) {         // BURST-bit set?
-	  spi.strobe(CC1101_STX);
-      _delay_ms(360);    // according to ELV, devices get activated every 300ms, so send burst for 360ms
+      _delay_ms(350);    // according to ELV, devices get activated every 300ms, so send burst for 360ms
     }
 
-	
-	// wait for GDO0 go low after tx
-	m_inttx = 1;
-	// write bytecount to send
     spi.writeReg(CC1101_TXFIFO, size);
     spi.writeBurst(CC1101_TXFIFO, buf, size);           // write in TX FIFO
 
-	flushrx();
-	
-	if(!burst){
-		spi.strobe(CC1101_STX); // send bytes
-	}
+    for(uint8_t i = 0; i < 200; i++) {  // after sending out all bytes the chip should go automatically in RX mode
+      if( spi.readReg(CC1101_MARCSTATE, CC1101_STATUS) == MARCSTATE_RX)
+        break;                                    //now in RX mode, good
+      _delay_us(10);
+    }
+    sending = 0;
     return true;
   }
 
@@ -735,10 +687,7 @@ protected:
     }
   //  DPRINT("-> ");
   //  DHEX(buf,buf[0]);
-	spi.strobe(CC1101_SFRX);
-	_delay_us(190);
     flushrx();
-	spi.strobe(CC1101_SRX);
     return rxBytes; // return number of byte in buffer
   }
 };
