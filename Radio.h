@@ -500,7 +500,7 @@ public:   //--------------------------------------------------------------------
       CC1101_PATABLE, 0xC3,
     };
     for (uint8_t i=0; i<sizeof(initVal); i+=2) {                    // write init value to TRX868
-      spi.writeReg(pgm_read_byte(&initVal[i]), pgm_read_byte(&initVal[i+1]));
+      writeRegister(pgm_read_byte(&initVal[i]), pgm_read_byte(&initVal[i+1]));
     }
     DPRINT(F("2"));
     spi.strobe(CC1101_SCAL);                                // calibrate frequency synthesizer and turn it off
@@ -513,6 +513,32 @@ public:   //--------------------------------------------------------------------
     flushrx();
     spi.strobe(CC1101_SWORRST);                               // reset real time clock
     DPRINTLN(F(" - ready"));
+  }
+  
+  // writes register and validates it like ELV does when initializing 
+  bool writeRegister(uint8_t regAddr, uint8_t val){
+	uint8_t retries = 2;
+	uint8_t val_read = 0;
+	bool success = false;
+	
+	do {
+		spi.writeReg(regAddr, val);
+		val_read = spi.readReg(regAddr, CC1101_CONFIG);
+		if(val_read == val) {
+			success = true;
+		}
+		else {
+			retries--;
+		}
+	}
+	while(success == false && retries > 0);
+	
+	if(success == false) {
+		DPRINT("Error at "); DHEX(regAddr);
+		DPRINT(" expected: "); DHEX(val); DPRINT(" read: "); DHEXLN(val_read);
+	}
+	
+	return success;
   }
 
   void handleInt () {
