@@ -349,11 +349,11 @@ class Radio {
       sysclock.add(*this);
     }
 
-    void setTimeout () {
+    void setTimeout (uint16_t millis=100) {
       // cancel possible old timeout
       sysclock.cancel(*this);
       // set to 100ms
-      set(millis2ticks(100));
+      set(millis2ticks(millis));
       // signal new wait cycle
       wait = true;
       // add to system clock
@@ -365,6 +365,17 @@ class Radio {
       wait = false;
     }
   } timeout;
+
+public:
+  //  this will delay next send by given millis
+  void setSendTimeout(uint16_t millis) {
+    timeout.setTimeout(millis);
+  }
+  // use the radio timer to wait given millis
+  void waitTimeout (uint16_t millis) {
+    timeout.setTimeout(millis);
+    timeout.waitTimeout();
+  }
 
 private:
   SPIType spi;

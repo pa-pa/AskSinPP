@@ -121,7 +121,9 @@ public:
     }
     this->keystore().init();
     this->setHal(hal);
-    hal.init();
+    HMID id;
+    this->getDeviceID(id);
+    hal.init(id);
     this->configChanged();
   }
 
