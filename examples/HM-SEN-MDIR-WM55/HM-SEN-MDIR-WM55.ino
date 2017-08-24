@@ -53,8 +53,8 @@ typedef StatusLed<4> LedType;
 typedef AskSin<LedType,BatterySensor,RadioType> BaseHal;
 class Hal : public BaseHal {
 public:
-  void init () {
-    BaseHal::init();
+  void init (const HMID& id) {
+    BaseHal::init(id);
     // measure battery every 1h
     battery.init(seconds2ticks(60UL*60),sysclock);
     battery.low(22);

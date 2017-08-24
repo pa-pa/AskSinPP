@@ -58,7 +58,8 @@ void setup () {
   DINIT(57600,ASKSIN_PLUS_PLUS_IDENTIFIER);
   sdev.init(hal,DIMMER_PIN);
   buttonISR(cfgBtn,CONFIG_BUTTON_PIN);
-  // TODO - random delay
+  // delay next send by random time
+  hal.waitTimeout((rand() % 3500)+1000);
 }
 
 void loop() {
