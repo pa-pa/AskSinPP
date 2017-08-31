@@ -172,6 +172,7 @@ public:
     toID = hmid;
     if( hmid == HMID::broadcast ) {
       flag |= BCAST;
+      flag &= ~BIDI;
     }
     else {
       flag &= ~BCAST;
