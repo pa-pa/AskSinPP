@@ -159,6 +159,7 @@ namespace as {
 template <uint8_t CS,uint8_t MOSI,uint8_t MISO,uint8_t SCLK>
 class AvrSPI {
 
+public:
   uint8_t send (uint8_t data) {
     SPDR = data;                  // send byte
     while (!(SPSR & _BV(SPIF)));  // wait until transfer finished
@@ -169,7 +170,6 @@ class AvrSPI {
     while(digitalRead(MISO));
   }
 
-public:
   void init () {
     pinMode(CS,OUTPUT);
     pinMode(MOSI,OUTPUT);
@@ -177,6 +177,9 @@ public:
     pinMode(SCLK,OUTPUT);
     // SPI enable, master, speed = CLK/4
     SPCR = _BV(SPE) | _BV(MSTR);
+    // Set SCLK = 1 and SI = 0, to avoid potential problems with pin control mode
+    digitalWrite(SCLK,HIGH);
+    digitalWrite(MOSI,LOW);
   }
 
   void select () {
@@ -192,7 +195,7 @@ public:
     waitMiso();
     deselect();
   }
-
+  
   uint8_t strobe(uint8_t cmd) {
     select();                                     // select CC1101
     waitMiso();                                     // wait until MISO goes low
@@ -269,6 +272,17 @@ public:
     SPI.transfer(0); // ????
     deselect();
     SPI.endTransaction();
+  }
+  
+  void waitMiso () {
+    _delay_us(10);
+  }
+
+  uint8_t send (uint8_t data) {
+    SPI.beginTransaction(SPISettings(CLOCK,BITORDER,MODE));
+    uint8_t ret = SPI.transfer(data);
+    SPI.endTransaction();
+    return ret;
   }
 
   uint8_t strobe(uint8_t cmd) {
@@ -390,6 +404,7 @@ private:
 public:   //---------------------------------------------------------------------------------------------------------
   void setIdle () {
     if( idle == false ) {
+	    //DPRINTLN("CC enter powerdown");
       uint8_t cnt = 0xff;
       while(cnt-- && (spi.strobe(CC1101_SIDLE) & 0x70) != 0) {
         _delay_us(10);
@@ -404,11 +419,42 @@ public:   //--------------------------------------------------------------------
     if( idle == true ) {
       spi.ping();
       flushrx();
+	    spi.strobe(CC1101_SRX);
       idle = false;
     }
   }
 
-  Radio () : rss(0), lqi(0), intread(0), sending(0), idle(false) {}
+  Radio () : rss(0), lqi(0), intread(0), sending(0),  idle(false) {}
+
+  uint8_t reset() {
+
+    // Strobe CSn low / high
+    spi.select();
+
+    // Automatic POR
+    // If the chip has had sufficient time for the crystal oscillator to stabilize after the power-on-reset the SO pin
+    // will go low immediately after taking CSn low. If CSn is taken low before reset is completed the
+    // SO pin will first go high, indicating that the crystal oscillator is not stabilized, before going low
+    spi.waitMiso();
+    spi.deselect();
+
+    // Hold CSn high for at least 40μs relative to pulling CSn low
+    _delay_us(50);
+
+    // Pull CSn low and wait for SO to go low (CHIP_RDYn).
+    spi.select();
+    spi.waitMiso();
+
+    // Issue the SRES strobe on the SI line
+    uint8_t ret = spi.send(CC1101_SRES);
+
+    // When SO goes low again, reset is complete and the chip is in the IDLE state.
+    spi.waitMiso();
+    spi.deselect();
+
+    return ret;
+  }
+
 
   void init () {
     // ensure ISR if off before we start to init CC1101
@@ -419,28 +465,22 @@ public:   //--------------------------------------------------------------------
     spi.init();                                     // init the hardware to get access to the RF modul
     pinMode(GDO0,INPUT);
 
-    DPRINT(F("1"));
-    spi.deselect();                                   // some deselect and selects to init the TRX868modul
-    _delay_us(5);
-    spi.select();
-    _delay_us(10);
-    spi.deselect();
-    _delay_us(41);
-
-    spi.strobe(CC1101_SRES);                                // send reset
-    _delay_ms(10);
+    DPRINTLN(F("1"));
+    
+	  reset();
 
     // define init settings for TRX868
     static const uint8_t initVal[] PROGMEM = {
       CC1101_IOCFG2,    0x2E, //                      // non inverted GDO2, high impedance tri state
-      CC1101_IOCFG1,    0x2E, // (default)            // low output drive strength, non inverted GD=1, high impedance tri state
+      // /CC1101_IOCFG1,    0x2E, // (default)            // low output drive strength, non inverted GD=1, high impedance tri state
       CC1101_IOCFG0,    0x06, // packet CRC ok        // disable temperature sensor, non inverted GDO0,
       CC1101_FIFOTHR,   0x0D,                         // 0 ADC retention, 0 close in RX, TX FIFO = 9 / RX FIFO = 56 byte
       CC1101_SYNC1,     0xE9,                         // Sync word
       CC1101_SYNC0,     0xCA,
-      CC1101_PKTLEN,    0x3D,                         // packet length has to be set to 61
-      CC1101_PKTCTRL1,  0x04,                         // PQT = 0, CRC auto flush = 0, append status = 1, no address check
-      CC1101_PKTCTRL0,  0x45,
+      // /CC1101_PKTLEN,    0x3D,                         //Default 0xFF, packet length has to be set to 61
+      //CC1101_PKTCTRL1,  0x04,                         // PQT = 0, CRC auto flush = 0, append status = 1, no address check
+      CC1101_PKTCTRL1,  0x0C,                         // PQT = 0, CRC auto flush = 0, append status = 1, no address check
+      // /CC1101_PKTCTRL0,  0x45,					  // Default 0x45
       CC1101_FSCTRL1,   0x06,                         // frequency synthesizer control
 
       // 868.299866 MHz
@@ -456,10 +496,10 @@ public:   //--------------------------------------------------------------------
       CC1101_MDMCFG4,  0xC8,
       CC1101_MDMCFG3,  0x93,
       CC1101_MDMCFG2,  0x03,
-      CC1101_MDMCFG1,  0x22,
+      // /CC1101_MDMCFG1,  0x22,					  // Default 0x22
       CC1101_DEVIATN,  0x34,                          // 19.042969 kHz
-      CC1101_MCSM2,    0x01,
-      CC1101_MCSM1,    0x33,
+      // /CC1101_MCSM2,    0x01,					  // Default 0x07
+      CC1101_MCSM1,    0x03,
       CC1101_MCSM0,    0x18,
       CC1101_FOCCFG,   0x16,
       CC1101_AGCCTRL2, 0x43,
@@ -467,58 +507,51 @@ public:   //--------------------------------------------------------------------
       //7CC1101_WOREVT0, 0xA0,
       //CC1101_WORCTRL, 0xFB,                         //EVENT1 = 3, WOR_RES = 0
       CC1101_FREND1,  0x56,
-      CC1101_FSCAL1,  0x00,
+      CC1101_FSCAL3,  0xE9,
+      CC1101_FSCAL2,  0x2A,
+      CC1101_FSCAL1,  0x1F,
       CC1101_FSCAL0,  0x11,
       CC1101_FSTEST,  0x59,
       CC1101_TEST2,   0x81,
       CC1101_TEST1,   0x35,
-      CC1101_PATABLE, 0xC3,
+      CC1101_TEST0,   0x09,
+      CC1101_PATABLE, 0x03,
     };
+	
     for (uint8_t i=0; i<sizeof(initVal); i+=2) {                    // write init value to TRX868
-      writeRegister(pgm_read_byte(&initVal[i]), pgm_read_byte(&initVal[i+1]));
+      initReg(pgm_read_byte(&initVal[i]), pgm_read_byte(&initVal[i+1]));
     }
-    DPRINT(F("2"));
-    spi.strobe(CC1101_SCAL);                                // calibrate frequency synthesizer and turn it off
-    while (spi.readReg(CC1101_MARCSTATE, CC1101_STATUS) != 1) {               // waits until module gets ready
-      _delay_us(1);
-      DPRINT(F("."));
-    }
-    DPRINT(F("3"));
-    spi.writeReg(CC1101_PATABLE, PA_MaxPower);                        // configure PATABLE
-    flushrx();
-    spi.strobe(CC1101_SWORRST);                               // reset real time clock
+	
+  	// Settings that ELV sets
+	  DPRINT("CC Version: "); DHEXLN(spi.readReg(CC1101_VERSION, CC1101_STATUS));
+
+	  spi.strobe(CC1101_SCAL);                                // calibrate frequency synthesizer and turn it off
+	
+	  _delay_ms(23);
+	
+	  initReg(CC1101_PATABLE, PA_MaxPower);                        // configure PATABLE
+	
     DPRINTLN(F(" - ready"));
   }
   
-  // writes register and validates it like ELV does when initializing 
-  bool writeRegister(uint8_t regAddr, uint8_t val) {
-  	uint8_t retries = 2;
-	  uint8_t val_read = 0;
-	  bool success = false;
-	
-	  do {
-		  spi.writeReg(regAddr, val);
-		  val_read = spi.readReg(regAddr, CC1101_CONFIG);
-		  if(val_read == val) {
-			  success = true;
-		  }
-		  else {
-			  retries--;
-		  }
-	  }
-	  while(success == false && retries > 0);
-	
-	  if(success == false) {
-		  DPRINT("Error at "); DHEX(regAddr);
-		  DPRINT(" expected: "); DHEX(val); DPRINT(" read: "); DHEXLN(val_read);
-	  }
-	  return success;
+  void initReg (uint8_t regAddr, uint8_t val, uint8_t retries=3) {
+    spi.writeReg(regAddr, val);
+    uint8_t val_read = spi.readReg(regAddr, CC1101_CONFIG);
+    if( val_read != val ) {
+      if( retries > 0 ) {
+        initReg(regAddr, val, --retries);
+      }
+      else {
+        DPRINT("Error at "); DHEX(regAddr);
+        DPRINT(" expected: "); DHEX(val); DPRINT(" read: "); DHEXLN(val_read);
+      }
+    }
   }
 
   void handleInt () {
-    // DPRINTLN("*");
-	  if(sending == 0){
-	    intread = 1;
+	  if( sending == 0 ){
+      // DPRINT("* "); DPRINTLN(millis());
+      intread = 1;
 	  }
   }
 
@@ -537,7 +570,7 @@ public:   //--------------------------------------------------------------------
   uint8_t read (Message& msg) {
     if( intread == 0 )
       return 0;
-
+  
     intread = 0;
     uint8_t len = rcvData(buffer.buffer(),buffer.buffersize());
     if( len > 0 ) {
@@ -580,7 +613,7 @@ public:   //--------------------------------------------------------------------
   bool readAck (const Message& msg) {
     if( intread == 0 )
       return false;
-
+	
     intread = 0;
     bool ack=false;
     uint8_t len = rcvData(buffer.buffer(),buffer.buffersize());
@@ -603,58 +636,48 @@ public:   //--------------------------------------------------------------------
   }
   
   void flushrx () {
+	  spi.strobe(CC1101_SIDLE);
+	  spi.strobe(CC1101_SNOP);
     spi.strobe(CC1101_SFRX);                                // flush Rx FIFO
-    spi.strobe(CC1101_SIDLE);                               // enter IDLE state
-    spi.strobe(CC1101_SNOP);
-    spi.strobe(CC1101_SRX);                                 // back to RX state
   }
 
 protected:
   uint8_t sndData(uint8_t *buf, uint8_t size, uint8_t burst) {
     timeout.waitTimeout();
     wakeup();
-    sending = 1;
+
+    sending=1;
+
     // Going from RX to TX does not work if there was a reception less than 0.5
     // sec ago. Due to CCA? Using IDLE helps to shorten this period(?)
-    spi.strobe(CC1101_SIDLE);                               // go to idle mode
+    spi.strobe(CC1101_SIDLE );
+	  _delay_us(150);
     spi.strobe(CC1101_SFTX );                               // flush TX buffer
 
-    uint8_t i=200;
-    do {
-      spi.strobe(CC1101_STX);
-      _delay_us(10);
-      if( --i == 0 ) {
-        // can not enter TX state - reset fifo
-        spi.strobe(CC1101_SIDLE );
-        spi.strobe(CC1101_SFTX  );
-        spi.strobe(CC1101_SNOP );
-        // back to RX mode
-        do { spi.strobe(CC1101_SRX);
-        } while (spi.readReg(CC1101_MARCSTATE, CC1101_STATUS) != MARCSTATE_RX);
-        sending = 0;
-        return false;
-      }
+    //_delay_ms(10);
+    if( burst == true ) {         // BURST-bit set?
+	    spi.strobe(CC1101_STX);
+      _delay_ms(360);    // according to ELV, devices get activated every 300ms, so send burst for 360ms
     }
-    while(spi.readReg(CC1101_MARCSTATE, CC1101_STATUS) != MARCSTATE_TX);
-
-    _delay_ms(10);
-    if (burst) {         // BURST-bit set?
-      _delay_ms(350);    // according to ELV, devices get activated every 300ms, so send burst for 360ms
-    }
-
+	
+	  // write bytecount to send
     spi.writeReg(CC1101_TXFIFO, size);
+	  // write bytes
     spi.writeBurst(CC1101_TXFIFO, buf, size);           // write in TX FIFO
-
-    for(uint8_t i = 0; i < 200; i++) {  // after sending out all bytes the chip should go automatically in RX mode
-      if( spi.readReg(CC1101_MARCSTATE, CC1101_STATUS) == MARCSTATE_RX)
-        break;                                    //now in RX mode, good
-      _delay_us(10);
-    }
-    sending = 0;
+	
+	  flushrx();
+	
+	  if( burst == false ){
+		  spi.strobe(CC1101_STX); // send bytes
+	  }
+	
+    sending=0;
     return true;
   }
 
   uint8_t rcvData(uint8_t *buf, uint8_t size) {
+	//DPRINTLN("rcvData");  
+	
     uint8_t packetBytes = 0;
     uint8_t rxBytes = 0;
     uint8_t fifoBytes = spi.readReg(CC1101_RXBYTES, CC1101_STATUS);             // how many bytes are in the buffer
@@ -666,11 +689,9 @@ protected:
       // check that packet fits into the buffer
       if (packetBytes <= size) {
         spi.readBurst(buf, CC1101_RXFIFO, packetBytes);          // read data packet
-        int16_t rssidec = spi.readReg(CC1101_RXFIFO, CC1101_CONFIG);         // read RSSI
-        if( rssidec >= 128 ) {
-          rssidec -= 256;
-        }
-        rss = (uint8_t)-((rssidec / 2) - 72);
+        rss = spi.readReg(CC1101_RXFIFO, CC1101_CONFIG);         // read RSSI
+        if (rss >= 128) rss = 255 - rss;
+        rss /= 2; rss += 72;
         uint8_t val = spi.readReg(CC1101_RXFIFO, CC1101_CONFIG); // read LQI and CRC_OK
         lqi = val & 0x7F;
         if( (val & 0x80) == 0x80 ) { // check crc_ok
@@ -685,9 +706,14 @@ protected:
         DPRINT("Packet too big: ");DDECLN(packetBytes);
       }
     }
-  //  DPRINT("-> ");
-  //  DHEX(buf,buf[0]);
+    //DPRINT("-> ");
+    //DHEXLN(buf,rxBytes);
+	  spi.strobe(CC1101_SFRX);
+	  _delay_us(190);
     flushrx();
+	  spi.strobe(CC1101_SRX);
+	  //DHEXLN(spi.readReg(CC1101_MARCSTATE, CC1101_STATUS));
+	
     return rxBytes; // return number of byte in buffer
   }
 };
