@@ -81,8 +81,8 @@ typedef DualStatusLed<LED2_PIN,LED1_PIN> LedType;
 typedef AskSin<LedType,BatSensor,RadioType> BaseHal;
 class Hal : public BaseHal {
 public:
-  void init () {
-    BaseHal::init();
+  void init (const HMID& id) {
+    BaseHal::init(id);
     // measure battery every 1h
     battery.init(seconds2ticks(60UL*60),sysclock);
   }
@@ -246,7 +246,7 @@ public:
   }
 
   uint8_t flags () const {
-    uint8_t flags = sabotage ? 0x02 : 0x00;
+    uint8_t flags = sabotage ? 0x07 << 1 : 0x00;
     flags |= this->device().battery().low() ? 0x80 : 0x00;
     return flags;
   }

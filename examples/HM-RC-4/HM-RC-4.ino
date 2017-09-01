@@ -57,8 +57,8 @@ class Hal : public HalType {
   // extra clock to count button press events
   AlarmClock btncounter;
 public:
-  void init () {
-    HalType::init();
+  void init (const HMID& id) {
+    HalType::init(id);
     // get new battery value after 50 key press
     battery.init(50,btncounter);
     battery.low(22);

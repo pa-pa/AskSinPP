@@ -50,7 +50,7 @@
 #define RELAY4_PIN 3
 
 // number of available peers per channel
-#define PEERS_PER_CHANNEL 4
+#define PEERS_PER_CHANNEL 8
 
 
 // all library classes are placed in the namespace 'as'
@@ -117,6 +117,19 @@ void setup () {
   else {
     DPRINTLN(F("HM-LC-SW4-SM"));
   }
+  // create internal peerings - CCU2 needs this
+  HMID devid;
+  sdev.getDeviceID(devid);
+  for( uint8_t i=1; i<=sdev.channels(); ++i ) {
+    Peer ipeer(devid,i);
+    // create internal peer if not already done
+    uint8_t idx = 0; // make compiler happy
+    if( sdev.channel(i).peer(idx) != ipeer ) {
+      sdev.channel(i).peer(ipeer);
+    }
+  }
+  // delay next send by random time
+  hal.waitTimeout((rand() % 3500)+1000);
 }
 
 void loop() {

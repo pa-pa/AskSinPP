@@ -121,7 +121,9 @@ public:
     }
     this->keystore().init();
     this->setHal(hal);
-    hal.init();
+    HMID id;
+    this->getDeviceID(id);
+    hal.init(id);
     this->configChanged();
   }
 
@@ -199,7 +201,7 @@ public:
     return true;
   }
 
-   void process(Message& msg) {
+   bool process(Message& msg) {
      HMID devid;
      this->getDeviceID(devid);
      if( msg.to() == devid || (msg.to() == HMID::broadcast && this->isBoardcastMsg(msg))) {
@@ -207,16 +209,12 @@ public:
        msg.dump();
        // ignore repeated messages
        if( this->isRepeat(msg) == true ) {
-         if( msg.ackRequired() == true ) {
-           this->sendNack(msg);
-         }
-         return;
+         return false;
        }
        uint8_t mtype = msg.type();
        uint8_t mcomm = msg.command();
        uint8_t msubc = msg.subcommand();
        if( mtype == AS_MESSAGE_CONFIG ) {
-         this->activity().stayAwake(millis2ticks(500));
          // PAIR_SERIAL
          if( msubc == AS_CONFIG_PAIR_SERIAL && this->isDeviceSerial(msg.data())==true ) {
            this->led().set(LedStates::pairing);
@@ -329,7 +327,6 @@ public:
            else {
              this->sendNack(msg);
            }
-           this->activity().stayAwake(millis2ticks(500));
          }
          else if( msubc == AS_CONFIG_SERIAL_REQ ) {
            this->sendSerialInfo(msg.from(),msg.count());
@@ -382,7 +379,6 @@ public:
        }
        else if( mtype == AS_MESSAGE_HAVE_DATA ) {
          DPRINTLN(F("HAVE DATA"));
-         this->activity().stayAwake(millis2ticks(500));
          this->sendAck(msg);
        }
        else if (mtype == AS_MESSAGE_REMOTE_EVENT || mtype == AS_MESSAGE_SENSOR_EVENT) {
@@ -423,9 +419,13 @@ public:
        }
      }
      else {
-//       DPRINT(F("ignore "));
-//       msg.dump();
+       DPRINT(F("ignore "));
+       msg.dump();
+       return false;
      }
+     // we always stay awake after valid communication
+     this->activity().stayAwake(millis2ticks(500));
+     return true;
    }
 
    uint8_t channelForPeer (const Peer& p) {

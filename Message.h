@@ -12,7 +12,7 @@
 #include "Debug.h"
 
 //#define MaxDataLen   60						// maximum length of received bytes
-#define MaxDataLen   50
+#define MaxDataLen   30
 
 namespace as {
 
@@ -172,6 +172,7 @@ public:
     toID = hmid;
     if( hmid == HMID::broadcast ) {
       flag |= BCAST;
+      flag &= ~BIDI;
     }
     else {
       flag &= ~BCAST;
