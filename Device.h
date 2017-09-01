@@ -161,9 +161,9 @@ public:
   bool pollRadio () {
     uint8_t num = radio().read(msg);
     if( num > 0 ) {
-      process(msg);
+      return process(msg);
     }
-    return num > 0;
+    return false;
   }
 
   uint8_t nextcount () {
@@ -172,7 +172,7 @@ public:
 
   virtual void configChanged () {}
 
-  virtual void process(__attribute__((unused)) Message& msg) {}
+  virtual bool process(__attribute__((unused)) Message& msg) { return false; }
 
   bool isBoardcastMsg(Message msg) {
     return msg.isPairSerial();
