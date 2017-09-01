@@ -27,6 +27,7 @@ public:
   static const BlinkPattern dual2[8] PROGMEM;
 };
 
+template <class PINTYPE=ArduinoPins>
 class Led : public Alarm, public LedStates {
 private:
   BlinkPattern current;
@@ -52,7 +53,7 @@ public:
 
   void init (uint8_t p) {
     pin = p;
-    pinMode(pin,OUTPUT);
+    PINTYPE::setOutput(pin);
     ledOff();
   }
 
@@ -68,11 +69,11 @@ public:
   }
 
   void ledOff () {
-    digitalWrite(pin,LOW);
+    PINTYPE::setLow(pin);
   }
 
   void ledOn () {
-    digitalWrite(pin,HIGH);
+    PINTYPE::setHigh(pin);
   }
 
   void ledOn (uint8_t ticks) {
@@ -108,10 +109,10 @@ public:
   }
 };
 
-template<uint8_t LEDPIN1>
+template<uint8_t LEDPIN1, class PINTYPE=ArduinoPins>
 class StatusLed : public LedStates {
 
-  Led led1;
+  Led<PINTYPE> led1;
 
 public:
   StatusLed () {}
@@ -122,11 +123,11 @@ public:
   void set(Mode stat) { led1.set(stat,single); }
 };
 
-template <uint8_t LEDPIN1,uint8_t LEDPIN2>
+template <uint8_t LEDPIN1,uint8_t LEDPIN2, class PINTYPE1=ArduinoPins, class PINTYPE2=ArduinoPins>
 class DualStatusLed : public LedStates  {
 private:
-  Led led1;
-  Led led2;
+  Led<PINTYPE1> led1;
+  Led<PINTYPE1> led2;
 public:
   DualStatusLed () {}
   void init () { led1.init(LEDPIN1); led2.init(LEDPIN2); }

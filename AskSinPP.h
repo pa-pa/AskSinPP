@@ -6,7 +6,7 @@
 #ifndef __ASKSINPP_h__
 #define __ASKSINPP_h__
 
-#define ASKSIN_PLUS_PLUS_VERSION "1.0.7"
+#define ASKSIN_PLUS_PLUS_VERSION "2.0.0"
 
 #define ASKSIN_PLUS_PLUS_IDENTIFIER F("AskSin++ V" ASKSIN_PLUS_PLUS_VERSION " (" __DATE__ " " __TIME__ ")")
 
@@ -19,6 +19,7 @@
 #endif
 
 
+#include <Pins.h>
 #include <Debug.h>
 #include <Activity.h>
 #include <Led.h>

@@ -3,11 +3,12 @@
 // 2016-10-31 papa Creative Commons - http://creativecommons.org/licenses/by-nc-sa/3.0/de/
 //- -----------------------------------------------------------------------------------------------------------------------
 
-#include "AlarmClock.h"
-#include "Led.h"
+
+#include <Pins.h>
+#include <AlarmClock.h>
+#include <Led.h>
 
 namespace as {
-
 
 const LedStates::BlinkPattern LedStates::single [8] PROGMEM = {
     {0, 0, {0 , 0 } },  // 0; define nothing

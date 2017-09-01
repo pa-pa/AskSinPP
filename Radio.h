@@ -154,9 +154,9 @@ namespace as {
 
 
 
-#ifdef ARDUINO_ARCH_AVR
+#if ARDUINO_ARCH_AVR or ARDUINO_ARCH_ATMEGA32
 
-template <uint8_t CS,uint8_t MOSI,uint8_t MISO,uint8_t SCLK>
+template <uint8_t CS,uint8_t MOSI,uint8_t MISO,uint8_t SCLK, class PINTYPE=ArduinoPins>
 class AvrSPI {
 
 public:
@@ -167,27 +167,27 @@ public:
   }
 
   void waitMiso () {
-    while(digitalRead(MISO));
+    while(PINTYPE::getState(MISO));
   }
 
   void init () {
-    pinMode(CS,OUTPUT);
-    pinMode(MOSI,OUTPUT);
-    pinMode(MISO,INPUT);
-    pinMode(SCLK,OUTPUT);
+    PINTYPE::setOutput(CS);
+    PINTYPE::setOutput(MOSI);
+    PINTYPE::setInput(MISO);
+    PINTYPE::setOutput(SCLK);
     // SPI enable, master, speed = CLK/4
     SPCR = _BV(SPE) | _BV(MSTR);
     // Set SCLK = 1 and SI = 0, to avoid potential problems with pin control mode
-    digitalWrite(SCLK,HIGH);
-    digitalWrite(MOSI,LOW);
+    PINTYPE::setHigh(SCLK);
+    PINTYPE::setLow(MOSI);
   }
 
   void select () {
-    digitalWrite(CS,LOW);
+    PINTYPE::setLow(CS);
   }
 
   void deselect () {
-    digitalWrite(CS,HIGH);
+    PINTYPE::setHigh(CS);
   }
 
   void ping () {
