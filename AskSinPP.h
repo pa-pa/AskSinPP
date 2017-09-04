@@ -14,8 +14,18 @@
   #define _delay_us(us) delayMicroseconds(us)
   inline void _delay_ms(uint32_t ms) { do { delayMicroseconds(1000); } while( (--ms) > 0); }
 
+  #define digitalPinToInterrupt(pin) pin
   #define enableInterrupt(pin,handler,mode) attachInterrupt(pin,handler,mode)
   #define disableInterrupt(pin) detachInterrupt(pin)
+#else
+  #ifdef ARDUINO_ARCH_ATMEGA32
+    inline uint8_t digitalPinToInterrupt(uint8_t pin) { return pin == 11 ? 1 : 0; } // D2 -> 0 && D3 -> 1
+  #endif
+  // if we have no EnableInterrupt Library - and also no PCINT - use polling
+  #ifndef EnableInterrupt_h
+    #define enableInterrupt(pin,handler,mode) pinpolling##pin().enable(pin,handler,mode)
+    #define disableInterrupt(pin) pinpolling##pin().disbale()
+  #endif
 #endif
 
 

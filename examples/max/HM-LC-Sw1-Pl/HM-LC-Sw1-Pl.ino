@@ -7,7 +7,6 @@
 // #define USE_OTA_BOOTLOADER
 
 // This firmware converts a MAX! into a Homematic
-#error "not working"
 #define HM_LC_SW1_PL 0x00,0x11
 
 // define all device properties
@@ -19,21 +18,15 @@
 #define DEVICE_INFO 0x01,0x01,0x00
 #define DEVICE_CONFIG
 
-//#define PINA _SFR_IO8(0x19)
-//#define DDRA _SFR_IO8(0x1A)
-//#define PORTA _SFR_IO8(0x1B)
-
-// #include <EnableInterrupt.h>
 #include <AskSinPP.h>
-#include <TimerOne.h>
-//#include <LowPower.h>
 
 #include <MultiChannelDevice.h>
 #include <SwitchChannel.h>
 
+// see https://github.com/eaconner/ATmega32-Arduino for Arduino Pin Mapping
 
-#define CONFIG_BUTTON_PIN PA0 // ????
-#define RELAY1_PIN 8 // PB0
+#define CONFIG_BUTTON_PIN 31 // PA0
+#define RELAY1_PIN 0 // PB0
 
 // number of available peers per channel
 #define PEERS_PER_CHANNEL 16
@@ -45,13 +38,9 @@ using namespace as;
 /**
  * Configure the used hardware
  */
-typedef AvrSPI<PB4,PB5,PB6,PB7,PortB> RadioSPI;
-typedef StatusLed<PD4,PortD> LedType;
-typedef AskSin<LedType,NoBattery,Radio<RadioSPI,3> > Hal;
-
-//typedef AvrSPI<PB2,PB3,PB4,PB5,PortB> RadioSPI;
-//typedef StatusLed<PD4,PortD> LedType;
-//typedef AskSin<LedType,NoBattery,Radio<RadioSPI,2> > Hal;
+typedef AvrSPI<4,5,6,7> RadioSPI; // PB4-PB7
+typedef StatusLed<12> LedType; // PD4
+typedef AskSin<LedType,NoBattery,Radio<RadioSPI,11> > Hal;  // PD3
 
 // setup the device with channel type and number of channels
 typedef MultiChannelDevice<Hal,SwitchChannel<Hal,PEERS_PER_CHANNEL>,1> SwitchType;
@@ -75,7 +64,7 @@ void setup () {
     sdev.channel(i).lowactive(false);
   }
 
-//  buttonISR(cfgBtn,CONFIG_BUTTON_PIN);
+  buttonISR(cfgBtn,CONFIG_BUTTON_PIN);
 
   // create internal peerings - CCU2 needs this
   HMID devid;

@@ -10,7 +10,10 @@ namespace as {
 SysClock sysclock;
 RTC rtc;
 
-#ifdef ARDUINO_ARCH_AVR
+#if ARDUINO_ARCH_AVR or ARDUINO_ARCH_ATMEGA32
+ISR(TIMER1_OVF_vect) {
+  --sysclock;
+}
 ISR(TIMER2_OVF_vect) {
   rtc.overflow();
   --rtc;

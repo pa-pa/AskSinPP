@@ -14,10 +14,10 @@
 #define DEVICE_TYPE DeviceType::Remote
 #define DEVICE_INFO 0x04,0x00,0x00
 
+#define EI_NOTEXTERNAL
 #include <EnableInterrupt.h>
 #include <SPI.h>  // after including SPI Library - we can use LibSPI class
 #include <AskSinPP.h>
-#include <TimerOne.h>
 #include <LowPower.h>
 
 #include <MultiChannelDevice.h>

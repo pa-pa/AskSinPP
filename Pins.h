@@ -3,6 +3,8 @@
 #define __PINS_H__
 
 #include <Arduino.h>
+#include <Alarm.h>
+#include <AlarmClock.h>
 
 namespace as {
 
@@ -52,6 +54,82 @@ public:
   };
 #endif
 
+
+  class PinPollingAlarm : public Alarm {
+    private:
+    uint8_t laststate;
+    uint8_t pin;
+    uint8_t mode;
+    void (*isr)(void);
+
+    public:
+    PinPollingAlarm () : Alarm(1), laststate(LOW), pin(0), mode(0), isr(0) {
+      async(true);
+    }
+    virtual ~PinPollingAlarm () {}
+    virtual void trigger (AlarmClock& clock) {
+      uint8_t state = digitalRead(pin);
+      if( state != laststate) {
+        if( state == HIGH ) {
+          if( mode == CHANGE || mode == RISING ) {
+            isr();
+          }
+        }
+        else {
+          if( mode == CHANGE || mode == FALLING ) {
+            isr();
+          }
+        }
+        laststate = state;
+      }
+      set(1);
+      clock.add(*this);
+    }
+
+    void enable (uint8_t p,void (*func)(void),uint8_t m) {
+      sysclock.cancel(*this);
+      pin = p;
+      isr = func;
+      mode = m;
+      laststate = digitalRead(pin);
+      DPRINT("Enable PinPolling: "); DDEC(pin); DPRINT(" - "); DDECLN(mode);
+      set(1);
+      sysclock.add(*this);
+    }
+    void disable () {
+      DPRINT("Disable PinPolling: "); DDECLN(pin);
+      sysclock.cancel(*this);
+    }
+  };
+
+  inline PinPollingAlarm& pinpolling4()  { static PinPollingAlarm p; return p; }
+  inline PinPollingAlarm& pinpolling5()  { static PinPollingAlarm p; return p; }
+  inline PinPollingAlarm& pinpolling6()  { static PinPollingAlarm p; return p; }
+  inline PinPollingAlarm& pinpolling7()  { static PinPollingAlarm p; return p; }
+  inline PinPollingAlarm& pinpolling8()  { static PinPollingAlarm p; return p; }
+  inline PinPollingAlarm& pinpolling9()  { static PinPollingAlarm p; return p; }
+  inline PinPollingAlarm& pinpolling10() { static PinPollingAlarm p; return p; }
+  inline PinPollingAlarm& pinpolling11() { static PinPollingAlarm p; return p; }
+  inline PinPollingAlarm& pinpolling12() { static PinPollingAlarm p; return p; }
+  inline PinPollingAlarm& pinpolling13() { static PinPollingAlarm p; return p; }
+  inline PinPollingAlarm& pinpolling14() { static PinPollingAlarm p; return p; }
+  inline PinPollingAlarm& pinpolling15() { static PinPollingAlarm p; return p; }
+  inline PinPollingAlarm& pinpolling16() { static PinPollingAlarm p; return p; }
+  inline PinPollingAlarm& pinpolling17() { static PinPollingAlarm p; return p; }
+  inline PinPollingAlarm& pinpolling18() { static PinPollingAlarm p; return p; }
+  inline PinPollingAlarm& pinpolling19() { static PinPollingAlarm p; return p; }
+  inline PinPollingAlarm& pinpolling20() { static PinPollingAlarm p; return p; }
+  inline PinPollingAlarm& pinpolling21() { static PinPollingAlarm p; return p; }
+  inline PinPollingAlarm& pinpolling22() { static PinPollingAlarm p; return p; }
+  inline PinPollingAlarm& pinpolling23() { static PinPollingAlarm p; return p; }
+  inline PinPollingAlarm& pinpolling24() { static PinPollingAlarm p; return p; }
+  inline PinPollingAlarm& pinpolling25() { static PinPollingAlarm p; return p; }
+  inline PinPollingAlarm& pinpolling26() { static PinPollingAlarm p; return p; }
+  inline PinPollingAlarm& pinpolling27() { static PinPollingAlarm p; return p; }
+  inline PinPollingAlarm& pinpolling28() { static PinPollingAlarm p; return p; }
+  inline PinPollingAlarm& pinpolling29() { static PinPollingAlarm p; return p; }
+  inline PinPollingAlarm& pinpolling30() { static PinPollingAlarm p; return p; }
+  inline PinPollingAlarm& pinpolling31() { static PinPollingAlarm p; return p; }
 
 }
 

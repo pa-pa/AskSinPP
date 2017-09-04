@@ -14,9 +14,9 @@
 #define DEVICE_TYPE DeviceType::THSensor
 #define DEVICE_INFO 0x01,0x01,0x00
 
+#define EI_NOTEXTERNAL
 #include <EnableInterrupt.h>
 #include <AskSinPP.h>
-#include <TimerOne.h>
 #include <LowPower.h>
 
 #include <MultiChannelDevice.h>

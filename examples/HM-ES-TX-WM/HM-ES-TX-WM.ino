@@ -14,9 +14,9 @@
 #define DEVICE_TYPE DeviceType::PowerMeter
 #define DEVICE_INFO 0x02,0x01,0x00
 
+#define EI_NOTEXTERNAL
 #include <EnableInterrupt.h>
 #include <AskSinPP.h>
-#include <TimerOne.h>
 #include <LowPower.h>
 
 #include <MultiChannelDevice.h>

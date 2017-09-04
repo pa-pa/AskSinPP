@@ -26,9 +26,9 @@
 
 // 24 0030 4D455130323134373633 80 910101
 
+#define EI_NOTEXTERNAL
 #include <EnableInterrupt.h>
 #include <AskSinPP.h>
-#include <TimerOne.h>
 #include <LowPower.h>
 
 #include <MultiChannelDevice.h>

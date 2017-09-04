@@ -25,9 +25,9 @@
 #define DEVICE_CONFIG CFG_LOWACTIVE_OFF
 
 
+#define EI_NOTEXTERNAL
 #include <EnableInterrupt.h>
 #include <AskSinPP.h>
-#include <TimerOne.h>
 #include <LowPower.h>
 
 #include <MultiChannelDevice.h>
