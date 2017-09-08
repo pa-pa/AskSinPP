@@ -42,8 +42,21 @@ typedef AvrSPI<4,5,6,7> RadioSPI; // PB4-PB7
 typedef StatusLed<12> LedType; // PD4
 typedef AskSin<LedType,NoBattery,Radio<RadioSPI,11> > Hal;  // PD3
 
+template<class HALTYPE,int PEERCOUNT>
+class SwChannel : public SwitchChannel<HALTYPE,PEERCOUNT> {
+public:
+  SwChannel () {};
+  virtual ~SwChannel () {};
+
+  virtual void switchState(__attribute__((unused)) uint8_t oldstate,uint8_t newstate) {
+    // if ON - invert led so it will stay on after sending status
+    this->device().led().invert(newstate == AS_CM_JT_ON);
+    SwitchChannel<HALTYPE,PEERCOUNT>::switchState(oldstate, newstate);
+  }
+};
+
 // setup the device with channel type and number of channels
-typedef MultiChannelDevice<Hal,SwitchChannel<Hal,PEERS_PER_CHANNEL>,1> SwitchType;
+typedef MultiChannelDevice<Hal,SwChannel<Hal,PEERS_PER_CHANNEL>,1> SwitchType;
 
 Hal hal;
 SwitchType sdev(0x20);
