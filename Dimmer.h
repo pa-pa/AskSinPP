@@ -900,7 +900,7 @@ class DimmerDevice : public MultiChannelDevice<HalType,ChannelType,ChannelCount,
 public:
   typedef MultiChannelDevice<HalType,ChannelType,ChannelCount,List0Type> DeviceType;
 
-  DimmerDevice (uint16_t addr) : DeviceType(addr), pin(0) {}
+  DimmerDevice (const DeviceInfo& info,uint16_t addr) : DeviceType(info,addr), pin(0) {}
   virtual ~DimmerDevice () {}
 
   void firstinit () {

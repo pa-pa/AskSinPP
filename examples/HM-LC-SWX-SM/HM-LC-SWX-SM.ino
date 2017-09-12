@@ -15,13 +15,6 @@
 #define CFG_LOWACTIVE_ON   0x01
 #define CFG_LOWACTIVE_OFF  0x00
 
-// define all device properties
-#define DEVICE_ID HMID(0x12,0x34,0x56)
-#define DEVICE_SERIAL "papa000000"
-#define DEVICE_MODEL  HM_LC_SW4_SM
-#define DEVICE_FIRMWARE 0x16
-#define DEVICE_TYPE DeviceType::Switch
-#define DEVICE_INFO 0x04,0x01,0x00
 #define DEVICE_CONFIG CFG_LOWACTIVE_OFF
 
 
@@ -42,7 +35,6 @@
 // B0 == PIN 8 on Pro Mini
 #define CONFIG_BUTTON_PIN 8
 
-
 // relay output pins compatible to the HM_Relay project
 #define RELAY1_PIN 5
 #define RELAY2_PIN 6
@@ -56,6 +48,16 @@
 // all library classes are placed in the namespace 'as'
 using namespace as;
 
+// define all device properties
+const struct DeviceInfo PROGMEM devinfo = {
+    {0x12,0x34,0x56},       // Device ID
+    "papa000000",           // Device Serial
+    {HM_LC_SW4_SM},         // Device Model
+    0x16,                   // Firmware Version
+    as::DeviceType::Switch, // Device Type
+    {0x04,0x01,0x00}        // Info Bytes
+};
+
 /**
  * Configure the used hardware
  */
@@ -66,7 +68,7 @@ typedef AskSin<StatusLed<4>,NoBattery,Radio<RadioSPI,2> > Hal;
 typedef MultiChannelDevice<Hal,SwitchChannel<Hal,PEERS_PER_CHANNEL>,4> SwitchType;
 
 Hal hal;
-SwitchType sdev(0x20);
+SwitchType sdev(devinfo,0x20);
 ConfigToggleButton<SwitchType> cfgBtn(sdev);
 
 // map number of channel to pin

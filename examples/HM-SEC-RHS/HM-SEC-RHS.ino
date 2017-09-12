@@ -13,13 +13,7 @@
 #define CFG_BAT_LOW_BYTE 0x01
 #define CFG_BAT_CRITICAL_BYTE 0x02
 
-// define all device properties
-#define DEVICE_ID HMID(0x09,0x56,0x34)
-#define DEVICE_SERIAL "papa222111"
-#define DEVICE_MODEL  0x00,0x30
-#define DEVICE_FIRMWARE 0x18
-#define DEVICE_TYPE DeviceType::ThreeStateSensor
-#define DEVICE_INFO 0x01,0x01,0x00
+// define device configuration bytes
 #define DEVICE_CONFIG CFG_STEPUP_OFF,22,19
 
 #define MODE_POLL
@@ -51,6 +45,16 @@
 
 // all library classes are placed in the namespace 'as'
 using namespace as;
+
+// define all device properties
+const struct DeviceInfo PROGMEM devinfo = {
+    {0x09,0x56,0x34},       // Device ID
+    "papa222111",           // Device Serial
+    {0x00,0x30},            // Device Model
+    0x18,                   // Firmware Version
+    as::DeviceType::ThreeStateSensor, // Device Type
+    {0x01,0x01,0x00}        // Info Bytes
+};
 
 class BatSensor : public BatterySensorUni<17,7,3000> {
   bool m_Extern;
@@ -338,7 +342,7 @@ class RHSType : public MultiChannelDevice<Hal,RHSChannel<Hal,PEERS_PER_CHANNEL>,
   } cycle;
 public:
   typedef MultiChannelDevice<Hal,RHSChannel<Hal,PEERS_PER_CHANNEL>,1,RHSList0> DevType;
-  RHSType(uint16_t addr) : DevType(addr), cycle(*this) {}
+  RHSType(const DeviceInfo& info,uint16_t addr) : DevType(info,addr), cycle(*this) {}
   virtual ~RHSType () {}
 
   virtual void configChanged () {
@@ -365,7 +369,7 @@ public:
   }
 };
 
-RHSType sdev(0x20);
+RHSType sdev(devinfo,0x20);
 ConfigButton<RHSType> cfgBtn(sdev);
 
 void setup () {

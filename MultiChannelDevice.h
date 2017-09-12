@@ -34,7 +34,7 @@ public:
 
   typedef Device<HalType> DeviceType;
 
-  ChannelDevice (uint16_t addr) : Device<HalType>(addr,list0), list0(addr + this->keystore().size()), numChannels(ChannelCount), cfgChannel(0xff) {}
+  ChannelDevice (const DeviceInfo& i,uint16_t addr) : Device<HalType>(i,addr,list0), list0(addr + this->keystore().size()), numChannels(ChannelCount), cfgChannel(0xff) {}
 
   virtual ~ChannelDevice () {}
 
@@ -474,7 +474,7 @@ public:
 
   typedef ChannelDevice<HalType,ChannelType,ChannelCount,List0Type> DeviceType;
 
-  MultiChannelDevice (uint16_t addr) : ChannelDevice<HalType,ChannelType,ChannelCount,List0Type>(addr) {
+  MultiChannelDevice (const DeviceInfo& i,uint16_t addr) : ChannelDevice<HalType,ChannelType,ChannelCount,List0Type>(i,addr) {
     for( uint8_t i=0; i<ChannelCount; ++i ) {
       this->registerChannel(cdata[i], i+1);
     }

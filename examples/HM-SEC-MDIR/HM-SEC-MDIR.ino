@@ -6,14 +6,6 @@
 // define this to read the device id, serial and device type from bootloader section
 // #define USE_OTA_BOOTLOADER
 
-// define all device properties
-#define DEVICE_ID HMID(0x56,0x78,0x90)
-#define DEVICE_SERIAL "papa222222"
-#define DEVICE_MODEL  0x00,0x4a
-#define DEVICE_FIRMWARE 0x16
-#define DEVICE_TYPE DeviceType::MotionDetector
-#define DEVICE_INFO 0x01,0x01,0x00
-
 #define EI_NOTEXTERNAL
 #include <EnableInterrupt.h>
 #include <AskSinPP.h>
@@ -42,6 +34,16 @@
 
 // all library classes are placed in the namespace 'as'
 using namespace as;
+
+// define all device properties
+const struct DeviceInfo PROGMEM devinfo = {
+    {0x56,0x78,0x90},       // Device ID
+    "papa222222",           // Device Serial
+    {0x00,0x4a},            // Device Model
+    0x16,                   // Firmware Version
+    as::DeviceType::MotionDetector, // Device Type
+    {0x01,0x01,0x00}        // Info Bytes
+};
 
 /**
  * Configure the used hardware
@@ -87,7 +89,7 @@ uint8_t measureBrightness () {
 
 
 typedef MultiChannelDevice<Hal,MotionChannel<Hal,PEERS_PER_CHANNEL>,1> MotionType;
-MotionType sdev(0x20);
+MotionType sdev(devinfo,0x20);
 
 ConfigButton<MotionType> cfgBtn(sdev);
 

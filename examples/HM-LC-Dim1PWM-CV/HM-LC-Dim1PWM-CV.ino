@@ -6,14 +6,6 @@
 // define this to read the device id, serial and device type from bootloader section
 // #define USE_OTA_BOOTLOADER
 
-// define all device properties
-#define DEVICE_ID HMID(0x11,0x12,0x22)
-#define DEVICE_SERIAL "papa111222"
-#define DEVICE_MODEL  0x00,0x67
-#define DEVICE_FIRMWARE 0x25
-#define DEVICE_TYPE DeviceType::Dimmer
-#define DEVICE_INFO 0x03,0x01,0x00
-
 #define EI_NOTEXTERNAL
 #include <EnableInterrupt.h>
 #include <AskSinPP.h>
@@ -30,15 +22,23 @@
 // B0 == PIN 8 on Pro Mini
 #define CONFIG_BUTTON_PIN 8
 
-
 #define DIMMER_PIN 3
 
 // number of available peers per channel
 #define PEERS_PER_CHANNEL 4
 
-
 // all library classes are placed in the namespace 'as'
 using namespace as;
+
+// define all device properties
+const struct DeviceInfo PROGMEM devinfo = {
+    {0x11,0x12,0x22},       // Device ID
+    "papa111222",           // Device Serial
+    {0x00,0x67},            // Device Model
+    0x25,                   // Firmware Version
+    as::DeviceType::Dimmer, // Device Type
+    {0x03,0x01,0x00}        // Info Bytes
+};
 
 /**
  * Configure the used hardware
@@ -51,7 +51,7 @@ typedef DimmerChannel<HalType,PEERS_PER_CHANNEL> ChannelType;
 typedef DimmerDevice<HalType,ChannelType,3> DimmerType;
 
 HalType hal;
-DimmerType sdev(0x20);
+DimmerType sdev(devinfo,0x20);
 ConfigToggleButton<DimmerType> cfgBtn(sdev);
 
 void setup () {

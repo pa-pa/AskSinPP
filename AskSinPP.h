@@ -6,7 +6,7 @@
 #ifndef __ASKSINPP_h__
 #define __ASKSINPP_h__
 
-#define ASKSIN_PLUS_PLUS_VERSION "2.0.0"
+#define ASKSIN_PLUS_PLUS_VERSION "2.1.0"
 
 #define ASKSIN_PLUS_PLUS_IDENTIFIER F("AskSin++ V" ASKSIN_PLUS_PLUS_VERSION " (" __DATE__ " " __TIME__ ")")
 
@@ -14,9 +14,10 @@
   #define _delay_us(us) delayMicroseconds(us)
   inline void _delay_ms(uint32_t ms) { do { delayMicroseconds(1000); } while( (--ms) > 0); }
 
-  #define digitalPinToInterrupt(pin) pin
+  #define digitalPinToInterrupt(pin) (pin)
   #define enableInterrupt(pin,handler,mode) attachInterrupt(pin,handler,mode)
   #define disableInterrupt(pin) detachInterrupt(pin)
+  #define memcmp_P(src,dst,count) memcmp((src),(dst),(count))
 #else
   #ifdef ARDUINO_ARCH_ATMEGA32
     inline uint8_t digitalPinToInterrupt(uint8_t pin) { return pin == 11 ? 1 : 0; } // D2 -> 0 && D3 -> 1

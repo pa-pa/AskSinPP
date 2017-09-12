@@ -5,18 +5,9 @@
 
 // define this to read the device id, serial and device type from bootloader section
 // #define USE_OTA_BOOTLOADER
-
+#define NDEBUG
 // This firmware converts a MAX! into a Homematic
 #define HM_LC_SW1_PL 0x00,0x11
-
-// define all device properties
-#define DEVICE_ID HMID(0x34,0x17,0x30)
-#define DEVICE_SERIAL "HMax000000"
-#define DEVICE_MODEL  HM_LC_SW1_PL
-#define DEVICE_FIRMWARE 0x16
-#define DEVICE_TYPE DeviceType::Switch
-#define DEVICE_INFO 0x01,0x01,0x00
-#define DEVICE_CONFIG
 
 #include <AskSinPP.h>
 
@@ -31,9 +22,18 @@
 // number of available peers per channel
 #define PEERS_PER_CHANNEL 16
 
-
 // all library classes are placed in the namespace 'as'
 using namespace as;
+
+// define all device properties
+const struct DeviceInfo PROGMEM devinfo = {
+    {0x34,0x17,0x30},       // Device ID
+    "HMax000000",           // Device Serial
+    {HM_LC_SW1_PL},         // Device Model
+    0x16,                   // Firmware Version
+    as::DeviceType::Switch, // Device Type
+    {0x01,0x01,0x00}        // Info Bytes
+};
 
 /**
  * Configure the used hardware
@@ -59,7 +59,7 @@ public:
 typedef MultiChannelDevice<Hal,SwChannel<Hal,PEERS_PER_CHANNEL>,1> SwitchType;
 
 Hal hal;
-SwitchType sdev(0x20);
+SwitchType sdev(devinfo,0x20);
 ConfigToggleButton<SwitchType> cfgBtn(sdev);
 
 // map number of channel to pin

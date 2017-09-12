@@ -6,14 +6,6 @@
 // define this to read the device id, serial and device type from bootloader section
 // #define USE_OTA_BOOTLOADER
 
-// define all device properties
-#define DEVICE_ID HMID(0x90,0x78,0x90)
-#define DEVICE_SERIAL "papa111333"
-#define DEVICE_MODEL  0x00,0xdb
-#define DEVICE_FIRMWARE 0x0b
-#define DEVICE_TYPE DeviceType::MotionDetector
-#define DEVICE_INFO 0x03,0x01,0x00
-
 #define EI_NOTEXTERNAL
 #include <EnableInterrupt.h>
 #include <AskSinPP.h>
@@ -43,6 +35,16 @@
 
 // all library classes are placed in the namespace 'as'
 using namespace as;
+
+// define all device properties
+const struct DeviceInfo PROGMEM devinfo = {
+    {0x90,0x78,0x90},       // Device ID
+    "papa111333",           // Device Serial
+    {0x00,0xdb},            // Device Model
+    0x0b,                   // Firmware Version
+    as::DeviceType::MotionDetector, // Device Type
+    {0x03,0x01,0x00}        // Info Bytes
+};
 
 /**
  * Configure the used hardware
@@ -129,7 +131,7 @@ public:
   VirtChannel<Hal,PirChannel> c3;
 public:
   typedef ChannelDevice<Hal,VirtBaseChannel<Hal>,3,BtnPirList0> DeviceType;
-  MixDevice (uint16_t addr) : DeviceType(addr) {
+  MixDevice (const DeviceInfo& info,uint16_t addr) : DeviceType(info,addr) {
     DeviceType::registerChannel(c1,1);
     DeviceType::registerChannel(c2,2);
     DeviceType::registerChannel(c3,3);
@@ -140,7 +142,7 @@ public:
   BtnChannel& btn2Channel () { return c2; }
   PirChannel& pirChannel () { return c3; }
 };
-MixDevice sdev(0x20);
+MixDevice sdev(devinfo,0x20);
 
 ConfigButton<MixDevice> cfgBtn(sdev);
 

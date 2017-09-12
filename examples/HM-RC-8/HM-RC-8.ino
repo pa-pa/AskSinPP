@@ -6,14 +6,6 @@
 // define this to read the device id, serial and device type from bootloader section
 // #define USE_OTA_BOOTLOADER
 
-// define all device properties
-#define DEVICE_ID HMID(0x00,0xda,0x00)
-#define DEVICE_SERIAL "HMRC00da00"
-#define DEVICE_MODEL  0x00,0xda
-#define DEVICE_FIRMWARE 0x01
-#define DEVICE_TYPE DeviceType::Remote
-#define DEVICE_INFO 0x08,0x00,0x00
-
 #define EI_NOTEXTERNAL
 #include <EnableInterrupt.h>
 #include <AskSinPP.h>
@@ -48,6 +40,16 @@
 // all library classes are placed in the namespace 'as'
 using namespace as;
 
+// define all device properties
+const struct DeviceInfo PROGMEM devinfo = {
+    {0x00,0xda,0x00},       // Device ID
+    "HMRC00da00",           // Device Serial
+    {0x00,0xda},            // Device Model
+    0x01,                   // Firmware Version
+    as::DeviceType::Remote, // Device Type
+    {0x08,0x00,0x00}        // Info Bytes
+};
+
 /**
  * Configure the used hardware
  */
@@ -80,7 +82,7 @@ typedef RemoteChannel<Hal,PEERS_PER_CHANNEL> ChannelType;
 typedef MultiChannelDevice<Hal,ChannelType,8> RemoteType;
 
 Hal hal;
-RemoteType sdev(0x20);
+RemoteType sdev(devinfo,0x20);
 ConfigButton<RemoteType> cfgBtn(sdev);
 
 void setup () {

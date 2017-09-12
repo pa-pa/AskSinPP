@@ -6,14 +6,6 @@
 // define this to read the device id, serial and device type from bootloader section
 // #define USE_OTA_BOOTLOADER
 
-// define all device properties
-#define DEVICE_ID HMID(0x34,0x56,0x78)
-#define DEVICE_SERIAL "papa111111"
-#define DEVICE_MODEL  0x00,0x3d
-#define DEVICE_FIRMWARE 0x10
-#define DEVICE_TYPE DeviceType::THSensor
-#define DEVICE_INFO 0x01,0x01,0x00
-
 #define EI_NOTEXTERNAL
 #include <EnableInterrupt.h>
 #include <AskSinPP.h>
@@ -31,13 +23,21 @@
 // B0 == PIN 8 on Pro Mini
 #define CONFIG_BUTTON_PIN 8
 
-
 // number of available peers per channel
 #define PEERS_PER_CHANNEL 6
 
-
 // all library classes are placed in the namespace 'as'
 using namespace as;
+
+// define all device properties
+const struct DeviceInfo PROGMEM devinfo = {
+    {0x34,0x56,0x78},       // Device ID
+    "papa111111",           // Device Serial
+    {0x00,0x3d},            // Device Model
+    0x10,                   // Firmware Version
+    as::DeviceType::THSensor, // Device Type
+    {0x01,0x01,0x00}        // Info Bytes
+};
 
 /**
  * Configure the used hardware
@@ -157,7 +157,7 @@ public:
 
 
 typedef MultiChannelDevice<Hal,WeatherChannel,1> WeatherType;
-WeatherType sdev(0x20);
+WeatherType sdev(devinfo,0x20);
 
 ConfigButton<WeatherType> cfgBtn(sdev);
 

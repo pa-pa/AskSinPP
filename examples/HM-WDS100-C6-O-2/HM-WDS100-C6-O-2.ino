@@ -6,14 +6,6 @@
 // define this to read the device id, serial and device type from bootloader section
 // #define USE_OTA_BOOTLOADER
 
-// define all device properties
-#define DEVICE_ID HMID(0x09,0x21,0x43)
-#define DEVICE_SERIAL "papa666666"
-#define DEVICE_MODEL  0x00,0xae
-#define DEVICE_FIRMWARE 0x11
-#define DEVICE_TYPE DeviceType::THSensor
-#define DEVICE_INFO 0x01,0x01,0x00
-
 #define EI_NOTEXTERNAL
 #include <EnableInterrupt.h>
 #include <AskSinPP.h>
@@ -35,6 +27,16 @@
 
 // all library classes are placed in the namespace 'as'
 using namespace as;
+
+// define all device properties
+const struct DeviceInfo PROGMEM devinfo = {
+    {0x09,0x21,0x43},       // Device ID
+    "papa666666",           // Device Serial
+    {0x00,0xae},            // Device Model
+    0x11,                   // Firmware Version
+    as::DeviceType::THSensor, // Device Type
+    {0x01,0x01,0x00}        // Info Bytes
+};
 
 /**
  * Configure the used hardware
@@ -209,7 +211,7 @@ public:
 
 
 typedef MultiChannelDevice<Hal,Wds100Channel,1,Wds100List0> WeatherType;
-WeatherType sdev(0x20);
+WeatherType sdev(devinfo,0x20);
 
 ConfigButton<WeatherType> cfgBtn(sdev);
 
