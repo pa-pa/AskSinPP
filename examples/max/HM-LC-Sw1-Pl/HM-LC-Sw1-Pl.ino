@@ -4,7 +4,7 @@
 //- -----------------------------------------------------------------------------------------------------------------------
 
 // define this to read the device id, serial and device type from bootloader section
-// #define USE_OTA_BOOTLOADER
+#define USE_OTA_BOOTLOADER
 #define NDEBUG
 // This firmware converts a MAX! into a Homematic
 #define HM_LC_SW1_PL 0x00,0x11

@@ -12,7 +12,7 @@
 #include <Led.h>
 #include <Activity.h>
 
-#ifdef ARDUINO_ARCH_AVR
+#if ARDUINO_ARCH_AVR or ARDUINO_ARCH_ATMEGA32
 #include <avr/wdt.h>
 #endif
 
@@ -143,7 +143,7 @@ public:
 
   void bootloader () {
     DPRINTLN(F("BOOTLOADER"));
-#ifdef ARDUINO_ARCH_AVR
+#if ARDUINO_ARCH_AVR or ARDUINO_ARCH_ATMEGA32
     wdt_enable(WDTO_250MS);
     while(1);
 #endif
