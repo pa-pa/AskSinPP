@@ -540,6 +540,7 @@ public:   //--------------------------------------------------------------------
     if( val_read != val ) {
       if( retries > 0 ) {
         initReg(regAddr, val, --retries);
+        _delay_ms(1);
       }
       else {
         DPRINT("Error at "); DHEX(regAddr);
