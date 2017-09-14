@@ -14,7 +14,7 @@
 #include <MultiChannelDevice.h>
 #include <Motion.h>
 
-#include <TSL2561.h>
+#include <SparkFunTSL2561.h>
 #include <Wire.h>
 
 
@@ -65,8 +65,11 @@ public:
 } hal;
 
 // Create an SFE_TSL2561 object, here called "light":
-TSL2561 light;
+SFE_TSL2561 light;
 bool lightenabled = false;
+unsigned char TSL2561_gain;
+unsigned int TSL2561_time;
+unsigned int TSL2561_ms;
 
 uint8_t measureBrightness () {
   static uint16_t maxvalue = 0;
@@ -75,7 +78,7 @@ uint8_t measureBrightness () {
     unsigned int data0, data1;
     if (light.getData(data0,data1)) {
       double lux;    // Resulting lux value
-      light.getLux (data0,data1,lux);
+      light.getLux (TSL2561_gain,TSL2561_ms,data0,data1,lux);
       uint16_t current = (uint16_t)lux;
       DPRINT(F("light: ")); DHEXLN(current);
       if( maxvalue < current ) {
@@ -104,7 +107,9 @@ void setup () {
     // If time = 1, integration will be 101ms
     // If time = 2, integration will be 402ms
     // If time = 3, use manual start / stop to perform your own integration
-  lightenabled = light.setTiming(0,2); //gain,time);
+  TSL2561_gain = 0;
+  TSL2561_time = 2;
+  lightenabled = light.setTiming(TSL2561_gain,TSL2561_time,TSL2561_ms); //gain,time);
   if( lightenabled == true ) {
     light.setPowerUp();
   }
