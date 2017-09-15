@@ -223,17 +223,32 @@ public:
 
 template <class HALTYPE,int PEERCOUNT>
 class RHSChannel : public Channel<HALTYPE,RHSList1,EmptyList,List4,PEERCOUNT>, public Alarm {
+
+  class EventSender : public Alarm {
+  public:
+    RHSChannel& channel;
+    uint8_t count, state;
+
+    EventSender (RHSChannel& c) : Alarm(0), channel(c), count(0), state(255) {}
+    virtual ~EventSender () {}
+    virtual void trigger (__attribute__ ((unused)) AlarmClock& clock) {
+      SensorEventMsg& msg = (SensorEventMsg&)channel.device().message();
+      msg.init(channel.device().nextcount(),channel.number(),count++,state,channel.device().battery().low());
+      channel.device().sendPeerEvent(msg,channel);
+    }
+  };
+
   // pin mapping can be changed by bootloader config data
   // map pins to pos     00   01   10   11
   uint8_t posmap[4] = {PosB,PosC,PosA,PosB};
   volatile bool isr;
-  uint8_t state, count;
+  EventSender sender;
   bool sabotage;
 
-public:
-  typedef Channel<HALTYPE,RHSList1,EmptyList,List4,PEERCOUNT> BaseChannel;
+  public:
+    typedef Channel<HALTYPE,RHSList1,EmptyList,List4,PEERCOUNT> BaseChannel;
 
-  RHSChannel () : BaseChannel(), Alarm(DEBOUNCETIME), isr(false), state(255), count(0), sabotage(false) {}
+  RHSChannel () : BaseChannel(), Alarm(DEBOUNCETIME), isr(false), sender(*this), sabotage(false) {}
   virtual ~RHSChannel () {}
 
   void setup(Device<HALTYPE>* dev,uint8_t number,uint16_t addr) {
@@ -242,7 +257,7 @@ public:
   }
 
   uint8_t status () const {
-    return state;
+    return sender.state;
   }
 
   uint8_t flags () const {
@@ -279,7 +294,7 @@ public:
 #else
     if( isr == true ) {
 #endif
-      uint8_t newstate = state;
+      uint8_t newstate = sender.state;
       uint8_t pinstate = readPin(SENS2_PIN) << 1 | readPin(SENS1_PIN);
       uint8_t pos = posmap[pinstate & 0x03];
       uint8_t msg = NO_MSG;
@@ -299,13 +314,19 @@ public:
 
       if( msg == CLOSED_MSG) newstate = CLOSED_STATE;
       else if( msg == OPEN_MSG) newstate = OPEN_STATE;
-      if( msg == TILTED_MSG) newstate = TILTED_STATE;
+      else if( msg == TILTED_MSG) newstate = TILTED_STATE;
 
-      if( newstate != state ) {
-        state = newstate;
-        SensorEventMsg& msg = (SensorEventMsg&)BaseChannel::device().message();
-        msg.init(this->device().nextcount(),this->number(),count++,state,this->device().battery().low());
-        this->device().sendPeerEvent(msg,*this);
+      if( newstate != sender.state ) {
+        uint8_t delay = this->getList1().eventDelaytime();
+        sender.state = newstate;
+        sysclock.cancel(sender);
+        if( delay == 0 ) {
+          sender.trigger(sysclock);
+        }
+        else {
+          sender.set(seconds2ticks(delay));
+          sysclock.add(sender);
+        }
       }
 
       bool sab = readPin(SABOTAGE_PIN) == LOW;
