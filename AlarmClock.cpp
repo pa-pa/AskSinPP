@@ -9,10 +9,20 @@ namespace as {
 
 SysClock sysclock;
 RTC rtc;
+Link pwm(0);
+
+void callback(void) {
+  --sysclock;
+  SoftPWM* p = (SoftPWM*)pwm.select();
+  while( p != 0 ) {
+    p->count();
+    p = (SoftPWM*)p->select();
+  }
+}
 
 #if ARDUINO_ARCH_AVR or ARDUINO_ARCH_ATMEGA32
 ISR(TIMER1_OVF_vect) {
-  --sysclock;
+  callback();
 }
 ISR(TIMER2_OVF_vect) {
   rtc.overflow();
@@ -20,9 +30,6 @@ ISR(TIMER2_OVF_vect) {
 }
 #endif
 
-void callback(void) {
-  --sysclock;
-}
 
 void AlarmClock::cancel(Alarm& item) {
   ATOMIC_BLOCK( ATOMIC_RESTORESTATE )

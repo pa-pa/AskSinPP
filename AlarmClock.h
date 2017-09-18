@@ -204,6 +204,45 @@ public:
 
 extern RTC rtc;
 
+
+extern Link pwm;
+
+class SoftPWM : public Link {
+private:
+  uint32_t duty, value;
+  uint8_t pin;
+
+#define STEPS 100
+#define FREQUENCE 2048
+#define R ((STEPS * log10(2))/(log10(FREQUENCE)))
+
+public:
+  SoftPWM () : Link(0), duty(0), value(0), pin(0) {}
+
+  void init (uint8_t p) {
+    pin = p;
+    pinMode(pin,OUTPUT);
+    digitalWrite(pin,LOW);
+    pwm.append(*this);
+  }
+
+  void count () {
+    ++value;
+    if( value == FREQUENCE ) {
+      digitalWrite(pin,duty > 0 ? HIGH : LOW);
+      value=0;
+    }
+    else if( value == duty ) {
+      digitalWrite(pin,LOW);
+    }
+  }
+
+  void set (uint8_t level) {
+    duty = level > 0 ? pow(2,(level/R)) : 0;
+  }
+};
+
+
 }
 
 #endif
