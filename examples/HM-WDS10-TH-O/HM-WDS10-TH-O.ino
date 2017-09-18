@@ -36,7 +36,7 @@ const struct DeviceInfo PROGMEM devinfo = {
     {0x00,0x3d},            // Device Model
     0x10,                   // Firmware Version
     as::DeviceType::THSensor, // Device Type
-    {0x01,0x01,0x00}        // Info Bytes
+    {0x01,0x00}             // Info Bytes
 };
 
 /**
@@ -86,7 +86,7 @@ class WeatherChannel : public Channel<Hal,List1,EmptyList,List4,PEERS_PER_CHANNE
   uint16_t        millis;
 
 public:
-  WeatherChannel () : Channel(), Alarm(5), temp(0), humidity(0), millis(0) {}
+  WeatherChannel () : Channel(), Alarm(5), temp(0), humidity(0), sht10(A4,A5), millis(0) {}
   virtual ~WeatherChannel () {}
 
   virtual void trigger (__attribute__ ((unused)) AlarmClock& clock) {
@@ -141,7 +141,6 @@ public:
   void setup(Device<Hal>* dev,uint8_t number,uint16_t addr) {
     Channel::setup(dev,number,addr);
     rtc.add(*this);
-    sht10.config(A4,A5);
     sht10.writeSR(LOW_RES);
   }
 

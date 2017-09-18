@@ -14,7 +14,7 @@
 #include <MultiChannelDevice.h>
 #include <Motion.h>
 
-#include <TSL2561.h>
+//#include <TSL2561.h>
 #include <Wire.h>
 
 
@@ -42,7 +42,7 @@ const struct DeviceInfo PROGMEM devinfo = {
     {0x00,0x4a},            // Device Model
     0x16,                   // Firmware Version
     as::DeviceType::MotionDetector, // Device Type
-    {0x01,0x01,0x00}        // Info Bytes
+    {0x01,0x00}             // Info Bytes
 };
 
 /**
@@ -65,25 +65,25 @@ public:
 } hal;
 
 // Create an SFE_TSL2561 object, here called "light":
-TSL2561 light;
+//TSL2561 light;
 bool lightenabled = false;
 
 uint8_t measureBrightness () {
   static uint16_t maxvalue = 0;
   uint8_t value = 0;
-  if( lightenabled == true ) {
-    unsigned int data0, data1;
-    if (light.getData(data0,data1)) {
-      double lux;    // Resulting lux value
-      light.getLux (data0,data1,lux);
-      uint16_t current = (uint16_t)lux;
-      DPRINT(F("light: ")); DHEXLN(current);
-      if( maxvalue < current ) {
-        maxvalue = current;
-      }
-      value = 200UL * current / maxvalue;
-    }
-  }
+//  if( lightenabled == true ) {
+//    unsigned int data0, data1;
+//    if (light.getData(data0,data1)) {
+//      double lux;    // Resulting lux value
+//      light.getLux (data0,data1,lux);
+//      uint16_t current = (uint16_t)lux;
+//      DPRINT(F("light: ")); DHEXLN(current);
+//      if( maxvalue < current ) {
+//        maxvalue = current;
+//      }
+//      value = 200UL * current / maxvalue;
+//    }
+//  }
   return value;
 }
 
@@ -97,17 +97,17 @@ void setup () {
   DINIT(57600,ASKSIN_PLUS_PLUS_IDENTIFIER);
   sdev.init(hal);
 
-  light.begin();
-    // If gain = false (0), device is set to low gain (1X)
-    // If gain = high (1), device is set to high gain (16X)
-    // If time = 0, integration will be 13.7ms
-    // If time = 1, integration will be 101ms
-    // If time = 2, integration will be 402ms
-    // If time = 3, use manual start / stop to perform your own integration
-  lightenabled = light.setTiming(0,2); //gain,time);
-  if( lightenabled == true ) {
-    light.setPowerUp();
-  }
+//  light.begin();
+//    // If gain = false (0), device is set to low gain (1X)
+//    // If gain = high (1), device is set to high gain (16X)
+//    // If time = 0, integration will be 13.7ms
+//    // If time = 1, integration will be 101ms
+//    // If time = 2, integration will be 402ms
+//    // If time = 3, use manual start / stop to perform your own integration
+//  lightenabled = light.setTiming(0,2); //gain,time);
+//  if( lightenabled == true ) {
+//    light.setPowerUp();
+//  }
 
   buttonISR(cfgBtn,CONFIG_BUTTON_PIN);
   motionISR(sdev,1,PIR_PIN);

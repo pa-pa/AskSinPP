@@ -46,10 +46,10 @@ using namespace as;
 const struct DeviceInfo PROGMEM devinfo = {
     {0x12,0x34,0x56},       // Device ID
     "papa000000",           // Device Serial
-    {HM_LC_SW4_SM},            // Device Model
+    {HM_LC_SW4_SM},         // Device Model
     0x16,                   // Firmware Version
     as::DeviceType::Switch, // Device Type
-    {0x04,0x01,0x00}        // Info Bytes
+    {0x01,0x00}             // Info Bytes
 };
 
 /**

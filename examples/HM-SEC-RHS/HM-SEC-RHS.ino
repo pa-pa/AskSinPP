@@ -53,7 +53,7 @@ const struct DeviceInfo PROGMEM devinfo = {
     {0x00,0x30},            // Device Model
     0x18,                   // Firmware Version
     as::DeviceType::ThreeStateSensor, // Device Type
-    {0x01,0x01,0x00}        // Info Bytes
+    {0x01,0x00}             // Info Bytes
 };
 
 class BatSensor : public BatterySensorUni<17,7,3000> {

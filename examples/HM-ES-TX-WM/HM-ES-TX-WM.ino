@@ -40,7 +40,7 @@ const struct DeviceInfo PROGMEM devinfo = {
     {0x00,0xde},            // Device Model
     0x11,                   // Firmware Version
     as::DeviceType::PowerMeter, // Device Type
-    {0x02,0x01,0x00}        // Info Bytes
+    {0x01,0x00}             // Info Bytes
 };
 
 /**

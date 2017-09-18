@@ -35,7 +35,7 @@ const struct DeviceInfo PROGMEM devinfo = {
     {0x00,0xae},            // Device Model
     0x11,                   // Firmware Version
     as::DeviceType::THSensor, // Device Type
-    {0x01,0x01,0x00}        // Info Bytes
+    {0x01,0x00}             // Info Bytes
 };
 
 /**

@@ -26,7 +26,6 @@ class ChannelDevice : public Device<HalType> {
 
   List0Type    list0;
   ChannelType* devchannels[ChannelCount];
-  uint8_t      numChannels;
   uint8_t      cfgChannel;
   GenericList  cfgList;
 
@@ -34,7 +33,7 @@ public:
 
   typedef Device<HalType> DeviceType;
 
-  ChannelDevice (const DeviceInfo& i,uint16_t addr) : Device<HalType>(i,addr,list0), list0(addr + this->keystore().size()), numChannels(ChannelCount), cfgChannel(0xff) {}
+  ChannelDevice (const DeviceInfo& i,uint16_t addr) : Device<HalType>(i,addr,list0,ChannelCount), list0(addr + this->keystore().size()), cfgChannel(0xff) {}
 
   virtual ~ChannelDevice () {}
 
@@ -46,14 +45,23 @@ public:
 
   void layoutChannels () {
     uint16_t addr = list0.address() + list0.size();
-    for( uint8_t i=0; i<channels(); ++i ) {
+    for( uint8_t i=0; i<this->channels(); ++i ) {
       devchannels[i]->setup(this,i+1,addr);
       addr += devchannels[i]->size();
     }
   }
 
+  void channels (uint8_t num) {
+    DeviceType::channels(min(num,ChannelCount));
+  }
+
+  uint8_t channels () const {
+    return DeviceType::channels();
+  }
+
+
   void dumpSize () {
-    ChannelType& ch = channel(channels());
+    ChannelType& ch = channel(this->channels());
     DPRINT("Address Space: ");DDEC(this->keystore().address());DPRINT(" - ");DDECLN((uint16_t)(ch.address() + ch.size()));
   }
 
@@ -66,7 +74,7 @@ public:
       crc = HalType::crc16(crc,list0.getRegister(i));
     }
     // add number of channels
-    for( uint8_t c=1; c<=channels(); ++c ) {
+    for( uint8_t c=1; c<=this->channels(); ++c ) {
       ChannelType& ch = channel(c);
       // add register list 1
       GenericList l = ch.getList1();
@@ -93,24 +101,6 @@ public:
     return list0;
   }
 
-  void getDeviceInfo (uint8_t* info) {
-    DeviceType::getDeviceInfo(info);
-    // patch real channel count into device info
-    *info = channels();
-  }
-
-  void channels (uint8_t num) {
-    numChannels = min(num,ChannelCount);
-  }
-
-  uint8_t channels () const {
-    return numChannels;
-  }
-
-  bool hasChannel (uint8_t number) const {
-    return number != 0 && number <= channels();
-  }
-
   void init (HalType& hal) {
     layoutChannels();
     dumpSize();
@@ -130,7 +120,7 @@ public:
   void firstinit () {
     this->keystore().defaults(); // init aes key infrastructure
     list0.defaults();
-    for( uint8_t i=0; i<channels(); ++i ) {
+    for( uint8_t i=0; i<this->channels(); ++i ) {
       devchannels[i]->firstinit();
     }
   }
@@ -161,7 +151,7 @@ public:
 
   bool pollRadio () {
     bool worked = DeviceType::pollRadio();
-    for( uint8_t i=1; i<=channels(); ++i ) {
+    for( uint8_t i=1; i<=this->channels(); ++i ) {
       ChannelType& ch = channel(i);
       if( ch.changed() == true ) {
         this->sendInfoActuatorStatus(this->getMasterID(),this->nextcount(),ch);
@@ -175,7 +165,7 @@ public:
     if( getList0().aesActive() == true ) {
       return true;
     }
-    for( uint8_t i=1; i<=channels(); ++i) {
+    for( uint8_t i=1; i<=this->channels(); ++i) {
       if( channel(i).aesActive() == true ) {
         return true;
       }
@@ -194,7 +184,7 @@ public:
 
   bool validSignature(uint8_t ch,Message& msg) {
 #ifdef USE_AES
-    if( (ch==0 && aesActive()) || (hasChannel(ch)==true && channel(ch).aesActive()==true) ) {
+    if( (ch==0 && aesActive()) || (this->hasChannel(ch)==true && channel(ch).aesActive()==true) ) {
       return this->requestSignature(msg);
     }
 #endif
@@ -225,7 +215,7 @@ public:
          else if ( msubc == AS_CONFIG_PEER_ADD ) {
            const ConfigPeerAddMsg& pm = msg.configPeerAdd();
            bool success = false;
-           if( hasChannel(pm.channel()) == true ) {
+           if( this->hasChannel(pm.channel()) == true ) {
              if( validSignature(pm.channel(),msg) == true ) {
                ChannelType& ch = channel(pm.channel());
                if( pm.peers() == 1 ) {
@@ -248,7 +238,7 @@ public:
          else if ( msubc == AS_CONFIG_PEER_REMOVE ) {
            const ConfigPeerRemoveMsg& pm = msg.configPeerRemove();
            bool success = false;
-           if( hasChannel(pm.channel()) == true ) {
+           if( this->hasChannel(pm.channel()) == true ) {
              if( validSignature(pm.channel(),msg) == true ) {
                ChannelType& ch = channel(pm.channel());
                success = ch.deletepeer(pm.peer1());
@@ -268,7 +258,7 @@ public:
          // CONFIG_PEER_LIST_REQ
          else if( msubc == AS_CONFIG_PEER_LIST_REQ ) {
            const ConfigPeerListReqMsg& pm = msg.configPeerListReq();
-           if( hasChannel(pm.channel()) == true ) {
+           if( this->hasChannel(pm.channel()) == true ) {
              this->sendInfoPeerList(msg.from(),msg.count(),channel(pm.channel()));
            }
          }
@@ -353,7 +343,7 @@ public:
          else {
            bool ack=false;
            const ActionMsg& pm = msg.action();
-           if( hasChannel(pm.channel())==true ) {
+           if( this->hasChannel(pm.channel())==true ) {
              ChannelType& ch = channel(pm.channel());
              if( validSignature(pm.channel(),msg)==true ) {
                switch( mcomm ) {
@@ -429,7 +419,7 @@ public:
    }
 
    uint8_t channelForPeer (const Peer& p) {
-     for( uint8_t x=1; x<=channels(); ++x ) {
+     for( uint8_t x=1; x<=this->channels(); ++x ) {
        ChannelType& ch = channel(x);
        for( uint8_t y=0; y<ch.peers(); ++y ) {
          if( ch.peer(y) == p ) {
@@ -443,7 +433,7 @@ public:
    GenericList findList(uint8_t ch,const Peer& peer,uint8_t numlist) {
     if (numlist == 0) {
       return list0;
-    } else if (hasChannel(ch) == true) {
+    } else if (this->hasChannel(ch) == true) {
       ChannelType& c = channel(ch);
       if (numlist == 1) {
         return c.getList1();

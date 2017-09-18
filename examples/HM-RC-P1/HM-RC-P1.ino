@@ -6,17 +6,9 @@
 // define this to read the device id, serial and device type from bootloader section
 // #define USE_OTA_BOOTLOADER
 
-// define all device properties
-#define DEVICE_ID HMID(0x00,0x1a,0x00)
-#define DEVICE_SERIAL "HMRC001A00"
-#define DEVICE_MODEL  0x00,0x1a
-#define DEVICE_FIRMWARE 0x11
-#define DEVICE_TYPE DeviceType::Remote
-#define DEVICE_INFO 0x01,0x00,0x00
-
+#define EI_NOTEXTERNAL
 #include <EnableInterrupt.h>
 #include <AskSinPP.h>
-#include <TimerOne.h>
 #include <LowPower.h>
 
 #include <MultiChannelDevice.h>
@@ -36,6 +28,16 @@
 // all library classes are placed in the namespace 'as'
 using namespace as;
 
+// define all device properties
+const struct DeviceInfo PROGMEM devinfo = {
+    {0x00,0x1a,0x00},       // Device ID
+    "HMRC001A00",           // Device Serial
+    {0x00,0x1a},            // Device Model
+    0x11,                   // Firmware Version
+    as::DeviceType::Remote, // Device Type
+    {0x00,0x00}             // Info Bytes
+};
+
 /**
  * Configure the used hardware
  */
@@ -47,8 +49,8 @@ class Hal : public HalType {
   // extra clock to count button press events
   AlarmClock btncounter;
 public:
-  void init () {
-    HalType::init();
+  void init (const HMID& id) {
+    HalType::init(id);
     // get new battery value after 50 key press
     battery.init(50,btncounter);
     battery.low(22);
@@ -68,7 +70,7 @@ typedef RemoteChannel<Hal,PEERS_PER_CHANNEL> ChannelType;
 typedef MultiChannelDevice<Hal,ChannelType,1> RemoteType;
 
 Hal hal;
-RemoteType sdev(0x20);
+RemoteType sdev(devinfo,0x20);
 ConfigButton<RemoteType> cfgBtn(sdev);
 
 void setup () {

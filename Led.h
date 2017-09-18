@@ -95,7 +95,7 @@ public:
     }
   }
 
-  void ledOn (uint8_t ticks) {
+  void ledOn (uint32_t ticks) {
     if( active() == false && ticks > 0 ) {
       current.length = 2;
       current.duration = 1;
@@ -138,7 +138,7 @@ public:
 
   void init () {  led1.init(LEDPIN1); }
   bool active () const { return led1.active(); }
-  void ledOn (uint8_t ticks) { led1.ledOn(ticks); }
+  void ledOn (uint32_t ticks) { led1.ledOn(ticks); }
   void set(Mode stat) { led1.set(stat,single); }
   void ledOn () { led1.ledOn(); }
   void ledOff () { led1.ledOff(); }
@@ -154,7 +154,7 @@ public:
   DualStatusLed () {}
   void init () { led1.init(LEDPIN1); led2.init(LEDPIN2); }
   bool active () const { return led1.active() || led2.active(); }
-  void ledOn (uint8_t ticks) { led1.ledOn(ticks); led2.ledOn(ticks); }
+  void ledOn (uint32_t ticks) { led1.ledOn(ticks); led2.ledOn(ticks); }
   void set(Mode stat) { led1.set(stat,dual1); led2.set(stat,dual2); }
   void ledOn () { led1.ledOn(); led2.ledOn(); }
   void ledOff () { led1.ledOff(); led2.ledOff(); }

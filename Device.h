@@ -54,7 +54,7 @@ struct DeviceInfo {
   uint8_t DeviceModel[2];
   uint8_t Firmware;
   uint8_t DeviceType;
-  uint8_t DeviceInfo[3];
+  uint8_t DeviceInfo[2];
 };
 
 
@@ -79,9 +79,10 @@ protected:
   KeyStore    kstore;
 
   const DeviceInfo& info;
+  uint8_t      numChannels;
 
 public:
-  Device (const DeviceInfo& i,uint16_t addr,List0& l) : hal(0), list0(l), msgcount(0), lastmsg(0), kstore(addr), info(i) {
+  Device (const DeviceInfo& i,uint16_t addr,List0& l,uint8_t ch) : hal(0), list0(l), msgcount(0), lastmsg(0), kstore(addr), info(i), numChannels(ch) {
     // TODO init seed
   }
   virtual ~Device () {}
@@ -94,6 +95,19 @@ public:
   Activity& activity () { return hal->activity; }
 
   Message& message () { return msg; }
+
+  void channels (uint8_t num) {
+    numChannels = num;
+  }
+
+  uint8_t channels () const {
+    return numChannels;
+  }
+
+  bool hasChannel (uint8_t number) const {
+    return number != 0 && number <= channels();
+  }
+
 
   bool isRepeat(const Message& m) {
     if( m.isRepeated() && lastdev == m.from() && lastmsg == m.count() ) {
@@ -143,7 +157,9 @@ public:
   }
 
   bool isDeviceSerial (const uint8_t* serial) {
-    return memcmp_P(serial,info.Serial,10);
+    uint8_t tmp[10];
+    getDeviceSerial(tmp);
+    return memcmp(serial,tmp,10) == 0;
   }
 
   void getDeviceModel (uint8_t* model) {
@@ -155,7 +171,9 @@ public:
   }
 
   void getDeviceInfo (uint8_t* di) {
-    memcpy_P(di,info.DeviceInfo,sizeof(info.DeviceInfo));
+    // first byte is number of channels
+    *di = this->channels();
+    memcpy_P(di+1,info.DeviceInfo,sizeof(info.DeviceInfo));
   }
 
   HMID getMasterID () {

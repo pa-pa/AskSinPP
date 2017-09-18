@@ -32,7 +32,7 @@ const struct DeviceInfo PROGMEM devinfo = {
     {HM_LC_SW1_PL},         // Device Model
     0x16,                   // Firmware Version
     as::DeviceType::Switch, // Device Type
-    {0x01,0x01,0x00}        // Info Bytes
+    {0x01,0x00}             // Info Bytes
 };
 
 /**

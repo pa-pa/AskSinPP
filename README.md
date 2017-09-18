@@ -14,6 +14,9 @@ Required Arduino libraries:
 - EnableInterrupt - https://github.com/GreyGnome/EnableInterrupt
 - Low-Power - https://github.com/rocketscream/Low-Power.git
 
+Required for different sensor examples:
+- Sensirion - https://github.com/spease/Sensirion.git
+
 ## Enable AES Support
 
 To enable the AES signature support **USE_AES** needs to be

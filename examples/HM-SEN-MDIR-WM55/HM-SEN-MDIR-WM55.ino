@@ -43,7 +43,7 @@ const struct DeviceInfo PROGMEM devinfo = {
     {0x00,0xdb},            // Device Model
     0x0b,                   // Firmware Version
     as::DeviceType::MotionDetector, // Device Type
-    {0x03,0x01,0x00}        // Info Bytes
+    {0x01,0x00}             // Info Bytes
 };
 
 /**

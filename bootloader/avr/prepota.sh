@@ -1,6 +1,8 @@
 #!/bin/bash
 
 HEXFILE=$1
+QUAL=`date +%Y%m%d%H%M`
+EQ3=`basename $1 .hex`_$QUAL.eq3
 
 crc=0xFFFF
 function crc16 {
@@ -37,7 +39,7 @@ function toout {
   done
 }
 
-
+(
 OUT=0
 
 while read LINE
@@ -63,4 +65,4 @@ for (( i=$OUT; i < 16#6FFE; i++ )); do toout "FF" 1; done
 crc16 0
 crc16 0
 printf "%02X%02X" $(( $crc & 0xff )) $(( $crc >> 8 ))  
-
+) > $EQ3

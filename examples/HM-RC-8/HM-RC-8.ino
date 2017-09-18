@@ -47,7 +47,7 @@ const struct DeviceInfo PROGMEM devinfo = {
     {0x00,0xda},            // Device Model
     0x01,                   // Firmware Version
     as::DeviceType::Remote, // Device Type
-    {0x08,0x00,0x00}        // Info Bytes
+    {0x00,0x00}             // Info Bytes
 };
 
 /**
