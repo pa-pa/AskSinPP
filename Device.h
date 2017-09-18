@@ -69,9 +69,12 @@ protected:
   Message     msg;
   KeyStore    kstore;
 
+  uint8_t      numChannels;
+
+
 
 public:
-  Device (uint16_t addr,List0& l) : hal(0), list0(l), msgcount(0), lastmsg(0), kstore(addr) {
+  Device (uint16_t addr,List0& l,uint8_t ch) : hal(0), list0(l), msgcount(0), lastmsg(0), kstore(addr), numChannels(ch) {
     // TODO init seed
   }
   virtual ~Device () {}
@@ -84,6 +87,19 @@ public:
   Activity& activity () { return hal->activity; }
 
   Message& message () { return msg; }
+
+  void channels (uint8_t num) {
+    numChannels = num;
+  }
+
+  uint8_t channels () const {
+    return numChannels;
+  }
+
+  bool hasChannel (uint8_t number) const {
+    return number != 0 && number <= channels();
+  }
+
 
   bool isRepeat(const Message& m) {
     if( m.isRepeated() && lastdev == m.from() && lastmsg == m.count() ) {
@@ -148,6 +164,8 @@ public:
   void getDeviceInfo (uint8_t* info) {
     uint8_t di[3] = {DEVICE_INFO};
     memcpy(info,di,sizeof(di));
+    // patch real channel count into device info
+    *info = this->channels();
   }
 
   HMID getMasterID () {
