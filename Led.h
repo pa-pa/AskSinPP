@@ -155,6 +155,7 @@ public:
   void init () { led1.init(LEDPIN1); led2.init(LEDPIN2); }
   bool active () const { return led1.active() || led2.active(); }
   void ledOn (uint32_t ticks) { led1.ledOn(ticks); led2.ledOn(ticks); }
+  void ledOn (uint32_t ticks,uint32_t tacks) { led1.ledOn(ticks); led2.ledOn(tacks); }
   void set(Mode stat) { led1.set(stat,dual1); led2.set(stat,dual2); }
   void ledOn () { led1.ledOn(); led2.ledOn(); }
   void ledOff () { led1.ledOff(); led2.ledOff(); }

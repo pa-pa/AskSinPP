@@ -331,6 +331,10 @@ class RHSChannel : public Channel<HALTYPE,RHSList1,EmptyList,List4,PEERCOUNT>, p
           sender.set(seconds2ticks(delay));
           sysclock.add(sender);
         }
+        uint16_t ledtime = (uint16_t)this->getList1().ledOntime() * 5;
+        if( ledtime > 0 ) {
+          this->device().led().ledOn(millis2ticks(ledtime),0);
+        }
       }
 
       bool sab = readPin(SABOTAGE_PIN) == LOW;
