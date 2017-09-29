@@ -162,6 +162,12 @@ public:
     return memcmp(serial,tmp,10) == 0;
   }
 
+  bool isDeviceID(const HMID& id) {
+    HMID me;
+    getDeviceID(me);
+    return id == me;
+  }
+
   void getDeviceModel (uint8_t* model) {
 #ifdef USE_OTA_BOOTLOADER
     HalType::pgm_read(model,OTA_MODEL_START,2);
@@ -212,10 +218,10 @@ public:
     uint8_t maxsend = 6;
     led().set(LedStates::send);
     while( result == false && maxsend > 0 ) {
+      result = radio().write(msg,msg.burstRequired());
       DPRINT(F("<- "));
       msg.dump();
       maxsend--;
-      result = radio().write(msg,msg.burstRequired());
       if( result == true && msg.ackRequired() == true && to.valid() == true ) {
         Message response;
         if( (result=waitResponse(msg,response,60)) ) { // 600ms
@@ -368,10 +374,26 @@ public:
     for( int i=0; i<ch.peers(); ++i ){
       Peer p = ch.peer(i);
       if( p.valid() == true ) {
-        typename ChannelType::List4 l4 = ch.getList4(p);
-        msg.burstRequired( l4.burst() );
-        send(msg,p);
-        sendtopeer = true;
+        if( isDeviceID(p) == true ) {
+          // we send to ourself - no ack needed
+          getDeviceID(msg.from());
+          msg.to(msg.from());
+          if( msg.ackRequired() == true ) {
+            msg.clearAck();
+            this->process(msg);
+            msg.setAck();
+          }
+          else {
+            this->process(msg);
+          }
+        }
+        else {
+          // check if burst needed for peer
+          typename ChannelType::List4 l4 = ch.getList4(p);
+          msg.burstRequired( l4.burst() );
+          send(msg,p);
+          sendtopeer = true;
+        }
       }
     }
     // if we have no peer - send to master/broadcast
@@ -424,6 +446,9 @@ public:
   }
 
   bool requestSignature(const Message& msg) {
+    if( isDeviceID(msg.from()) == true ) {
+      return true;
+    }
     AesChallengeMsg signmsg;
     signmsg.init(msg,kstore.getIndex());
     kstore.challengeKey(signmsg.challenge(),kstore.getIndex());

@@ -20,6 +20,9 @@ namespace as {
 
 void(* resetFunc) (void) = 0;
 
+#define REPLAY_NO   0
+#define REPLAY_ACK  1
+#define REPLAY_NACK 2
 
 template <class HalType,class ChannelType,int ChannelCount,class List0Type=List0>
 class ChannelDevice : public Device<HalType> {
@@ -101,11 +104,12 @@ public:
     return list0;
   }
 
-  void init (HalType& hal) {
+  bool init (HalType& hal) {
     layoutChannels();
     dumpSize();
     // first initialize EEProm if needed
-    if( storage.setup(checksum()) == true ) {
+    bool first = storage.setup(checksum());
+    if( first == true ) {
       firstinit();
       storage.store();
     }
@@ -115,6 +119,7 @@ public:
     this->getDeviceID(id);
     hal.init(id);
     this->configChanged();
+    return first;
   }
 
   void firstinit () {
@@ -192,6 +197,8 @@ public:
   }
 
    bool process(Message& msg) {
+     uint8_t answer = REPLAY_NO;
+     ChannelType* ch = 0;
      HMID devid;
      this->getDeviceID(devid);
      if( msg.to() == devid || (msg.to() == HMID::broadcast && this->isBoardcastMsg(msg))) {
@@ -217,21 +224,21 @@ public:
            bool success = false;
            if( this->hasChannel(pm.channel()) == true ) {
              if( validSignature(pm.channel(),msg) == true ) {
-               ChannelType& ch = channel(pm.channel());
+               ch = &channel(pm.channel());
                if( pm.peers() == 1 ) {
-                 success = ch.peer(pm.peer1());
+                 success = ch->peer(pm.peer1());
                }
                else {
-                 success = ch.peer(pm.peer1(),pm.peer2());
+                 success = ch->peer(pm.peer1(),pm.peer2());
                }
              }
            }
            if( success == true ) {
              storage.store();
-             this->sendAck(msg);
+             answer = REPLAY_ACK;
            }
            else {
-             this->sendNack(msg);
+             answer = REPLAY_ACK;
            }
          }
          // CONFIG_PEER_REMOVE
@@ -240,19 +247,19 @@ public:
            bool success = false;
            if( this->hasChannel(pm.channel()) == true ) {
              if( validSignature(pm.channel(),msg) == true ) {
-               ChannelType& ch = channel(pm.channel());
-               success = ch.deletepeer(pm.peer1());
+               ch = &channel(pm.channel());
+               success = ch->deletepeer(pm.peer1());
                if( pm.peers() == 2 ) {
-                 success &= ch.deletepeer(pm.peer2());
+                 success &= ch->deletepeer(pm.peer2());
                }
              }
            }
            if( success == true ) {
              storage.store();
-             this->sendAck(msg);
+             answer = REPLAY_ACK;
            }
            else {
-             this->sendNack(msg);
+             answer = REPLAY_NACK;
            }
          }
          // CONFIG_PEER_LIST_REQ
@@ -270,7 +277,7 @@ public:
              this->sendInfoParamResponsePairs(msg.from(),msg.count(),gl);
            }
            else {
-             this->sendNack(msg);
+             answer = REPLAY_NACK;
            }
          }
          // CONFIG_STATUS_REQUEST
@@ -285,10 +292,10 @@ public:
              cfgChannel = pm.channel();
              cfgList = findList(cfgChannel,pm.peer(),pm.list());
              // TODO setup alarm to disable after 2000ms
-             this->sendAck(msg);
+             answer = REPLAY_ACK;
            }
            else {
-             this->sendNack(msg);
+             answer = REPLAY_NACK;
            }
          }
          // CONFIG_END
@@ -312,20 +319,17 @@ public:
              if( cfgChannel == pm.channel() && cfgList.valid() == true ) {
                this->writeList(cfgList,pm.data(),pm.datasize());
              }
-             this->sendAck(msg);
+             answer = REPLAY_ACK;
            }
            else {
-             this->sendNack(msg);
+             answer = REPLAY_NACK;
            }
          }
          else if( msubc == AS_CONFIG_SERIAL_REQ ) {
            this->sendSerialInfo(msg.from(),msg.count());
          }
-         // default - send Nack if answer is requested
          else {
-           if( msg.ackRequired() == true ) {
-             this->sendNack(msg);
-           }
+           answer = REPLAY_NACK;
          }
        }
        else if( mtype == AS_MESSAGE_ACTION ) {
@@ -341,77 +345,79 @@ public:
            }
          }
          else {
-           bool ack=false;
            const ActionMsg& pm = msg.action();
            if( this->hasChannel(pm.channel())==true ) {
-             ChannelType& ch = channel(pm.channel());
+             ch = &channel(pm.channel());
              if( validSignature(pm.channel(),msg)==true ) {
                switch( mcomm ) {
                case AS_ACTION_INHIBIT_OFF:
-                 ch.inhibit(false);
-                 ack = true;
+                 ch->inhibit(false);
+                 answer = REPLAY_ACK;
                  break;
                case AS_ACTION_INHIBIT_ON:
-                 ch.inhibit(true);
-                 ack = true;
+                 ch->inhibit(true);
+                 answer = REPLAY_ACK;
                  break;
                case AS_ACTION_SET:
-                 if( ch.inhibit() == false ) {
-                   ack = ch.process(msg.actionSet());
+                 if( ch->inhibit() == false ) {
+                   answer = ch->process(msg.actionSet()) ? REPLAY_ACK : REPLAY_NACK;
                  }
                  break;
                }
              }
-             if( ack == true ) this->sendAck(msg,ch);
            }
-           if( ack==false) this->sendNack(msg);
          }
        }
        else if( mtype == AS_MESSAGE_HAVE_DATA ) {
          DPRINTLN(F("HAVE DATA"));
-         this->sendAck(msg);
+         answer = REPLAY_ACK;
        }
        else if (mtype == AS_MESSAGE_REMOTE_EVENT || mtype == AS_MESSAGE_SENSOR_EVENT) {
          const RemoteEventMsg& pm = msg.remoteEvent();
          uint8_t cdx = channelForPeer(pm.peer());
-         bool ack=false;
          if( cdx != 0 ) {
-           ChannelType& ch = channel(cdx);
-           if( ch.inhibit() == false ) {
+           ch = &channel(cdx);
+           if( ch->inhibit() == false ) {
              if( validSignature(cdx,msg)==true ) {
                switch( mtype ) {
                case AS_MESSAGE_REMOTE_EVENT:
-                 ack = ch.process(pm);
+                 answer = ch->process(pm) ? REPLAY_ACK : REPLAY_NACK;
                  break;
                case AS_MESSAGE_SENSOR_EVENT:
-                 ack = ch.process(msg.sensorEvent());
+                 answer = ch->process(msg.sensorEvent()) ? REPLAY_ACK : REPLAY_NACK;
                  break;
                }
-               if( ack == true ) DeviceType::sendAck(msg,ch);
              }
            }
          }
-         if( ack == false ) DeviceType::sendNack(msg);
        }
 #ifdef USE_AES
        else if (mtype == AS_MESSAGE_KEY_EXCHANGE ) {
          if( validSignature(msg) == true ) {
-           if( this->keystore().exchange(msg.aesExchange())==true ) this->sendAck(msg);
-           else this->sendNack(msg);
+           if( this->keystore().exchange(msg.aesExchange())==true ) answer = REPLAY_ACK;
+           else answer = REPLAY_NACK;
          }
        }
 #endif
        // default - send Nack if answer is requested
        else {
-         if( msg.ackRequired() == true ) {
-           this->sendNack(msg);
-         }
+         answer = REPLAY_NACK;
        }
      }
      else {
        DPRINT(F("ignore "));
        msg.dump();
        return false;
+     }
+     // send ack/nack
+     if( msg.ackRequired() == true) {
+       if( answer == REPLAY_ACK ) {
+         if( ch != 0 ) this->sendAck(msg, *ch);
+         else this->sendAck(msg);
+       }
+       else if( answer == REPLAY_NACK ) {
+         this->sendNack(msg);
+       }
      }
      // we always stay awake after valid communication
      this->activity().stayAwake(millis2ticks(500));
