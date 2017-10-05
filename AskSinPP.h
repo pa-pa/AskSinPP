@@ -10,6 +10,8 @@
 
 #define ASKSIN_PLUS_PLUS_IDENTIFIER F("AskSin++ V" ASKSIN_PLUS_PLUS_VERSION " (" __DATE__ " " __TIME__ ")")
 
+#include <stdint.h>
+
 #ifdef ARDUINO_ARCH_STM32F1
   #define _delay_us(us) delayMicroseconds(us)
   inline void _delay_ms(uint32_t ms) { do { delayMicroseconds(1000); } while( (--ms) > 0); }
