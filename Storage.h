@@ -146,6 +146,11 @@ public:
     return true;
   }
 
+  void reset () {
+    // clear magic
+    clearData(0x0,4);
+  }
+
   void dump (uint16_t start, uint16_t num);
 
   static uint16_t crc16 (uint16_t crc,uint8_t d);

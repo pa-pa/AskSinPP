@@ -132,7 +132,7 @@ public:
 
   void reset () {
     DPRINTLN(F("RESET"));
-    firstinit();
+    storage.reset();
     resetFunc();
   }
 
@@ -202,12 +202,15 @@ public:
      HMID devid;
      this->getDeviceID(devid);
      if( msg.to() == devid || (msg.to() == HMID::broadcast && this->isBoardcastMsg(msg))) {
+       // we got a message - we do not answer before 100ms
+       this->radio().setSendTimeout(100);
        DPRINT(F("-> "));
        msg.dump();
        // ignore repeated messages
        if( this->isRepeat(msg) == true ) {
          return false;
        }
+       // start processing the message
        uint8_t mtype = msg.type();
        uint8_t mcomm = msg.command();
        uint8_t msubc = msg.subcommand();

@@ -78,7 +78,7 @@ MixDevice sdev(devinfo,0x20);
 ConfigButton<MixDevice> cfgBtn(sdev);
 
 void setup () {
-  DINIT(57600,ASKSIN_PLUS_PLUS_IDENTIFIER);
+  DINIT(19200,ASKSIN_PLUS_PLUS_IDENTIFIER);
   bool firstinit = sdev.init(hal);
   sdev.sw1Channel().lowactive(false);
   sdev.sw2Channel().lowactive(false);
@@ -92,6 +92,7 @@ void setup () {
     sdev.sw2Channel().peer(Peer(devid,2));
     sdev.btn1Channel().peer(Peer(devid,3));
     sdev.btn2Channel().peer(Peer(devid,4));
+    storage.store();
   }
   // delay next send by random time
   hal.waitTimeout((rand() % 3500)+1000);
