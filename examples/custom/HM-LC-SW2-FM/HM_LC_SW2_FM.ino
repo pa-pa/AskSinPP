@@ -4,7 +4,7 @@
 //- -----------------------------------------------------------------------------------------------------------------------
 
 // define this to read the device id, serial and device type from bootloader section
-#define USE_OTA_BOOTLOADER
+//#define USE_OTA_BOOTLOADER
 #define NDEBUG
 
 #include <AskSinPP.h>
@@ -75,7 +75,6 @@ public:
   SwChannel&  sw2Channel  () { return c4; }
 };
 MixDevice sdev(devinfo,0x20);
-ConfigButton<MixDevice> cfgBtn(sdev);
 
 void setup () {
   DINIT(19200,ASKSIN_PLUS_PLUS_IDENTIFIER);
