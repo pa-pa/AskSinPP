@@ -18,8 +18,6 @@
 
 #ifdef ARDUINO_ARCH_AVR
   #include <util/delay.h>
-  #define LIBCALL_ENABLEINTERRUPT
-  #include <EnableInterrupt.h>
   typedef uint8_t BitOrder;
 #endif
 
@@ -540,6 +538,7 @@ public:   //--------------------------------------------------------------------
     if( val_read != val ) {
       if( retries > 0 ) {
         initReg(regAddr, val, --retries);
+        _delay_ms(1);
       }
       else {
         DPRINT("Error at "); DHEX(regAddr);
@@ -560,10 +559,10 @@ public:   //--------------------------------------------------------------------
   }
 
   void enable () {
-    enableInterrupt(GDO0, isr, FALLING);
+    attachInterrupt(digitalPinToInterrupt(GDO0),isr,FALLING);
   }
   void disable () {
-    disableInterrupt(GDO0);
+    detachInterrupt(digitalPinToInterrupt(GDO0));
   }
 
   // read the message form the internal buffer, if any

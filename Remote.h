@@ -91,17 +91,13 @@ public:
   virtual void state(uint8_t s) {
     DHEX(BaseChannel::number());
     Button::state(s);
-    if( s == released ) {
-      RemoteEventMsg& msg = (RemoteEventMsg&)BaseChannel::device().message();
-      msg.init(BaseChannel::device().nextcount(),BaseChannel::number(),repeatcnt++,false,BaseChannel::device().battery().low());
-      BaseChannel::device().sendPeerEvent(msg,*this);
+    if( s == released || s == longpressed) {
+      RemoteEventMsg& msg = (RemoteEventMsg&)this->device().message();
+      // send to peers
+      msg.init(this->device().nextcount(),this->number(),repeatcnt,(s==longpressed),this->device().battery().low());
+      this->device().sendPeerEvent(msg,*this);
     }
-    else if( s == longpressed ) {
-      RemoteEventMsg& msg = (RemoteEventMsg&)BaseChannel::device().message();
-      msg.init(BaseChannel::device().nextcount(),BaseChannel::number(),repeatcnt,true,BaseChannel::device().battery().low());
-      BaseChannel::device().sendPeerEvent(msg,*this);
-    }
-    else if( s == longreleased ) {
+    if( s == released || s == longreleased ) {
       repeatcnt++;
     }
   }
@@ -114,7 +110,7 @@ public:
     bool result = isr;
     if( isr == true ) {
       isr = false;
-      Button::check();
+      this->check();
     }
     return result;
   }

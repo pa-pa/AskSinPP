@@ -48,6 +48,15 @@ enum Types {
 };
 };
 
+struct DeviceInfo {
+  uint8_t DeviceID[3];
+  char    Serial[11];
+  uint8_t DeviceModel[2];
+  uint8_t Firmware;
+  uint8_t DeviceType;
+  uint8_t DeviceInfo[2];
+};
+
 
 template <class HalType>
 class Device {
@@ -69,9 +78,11 @@ protected:
   Message     msg;
   KeyStore    kstore;
 
+  const DeviceInfo& info;
+  uint8_t      numChannels;
 
 public:
-  Device (uint16_t addr,List0& l) : hal(0), list0(l), msgcount(0), lastmsg(0), kstore(addr) {
+  Device (const DeviceInfo& i,uint16_t addr,List0& l,uint8_t ch) : hal(0), list0(l), msgcount(0), lastmsg(0), kstore(addr), info(i), numChannels(ch) {
     // TODO init seed
   }
   virtual ~Device () {}
@@ -84,6 +95,19 @@ public:
   Activity& activity () { return hal->activity; }
 
   Message& message () { return msg; }
+
+  void channels (uint8_t num) {
+    numChannels = num;
+  }
+
+  uint8_t channels () const {
+    return numChannels;
+  }
+
+  bool hasChannel (uint8_t number) const {
+    return number != 0 && number <= channels();
+  }
+
 
   bool isRepeat(const Message& m) {
     if( m.isRepeated() && lastdev == m.from() && lastmsg == m.count() ) {
@@ -118,7 +142,9 @@ public:
 #ifdef USE_OTA_BOOTLOADER
     HalType::pgm_read((uint8_t*)&id,OTA_HMID_START,sizeof(id));
 #else
-    id = DEVICE_ID;
+    uint8_t ids[3];
+    memcpy_P(ids,info.DeviceID,3);
+    id = HMID(ids);
 #endif
   }
 
@@ -126,28 +152,34 @@ public:
 #ifdef USE_OTA_BOOTLOADER
     HalType::pgm_read((uint8_t*)serial,OTA_SERIAL_START,10);
 #else
-    memcpy(serial,DEVICE_SERIAL,10);
+    memcpy_P(serial,info.Serial,10);
 #endif
   }
 
   bool isDeviceSerial (const uint8_t* serial) {
     uint8_t tmp[10];
     getDeviceSerial(tmp);
-    return memcmp(tmp,serial,10)==0;
+    return memcmp(serial,tmp,10) == 0;
+  }
+
+  bool isDeviceID(const HMID& id) {
+    HMID me;
+    getDeviceID(me);
+    return id == me;
   }
 
   void getDeviceModel (uint8_t* model) {
 #ifdef USE_OTA_BOOTLOADER
     HalType::pgm_read(model,OTA_MODEL_START,2);
 #else
-    uint8_t dm[2] = {DEVICE_MODEL};
-    memcpy(model,dm,sizeof(dm));
+    memcpy_P(model,info.DeviceModel,sizeof(info.DeviceModel));
 #endif
   }
 
-  void getDeviceInfo (uint8_t* info) {
-    uint8_t di[3] = {DEVICE_INFO};
-    memcpy(info,di,sizeof(di));
+  void getDeviceInfo (uint8_t* di) {
+    // first byte is number of channels
+    *di = this->channels();
+    memcpy_P(di+1,info.DeviceInfo,sizeof(info.DeviceInfo));
   }
 
   HMID getMasterID () {
@@ -186,10 +218,10 @@ public:
     uint8_t maxsend = 6;
     led().set(LedStates::send);
     while( result == false && maxsend > 0 ) {
+      result = radio().write(msg,msg.burstRequired());
       DPRINT(F("<- "));
       msg.dump();
       maxsend--;
-      result = radio().write(msg,msg.burstRequired());
       if( result == true && msg.ackRequired() == true && to.valid() == true ) {
         Message response;
         if( (result=waitResponse(msg,response,60)) ) { // 600ms
@@ -251,7 +283,7 @@ public:
   void sendDeviceInfo (const HMID& to,uint8_t count) {
     DeviceInfoMsg& pm = msg.deviceInfo();
     pm.init(to,count);
-    pm.fill(DEVICE_FIRMWARE,DEVICE_TYPE);
+    pm.fill(pgm_read_byte(&info.Firmware),pgm_read_byte(&info.DeviceType));
     getDeviceModel(pm.model());
     getDeviceSerial(pm.serial());
     getDeviceInfo(pm.info());
@@ -342,10 +374,26 @@ public:
     for( int i=0; i<ch.peers(); ++i ){
       Peer p = ch.peer(i);
       if( p.valid() == true ) {
-        typename ChannelType::List4 l4 = ch.getList4(p);
-        msg.burstRequired( l4.burst() );
-        send(msg,p);
-        sendtopeer = true;
+        if( isDeviceID(p) == true ) {
+          // we send to ourself - no ack needed
+          getDeviceID(msg.from());
+          msg.to(msg.from());
+          if( msg.ackRequired() == true ) {
+            msg.clearAck();
+            this->process(msg);
+            msg.setAck();
+          }
+          else {
+            this->process(msg);
+          }
+        }
+        else {
+          // check if burst needed for peer
+          typename ChannelType::List4 l4 = ch.getList4(p);
+          msg.burstRequired( l4.burst() );
+          send(msg,p);
+          sendtopeer = true;
+        }
       }
     }
     // if we have no peer - send to master/broadcast
@@ -398,6 +446,9 @@ public:
   }
 
   bool requestSignature(const Message& msg) {
+    if( isDeviceID(msg.from()) == true ) {
+      return true;
+    }
     AesChallengeMsg signmsg;
     signmsg.init(msg,kstore.getIndex());
     kstore.challengeKey(signmsg.challenge(),kstore.getIndex());

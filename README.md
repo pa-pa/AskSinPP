@@ -1,4 +1,6 @@
 
+# Please use V2 Branch for your devices. The master branch is used for active development and may be instable
+
 # AskSin++
 
 C++ implementation of the AskSin protocol
@@ -11,6 +13,9 @@ Required Arduino libraries:
 - TimerOne - https://github.com/PaulStoffregen/TimerOne
 - EnableInterrupt - https://github.com/GreyGnome/EnableInterrupt
 - Low-Power - https://github.com/rocketscream/Low-Power.git
+
+Required for different sensor examples:
+- Sensirion - https://github.com/spease/Sensirion.git
 
 ## Enable AES Support
 

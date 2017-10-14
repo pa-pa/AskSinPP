@@ -668,7 +668,7 @@ public:
       case AS_CM_JT_RAMPOFF:  value = lst.rampOffTime(); break;
       case AS_CM_JT_OFF:      value = lst.offTime(); break;
     }
-    return byteTimeCvt(value);
+    return AskSinBase::byteTimeCvt(value);
   }
 
   uint32_t getDefaultDelay(uint8_t stat) const {
@@ -684,27 +684,6 @@ public:
   }
 
   bool delayActive () const { return sysclock.get(alarm) > 0; }
-
-  // get timer count in ticks
-  static uint32_t byteTimeCvt(uint8_t tTime) {
-    if( tTime == 0xff ) return 0xffffffff;
-    const uint16_t c[8] = {1,10,50,100,600,3000,6000,36000};
-    return decis2ticks( (uint32_t)(tTime & 0x1F) * c[tTime >> 5] );
-  }
-
-  // get timer count in ticks
-  static uint32_t intTimeCvt(uint16_t iTime) {
-    if (iTime == 0x00) return 0x00;
-    if (iTime == 0xffff) return 0xffffffff;
-
-    uint8_t tByte;
-    if ((iTime & 0x1F) != 0) {
-      tByte = 2;
-      for (uint8_t i = 1; i < (iTime & 0x1F); i++) tByte *= 2;
-    } else tByte = 1;
-
-    return decis2ticks( (uint32_t)tByte*(iTime>>5) );
-  }
 
   void dimUp (const DimmerPeerList& lst) {
     uint8_t dx = lst.dimStep();
@@ -797,11 +776,11 @@ public:
     if( ramp==0 ) {
       alarm.destlevel=level;
       updateLevel(level);
-      setState(level==0 ? AS_CM_JT_OFF : AS_CM_JT_ON, intTimeCvt(delay));
+      setState(level==0 ? AS_CM_JT_OFF : AS_CM_JT_ON, AskSinBase::intTimeCvt(delay));
     }
     else {
       sysclock.cancel(alarm);
-      alarm.init(intTimeCvt(ramp), level, intTimeCvt(delay));
+      alarm.init(AskSinBase::intTimeCvt(ramp), level, AskSinBase::intTimeCvt(delay));
       sysclock.add(alarm);
     }
   }
@@ -900,7 +879,7 @@ class DimmerDevice : public MultiChannelDevice<HalType,ChannelType,ChannelCount,
 public:
   typedef MultiChannelDevice<HalType,ChannelType,ChannelCount,List0Type> DeviceType;
 
-  DimmerDevice (uint16_t addr) : DeviceType(addr), pin(0) {}
+  DimmerDevice (const DeviceInfo& info,uint16_t addr) : DeviceType(info,addr), pin(0) {}
   virtual ~DimmerDevice () {}
 
   void firstinit () {

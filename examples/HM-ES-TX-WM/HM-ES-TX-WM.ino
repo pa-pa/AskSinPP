@@ -6,21 +6,12 @@
 // define this to read the device id, serial and device type from bootloader section
 // #define USE_OTA_BOOTLOADER
 
-// define all device properties
-#define DEVICE_ID HMID(0x90,0x12,0x34)
-#define DEVICE_SERIAL "papa555555"
-#define DEVICE_MODEL  0x00,0xde
-#define DEVICE_FIRMWARE 0x11
-#define DEVICE_TYPE DeviceType::PowerMeter
-#define DEVICE_INFO 0x02,0x01,0x00
-
+#define EI_NOTEXTERNAL
 #include <EnableInterrupt.h>
 #include <AskSinPP.h>
-#include <TimerOne.h>
 #include <LowPower.h>
 
 #include <MultiChannelDevice.h>
-
 
 // we use a Pro Mini
 // Arduino pin for the LED
@@ -41,6 +32,16 @@
 
 // all library classes are placed in the namespace 'as'
 using namespace as;
+
+// define all device properties
+const struct DeviceInfo PROGMEM devinfo = {
+    {0x90,0x12,0x34},       // Device ID
+    "papa555555",           // Device Serial
+    {0x00,0xde},            // Device Model
+    0x11,                   // Firmware Version
+    as::DeviceType::PowerMeter, // Device Type
+    {0x01,0x00}             // Info Bytes
+};
 
 /**
  * Configure the used hardware
@@ -371,7 +372,7 @@ public:
 typedef MultiChannelDevice<HalType,MeterChannel,2,MeterList0> MeterType;
 
 HalType hal;
-MeterType sdev(0x20);
+MeterType sdev(devinfo,0x20);
 
 template <uint8_t pin, void (*isr)(), uint16_t millis>
 class ISRWrapper : public Alarm {

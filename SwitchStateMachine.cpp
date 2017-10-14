@@ -3,6 +3,7 @@
 // 2016-10-31 papa Creative Commons - http://creativecommons.org/licenses/by-nc-sa/3.0/de/
 //- -----------------------------------------------------------------------------------------------------------------------
 
+#include <AskSinPP.h>
 #include "SwitchStateMachine.h"
 
 namespace as {

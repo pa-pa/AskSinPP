@@ -13,22 +13,16 @@
 #define CFG_BAT_LOW_BYTE 0x01
 #define CFG_BAT_CRITICAL_BYTE 0x02
 
-// define all device properties
-#define DEVICE_ID HMID(0x09,0x56,0x34)
-#define DEVICE_SERIAL "papa222111"
-#define DEVICE_MODEL  0x00,0x30
-#define DEVICE_FIRMWARE 0x18
-#define DEVICE_TYPE DeviceType::ThreeStateSensor
-#define DEVICE_INFO 0x01,0x01,0x00
+// define device configuration bytes
 #define DEVICE_CONFIG CFG_STEPUP_OFF,22,19
 
 #define MODE_POLL
 
 // 24 0030 4D455130323134373633 80 910101
 
+#define EI_NOTEXTERNAL
 #include <EnableInterrupt.h>
 #include <AskSinPP.h>
-#include <TimerOne.h>
 #include <LowPower.h>
 
 #include <MultiChannelDevice.h>
@@ -51,6 +45,16 @@
 
 // all library classes are placed in the namespace 'as'
 using namespace as;
+
+// define all device properties
+const struct DeviceInfo PROGMEM devinfo = {
+    {0x09,0x56,0x34},       // Device ID
+    "papa222111",           // Device Serial
+    {0x00,0x30},            // Device Model
+    0x18,                   // Firmware Version
+    as::DeviceType::ThreeStateSensor, // Device Type
+    {0x01,0x00}             // Info Bytes
+};
 
 class BatSensor : public BatterySensorUni<17,7,3000> {
   bool m_Extern;
@@ -223,17 +227,32 @@ public:
 
 template <class HALTYPE,int PEERCOUNT>
 class RHSChannel : public Channel<HALTYPE,RHSList1,EmptyList,List4,PEERCOUNT>, public Alarm {
+
+  class EventSender : public Alarm {
+  public:
+    RHSChannel& channel;
+    uint8_t count, state;
+
+    EventSender (RHSChannel& c) : Alarm(0), channel(c), count(0), state(255) {}
+    virtual ~EventSender () {}
+    virtual void trigger (__attribute__ ((unused)) AlarmClock& clock) {
+      SensorEventMsg& msg = (SensorEventMsg&)channel.device().message();
+      msg.init(channel.device().nextcount(),channel.number(),count++,state,channel.device().battery().low());
+      channel.device().sendPeerEvent(msg,channel);
+    }
+  };
+
   // pin mapping can be changed by bootloader config data
   // map pins to pos     00   01   10   11
   uint8_t posmap[4] = {PosB,PosC,PosA,PosB};
   volatile bool isr;
-  uint8_t state, count;
+  EventSender sender;
   bool sabotage;
 
-public:
-  typedef Channel<HALTYPE,RHSList1,EmptyList,List4,PEERCOUNT> BaseChannel;
+  public:
+    typedef Channel<HALTYPE,RHSList1,EmptyList,List4,PEERCOUNT> BaseChannel;
 
-  RHSChannel () : BaseChannel(), Alarm(DEBOUNCETIME), isr(false), state(255), count(0), sabotage(false) {}
+  RHSChannel () : BaseChannel(), Alarm(DEBOUNCETIME), isr(false), sender(*this), sabotage(false) {}
   virtual ~RHSChannel () {}
 
   void setup(Device<HALTYPE>* dev,uint8_t number,uint16_t addr) {
@@ -242,7 +261,7 @@ public:
   }
 
   uint8_t status () const {
-    return state;
+    return sender.state;
   }
 
   uint8_t flags () const {
@@ -279,7 +298,7 @@ public:
 #else
     if( isr == true ) {
 #endif
-      uint8_t newstate = state;
+      uint8_t newstate = sender.state;
       uint8_t pinstate = readPin(SENS2_PIN) << 1 | readPin(SENS1_PIN);
       uint8_t pos = posmap[pinstate & 0x03];
       uint8_t msg = NO_MSG;
@@ -299,13 +318,23 @@ public:
 
       if( msg == CLOSED_MSG) newstate = CLOSED_STATE;
       else if( msg == OPEN_MSG) newstate = OPEN_STATE;
-      if( msg == TILTED_MSG) newstate = TILTED_STATE;
+      else if( msg == TILTED_MSG) newstate = TILTED_STATE;
 
-      if( newstate != state ) {
-        state = newstate;
-        SensorEventMsg& msg = (SensorEventMsg&)BaseChannel::device().message();
-        msg.init(this->device().nextcount(),this->number(),count++,state,this->device().battery().low());
-        this->device().sendPeerEvent(msg,*this);
+      if( newstate != sender.state ) {
+        uint8_t delay = this->getList1().eventDelaytime();
+        sender.state = newstate;
+        sysclock.cancel(sender);
+        if( delay == 0 ) {
+          sender.trigger(sysclock);
+        }
+        else {
+          sender.set(seconds2ticks(delay));
+          sysclock.add(sender);
+        }
+        uint16_t ledtime = (uint16_t)this->getList1().ledOntime() * 5;
+        if( ledtime > 0 ) {
+          this->device().led().ledOn(millis2ticks(ledtime),0);
+        }
       }
 
       bool sab = readPin(SABOTAGE_PIN) == LOW;
@@ -338,7 +367,7 @@ class RHSType : public MultiChannelDevice<Hal,RHSChannel<Hal,PEERS_PER_CHANNEL>,
   } cycle;
 public:
   typedef MultiChannelDevice<Hal,RHSChannel<Hal,PEERS_PER_CHANNEL>,1,RHSList0> DevType;
-  RHSType(uint16_t addr) : DevType(addr), cycle(*this) {}
+  RHSType(const DeviceInfo& info,uint16_t addr) : DevType(info,addr), cycle(*this) {}
   virtual ~RHSType () {}
 
   virtual void configChanged () {
@@ -365,7 +394,7 @@ public:
   }
 };
 
-RHSType sdev(0x20);
+RHSType sdev(devinfo,0x20);
 ConfigButton<RHSType> cfgBtn(sdev);
 
 void setup () {

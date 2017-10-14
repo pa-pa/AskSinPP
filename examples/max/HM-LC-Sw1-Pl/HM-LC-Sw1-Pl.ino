@@ -4,60 +4,62 @@
 //- -----------------------------------------------------------------------------------------------------------------------
 
 // define this to read the device id, serial and device type from bootloader section
-// #define USE_OTA_BOOTLOADER
-
+#define USE_OTA_BOOTLOADER
+#define NDEBUG
 // This firmware converts a MAX! into a Homematic
-#error "not working"
 #define HM_LC_SW1_PL 0x00,0x11
 
-// define all device properties
-#define DEVICE_ID HMID(0x34,0x17,0x30)
-#define DEVICE_SERIAL "HMax000000"
-#define DEVICE_MODEL  HM_LC_SW1_PL
-#define DEVICE_FIRMWARE 0x16
-#define DEVICE_TYPE DeviceType::Switch
-#define DEVICE_INFO 0x01,0x01,0x00
-#define DEVICE_CONFIG
-
-//#define PINA _SFR_IO8(0x19)
-//#define DDRA _SFR_IO8(0x1A)
-//#define PORTA _SFR_IO8(0x1B)
-
-// #include <EnableInterrupt.h>
 #include <AskSinPP.h>
-#include <TimerOne.h>
-//#include <LowPower.h>
 
 #include <MultiChannelDevice.h>
 #include <SwitchChannel.h>
 
+// see https://github.com/eaconner/ATmega32-Arduino for Arduino Pin Mapping
 
-#define CONFIG_BUTTON_PIN PA0 // ????
-#define RELAY1_PIN 8 // PB0
+#define CONFIG_BUTTON_PIN 31 // PA0
+#define RELAY1_PIN 0 // PB0
 
 // number of available peers per channel
 #define PEERS_PER_CHANNEL 16
 
-
 // all library classes are placed in the namespace 'as'
 using namespace as;
+
+// define all device properties
+const struct DeviceInfo PROGMEM devinfo = {
+    {0x34,0x17,0x30},       // Device ID
+    "HMax000000",           // Device Serial
+    {HM_LC_SW1_PL},         // Device Model
+    0x16,                   // Firmware Version
+    as::DeviceType::Switch, // Device Type
+    {0x01,0x00}             // Info Bytes
+};
 
 /**
  * Configure the used hardware
  */
-typedef AvrSPI<PB4,PB5,PB6,PB7,PortB> RadioSPI;
-typedef StatusLed<PD4,PortD> LedType;
-typedef AskSin<LedType,NoBattery,Radio<RadioSPI,3> > Hal;
+typedef AvrSPI<4,5,6,7> RadioSPI; // PB4-PB7
+typedef StatusLed<12> LedType; // PD4
+typedef AskSin<LedType,NoBattery,Radio<RadioSPI,11> > Hal;  // PD3
 
-//typedef AvrSPI<PB2,PB3,PB4,PB5,PortB> RadioSPI;
-//typedef StatusLed<PD4,PortD> LedType;
-//typedef AskSin<LedType,NoBattery,Radio<RadioSPI,2> > Hal;
+template<class HALTYPE,int PEERCOUNT>
+class SwChannel : public SwitchChannel<HALTYPE,PEERCOUNT> {
+public:
+  SwChannel () {};
+  virtual ~SwChannel () {};
+
+  virtual void switchState(__attribute__((unused)) uint8_t oldstate,uint8_t newstate) {
+    // if ON - invert led so it will stay on after sending status
+    this->device().led().invert(newstate == AS_CM_JT_ON);
+    SwitchChannel<HALTYPE,PEERCOUNT>::switchState(oldstate, newstate);
+  }
+};
 
 // setup the device with channel type and number of channels
-typedef MultiChannelDevice<Hal,SwitchChannel<Hal,PEERS_PER_CHANNEL>,1> SwitchType;
+typedef MultiChannelDevice<Hal,SwChannel<Hal,PEERS_PER_CHANNEL>,1> SwitchType;
 
 Hal hal;
-SwitchType sdev(0x20);
+SwitchType sdev(devinfo,0x20);
 ConfigToggleButton<SwitchType> cfgBtn(sdev);
 
 // map number of channel to pin
@@ -75,7 +77,7 @@ void setup () {
     sdev.channel(i).lowactive(false);
   }
 
-//  buttonISR(cfgBtn,CONFIG_BUTTON_PIN);
+  buttonISR(cfgBtn,CONFIG_BUTTON_PIN);
 
   // create internal peerings - CCU2 needs this
   HMID devid;

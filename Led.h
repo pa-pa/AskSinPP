@@ -34,6 +34,7 @@ private:
   uint8_t step;   // current step in pattern
   uint8_t repeat; // current repeat of the pattern
   uint8_t pin;
+  uint8_t inv;
 
   void copyPattern (Mode stat,const BlinkPattern* patt) {
     memcpy_P(&current,patt+stat,sizeof(BlinkPattern));
@@ -46,7 +47,7 @@ private:
   }
 
 public:
-  Led () : Alarm(0), step(0), repeat(0), pin(0) {
+  Led () : Alarm(0), step(0), repeat(0), pin(0), inv(false) {
     async(true);
   }
   virtual ~Led() {}
@@ -55,6 +56,14 @@ public:
     pin = p;
     PINTYPE::setOutput(pin);
     ledOff();
+  }
+
+  void invert (bool value) {
+    inv = value;
+  }
+
+  bool invert () const {
+    return inv;
   }
 
   void set(Mode stat,const BlinkPattern* patt) {
@@ -69,14 +78,24 @@ public:
   }
 
   void ledOff () {
-    PINTYPE::setLow(pin);
+    if( invert() == true ) {
+      PINTYPE::setHigh(pin);
+    }
+    else {
+      PINTYPE::setLow(pin);
+    }
   }
 
   void ledOn () {
-    PINTYPE::setHigh(pin);
+    if( invert() == true ) {
+      PINTYPE::setLow(pin);
+    }
+    else {
+      PINTYPE::setHigh(pin);
+    }
   }
 
-  void ledOn (uint8_t ticks) {
+  void ledOn (uint32_t ticks) {
     if( active() == false && ticks > 0 ) {
       current.length = 2;
       current.duration = 1;
@@ -119,8 +138,11 @@ public:
 
   void init () {  led1.init(LEDPIN1); }
   bool active () const { return led1.active(); }
-  void ledOn (uint8_t ticks) { led1.ledOn(ticks); }
+  void ledOn (uint32_t ticks) { led1.ledOn(ticks); }
   void set(Mode stat) { led1.set(stat,single); }
+  void ledOn () { led1.ledOn(); }
+  void ledOff () { led1.ledOff(); }
+  void invert (bool value) { led1.invert(value); }
 };
 
 template <uint8_t LEDPIN1,uint8_t LEDPIN2, class PINTYPE1=ArduinoPins, class PINTYPE2=ArduinoPins>
@@ -132,8 +154,12 @@ public:
   DualStatusLed () {}
   void init () { led1.init(LEDPIN1); led2.init(LEDPIN2); }
   bool active () const { return led1.active() || led2.active(); }
-  void ledOn (uint8_t ticks) { led1.ledOn(ticks); led2.ledOn(ticks); }
+  void ledOn (uint32_t ticks) { led1.ledOn(ticks); led2.ledOn(ticks); }
+  void ledOn (uint32_t ticks,uint32_t tacks) { led1.ledOn(ticks); led2.ledOn(tacks); }
   void set(Mode stat) { led1.set(stat,dual1); led2.set(stat,dual2); }
+  void ledOn () { led1.ledOn(); led2.ledOn(); }
+  void ledOff () { led1.ledOff(); led2.ledOff(); }
+  void invert (bool value) { led1.invert(value); led2.invert(value); }
 };
 
 }

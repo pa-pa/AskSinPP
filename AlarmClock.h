@@ -8,14 +8,14 @@
 
 #include "Debug.h"
 #include "Alarm.h"
-#ifdef ARDUINO_ARCH_AVR
-  #include "TimerOne.h"
-#endif
 
 
 namespace as {
 
-#define TICKS_PER_SECOND 100UL
+#ifndef TICKS_PER_SECOND
+  // default 100 ticks per second
+  #define TICKS_PER_SECOND 100UL
+#endif
 
 #define seconds2ticks(tm) ( tm * TICKS_PER_SECOND )
 #define ticks2seconds(tm) ( tm / TICKS_PER_SECOND )
@@ -81,9 +81,42 @@ extern void callback(void);
 class SysClock : public AlarmClock {
 public:
   void init() {
-  #ifdef ARDUINO_ARCH_AVR
-    // use TimeOne on AVR
-    Timer1.initialize(1000000 / TICKS_PER_SECOND); // initialize timer1, and set a 1/10 second period
+  #if ARDUINO_ARCH_AVR or ARDUINO_ARCH_ATMEGA32
+  #define TIMER1_RESOLUTION 65536UL  // Timer1 is 16 bit
+    // use Time1 on AVR
+    TCCR1B = _BV(WGM13);        // set mode as phase and frequency correct pwm, stop the timer
+    TCCR1A = 0;                 // clear control register A
+    const unsigned long cycles = (F_CPU / 2000000) * (1000000 / TICKS_PER_SECOND);
+    unsigned short pwmPeriod;
+    unsigned char clockSelectBits;
+
+    if (cycles < TIMER1_RESOLUTION) {
+      clockSelectBits = _BV(CS10);
+      pwmPeriod = cycles;
+    }
+    else if (cycles < TIMER1_RESOLUTION * 8) {
+      clockSelectBits = _BV(CS11);
+      pwmPeriod = cycles / 8;
+    }
+    else if (cycles < TIMER1_RESOLUTION * 64) {
+      clockSelectBits = _BV(CS11) | _BV(CS10);
+      pwmPeriod = cycles / 64;
+    }
+    else if (cycles < TIMER1_RESOLUTION * 256) {
+      clockSelectBits = _BV(CS12);
+      pwmPeriod = cycles / 256;
+    }
+    else if (cycles < TIMER1_RESOLUTION * 1024) {
+      clockSelectBits = _BV(CS12) | _BV(CS10);
+      pwmPeriod = cycles / 1024;
+    }
+    else {
+      clockSelectBits = _BV(CS12) | _BV(CS10);
+      pwmPeriod = TIMER1_RESOLUTION - 1;
+    }
+    TCNT1 = 0;
+    ICR1 = pwmPeriod;
+    TCCR1B = _BV(WGM13) | clockSelectBits;
   #endif
   #ifdef ARDUINO_ARCH_STM32F1
     // Setup Timer2 on ARM
@@ -96,7 +129,10 @@ public:
 
   void disable () {
   #ifdef ARDUINO_ARCH_AVR
-    Timer1.detachInterrupt();
+    TIMSK1 &= ~_BV(TOIE1);
+  #endif
+  #ifdef ARDUINO_ARCH_ATMEGA32
+    TIMSK &= ~_BV(TOIE1);
   #endif
   #ifdef ARDUINO_ARCH_STM32F1
     Timer2.detachInterrupt(TIMER_CH2);
@@ -105,7 +141,10 @@ public:
 
   void enable () {
   #ifdef ARDUINO_ARCH_AVR
-    Timer1.attachInterrupt(callback);
+    TIMSK1 |= _BV(TOIE1);
+  #endif
+  #ifdef ARDUINO_ARCH_ATMEGA32
+     TIMSK |= _BV(TOIE1);
   #endif
   #ifdef ARDUINO_ARCH_STM32F1
     Timer2.attachInterrupt(TIMER_CH2,callback);
@@ -125,33 +164,37 @@ public:
   RTC () : ovrfl(0) {}
 
   void init () {
-#ifdef ARDUINO_ARCH_AVR
-    //Disable timer2 interrupts
-    TIMSK2  = 0;
-    //Enable asynchronous mode
-    ASSR  = (1<<AS2);
-    //set initial counter value
-    TCNT2 = 0;
-    // mode normal
-    TCCR2A = 0;
-    //set prescaller 128
-    TCCR2B = (1<<CS22)|(1<<CS20);
-    //wait for registers update
-    while (ASSR & ((1<<TCN2UB)|(1<<TCR2BUB)));
-    //clear interrupt flags
-    TIFR2  = (1<<TOV2);
-    //enable TOV2 interrupt
-    TIMSK2  = (1<<TOIE2);
+#if ARDUINO_ARCH_AVR
+    TIMSK2  = 0; //Disable timer2 interrupts
+    ASSR  = (1<<AS2); //Enable asynchronous mode
+    TCNT2 = 0; //set initial counter value
+    TCCR2A = 0; // mode normal
+    TCCR2B = (1<<CS22)|(1<<CS20); //set prescaller 128
+    while (ASSR & ((1<<TCN2UB)|(1<<TCR2BUB))); //wait for registers update
+    TIFR2  = (1<<TOV2); //clear interrupt flags
+    TIMSK2  = (1<<TOIE2); //enable TOV2 interrupt
+#elif ARDUINO_ARCH_ATMEGA32
+    TIMSK &= ~(1<<TOIE2); //Disable timer2 interrupts
+    ASSR  |= (1<<AS2); //Enable asynchronous mode
+    TCNT2 = 0; //set initial counter value
+    TCCR2 = (1<<CS22)|(1<<CS20); // mode normal & set prescaller 128
+    while (ASSR & (1<<TCN2UB)); //wait for registers update
+    TIFR |= (1<<TOV2); //clear interrupt flags
+    TIMSK |= (1<<TOIE2); //enable TOV2 interrupt
 #else
   #warning "RTC not supported"
 #endif
   }
 
   uint16_t getCounter (bool resetovrflow) {
+#if ARDUINO_ARCH_AVR or ARDUINO_ARCH_ATMEGA32
     if( resetovrflow == true ) {
       ovrfl = 0;
     }
     return (256 * ovrfl) + TCNT2;
+#else
+    return 0;
+#endif
   }
 
   void overflow () {
@@ -160,6 +203,45 @@ public:
 };
 
 extern RTC rtc;
+
+
+extern Link pwm;
+
+class SoftPWM : public Link {
+private:
+  uint32_t duty, value;
+  uint8_t pin;
+
+#define STEPS 100
+#define FREQUENCE 2048
+#define R ((STEPS * log10(2))/(log10(FREQUENCE)))
+
+public:
+  SoftPWM () : Link(0), duty(0), value(0), pin(0) {}
+
+  void init (uint8_t p) {
+    pin = p;
+    pinMode(pin,OUTPUT);
+    digitalWrite(pin,LOW);
+    pwm.append(*this);
+  }
+
+  void count () {
+    ++value;
+    if( value == FREQUENCE ) {
+      digitalWrite(pin,duty > 0 ? HIGH : LOW);
+      value=0;
+    }
+    else if( value == duty ) {
+      digitalWrite(pin,LOW);
+    }
+  }
+
+  void set (uint8_t level) {
+    duty = level > 0 ? pow(2,(level/R)) : 0;
+  }
+};
+
 
 }
 
