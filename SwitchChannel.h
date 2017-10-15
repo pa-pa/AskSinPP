@@ -20,7 +20,8 @@ class SwitchChannel : public Channel<HalType,SwitchList1,SwitchList3,EmptyList,P
 protected:
   typedef Channel<HalType,SwitchList1,SwitchList3,EmptyList,PeerCount> BaseChannel;
   uint8_t lowact;
-
+  uint8_t messageCounter;
+  
 public:
   SwitchChannel () : BaseChannel(), lowact(false) {}
   virtual ~SwitchChannel() {}
@@ -59,13 +60,18 @@ public:
     Peer p(msg.peer());
     uint8_t cnt = msg.counter();
     typename BaseChannel::List3 l3 = BaseChannel::getList3(p);
-    if( l3.valid() == true ) {
+    if( l3.valid() == true && ((cnt != messageCounter && msg.isBroadcast() && lg) || !lg)) {
+      messageCounter = cnt;
       // l3.dump();
       typename BaseChannel::List3::PeerList pl = lg ? l3.lg() : l3.sh();
       // pl.dump();
       remote(pl,cnt);
       return true;
     }
+    else if(messageCounter == cnt && msg.isBroadcast() && lg) {
+         return true;
+    }
+	
     return false;
   }
 
