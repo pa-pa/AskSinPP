@@ -241,7 +241,7 @@ public:
              answer = REPLAY_ACK;
            }
            else {
-             answer = REPLAY_ACK;
+             answer = REPLAY_NACK;
            }
          }
          // CONFIG_PEER_REMOVE
