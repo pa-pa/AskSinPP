@@ -377,22 +377,30 @@ public:
        }
        else if (mtype == AS_MESSAGE_REMOTE_EVENT || mtype == AS_MESSAGE_SENSOR_EVENT) {
          const RemoteEventMsg& pm = msg.remoteEvent();
-         uint8_t cdx = channelForPeer(pm.peer());
-         if( cdx != 0 ) {
-           ch = &channel(cdx);
-           if( ch->inhibit() == false ) {
-             if( validSignature(cdx,msg)==true ) {
-               switch( mtype ) {
-               case AS_MESSAGE_REMOTE_EVENT:
-                 answer = ch->process(pm) ? REPLAY_ACK : REPLAY_NACK;
-                 break;
-               case AS_MESSAGE_SENSOR_EVENT:
-                 answer = ch->process(msg.sensorEvent()) ? REPLAY_ACK : REPLAY_NACK;
-                 break;
+         uint8_t multiChannel = 0;
+       
+         for( uint8_t x=1; x<=this->channels(); ++x ) {
+           uint8_t cdx = channelForPeer(pm.peer(), x);
+           if( cdx != 0 ) {
+             multiChannel++;
+             ch = &channel(cdx);
+             if( ch->inhibit() == false ) {
+               if( validSignature(cdx,msg)==true ) {
+                 switch( mtype ) {
+                   case AS_MESSAGE_REMOTE_EVENT:
+                     answer = ch->process(pm) ? REPLAY_ACK : REPLAY_NACK;
+                     break;
+                   case AS_MESSAGE_SENSOR_EVENT:
+                     answer = ch->process(msg.sensorEvent()) ? REPLAY_ACK : REPLAY_NACK;
+                     break;
+                 }
                }
              }
            }
          }
+       
+         if(multiChannel > 1)
+          ch = 0;
        }
 #ifdef USE_AES
        else if (mtype == AS_MESSAGE_KEY_EXCHANGE ) {
@@ -436,6 +444,16 @@ public:
          }
        }
      }
+     return 0;
+   }
+   
+   uint8_t channelForPeer (const Peer& p, uint8_t chan) {
+     ChannelType& ch = channel(chan);
+       for( uint8_t y=0; y<ch.peers(); ++y ) {
+         if( ch.peer(y) == p ) {
+           return chan;
+         }
+       }
      return 0;
    }
 
