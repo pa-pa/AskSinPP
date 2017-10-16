@@ -436,6 +436,7 @@ public:
   Peer peer () const { return Peer(from(),command() & 0x3f); }
   uint8_t counter () const { return subcommand(); }
   bool isLong () const { return (command() & 0x40) == 0x40; }
+  bool isBroadcast() const { return (flag & BCAST) == BCAST; }
 };
 
 class SensorEventMsg : public RemoteEventMsg {
