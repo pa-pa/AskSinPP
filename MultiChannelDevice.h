@@ -241,7 +241,7 @@ public:
              answer = REPLAY_ACK;
            }
            else {
-             answer = REPLAY_ACK;
+             answer = REPLAY_NACK;
            }
          }
          // CONFIG_PEER_REMOVE
@@ -376,22 +376,30 @@ public:
          answer = REPLAY_ACK;
        }
        else if (mtype == AS_MESSAGE_REMOTE_EVENT || mtype == AS_MESSAGE_SENSOR_EVENT) {
+         answer = REPLAY_NACK;
          const RemoteEventMsg& pm = msg.remoteEvent();
-         uint8_t cdx = channelForPeer(pm.peer());
-         if( cdx != 0 ) {
+         uint8_t processed = 0;
+         for( uint8_t cdx=1; cdx<=this->channels(); ++cdx ) {
            ch = &channel(cdx);
-           if( ch->inhibit() == false ) {
-             if( validSignature(cdx,msg)==true ) {
+           if( ch->inhibit() == false && ch->has(pm.peer()) == true ) {
+             if( processed > 0 || validSignature(cdx,msg) == true ) {
+               ++processed;
                switch( mtype ) {
                case AS_MESSAGE_REMOTE_EVENT:
-                 answer = ch->process(pm) ? REPLAY_ACK : REPLAY_NACK;
+                 ch->process(pm);
                  break;
                case AS_MESSAGE_SENSOR_EVENT:
-                 answer = ch->process(msg.sensorEvent()) ? REPLAY_ACK : REPLAY_NACK;
+                 ch->process(msg.sensorEvent());
                  break;
                }
+               answer = REPLAY_ACK;
              }
            }
+         }
+         if( processed > 1 ) {
+           // we had more than one channel processed
+           // clear channel, so we only send an ACK
+           ch = 0;
          }
        }
 #ifdef USE_AES
@@ -425,18 +433,6 @@ public:
      // we always stay awake after valid communication
      this->activity().stayAwake(millis2ticks(500));
      return true;
-   }
-
-   uint8_t channelForPeer (const Peer& p) {
-     for( uint8_t x=1; x<=this->channels(); ++x ) {
-       ChannelType& ch = channel(x);
-       for( uint8_t y=0; y<ch.peers(); ++y ) {
-         if( ch.peer(y) == p ) {
-           return x;
-         }
-       }
-     }
-     return 0;
    }
 
    GenericList findList(uint8_t ch,const Peer& peer,uint8_t numlist) {

@@ -67,6 +67,15 @@ public:
     return size;
   }
 
+  bool has (const Peer& p) const {
+    for( uint8_t i=0; i<peers(); ++i ) {
+      if( peer(i) == p ) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   Peer peer (uint8_t idx) const {
     Peer result;
     uint16_t paddr = peerAddress(idx);
@@ -245,6 +254,7 @@ public:
   virtual void inhibit (bool value) = 0;
   virtual bool inhibit () const = 0;
   virtual bool aesActive () const = 0;
+  virtual bool has (const Peer& p) const = 0;
   virtual Peer peer (uint8_t idx) const = 0;
   virtual bool peer (const Peer& p) = 0;
   virtual bool peer (const Peer& p1,const Peer& p2) = 0;
@@ -287,6 +297,7 @@ public:
   virtual void inhibit (bool value) { ch.inhibit(value); }
   virtual bool inhibit () const { return ch.inhibit(); }
   virtual bool aesActive () const { return ch.aesActive(); }
+  virtual bool has (const Peer& p) { return ch.has(p); };
   virtual Peer peer (uint8_t idx) const { return ch.peer(idx); }
   virtual bool peer (const Peer& p) { return ch.peer(p); }
   virtual bool peer (const Peer& p1,const Peer& p2) { return ch.peer(p1,p2); }
