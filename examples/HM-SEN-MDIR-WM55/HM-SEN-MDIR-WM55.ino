@@ -122,15 +122,15 @@ uint8_t measureBrightness () {
   return 0x00;
 }
 
-typedef RemoteChannel<Hal,PEERS_PER_BTNCHANNEL> BtnChannel;
-typedef MotionChannel<Hal,PEERS_PER_PIRCHANNEL> PirChannel;
+typedef RemoteChannel<Hal,PEERS_PER_BTNCHANNEL,BtnPirList0> BtnChannel;
+typedef MotionChannel<Hal,PEERS_PER_PIRCHANNEL,BtnPirList0> PirChannel;
 
-class MixDevice : public ChannelDevice<Hal,VirtBaseChannel<Hal>,3,BtnPirList0> {
+class MixDevice : public ChannelDevice<Hal,VirtBaseChannel<Hal,BtnPirList0>,3,BtnPirList0> {
 public:
-  VirtChannel<Hal,BtnChannel> c1,c2;
-  VirtChannel<Hal,PirChannel> c3;
+  VirtChannel<Hal,BtnChannel,BtnPirList0> c1,c2;
+  VirtChannel<Hal,PirChannel,BtnPirList0> c3;
 public:
-  typedef ChannelDevice<Hal,VirtBaseChannel<Hal>,3,BtnPirList0> DeviceType;
+  typedef ChannelDevice<Hal,VirtBaseChannel<Hal,BtnPirList0>,3,BtnPirList0> DeviceType;
   MixDevice (const DeviceInfo& info,uint16_t addr) : DeviceType(info,addr) {
     DeviceType::registerChannel(c1,1);
     DeviceType::registerChannel(c2,2);

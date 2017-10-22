@@ -57,8 +57,7 @@ struct DeviceInfo {
   uint8_t DeviceInfo[2];
 };
 
-
-template <class HalType>
+template <class HalType,class List0Type=List0>
 class Device {
 
 public:
@@ -68,7 +67,7 @@ public:
 
 private:
   HalType* hal;
-  List0&   list0;
+  List0Type&   list0;
   uint8_t  msgcount;
 
   HMID    lastdev;
@@ -82,7 +81,7 @@ protected:
   uint8_t      numChannels;
 
 public:
-  Device (const DeviceInfo& i,uint16_t addr,List0& l,uint8_t ch) : hal(0), list0(l), msgcount(0), lastmsg(0), kstore(addr), info(i), numChannels(ch) {
+  Device (const DeviceInfo& i,uint16_t addr,List0Type& l,uint8_t ch) : hal(0), list0(l), msgcount(0), lastmsg(0), kstore(addr), info(i), numChannels(ch) {
     // TODO init seed
   }
   virtual ~Device () {}
@@ -186,7 +185,7 @@ public:
     return list0.masterid();
   }
 
-  const List0& getList0 () {
+  const List0Type& getList0 () {
     return list0;
   }
 

@@ -274,7 +274,7 @@ public:
   }
 };
 
-class MeterChannel : public Channel<HalType,MeterList1,EmptyList,List4,PEERS_PER_CHANNEL>, public Alarm {
+class MeterChannel : public Channel<HalType,MeterList1,EmptyList,List4,PEERS_PER_CHANNEL,MeterList0>, public Alarm {
 
   const uint32_t    maxVal = 838860700;
   uint64_t          counterSum;

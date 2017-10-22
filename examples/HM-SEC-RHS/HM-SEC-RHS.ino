@@ -226,7 +226,7 @@ public:
 #define DEBOUNCETIME millis2ticks(200)
 
 template <class HALTYPE,int PEERCOUNT>
-class RHSChannel : public Channel<HALTYPE,RHSList1,EmptyList,List4,PEERCOUNT>, public Alarm {
+class RHSChannel : public Channel<HALTYPE,RHSList1,EmptyList,List4,PEERCOUNT,RHSList0>, public Alarm {
 
   class EventSender : public Alarm {
   public:
@@ -250,12 +250,12 @@ class RHSChannel : public Channel<HALTYPE,RHSList1,EmptyList,List4,PEERCOUNT>, p
   bool sabotage;
 
   public:
-    typedef Channel<HALTYPE,RHSList1,EmptyList,List4,PEERCOUNT> BaseChannel;
+    typedef Channel<HALTYPE,RHSList1,EmptyList,List4,PEERCOUNT,RHSList0> BaseChannel;
 
   RHSChannel () : BaseChannel(), Alarm(DEBOUNCETIME), isr(false), sender(*this), sabotage(false) {}
   virtual ~RHSChannel () {}
 
-  void setup(Device<HALTYPE>* dev,uint8_t number,uint16_t addr) {
+  void setup(Device<HALTYPE,RHSList0>* dev,uint8_t number,uint16_t addr) {
     BaseChannel::setup(dev,number,addr);
     // TODO try to read pin to position mapping from bootloader
   }

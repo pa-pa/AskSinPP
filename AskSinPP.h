@@ -107,6 +107,8 @@ public:
     sysclock.init();
     // signal start to user
     led.set(LedStates::welcome);
+    // delay next send by random time
+    waitTimeout((rand() % 3500)+1000);
   }
 
   bool runready () {

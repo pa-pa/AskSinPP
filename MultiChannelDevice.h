@@ -25,7 +25,7 @@ void(* resetFunc) (void) = 0;
 #define REPLAY_NACK 2
 
 template <class HalType,class ChannelType,int ChannelCount,class List0Type=List0>
-class ChannelDevice : public Device<HalType> {
+class ChannelDevice : public Device<HalType,List0Type> {
 
   List0Type    list0;
   ChannelType* devchannels[ChannelCount];
@@ -34,9 +34,9 @@ class ChannelDevice : public Device<HalType> {
 
 public:
 
-  typedef Device<HalType> DeviceType;
+  typedef Device<HalType,List0Type> DeviceType;
 
-  ChannelDevice (const DeviceInfo& i,uint16_t addr) : Device<HalType>(i,addr,list0,ChannelCount), list0(addr + this->keystore().size()), cfgChannel(0xff) {}
+  ChannelDevice (const DeviceInfo& i,uint16_t addr) : DeviceType(i,addr,list0,ChannelCount), list0(addr + this->keystore().size()), cfgChannel(0xff) {}
 
   virtual ~ChannelDevice () {}
 

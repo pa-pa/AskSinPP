@@ -11,14 +11,14 @@
 
 namespace as {
 
-template <class HalType> class Device;
+template <class HalType,class List0Type> class Device;
 class ActionSetMsg;
 class RemoteEventMsg;
 class SensorEventMsg;
 
-template<class HalType,class List1Type,class List3Type,class List4Type,int PeerCount>
+template<class HalType,class List1Type,class List3Type,class List4Type,int PeerCount,class List0Type=List0>
 class Channel {
-  Device<HalType>*   dev;
+  Device<HalType,List0Type>*   dev;
   bool      change; // the status is changed, we may need to send a status
   bool      inhi;
   uint8_t   num   ; // channels per device
@@ -28,7 +28,7 @@ public:
   typedef List1Type List1;
   typedef List3Type List3;
   typedef List4Type List4;
-  typedef Device<HalType> DeviceType;
+  typedef Device<HalType,List0Type> DeviceType;
 
   public:
   Channel () : dev(0), change(false), inhi(false), num(0), addr(0) {}
@@ -53,7 +53,7 @@ public:
 
   bool aesActive () const { return getList1().aesActive(); }
 
-  void setup(Device<HalType>* dev,uint8_t number,uint16_t addr) {
+  void setup(Device<HalType,List0Type>* dev,uint8_t number,uint16_t addr) {
     this->dev = dev;
     this->num = number;
     this->addr = addr;
@@ -238,13 +238,13 @@ public:
 
 
 
-template <class HalType>
+template <class HalType,class List0Type=List0>
 class VirtBaseChannel {
 public:
   VirtBaseChannel () {}
   virtual ~VirtBaseChannel () {}
 
-  virtual void setup(Device<HalType>* dev,uint8_t number,uint16_t addr) = 0;
+  virtual void setup(Device<HalType,List0Type>* dev,uint8_t number,uint16_t addr) = 0;
   virtual uint16_t size () const = 0;
   virtual uint8_t number () const = 0;
   virtual uint16_t address () const = 0;
@@ -278,8 +278,8 @@ public:
 
 };
 
-template <class HalType,class ChannelType>
-class VirtChannel : public VirtBaseChannel<HalType> {
+template <class HalType,class ChannelType,class List0Type=List0>
+class VirtChannel : public VirtBaseChannel<HalType,List0Type> {
   ChannelType ch;
 public:
   VirtChannel () {}
@@ -287,7 +287,7 @@ public:
 
   operator ChannelType& () { return ch; }
 
-  virtual void setup(Device<HalType>* dev,uint8_t number,uint16_t addr) { ch.setup(dev,number,addr); }
+  virtual void setup(Device<HalType,List0Type>* dev,uint8_t number,uint16_t addr) { ch.setup(dev,number,addr); }
   virtual uint16_t size () const { return ch.size(); }
   virtual uint8_t number () const { return ch.number(); }
   virtual uint16_t address () const { return ch.address(); }
@@ -297,7 +297,7 @@ public:
   virtual void inhibit (bool value) { ch.inhibit(value); }
   virtual bool inhibit () const { return ch.inhibit(); }
   virtual bool aesActive () const { return ch.aesActive(); }
-  virtual bool has (const Peer& p) { return ch.has(p); };
+  virtual bool has (const Peer& p) const { return ch.has(p); };
   virtual Peer peer (uint8_t idx) const { return ch.peer(idx); }
   virtual bool peer (const Peer& p) { return ch.peer(p); }
   virtual bool peer (const Peer& p1,const Peer& p2) { return ch.peer(p1,p2); }

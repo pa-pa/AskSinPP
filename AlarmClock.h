@@ -92,7 +92,7 @@ public:
 
     if (cycles < TIMER1_RESOLUTION) {
       clockSelectBits = _BV(CS10);
-      pwmPeriod = cycles;
+      pwmPeriod = (unsigned short)cycles;
     }
     else if (cycles < TIMER1_RESOLUTION * 8) {
       clockSelectBits = _BV(CS11);

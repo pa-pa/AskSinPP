@@ -57,6 +57,16 @@ public:
   bool getData (uint8_t offset,uint8_t* buf,uint16_t size) const {
     return storage.getData(addr + offset,buf,size);
   }
+
+  void clear (uint8_t offset,uint16_t size) {
+    storage.clearData(addr + offset,size);
+  }
+
+  void init (const uint8_t* data,uint16_t size) {
+    for(uint16_t idx=0; idx<size; ++idx) {
+      storage.setByte(addr + idx,pgm_read_byte(data + idx));
+    }
+  }
 };
 
 class GenericList : public BaseList {
