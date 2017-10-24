@@ -76,7 +76,7 @@ public:
   }
 };
 
-class WeatherChannel : public Channel<Hal,List1,EmptyList,List4,PEERS_PER_CHANNEL>, public Alarm {
+class WeatherChannel : public Channel<Hal,List1,EmptyList,List4,PEERS_PER_CHANNEL,List0>, public Alarm {
 
   WeatherEventMsg msg;
   int16_t         temp;
@@ -138,7 +138,7 @@ public:
     return value;
   }
 
-  void setup(Device<Hal>* dev,uint8_t number,uint16_t addr) {
+  void setup(Device<Hal,List0>* dev,uint8_t number,uint16_t addr) {
     Channel::setup(dev,number,addr);
     rtc.add(*this);
     sht10.config(A4,A5);

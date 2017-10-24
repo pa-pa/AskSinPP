@@ -171,7 +171,7 @@ public:
 };
 
 
-class Wds100Channel : public Channel<Hal,Wds100List1,EmptyList,List4,PEERS_PER_CHANNEL>, public Alarm {
+class Wds100Channel : public Channel<Hal,Wds100List1,EmptyList,List4,PEERS_PER_CHANNEL,Wds100List0>, public Alarm {
 
   Wds100EventMsg     msg;
   uint8_t     msgcnt;

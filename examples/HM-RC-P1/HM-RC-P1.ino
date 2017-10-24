@@ -66,7 +66,7 @@ public:
   }
 };
 
-typedef RemoteChannel<Hal,PEERS_PER_CHANNEL> ChannelType;
+typedef RemoteChannel<Hal,PEERS_PER_CHANNEL,List0> ChannelType;
 typedef MultiChannelDevice<Hal,ChannelType,1> RemoteType;
 
 Hal hal;

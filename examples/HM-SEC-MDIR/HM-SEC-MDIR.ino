@@ -88,7 +88,7 @@ uint8_t measureBrightness () {
 }
 
 
-typedef MultiChannelDevice<Hal,MotionChannel<Hal,PEERS_PER_CHANNEL>,1> MotionType;
+typedef MultiChannelDevice<Hal,MotionChannel<Hal,PEERS_PER_CHANNEL,List0>,1> MotionType;
 MotionType sdev(devinfo,0x20);
 
 ConfigButton<MotionType> cfgBtn(sdev);

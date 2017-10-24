@@ -10,7 +10,7 @@
 #include <AskSinPP.h>
 
 #include <MultiChannelDevice.h>
-#include <SwitchChannel.h>
+#include <Switch.h>
 #include <Remote.h>
 
 // see https://github.com/eaconner/ATmega32-Arduino for Arduino Pin Mapping
@@ -52,15 +52,15 @@ uint8_t SwitchPin (uint8_t number) {
   return RELAY1_PIN;
 }
 
-typedef SwitchChannel<Hal,PEERS_PER_SWCHANNEL>  SwChannel;
-typedef RemoteChannel<Hal,PEERS_PER_BTNCHANNEL> BtnChannel;
+typedef SwitchChannel<Hal,PEERS_PER_SWCHANNEL,List0>  SwChannel;
+typedef RemoteChannel<Hal,PEERS_PER_BTNCHANNEL,List0> BtnChannel;
 
-class MixDevice : public ChannelDevice<Hal,VirtBaseChannel<Hal>,4> {
+class MixDevice : public ChannelDevice<Hal,VirtBaseChannel<Hal,List0>,4> {
 public:
-  VirtChannel<Hal,BtnChannel> c1,c2;
-  VirtChannel<Hal,SwChannel>  c3,c4;
+  VirtChannel<Hal,BtnChannel,List0> c1,c2;
+  VirtChannel<Hal,SwChannel,List0>  c3,c4;
 public:
-  typedef ChannelDevice<Hal,VirtBaseChannel<Hal>,4> DeviceType;
+  typedef ChannelDevice<Hal,VirtBaseChannel<Hal,List0>,4> DeviceType;
   MixDevice (const DeviceInfo& info,uint16_t addr) : DeviceType(info,addr) {
     DeviceType::registerChannel(c1,1);
     DeviceType::registerChannel(c2,2);
@@ -79,8 +79,8 @@ MixDevice sdev(devinfo,0x20);
 void setup () {
   DINIT(19200,ASKSIN_PLUS_PLUS_IDENTIFIER);
   bool firstinit = sdev.init(hal);
-  sdev.sw1Channel().lowactive(false);
-  sdev.sw2Channel().lowactive(false);
+  sdev.sw1Channel().init(RELAY1_PIN,false);
+  sdev.sw2Channel().init(RELAY1_PIN,false);
   remoteChannelISR(sdev.btn1Channel(),BUTTON1_PIN);
   remoteChannelISR(sdev.btn2Channel(),BUTTON2_PIN);
   if( firstinit == true ) {
