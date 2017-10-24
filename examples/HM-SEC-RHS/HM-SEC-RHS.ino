@@ -16,8 +16,6 @@
 // define device configuration bytes
 #define DEVICE_CONFIG CFG_STEPUP_OFF,22,19
 
-#define MODE_POLL
-
 // 24 0030 4D455130323134373633 80 910101
 
 #define EI_NOTEXTERNAL
@@ -25,7 +23,8 @@
 #include <AskSinPP.h>
 #include <LowPower.h>
 
-#include <MultiChannelDevice.h>
+#include <Register.h>
+#include <ThreeState.h>
 
 // we use a Pro Mini
 // Arduino pin for the LED
@@ -36,8 +35,8 @@
 // B0 == PIN 8 on Pro Mini
 #define CONFIG_BUTTON_PIN 8
 
-#define SENS1_PIN 14
-#define SENS2_PIN 15
+#define SENS1_PIN 6//14
+#define SENS2_PIN 3//15
 #define SABOTAGE_PIN 16
 
 // number of available peers per channel
@@ -92,296 +91,44 @@ public:
   }
 } hal;
 
-
-class RHSList0Data : public List0Data {
-  uint8_t CycleInfoMsg      : 8;   // 0x09 - 09
-  uint8_t TransmitDevTryMap : 8;   // 0x14 - 20
-  uint8_t sabotageMsg       : 8;   // 0x10 - 16
-
+DEFREGISTER(Reg0,DREG_INTKEY,DREG_CYCLICINFOMSG,MASTERID_REGS,DREG_TRANSMITTRYMAX,DREG_SABOTAGEMSG)
+class RHSList0 : public RegList0<Reg0> {
 public:
-  static uint8_t getOffset(uint8_t reg) {
-    switch (reg) {
-      case 0x09: return sizeof(List0Data) + 0;
-      case 0x14: return sizeof(List0Data) + 1;
-      case 0x16: return sizeof(List0Data) + 2;
-      default:   break;
-    }
-    return List0Data::getOffset(reg);
-  }
-
-  static uint8_t getRegister(uint8_t offset) {
-    switch (offset) {
-      case sizeof(List0Data) + 0:  return 0x09;
-      case sizeof(List0Data) + 1:  return 0x14;
-      case sizeof(List0Data) + 2:  return 0x16;
-      default: break;
-    }
-    return List0Data::getRegister(offset);
-  }
-};
-
-class RHSList0 : public ChannelList<RHSList0Data> {
-public:
-  RHSList0(uint16_t a) : ChannelList(a) {}
-
-  operator List0& () const { return *(List0*)this; }
-
-  // from List0
-  HMID masterid () { return ((List0*)this)->masterid(); }
-  void masterid (const HMID& mid) { ((List0*)this)->masterid(mid); }
-  bool aesActive() const { return ((List0*)this)->aesActive(); }
-
-  bool cycleInfoMsg () const { return getByte(sizeof(List0Data) + 0); }
-  bool cycleInfoMsg (bool value) const { return setByte(sizeof(List0Data) + 0,value); }
-  uint8_t transmitDevTryMax () const { return getByte(sizeof(List0Data) + 1); }
-  bool transmitDevTryMax (uint8_t value) const { return setByte(sizeof(List0Data) + 1,value); }
-  bool sabotageMsg () const { return getByte(sizeof(List0Data) + 2); }
-  bool sabotageMsg (bool value) const { return setByte(sizeof(List0Data) + 2,value); }
-
+  RHSList0(uint16_t addr) : RegList0<Reg0>(addr) {}
   void defaults () {
-    ((List0*)this)->defaults();
+    clear();
     cycleInfoMsg(false);
-    sabotageMsg(true);
     transmitDevTryMax(6);
+    //sabotageMsg(false);
   }
 };
 
-class RHSList1Data {
-
-   uint8_t aesActive                 :1;   // 0x08.0, s:1    d: false
-   uint8_t unused1                   :7;
-   uint8_t msgForPosC                :2;   // 0x20.2, s:2    d: TILTED
-   uint8_t msgForPosB                :2;   // 0x20.4, s:2    d: OPEN
-   uint8_t msgForPosA                :2;   // 0x20.6, s:2    d: CLOSED
-   uint8_t eventDelaytime            :8;   // 0x21.0, s:8    d: 0.0 s
-   uint8_t ledOntime                 :8;   // 0x22.0, s:8    d: 0.5 s
-   uint8_t transmitTryMax            :8;   // 0x30.0, s:8    d: nF
-
+DEFREGISTER(Reg1,CREG_AES_ACTIVE,CREG_MSGFORPOS,CREG_EVENTDELAYTIME,CREG_LEDONTIME,CREG_TRANSMITTRYMAX)
+class RHSList1 : public RegList1<Reg1> {
 public:
-   static uint8_t avrRegister[5];
-
-   static uint8_t getOffset  (uint8_t r) {
-      for (uint8_t i=0;i<sizeof(avrRegister);i++) {
-         if(avrRegister[i]==r) {
-            return i;
-         }
-      }
-      return 0xff;
-   }
-   static uint8_t getRegister(uint8_t o) {
-     if (o < sizeof(avrRegister)) {
-        return avrRegister[o];
-     };
-     return 0xff;
-   }
+  RHSList1 (uint16_t addr) : RegList1<Reg1>(addr) {}
+  void defaults () {
+    clear();
+    msgForPosA(1); // CLOSED
+    msgForPosB(2); // OPEN
+    msgForPosC(3); // TILTED
+    // aesActive(false);
+    // eventDelaytime(0);
+    ledOntime(100);
+    transmitTryMax(6);
+  }
 };
 
-uint8_t RHSList1Data::avrRegister[] = {0x08,0x20,0x21,0x22,0x30};
 
-#define NO_MSG 0
-#define CLOSED_MSG 1
-#define CLOSED_STATE 0
-#define OPEN_MSG 2
-#define OPEN_STATE 200
-#define TILTED_MSG 3
-#define TILTED_STATE 100
-
-#define NoPos 0
-#define PosA  1
-#define PosB  2
-#define PosC  3
-
-
-class RHSList1 : public ChannelList<RHSList1Data> {
+typedef ThreeStateChannel<Hal,RHSList0,RHSList1,DefList4,PEERS_PER_CHANNEL> ChannelType;
+class RHSType : public ThreeStateDevice<Hal,ChannelType,1,RHSList0> {
 public:
-   RHSList1(uint16_t a) : ChannelList(a) {}
-
-  bool aesActive(bool v) const { return setBit(0, 0x01, v); }
-  bool aesActive() const { return isBitSet(0, 0x01); }
-
-  bool msgForPosC(uint8_t v) const { return setByte(1,v,0x0c,2); }
-  uint8_t msgForPosC() const { return getByte(1,0x0c,2); }
-  bool msgForPosB(uint8_t v) const { return setByte(1,v,0x30,4); }
-  uint8_t msgForPosB() const { return getByte(1,0x30,4); }
-  bool msgForPosA(uint8_t v) const { return setByte(1,v,0xc0,6); }
-  uint8_t msgForPosA() const { return getByte(1,0xc0,6); }
-
-  bool eventDelaytime(uint8_t v) const { return setByte(2,v); }
-  uint8_t eventDelaytime() const { return getByte(2); }
-  bool ledOntime(uint8_t v) const { return setByte(3,v); }
-  uint8_t ledOntime() const { return getByte(3); }
-  bool transmitTryMax(uint8_t v) const { return setByte(4,v); }
-  uint8_t transmitTryMax() const { return getByte(4); }
-
-   void defaults () {
-      aesActive (0);
-      msgForPosC (TILTED_MSG);
-      msgForPosB (OPEN_MSG);
-      msgForPosA (CLOSED_MSG);
-      eventDelaytime (0);
-      ledOntime (100);
-   }
-};
-
-#define DEBOUNCETIME millis2ticks(200)
-
-template <class HALTYPE,int PEERCOUNT>
-class RHSChannel : public Channel<HALTYPE,RHSList1,EmptyList,List4,PEERCOUNT,RHSList0>, public Alarm {
-
-  class EventSender : public Alarm {
-  public:
-    RHSChannel& channel;
-    uint8_t count, state;
-
-    EventSender (RHSChannel& c) : Alarm(0), channel(c), count(0), state(255) {}
-    virtual ~EventSender () {}
-    virtual void trigger (__attribute__ ((unused)) AlarmClock& clock) {
-      SensorEventMsg& msg = (SensorEventMsg&)channel.device().message();
-      msg.init(channel.device().nextcount(),channel.number(),count++,state,channel.device().battery().low());
-      channel.device().sendPeerEvent(msg,channel);
-    }
-  };
-
-  // pin mapping can be changed by bootloader config data
-  // map pins to pos     00   01   10   11
-  uint8_t posmap[4] = {PosB,PosC,PosA,PosB};
-  volatile bool isr;
-  EventSender sender;
-  bool sabotage;
-
-  public:
-    typedef Channel<HALTYPE,RHSList1,EmptyList,List4,PEERCOUNT,RHSList0> BaseChannel;
-
-  RHSChannel () : BaseChannel(), Alarm(DEBOUNCETIME), isr(false), sender(*this), sabotage(false) {}
-  virtual ~RHSChannel () {}
-
-  void setup(Device<HALTYPE,RHSList0>* dev,uint8_t number,uint16_t addr) {
-    BaseChannel::setup(dev,number,addr);
-    // TODO try to read pin to position mapping from bootloader
-  }
-
-  uint8_t status () const {
-    return sender.state;
-  }
-
-  uint8_t flags () const {
-    uint8_t flags = sabotage ? 0x07 << 1 : 0x00;
-    flags |= this->device().battery().low() ? 0x80 : 0x00;
-    return flags;
-  }
-
-  void handleISR () {
-    if( isr == false ) {
-      isr = true;
-      set(DEBOUNCETIME);
-      sysclock.add(*this);
-    }
-  }
-
-  uint8_t readPin(uint8_t pinnr) {
-    uint8_t value=0;
-#ifdef MODE_POLL
-    pinMode(pinnr,INPUT_PULLUP);
-    value = digitalRead(pinnr);
-    pinMode(pinnr,OUTPUT);
-    digitalWrite(pinnr,LOW);
-#else
-    value = digitalRead(pinnr);
-#endif
-    return value;
-  }
-
-  void trigger (__attribute__ ((unused)) AlarmClock& clock)  {
-#ifdef MODE_POLL
-    set(seconds2ticks(1));
-    clock.add(*this);
-#else
-    if( isr == true ) {
-#endif
-      uint8_t newstate = sender.state;
-      uint8_t pinstate = readPin(SENS2_PIN) << 1 | readPin(SENS1_PIN);
-      uint8_t pos = posmap[pinstate & 0x03];
-      uint8_t msg = NO_MSG;
-      switch( pos ) {
-      case PosA:
-        msg = this->getList1().msgForPosA();
-        break;
-      case PosB:
-        msg = this->getList1().msgForPosB();
-        break;
-      case PosC:
-        msg = this->getList1().msgForPosC();
-        break;
-      default:
-        break;
-      }
-
-      if( msg == CLOSED_MSG) newstate = CLOSED_STATE;
-      else if( msg == OPEN_MSG) newstate = OPEN_STATE;
-      else if( msg == TILTED_MSG) newstate = TILTED_STATE;
-
-      if( newstate != sender.state ) {
-        uint8_t delay = this->getList1().eventDelaytime();
-        sender.state = newstate;
-        sysclock.cancel(sender);
-        if( delay == 0 ) {
-          sender.trigger(sysclock);
-        }
-        else {
-          sender.set(seconds2ticks(delay));
-          sysclock.add(sender);
-        }
-        uint16_t ledtime = (uint16_t)this->getList1().ledOntime() * 5;
-        if( ledtime > 0 ) {
-          this->device().led().ledOn(millis2ticks(ledtime),0);
-        }
-      }
-
-      bool sab = readPin(SABOTAGE_PIN) == LOW;
-      if( sabotage != sab && ((const RHSList0&)this->device().getList0()).sabotageMsg() == true ) {
-        sabotage = sab;
-        this->changed(true); // trigger StatusInfoMessage to central
-      }
-#ifdef MODE_POLL
-#else
-      isr = false;
-    }
-#endif
-  }
-};
-
-
-class RHSType : public MultiChannelDevice<Hal,RHSChannel<Hal,PEERS_PER_CHANNEL>,1,RHSList0> {
-  #define CYCLETIME seconds2ticks(60UL*60*24) // at least one message per day
-  class CycleInfoAlarm : public Alarm {
-    RHSType& dev;
-  public:
-    CycleInfoAlarm (RHSType& d) : Alarm (CYCLETIME), dev(d) {}
-    virtual ~CycleInfoAlarm () {}
-
-    void trigger (AlarmClock& clock)  {
-      set(CYCLETIME);
-      clock.add(*this);
-      dev.channel(1).changed(true); // force StatusInfoMessage to central
-    }
-  } cycle;
-public:
-  typedef MultiChannelDevice<Hal,RHSChannel<Hal,PEERS_PER_CHANNEL>,1,RHSList0> DevType;
-  RHSType(const DeviceInfo& info,uint16_t addr) : DevType(info,addr), cycle(*this) {}
+  typedef ThreeStateDevice<Hal,ChannelType,1,RHSList0> TSDevice;
+  RHSType(const DeviceInfo& info,uint16_t addr) : TSDevice(info,addr) {}
   virtual ~RHSType () {}
 
   virtual void configChanged () {
-    // activate cycle info message
-    if( this->getList0().cycleInfoMsg() == true ) {
-      DPRINTLN("Activate Cycle Msg");
-      sysclock.cancel(cycle);
-      cycle.set(CYCLETIME);
-      sysclock.add(cycle);
-    }
-    else {
-      DPRINTLN("Deactivate Cycle Msg");
-      sysclock.cancel(cycle);
-    }
+    TSDevice::configChanged();
     // set battery low/critical values
     battery().low(getConfigByte(CFG_BAT_LOW_BYTE));
     battery().critical(getConfigByte(CFG_BAT_CRITICAL_BYTE));
@@ -390,7 +137,6 @@ public:
       DPRINTLN("Use StepUp");
       battery().hasStepUp(true);
     }
-
   }
 };
 
@@ -401,17 +147,8 @@ void setup () {
   DINIT(57600,ASKSIN_PLUS_PLUS_IDENTIFIER);
   sdev.init(hal);
   buttonISR(cfgBtn,CONFIG_BUTTON_PIN);
-#ifdef MODE_POLL
-  // start polling
-  sdev.channel(1).set(millis2ticks(100));
-  sysclock.add(sdev.channel(1));
-#else
-  channelISR(sdev.channel(1),SENS1_PIN,INPUT_PULLUP,CHANGE);
-  channelISR(sdev.channel(1),SENS2_PIN,INPUT_PULLUP,CHANGE);
-  channelISR(sdev.channel(1),SABOTAGE_PIN,INPUT_PULLUP,CHANGE);
-  // trigger first send of state
-  sdev.channel(1).handleISR();
-#endif
+  const uint8_t posmap[4] = {Positions::PosB,Positions::PosC,Positions::PosA,Positions::PosB};
+  sdev.channel(1).init(SENS1_PIN,SENS2_PIN,SABOTAGE_PIN,posmap);
 }
 
 void loop() {
@@ -425,7 +162,7 @@ void loop() {
       hal.activity.sleepForever(hal);
     }
     // if nothing to do - go sleep
-    hal.activity.savePower<Sleep<>>(hal);
+    hal.activity.savePower<Sleep<> >(hal);
   }
 }
 

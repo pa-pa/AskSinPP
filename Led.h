@@ -139,6 +139,7 @@ public:
   void init () {  led1.init(LEDPIN1); }
   bool active () const { return led1.active(); }
   void ledOn (uint32_t ticks) { led1.ledOn(ticks); }
+  void ledOn (uint32_t ticks,__attribute__((unused)) uint32_t tacks) { led1.ledOn(ticks); }
   void set(Mode stat) { led1.set(stat,single); }
   void ledOn () { led1.ledOn(); }
   void ledOff () { led1.ledOff(); }

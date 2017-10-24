@@ -10,10 +10,10 @@
 
 namespace as {
 
+enum Positions { NoPos=0, PosA, PosB, PosC };
+
 template <class HALTYPE,class List0Type,class List1Type,class List4Type,int PEERCOUNT>
 class ThreeStateChannel : public Channel<HALTYPE,List1Type,EmptyList,List4Type,PEERCOUNT,List0Type>, public Alarm {
-
-  enum Pos { NoPos=0, PosA, PosB, PosC };
 
   class EventSender : public Alarm {
   public:
@@ -31,7 +31,7 @@ class ThreeStateChannel : public Channel<HALTYPE,List1Type,EmptyList,List4Type,P
 
   // pin mapping can be changed by bootloader config data
   // map pins to pos     00   01   10   11
-  uint8_t posmap[4] = {PosC,PosC,PosB,PosA};
+  uint8_t posmap[4] = {Positions::PosC,Positions::PosC,Positions::PosB,Positions::PosA};
   volatile bool isr;
   EventSender sender;
   uint8_t sens1, sens2, sabpin;

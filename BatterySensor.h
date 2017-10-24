@@ -30,9 +30,9 @@ namespace as {
 
 class NoBattery {
 public:
-  uint8_t current () { return 0; }
-  bool critical () { return false; }
-  bool low () { return false; }
+  uint8_t current () const { return 0; }
+  bool critical () const { return false; }
+  bool low () const { return false; }
 };
 
 #ifdef ARDUINO_ARCH_AVR

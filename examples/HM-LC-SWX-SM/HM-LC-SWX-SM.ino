@@ -17,7 +17,7 @@
 
 #define DEVICE_CONFIG CFG_LOWACTIVE_OFF
 
-#define HM_SENSOR_RELAY
+// #define HM_SENSOR_RELAY
 
 #define EI_NOTEXTERNAL
 #include <EnableInterrupt.h>
@@ -148,6 +148,6 @@ void loop() {
   bool worked = hal.runready();
   bool poll = sdev.pollRadio();
   if( worked == false && poll == false ) {
-    hal.activity.savePower<Idle<>>(hal);
+    hal.activity.savePower<Idle<> >(hal);
   }
 }

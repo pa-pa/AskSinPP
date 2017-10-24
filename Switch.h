@@ -294,11 +294,11 @@ public:
 };
 
 
-template <class HalType,int PeerCount>
-class SwitchChannel : public Channel<HalType,SwitchList1,SwitchList3,EmptyList,PeerCount>, public SwitchStateMachine {
+template <class HalType,int PeerCount,class List0Type>
+class SwitchChannel : public Channel<HalType,SwitchList1,SwitchList3,EmptyList,PeerCount,List0Type>, public SwitchStateMachine {
 
 protected:
-  typedef Channel<HalType,SwitchList1,SwitchList3,EmptyList,PeerCount> BaseChannel;
+  typedef Channel<HalType,SwitchList1,SwitchList3,EmptyList,PeerCount,List0Type> BaseChannel;
   uint8_t lowact;
   uint8_t pin;
 
@@ -315,7 +315,7 @@ public:
     BaseChannel::changed(true);
   }
 
-  void setup(Device<HalType>* dev,uint8_t number,uint16_t addr) {
+  void setup(Device<HalType,List0Type>* dev,uint8_t number,uint16_t addr) {
     BaseChannel::setup(dev,number,addr);
   }
 

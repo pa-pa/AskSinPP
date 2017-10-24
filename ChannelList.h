@@ -223,6 +223,8 @@ public:
     setByte(3,mid.id2());
   };
   bool aesActive () const { return false; }
+  bool sabotageMsg () const { return false; }
+  bool localResetDisable () const { return false; }
 
   void defaults () {
     setByte(0,0x01);

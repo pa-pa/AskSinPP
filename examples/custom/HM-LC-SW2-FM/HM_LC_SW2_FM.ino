@@ -93,8 +93,6 @@ void setup () {
     sdev.btn2Channel().peer(Peer(devid,4));
     storage.store();
   }
-  // delay next send by random time
-  hal.waitTimeout((rand() % 3500)+1000);
 }
 
 void loop() {

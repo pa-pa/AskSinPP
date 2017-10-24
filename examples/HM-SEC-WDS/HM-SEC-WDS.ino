@@ -76,9 +76,6 @@ public:
   }
 };
 
-//DEFREGISTER(Reg4,PREG_BURST_AES)
-//typedef RegList4<Reg4> WDSList4;
-
 typedef ThreeStateChannel<HalType,WDSList0,WDSList1,DefList4,PEERS_PER_CHANNEL> ChannelType;
 typedef ThreeStateDevice<HalType,ChannelType,1,WDSList0> DevType;
 
@@ -107,6 +104,6 @@ void loop() {
       hal.activity.sleepForever(hal);
     }
     // if nothing to do - go sleep
-    hal.activity.savePower<Sleep<>>(hal);
+    hal.activity.savePower<Sleep<> >(hal);
   }
 }

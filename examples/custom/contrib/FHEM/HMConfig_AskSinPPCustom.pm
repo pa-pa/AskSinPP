@@ -14,6 +14,16 @@ $HMConfig::culHmRegChan{"HM-LC-Sw2-FM-CustomFW02"}  = $HMConfig::culHmRegType{re
 $HMConfig::culHmRegChan{"HM-LC-Sw2-FM-CustomFW03"}  = $HMConfig::culHmRegType{switch};
 $HMConfig::culHmRegChan{"HM-LC-Sw2-FM-CustomFW04"}  = $HMConfig::culHmRegType{switch};
 
+$HMConfig::culHmModel{"F202"} = {name=>"HB-SW2-SENS",st=>'custom',cyc=>'',rxt=>'',lst=>'1,3:1p.2p,4:3p',chn=>"Sw:1:2,Sen:3:3"};
+$HMConfig::culHmChanSets{"HB-SW2-SENS00"}{fwUpdate} = "<filename>";
+$HMConfig::culHmChanSets{"HB-SW2-SENS01"} = $HMConfig::culHmSubTypeSets{"switch"};
+$HMConfig::culHmChanSets{"HB-SW2-SENS02"} = $HMConfig::culHmSubTypeSets{"switch"};
+$HMConfig::culHmChanSets{"HB-SW2-SENS03"} = $HMConfig::culHmSubTypeSets{"THSensor"};
+$HMConfig::culHmRegChan{"HB-SW2-SENS01"}  = $HMConfig::culHmRegType{switch};
+$HMConfig::culHmRegChan{"HB-SW2-SENS02"}  = $HMConfig::culHmRegType{switch};
+$HMConfig::culHmRegChan{"HB-SW2-SENS03"}  = $HMConfig::culHmRegType{threeStateSensor};
+
+
 sub CUL_HM_Parsecustom($$$$$$) {
   my($mFlg,$mTp,$src,$dst,$p,$target) = @_;
   my @evtEt = ();
@@ -30,14 +40,13 @@ sub CUL_HM_Parsecustom($$$$$$) {
     my ($subType,$chn,$val,$err) = ($1,hex($2),hex($3)/2,hex($4))
                         if($p =~ m/^(..)(..)(..)(..)/);
     $chn = sprintf("%02X",$chn&0x3f);
-    
+	my $chId = $src.$chn;
+    my $shash = $modules{CUL_HM}{defptr}{$chId}
+                    if($modules{CUL_HM}{defptr}{$chId});
+	
     # update state of a switch  
     if( $HMConfig::culHmRegChan{$model.$chn} == $HMConfig::culHmRegType{switch} ) {
       Log 1, $model.$chn." is switch";
-      my $chId = $src.$chn;
-      my $shash = $modules{CUL_HM}{defptr}{$chId}
-                           if($modules{CUL_HM}{defptr}{$chId});
-
       # user string
       my $vs = ($val==100 ? "on":($val==0 ? "off":"$val %"));
 
@@ -47,6 +56,26 @@ sub CUL_HM_Parsecustom($$$$$$) {
       push @evtEt,[$shash,1,"state:".$vs];
       push @evtEt,[$shash,1,"timedOn:".(($err&0x40)?"running":"off")];
     }
+    elsif( $HMConfig::culHmRegChan{$model.$chn} == $HMConfig::culHmRegType{threeStateSensor} ) {
+      Log 1, $model.$chn." is threeStateSensor";
+      my $chnHash = $modules{CUL_HM}{defptr}{$src.$chn};
+      my $vs = ($val==100 ? "open" : ($val==0 ? "closed" : "tilted"));
+      push @evtEt,[$chnHash,1,"state:".$vs];
+	  push @evtEt,[$chnHash,1,"contact:$vs$target"];
+	}
+  }
+  elsif($mTp =~ m/^41/ && $p =~ m/^(..)(..)(..)/) {
+    my $shash = CUL_HM_id2Hash($src);
+    my ($chn,$cnt,$val) = (hex($1),$2,hex($3)/2);
+	$chn = sprintf("%02X",$chn & 0x3f);
+    # Log 1, "41 ".$model.$chn." ".$val;
+    if( $HMConfig::culHmRegChan{$model.$chn} == $HMConfig::culHmRegType{threeStateSensor} ) {
+      my $chnHash = $modules{CUL_HM}{defptr}{$src.$chn};
+      Log 1, $model.$chn." is threeStateSensor";
+      my $vs = ($val==100 ? "open" : ($val==0 ? "closed" : "tilted"));
+      push @evtEt,[$chnHash,1,"state:".$vs];
+	  push @evtEt,[$chnHash,1,"contact:$vs$target"];
+	}
   }
   elsif($mTp =~ m/^40/ && $p =~ m/^(..)(..)/) {
     my $shash = CUL_HM_id2Hash($src);

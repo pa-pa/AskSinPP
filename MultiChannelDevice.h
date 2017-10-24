@@ -132,8 +132,10 @@ public:
 
   void reset () {
     DPRINTLN(F("RESET"));
-    storage.reset();
-    resetFunc();
+    if( getList0().localResetDisable() == false ) {
+      storage.reset();
+      resetFunc();
+    }
   }
 
   void bootloader () {
