@@ -161,6 +161,10 @@ public:
     }
   }
 
+  bool stayAwake () const {
+    return awake;
+  }
+
   template <class Saver,class Hal>
   void savePower (Hal& hal) {
     if( awake == false ) {
@@ -186,6 +190,40 @@ public:
   }
 
 };
+
+template <class HalType>
+class BurstDetector : public Alarm {
+  bool burst;
+  HalType& hal;
+public:
+  BurstDetector (HalType& h) : Alarm(millis2ticks(250)), burst(false), hal(h) {}
+  virtual ~BurstDetector () {}
+  virtual void trigger (AlarmClock& clock) {
+    uint32_t next = millis2ticks(250);
+    bool detect = hal.radio.detectBurst();
+    if( detect == true ) {
+      if( burst == false ) {
+        burst = true;
+        next = millis2ticks(30);
+        // DPRINTLN("1");
+      }
+      else {
+        burst = false;
+        hal.activity.stayAwake(millis2ticks(500));
+        // DPRINTLN("2");
+      }
+    }
+    else {
+      burst = false;
+    }
+    set(next);
+    clock.add(*this);
+  }
+  void enable(AlarmClock& clock) {
+    clock.add(*this);
+  }
+};
+
 
 }
 

@@ -9,19 +9,19 @@ $HMConfig::culHmChanSets{"HM-LC-Sw2-FM-CustomFW01"} = $HMConfig::culHmSubTypeSet
 $HMConfig::culHmChanSets{"HM-LC-Sw2-FM-CustomFW02"} = $HMConfig::culHmSubTypeSets{"THSensor"};
 $HMConfig::culHmChanSets{"HM-LC-Sw2-FM-CustomFW03"} = $HMConfig::culHmSubTypeSets{"switch"};
 $HMConfig::culHmChanSets{"HM-LC-Sw2-FM-CustomFW04"} = $HMConfig::culHmSubTypeSets{"switch"};
-$HMConfig::culHmRegChan{"HM-LC-Sw2-FM-CustomFW01"}  = $HMConfig::culHmRegType{remote};
-$HMConfig::culHmRegChan{"HM-LC-Sw2-FM-CustomFW02"}  = $HMConfig::culHmRegType{remote};
-$HMConfig::culHmRegChan{"HM-LC-Sw2-FM-CustomFW03"}  = $HMConfig::culHmRegType{switch};
-$HMConfig::culHmRegChan{"HM-LC-Sw2-FM-CustomFW04"}  = $HMConfig::culHmRegType{switch};
+$HMConfig::culHmRegChan {"HM-LC-Sw2-FM-CustomFW01"} = $HMConfig::culHmRegType{remote};
+$HMConfig::culHmRegChan {"HM-LC-Sw2-FM-CustomFW02"} = $HMConfig::culHmRegType{remote};
+$HMConfig::culHmRegChan {"HM-LC-Sw2-FM-CustomFW03"} = $HMConfig::culHmRegType{switch};
+$HMConfig::culHmRegChan {"HM-LC-Sw2-FM-CustomFW04"} = $HMConfig::culHmRegType{switch};
 
 $HMConfig::culHmModel{"F202"} = {name=>"HB-SW2-SENS",st=>'custom',cyc=>'',rxt=>'',lst=>'1,3:1p.2p,4:3p',chn=>"Sw:1:2,Sen:3:3"};
 $HMConfig::culHmChanSets{"HB-SW2-SENS00"}{fwUpdate} = "<filename>";
 $HMConfig::culHmChanSets{"HB-SW2-SENS01"} = $HMConfig::culHmSubTypeSets{"switch"};
 $HMConfig::culHmChanSets{"HB-SW2-SENS02"} = $HMConfig::culHmSubTypeSets{"switch"};
 $HMConfig::culHmChanSets{"HB-SW2-SENS03"} = $HMConfig::culHmSubTypeSets{"THSensor"};
-$HMConfig::culHmRegChan{"HB-SW2-SENS01"}  = $HMConfig::culHmRegType{switch};
-$HMConfig::culHmRegChan{"HB-SW2-SENS02"}  = $HMConfig::culHmRegType{switch};
-$HMConfig::culHmRegChan{"HB-SW2-SENS03"}  = $HMConfig::culHmRegType{threeStateSensor};
+$HMConfig::culHmRegChan {"HB-SW2-SENS01"} = $HMConfig::culHmRegType{switch};
+$HMConfig::culHmRegChan {"HB-SW2-SENS02"} = $HMConfig::culHmRegType{switch};
+$HMConfig::culHmRegChan {"HB-SW2-SENS03"} = $HMConfig::culHmRegType{threeStateSensor};
 
 
 sub CUL_HM_Parsecustom($$$$$$) {
@@ -64,6 +64,7 @@ sub CUL_HM_Parsecustom($$$$$$) {
 	  push @evtEt,[$chnHash,1,"contact:$vs$target"];
 	}
   }
+  # handle sensor event
   elsif($mTp =~ m/^41/ && $p =~ m/^(..)(..)(..)/) {
     my $shash = CUL_HM_id2Hash($src);
     my ($chn,$cnt,$val) = (hex($1),$2,hex($3)/2);
@@ -77,6 +78,7 @@ sub CUL_HM_Parsecustom($$$$$$) {
 	  push @evtEt,[$chnHash,1,"contact:$vs$target"];
 	}
   }
+  # handle remote event
   elsif($mTp =~ m/^40/ && $p =~ m/^(..)(..)/) {
     my $shash = CUL_HM_id2Hash($src);
     my ($chn, $bno) = (hex($1), hex($2));# button number/event count
@@ -119,7 +121,7 @@ sub CUL_HM_Parsecustom($$$$$$) {
       push @evtEt,[$shash,1,"state:$btnName $state$target"];
     }
   } else {
-    Log(1, "AskSinPP_HM_LC_Sw2_FM_CustomFW received unknown message: $mFlg,$mTp,$src,$dst,$p");
+    Log(1, "HMConfig_AskSinPPCustom received unknown message: $mFlg,$mTp,$src,$dst,$p");
   }
 
   return @evtEt;

@@ -6,7 +6,7 @@
 #ifndef __ASKSINPP_h__
 #define __ASKSINPP_h__
 
-#define ASKSIN_PLUS_PLUS_VERSION "2.1.1"
+#define ASKSIN_PLUS_PLUS_VERSION "2.1.2"
 
 #define ASKSIN_PLUS_PLUS_IDENTIFIER F("AskSin++ V" ASKSIN_PLUS_PLUS_VERSION " (" __DATE__ " " __TIME__ ")")
 
@@ -108,7 +108,7 @@ public:
     // signal start to user
     led.set(LedStates::welcome);
     // delay first send by random time
-    waitTimeout((rand() % 3500)+1000);
+    radio.setSendTimeout((rand() % 3500)+1000);
   }
 
   bool runready () {

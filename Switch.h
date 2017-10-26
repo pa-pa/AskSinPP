@@ -319,6 +319,15 @@ public:
     BaseChannel::setup(dev,number,addr);
   }
 
+  uint8_t flags () const {
+    uint8_t flags = SwitchStateMachine::flags();
+    if( this->device().battery().low() == true ) {
+      flags |= 0x80;
+    }
+    return flags;
+  }
+
+
   virtual void switchState(__attribute__((unused)) uint8_t oldstate,uint8_t newstate) {
     if( newstate == AS_CM_JT_ON ) {
       digitalWrite(pin,lowact ? LOW : HIGH);

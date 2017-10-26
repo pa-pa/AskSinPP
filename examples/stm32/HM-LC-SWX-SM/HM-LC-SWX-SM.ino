@@ -22,7 +22,7 @@
 #include <AskSinPP.h>
 
 #include <MultiChannelDevice.h>
-#include <SwitchChannel.h>
+#include <Switch.h>
 
 // use builtin led
 #define LED_PIN LED_BUILTIN
@@ -59,19 +59,9 @@ typedef LibSPI<PA4> RadioSPI;
 typedef AskSin<StatusLed<LED_BUILTIN>,NoBattery,Radio<RadioSPI,PB0> > Hal;
 Hal hal;
 
-// map number of channel to pin
-// this will be called by the SwitchChannel class
-uint8_t SwitchPin (uint8_t number) {
-  switch( number ) {
-    case 2: return RELAY2_PIN;
-    case 3: return RELAY3_PIN;
-    case 4: return RELAY4_PIN;
-  }
-  return RELAY1_PIN;
-}
 
 // setup the device with channel type and number of channels
-typedef MultiChannelDevice<Hal,SwitchChannel<Hal,PEERS_PER_CHANNEL>,4> SwitchDevice;
+typedef MultiChannelDevice<Hal,SwitchChannel<Hal,PEERS_PER_CHANNEL,List0>,4> SwitchDevice;
 SwitchDevice sdev(devinfo,0x20);
 
 ConfigToggleButton<SwitchDevice,LOW,HIGH,INPUT_PULLDOWN> cfgBtn(sdev);
@@ -83,13 +73,12 @@ void setup () {
   // this will also trigger powerUpAction handling
   bool low = sdev.getConfigByte(CFG_LOWACTIVE_BYTE);
   DPRINT("Invert ");low ? DPRINTLN("active") : DPRINTLN("disabled");
-  for( uint8_t i=1; i<=sdev.channels(); ++i ) {
-    sdev.channel(i).lowactive(low);
-  }
+  sdev.channel(1).init(RELAY1_PIN,low);
+  sdev.channel(2).init(RELAY2_PIN,low);
+  sdev.channel(3).init(RELAY3_PIN,low);
+  sdev.channel(4).init(RELAY4_PIN,low);
 
   buttonISR(cfgBtn,CONFIG_BUTTON_PIN);
-
-  // TODO - random delay
 }
 
 void loop() {

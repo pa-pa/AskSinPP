@@ -13,11 +13,13 @@ namespace as {
 
 // Device Registers used in List0
 #define DREG_INTKEY     0x02
+#define DREG_LEDMODE     0x05
 #define DREG_CYCLICINFOMSG     0x09
 #define DREG_MASTER_ID1 0x0A
 #define DREG_MASTER_ID2 0x0B
 #define DREG_MASTER_ID3 0x0C
 #define DREG_SABOTAGEMSG     0x10
+#define DREG_LOWBATLIMIT     0x12
 #define DREG_TRANSMITTRYMAX     0x14
 #define DREG_LOCALRESETDISABLE 0x18
 
@@ -257,12 +259,16 @@ public:
     this->writeRegister(DREG_MASTER_ID3,mid.id2());
   };
 
+  uint8_t ledMode () const { return this->readRegister(DREG_LEDMODE,0x03,6,0); }
+  bool ledMode (uint8_t value) const { return this->writeRegister(DREG_LEDMODE,0x03,6,value); }
   bool cycleInfoMsg () const { return this->readRegister(DREG_CYCLICINFOMSG,false); }
   bool cycleInfoMsg (bool value) const { return this->writeRegister(DREG_CYCLICINFOMSG,value); }
   uint8_t transmitDevTryMax () const { return this->readRegister(DREG_TRANSMITTRYMAX,6); }
   bool transmitDevTryMax (uint8_t value) const { return this->writeRegister(DREG_TRANSMITTRYMAX,value); }
   bool sabotageMsg () const { return this->readRegister(DREG_SABOTAGEMSG,false); }
   bool sabotageMsg (bool value) const { return this->writeRegister(DREG_SABOTAGEMSG,value); }
+  uint8_t lowBatLimit () const { return this->readRegister(DREG_LOWBATLIMIT,0); }
+  bool lowBatLimit (uint8_t value) const { return this->writeRegister(DREG_LOWBATLIMIT,value); }
 
   bool localResetDisable (bool v) const { return this->writeBit(DREG_LOCALRESETDISABLE,0,v); }
   bool localResetDisable () const { return this->readBit(DREG_LOCALRESETDISABLE,0,false); }
