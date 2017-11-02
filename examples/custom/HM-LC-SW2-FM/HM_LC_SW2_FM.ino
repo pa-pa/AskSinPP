@@ -5,7 +5,12 @@
 
 // define this to read the device id, serial and device type from bootloader section
 //#define USE_OTA_BOOTLOADER
-#define NDEBUG
+//#define NDEBUG
+
+// raise timer ticks to get more pin samples
+#define TICKS_PER_SECOND 500UL
+// we needs at least 10 LOW samples before we switch back to LOW
+#define PINPOLL_COUNT_LOW 10
 
 #include <AskSinPP.h>
 
@@ -80,7 +85,7 @@ void setup () {
   DINIT(19200,ASKSIN_PLUS_PLUS_IDENTIFIER);
   bool firstinit = sdev.init(hal);
   sdev.sw1Channel().init(RELAY1_PIN,false);
-  sdev.sw2Channel().init(RELAY1_PIN,false);
+  sdev.sw2Channel().init(RELAY2_PIN,false);
   remoteChannelISR(sdev.btn1Channel(),BUTTON1_PIN);
   remoteChannelISR(sdev.btn2Channel(),BUTTON2_PIN);
   if( firstinit == true ) {
