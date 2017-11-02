@@ -221,6 +221,7 @@ void setup () {
   buttonISR(cfgBtn,CONFIG_BUTTON_PIN);
   // add channel 1 to timer to send event
   sysclock.add(sdev.channel(1));
+  sdev.initDone();
 }
 
 void loop() {

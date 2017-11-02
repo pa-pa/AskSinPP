@@ -98,6 +98,7 @@ void setup () {
     sdev.btn2Channel().peer(Peer(devid,4));
     storage.store();
   }
+  sdev.initDone();
 }
 
 void loop() {

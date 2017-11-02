@@ -452,6 +452,7 @@ void setup () {
   // add channel 1 to timer to send event
   sysclock.add(sdev.channel(1));
   sysclock.add(sdev.channel(2));
+  sdev.initDone();
 }
 
 void loop() {

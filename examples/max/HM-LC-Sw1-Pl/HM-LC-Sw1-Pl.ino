@@ -62,28 +62,25 @@ Hal hal;
 SwitchType sdev(devinfo,0x20);
 ConfigToggleButton<SwitchType> cfgBtn(sdev);
 
-
-void setup () {
-  DINIT(57600,ASKSIN_PLUS_PLUS_IDENTIFIER);
-  sdev.init(hal);
-
-  sdev.channel(1).init(RELAY1_PIN,false);
-
-  buttonISR(cfgBtn,CONFIG_BUTTON_PIN);
-
+void initPeerings (bool first) {
   // create internal peerings - CCU2 needs this
-  HMID devid;
-  sdev.getDeviceID(devid);
-  for( uint8_t i=1; i<=sdev.channels(); ++i ) {
-    Peer ipeer(devid,i);
-    // create internal peer if not already done
-    uint8_t idx = 0; // make compiler happy
-    if( sdev.channel(i).peer(idx) != ipeer ) {
+  if( first == true ) {
+    HMID devid;
+    sdev.getDeviceID(devid);
+    for( uint8_t i=1; i<=sdev.channels(); ++i ) {
+      Peer ipeer(devid,i);
       sdev.channel(i).peer(ipeer);
     }
   }
-  // delay next send by random time
-  hal.waitTimeout((rand() % 3500)+1000);
+}
+
+void setup () {
+  DINIT(57600,ASKSIN_PLUS_PLUS_IDENTIFIER);
+  bool first = sdev.init(hal);
+  sdev.channel(1).init(RELAY1_PIN,false);
+  buttonISR(cfgBtn,CONFIG_BUTTON_PIN);
+  initPeerings(first);
+  sdev.initDone();
 }
 
 void loop() {

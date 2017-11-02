@@ -111,6 +111,7 @@ void setup () {
 
   buttonISR(cfgBtn,CONFIG_BUTTON_PIN);
   motionISR(sdev,1,PIR_PIN);
+  sdev.initDone();
 }
 
 void loop() {

@@ -99,6 +99,8 @@ void setup () {
   remoteISR(sdev,8,BTN08_PIN);
 
   buttonISR(cfgBtn,CONFIG_BUTTON_PIN);
+
+  sdev.initDone();
 }
 
 void loop() {

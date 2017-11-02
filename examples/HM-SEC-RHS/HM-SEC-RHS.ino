@@ -149,6 +149,7 @@ void setup () {
   buttonISR(cfgBtn,CONFIG_BUTTON_PIN);
   const uint8_t posmap[4] = {Positions::PosB,Positions::PosC,Positions::PosA,Positions::PosB};
   sdev.channel(1).init(SENS1_PIN,SENS2_PIN,SABOTAGE_PIN,posmap);
+  sdev.initDone();
 }
 
 void loop() {

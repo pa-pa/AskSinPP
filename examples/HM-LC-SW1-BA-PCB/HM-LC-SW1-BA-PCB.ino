@@ -103,6 +103,7 @@ void setup () {
   hal.activity.stayAwake(seconds2ticks(15));
   // measure battery every hour
   hal.battery.init(seconds2ticks(60UL*60),sysclock);
+  sdev.initDone();
 }
 
 void loop() {

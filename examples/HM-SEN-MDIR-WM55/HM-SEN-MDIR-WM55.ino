@@ -153,6 +153,7 @@ void setup () {
   remoteChannelISR(sdev.btn1Channel(),BUTTON1_PIN);
   remoteChannelISR(sdev.btn2Channel(),BUTTON2_PIN);
   motionChannelISR(sdev.pirChannel(),PIR_PIN);
+  sdev.initDone();
 }
 
 void loop() {

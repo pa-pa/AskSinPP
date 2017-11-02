@@ -86,13 +86,12 @@ ConfigButton<RemoteType> cfgBtn(sdev);
 void setup () {
   DINIT(57600,ASKSIN_PLUS_PLUS_IDENTIFIER);
   sdev.init(hal);
-
   remoteISR(sdev,1,BTN1_PIN);
   remoteISR(sdev,2,BTN2_PIN);
   remoteISR(sdev,3,BTN3_PIN);
   remoteISR(sdev,4,BTN4_PIN);
-
   buttonISR(cfgBtn,CONFIG_BUTTON_PIN);
+  sdev.initDone();
 }
 
 void loop() {

@@ -91,6 +91,7 @@ void setup () {
   hal.battery.init(seconds2ticks(60UL*60), sysclock);
   hal.battery.low(22);
   hal.battery.critical(19);
+  sdev.initDone();
 }
 
 void loop() {

@@ -17,7 +17,7 @@
 
 #define DEVICE_CONFIG CFG_LOWACTIVE_OFF
 
-// #define HM_SENSOR_RELAY
+#define HM_SENSOR_RELAY
 
 #define EI_NOTEXTERNAL
 #include <EnableInterrupt.h>
@@ -142,6 +142,7 @@ void setup () {
 
   initModelType();
   initPeerings(first);
+  sdev.initDone();
 }
 
 void loop() {

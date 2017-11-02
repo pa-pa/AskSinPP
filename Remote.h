@@ -31,13 +31,15 @@ class RemoteChannel : public Channel<HALTYPE,RemoteList1,EmptyList,DefList4,PEER
 
 private:
   uint8_t       repeatcnt;
+  uint8_t       peerself;
+  uint8_t       extpeer;
   volatile bool isr;
 
 public:
 
   typedef Channel<HALTYPE,RemoteList1,EmptyList,DefList4,PEERCOUNT,List0Type> BaseChannel;
 
-  RemoteChannel () : BaseChannel(), repeatcnt(0), isr(false) {}
+  RemoteChannel () : BaseChannel(), repeatcnt(0), peerself(false), extpeer(0xff), isr(false) {}
   virtual ~RemoteChannel () {}
 
   Button& button () { return *(Button*)this; }
@@ -53,14 +55,39 @@ public:
   virtual void state(uint8_t s) {
     DHEX(BaseChannel::number());
     Button::state(s);
-    if( s == released || s == longpressed) {
-      RemoteEventMsg& msg = (RemoteEventMsg&)this->device().message();
-      // send to peers
-      msg.init(this->device().nextcount(),this->number(),repeatcnt,(s==longpressed),this->device().battery().low());
+    RemoteEventMsg& msg = (RemoteEventMsg&)this->device().message();
+    msg.init(this->device().nextcount(),this->number(),repeatcnt,(s==longreleased || s==longpressed),this->device().battery().low());
+    if( s == released || s == longreleased) {
+      // send the message to every peer
       this->device().sendPeerEvent(msg,*this);
-    }
-    if( s == released || s == longreleased ) {
       repeatcnt++;
+    }
+    else if (s == longpressed) {
+      // send one message to all peers
+      msg.clearAck();
+      msg.setBroadcast();
+      if( peerself == true ) {
+        // simply process by yourself
+        this->device().process(msg);
+      }
+      // send out to one peer
+      this->device().send(msg,extpeer != 0xff ? this->peer(extpeer) : this->device().getMasterID());
+    }
+  }
+
+  void configChanged () {
+    peerself = false;
+    extpeer = 0xff;
+    for( int i=0; i<this->peers(); ++i ){
+      Peer p = this->peer(i);
+      if( p.valid() == true ) {
+        if( this->device().isDeviceID(p) == true ) {
+          peerself |=  true;
+        }
+        else {
+          extpeer = i; // store offset to an external peer
+        }
+      }
     }
   }
 

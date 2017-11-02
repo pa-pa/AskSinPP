@@ -66,10 +66,21 @@ SwitchDevice sdev(devinfo,0x20);
 
 ConfigToggleButton<SwitchDevice,LOW,HIGH,INPUT_PULLDOWN> cfgBtn(sdev);
 
+void initPeerings (bool first) {
+  // create internal peerings - CCU2 needs this
+  if( first == true ) {
+    HMID devid;
+    sdev.getDeviceID(devid);
+    for( uint8_t i=1; i<=sdev.channels(); ++i ) {
+      Peer ipeer(devid,i);
+      sdev.channel(i).peer(ipeer);
+    }
+  }
+}
+
 void setup () {
   DINIT(57600,ASKSIN_PLUS_PLUS_IDENTIFIER);
-  sdev.init(hal);
-
+  bool first = sdev.init(hal);
   // this will also trigger powerUpAction handling
   bool low = sdev.getConfigByte(CFG_LOWACTIVE_BYTE);
   DPRINT("Invert ");low ? DPRINTLN("active") : DPRINTLN("disabled");
@@ -77,8 +88,9 @@ void setup () {
   sdev.channel(2).init(RELAY2_PIN,low);
   sdev.channel(3).init(RELAY3_PIN,low);
   sdev.channel(4).init(RELAY4_PIN,low);
-
   buttonISR(cfgBtn,CONFIG_BUTTON_PIN);
+  initPeerings(first);
+  sdev.initDone();
 }
 
 void loop() {

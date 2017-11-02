@@ -293,6 +293,10 @@ public:
     flag |= BCAST;
   }
 
+  bool isBroadcast () const {
+    return (flag & BCAST) == BCAST;
+  }
+
   bool isRepeated () const {
     return (flag & RPTED) == RPTED;
   }
@@ -332,6 +336,10 @@ public:
 
   bool isChallengeAes () const {
     return typ==AS_MESSAGE_RESPONSE && (comm & AS_RESPONSE_AES_CHALLANGE) == AS_RESPONSE_AES_CHALLANGE;
+  }
+
+  bool isRemoteEvent () const {
+    return typ==AS_MESSAGE_REMOTE_EVENT;
   }
 
   // cast to specific read-only message types

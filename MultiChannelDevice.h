@@ -118,8 +118,15 @@ public:
     HMID id;
     this->getDeviceID(id);
     hal.init(id);
-    this->configChanged();
     return first;
+  }
+
+  void initDone () {
+    // trigger initial config changed - to allow scan/caching of list data
+    this->configChanged();
+    for( uint8_t cdx=1; cdx>=channels(); ++cdx ) {
+      channel(cdx).configChanged();
+    }
   }
 
   void firstinit () {

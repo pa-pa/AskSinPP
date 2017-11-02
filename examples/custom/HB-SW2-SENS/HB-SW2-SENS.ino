@@ -124,8 +124,8 @@ void setup () {
   sdev.switch1Channel().init(RELAY1_PIN);
   sdev.switch2Channel().init(RELAY2_PIN);
   sdev.sensorChannel().init(SENS1_PIN,SENS2_PIN);
-
   buttonISR(cfgBtn,CONFIG_BUTTON_PIN);
+  sdev.initDone();
 }
 
 void loop() {
