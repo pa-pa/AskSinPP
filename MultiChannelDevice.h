@@ -382,10 +382,11 @@ public:
          const RemoteEventMsg& pm = msg.remoteEvent();
          uint8_t processed = 0;
          for( uint8_t cdx=1; cdx<=this->channels(); ++cdx ) {
-           ch = &channel(cdx);
-           if( ch->inhibit() == false && ch->has(pm.peer()) == true ) {
+           ChannelType* c = &channel(cdx);
+           if( c->inhibit() == false && c->has(pm.peer()) == true ) {
              if( processed > 0 || validSignature(cdx,msg) == true ) {
                ++processed;
+               ch = c;
                switch( mtype ) {
                case AS_MESSAGE_REMOTE_EVENT:
                  ch->process(pm);
