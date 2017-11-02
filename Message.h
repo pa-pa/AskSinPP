@@ -174,9 +174,6 @@ public:
       flag |= BCAST;
       flag &= ~BIDI;
     }
-    else {
-      flag &= ~BCAST;
-    }
   }
 
   const HMID& to () const {

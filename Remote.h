@@ -78,14 +78,14 @@ public:
   void configChanged () {
     peerself = false;
     extpeer = 0xff;
-    for( int i=0; i<this->peers(); ++i ){
+    for( uint8_t i=0; i<this->peers(); ++i ){
       Peer p = this->peer(i);
       if( p.valid() == true ) {
         if( this->device().isDeviceID(p) == true ) {
           peerself |=  true;
         }
-        else {
-          extpeer = i; // store offset to an external peer
+        else if (extpeer == 0xff ) {
+          extpeer = i; // store offset to first external peer
         }
       }
     }

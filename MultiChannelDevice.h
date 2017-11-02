@@ -124,7 +124,7 @@ public:
   void initDone () {
     // trigger initial config changed - to allow scan/caching of list data
     this->configChanged();
-    for( uint8_t cdx=1; cdx>=channels(); ++cdx ) {
+    for( uint8_t cdx=1; cdx<=channels(); ++cdx ) {
       channel(cdx).configChanged();
     }
   }
@@ -210,7 +210,7 @@ public:
      ChannelType* ch = 0;
      HMID devid;
      this->getDeviceID(devid);
-     if( msg.to() == devid || (msg.to() == HMID::broadcast && this->isBoardcastMsg(msg))) {
+     if( msg.to() == devid || this->isBoardcastMsg(msg) ) {
        // we got a message - we do not answer before 100ms
        this->radio().setSendTimeout(100);
        DPRINT(F("-> "));
