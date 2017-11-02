@@ -112,6 +112,7 @@ public:
     ssl.jtOff(AS_CM_JT_ONDELAY);
     ssl.jtDlyOn(AS_CM_JT_ON);
     ssl.jtDlyOff(AS_CM_JT_OFF);
+    ssl.multiExec(false);
   }
 };
 
@@ -301,9 +302,10 @@ protected:
   typedef Channel<HalType,SwitchList1,SwitchList3,EmptyList,PeerCount,List0Type> BaseChannel;
   uint8_t lowact;
   uint8_t pin;
+  uint8_t lastmsgcnt;
 
 public:
-  SwitchChannel () : BaseChannel(), lowact(false), pin(0) {}
+  SwitchChannel () : BaseChannel(), lowact(false), pin(0), lastmsgcnt(0xff) {}
   virtual ~SwitchChannel() {}
 
   void init (uint8_t p,bool value=false) {
@@ -352,7 +354,10 @@ public:
       // l3.dump();
       typename BaseChannel::List3::PeerList pl = lg ? l3.lg() : l3.sh();
       // pl.dump();
-      remote(pl,cnt);
+      if( lg == false || cnt != lastmsgcnt || pl.multiExec() == true ) {
+        lastmsgcnt = cnt;
+        remote(pl,cnt);
+      }
       return true;
     }
     return false;

@@ -533,11 +533,13 @@ static uint8_t physical(0);
 template <class HalType,int PeerCount>
 class DimmerChannel : public Channel<HalType,DimmerList1,DimmerList3,EmptyList,PeerCount>, public DimmerStateMachine {
 
+  uint8_t lastmsgcnt;
+
 protected:
   typedef Channel<HalType,DimmerList1,DimmerList3,EmptyList,PeerCount> BaseChannel;
 
 public:
-  DimmerChannel () : BaseChannel() {}
+  DimmerChannel () : BaseChannel(), lastmsgcnt(0xff) {}
   virtual ~DimmerChannel() {}
 
   void setup(Device<HalType>* dev,uint8_t number,uint16_t addr) {
@@ -569,7 +571,10 @@ public:
       // l3.dump();
       typename BaseChannel::List3::PeerList pl = lg ? l3.lg() : l3.sh();
       // pl.dump();
-      remote(pl,cnt);
+      if( lg == false || cnt != lastmsgcnt || pl.multiExec() == true ) {
+        lastmsgcnt = cnt;
+        remote(pl,cnt);
+      }
       return true;
     }
     return false;
