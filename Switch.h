@@ -354,7 +354,7 @@ public:
       // l3.dump();
       typename BaseChannel::List3::PeerList pl = lg ? l3.lg() : l3.sh();
       // pl.dump();
-      if( lg == false || cnt != lastmsgcnt || pl.multiExec() == true ) {
+      if( cnt != lastmsgcnt || (lg == true && pl.multiExec() == true) ) {
         lastmsgcnt = cnt;
         remote(pl,cnt);
       }

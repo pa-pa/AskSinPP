@@ -246,6 +246,7 @@ public:
              }
            }
            if( success == true ) {
+             ch->configChanged();
              storage.store();
              answer = REPLAY_ACK;
            }
@@ -267,6 +268,7 @@ public:
              }
            }
            if( success == true ) {
+             ch->configChanged();
              storage.store();
              answer = REPLAY_ACK;
            }

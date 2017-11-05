@@ -373,6 +373,10 @@ public:
     for( int i=0; i<ch.peers(); ++i ){
       Peer p = ch.peer(i);
       if( p.valid() == true ) {
+        // skip if this is not the first peer of that device
+        if( ch.peerfor(p) < i ) {
+          continue;
+        }
         if( isDeviceID(p) == true ) {
           // we send to ourself - no ack needed
           getDeviceID(msg.from());
@@ -399,6 +403,43 @@ public:
     if( sendtopeer == false ) {
       send(msg,getMasterID());
     }
+    // signal that we have send to peer
+    hal->sendPeer();
+  }
+
+  template <class ChannelType>
+  void broadcastPeerEvent (Message& msg,const ChannelType& ch) {
+    getDeviceID(msg.from());
+    msg.clearAck();
+    msg.setBroadcast();
+    // check if we are peered to ourself
+    if( ch.peerfor(msg.from()) < ch.peers() ) {
+      msg.to(msg.from());
+      // simply process
+      this->process(msg);
+    }
+    HMID todev;
+    bool burst=false;
+    // go over all peers, get first external device
+    // check if one of the peers needs a burst to wakeup
+    for( uint8_t i=0; burst==false && i<ch.peers(); ++i ) {
+      Peer p = ch.peer(i);
+      if( p.valid() == true ) {
+        if( msg.from() != p ) {
+          if( todev.valid() == false ) {
+            todev = p;
+          }
+          typename ChannelType::List4 l4 = ch.getList4(p);
+          burst = l4.burst();
+        }
+      }
+    }
+    // if we have no external device - send to master/broadcast
+    if( todev.valid() == false ) {
+      todev = getMasterID();
+    }
+    msg.burstRequired(burst);
+    send(msg,todev);
     // signal that we have send to peer
     hal->sendPeer();
   }

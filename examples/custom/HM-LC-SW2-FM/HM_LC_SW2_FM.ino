@@ -65,7 +65,8 @@ public:
   VirtChannel<Hal,BtnChannel,List0> c1,c2;
   VirtChannel<Hal,SwChannel,List0>  c3,c4;
 public:
-  typedef ChannelDevice<Hal,VirtBaseChannel<Hal,List0>,4> DeviceType;
+  typedef VirtBaseChannel<Hal,List0> ChannelType;
+  typedef ChannelDevice<Hal,ChannelType,4> DeviceType;
   MixDevice (const DeviceInfo& info,uint16_t addr) : DeviceType(info,addr) {
     DeviceType::registerChannel(c1,1);
     DeviceType::registerChannel(c2,2);
@@ -78,6 +79,22 @@ public:
   BtnChannel& btn2Channel () { return c2; }
   SwChannel&  sw1Channel  () { return c3; }
   SwChannel&  sw2Channel  () { return c4; }
+
+  bool pollRadio () {
+    bool worked = Device<Hal,List0>::pollRadio();
+    for( uint8_t i=1; i<=this->channels(); ++i ) {
+      ChannelType& ch = channel(i);
+      if( ch.changed() == true ) {
+        // we do not send status updates during a button is pressed
+        if( btn1Channel().pressed()==false && btn2Channel().pressed()==false ) {
+          this->sendInfoActuatorStatus(this->getMasterID(),this->nextcount(),ch);
+          worked = true;
+        }
+      }
+    }
+    return worked;
+  }
+
 };
 MixDevice sdev(devinfo,0x20);
 

@@ -69,11 +69,20 @@ public:
 
   bool has (const Peer& p) const {
     for( uint8_t i=0; i<peers(); ++i ) {
-      if( peer(i) == p ) {
+      if( p == peer(i) ) {
         return true;
       }
     }
     return false;
+  }
+
+  uint8_t peerfor (const HMID& hmid) const {
+    for( uint8_t i=0; i<peers(); ++i ) {
+      if( hmid == peer(i) ) {
+        return i;
+      }
+    }
+    return 0xff;
   }
 
   Peer peer (uint8_t idx) const {
