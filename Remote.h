@@ -72,7 +72,7 @@ public:
 
   bool pressed () const {
     uint8_t s = state();
-    return s == pressed || s == debounce || s == longpressed;
+    return s == Button::pressed || s == Button::debounce || s == Button::longpressed;
   }
 
   void pinchanged () {
