@@ -668,7 +668,7 @@ protected:
     uint8_t i=200;
     do {
       spi.strobe(CC1101_STX);
-      _delay_us(10);
+      _delay_us(100);
       if( --i == 0 ) {
         // can not enter TX state - reset fifo
         spi.strobe(CC1101_SIDLE );
@@ -694,7 +694,7 @@ protected:
     for(uint8_t i = 0; i < 200; i++) {  // after sending out all bytes the chip should go automatically in RX mode
       if( spi.readReg(CC1101_MARCSTATE, CC1101_STATUS) == MARCSTATE_RX)
         break;                                    //now in RX mode, good
-      _delay_us(10);
+      _delay_us(100);
     }
     sending = 0;
     return true;
