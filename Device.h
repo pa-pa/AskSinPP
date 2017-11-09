@@ -81,9 +81,7 @@ protected:
   uint8_t      numChannels;
 
 public:
-  Device (const DeviceInfo& i,uint16_t addr,List0Type& l,uint8_t ch) : hal(0), list0(l), msgcount(0), lastmsg(0), kstore(addr), info(i), numChannels(ch) {
-    // TODO init seed
-  }
+  Device (const DeviceInfo& i,uint16_t addr,List0Type& l,uint8_t ch) : hal(0), list0(l), msgcount(0), lastmsg(0), kstore(addr), info(i), numChannels(ch) {}
   virtual ~Device () {}
 
   LedType& led ()  { return hal->led; }
@@ -411,7 +409,6 @@ public:
   void broadcastPeerEvent (Message& msg,const ChannelType& ch) {
     getDeviceID(msg.from());
     msg.clearAck();
-    msg.setBroadcast();
     // check if we are peered to ourself
     if( ch.peerfor(msg.from()) < ch.peers() ) {
       msg.to(msg.from());
@@ -420,9 +417,10 @@ public:
     }
     HMID todev;
     bool burst=false;
+    uint8_t tonum=0;
     // go over all peers, get first external device
     // check if one of the peers needs a burst to wakeup
-    for( uint8_t i=0; burst==false && i<ch.peers(); ++i ) {
+    for( uint8_t i=0; i<ch.peers(); ++i ) {
       Peer p = ch.peer(i);
       if( p.valid() == true ) {
         if( msg.from() != p ) {
@@ -430,7 +428,8 @@ public:
             todev = p;
           }
           typename ChannelType::List4 l4 = ch.getList4(p);
-          burst = l4.burst();
+          burst |= l4.burst();
+          tonum++;
         }
       }
     }
@@ -438,7 +437,14 @@ public:
     if( todev.valid() == false ) {
       todev = getMasterID();
     }
+    // DPRINT("BCAST to: ");todev.dump(); DPRINTLN("\n");
     msg.burstRequired(burst);
+    if( tonum > 1 ) {
+      msg.setBroadcast();
+    }
+    else {
+      msg.setAck();
+    }
     send(msg,todev);
     // signal that we have send to peer
     hal->sendPeer();
@@ -486,44 +492,48 @@ public:
   }
 
   bool requestSignature(const Message& msg) {
+    // no signature for internal message processing needed
     if( isDeviceID(msg.from()) == true ) {
       return true;
     }
-    AesChallengeMsg signmsg;
-    signmsg.init(msg,kstore.getIndex());
-    kstore.challengeKey(signmsg.challenge(),kstore.getIndex());
-    // TODO re-send message handling
-    DPRINT(F("<- ")); signmsg.dump();
-    radio().write(signmsg,signmsg.burstRequired());
-    // read answer
-    if( waitForAesResponse(msg.from(),signmsg,60) == true ) {
-      AesResponseMsg& response = signmsg.aesResponse();
-  //    DPRINT("AES ");DHEX(response.data(),16);
-      // fill initial vector with message to sign
-      kstore.fillInitVector(msg);
-  //    DPRINT("IV ");DHEX(iv,16);
-      // decrypt response
-      uint8_t* data = response.data();
-      aes128_dec(data,&kstore.ctx);
-      // xor encrypted data with initial vector
-      kstore.applyVector(data);
-      // store data for sending ack
-      kstore.storeAuth(response.count(),data);
-      // decrypt response
-      aes128_dec(data,&kstore.ctx);
-  //    DPRINT("r "); DHEX(response.data()+6,10);
-  //    DPRINT("s "); DHEX(msg.buffer(),10);
-      // compare decrypted message with original message
-      if( memcmp(data+6,msg.buffer(),10) == 0 ) {
-        DPRINTLN(F("Signature OK"));
-        return true;
+    // signing only possible if sender requests ACK
+    if( msg.ackRequired() == true ) {
+      AesChallengeMsg signmsg;
+      signmsg.init(msg,kstore.getIndex());
+      kstore.challengeKey(signmsg.challenge(),kstore.getIndex());
+      // TODO re-send message handling
+      DPRINT(F("<- ")); signmsg.dump();
+      radio().write(signmsg,signmsg.burstRequired());
+      // read answer
+      if( waitForAesResponse(msg.from(),signmsg,60) == true ) {
+        AesResponseMsg& response = signmsg.aesResponse();
+        // DPRINT("AES ");DHEX(response.data(),16);
+        // fill initial vector with message to sign
+        kstore.fillInitVector(msg);
+        // DPRINT("IV ");DHEX(iv,16);
+        // decrypt response
+        uint8_t* data = response.data();
+        aes128_dec(data,&kstore.ctx);
+        // xor encrypted data with initial vector
+        kstore.applyVector(data);
+        // store data for sending ack
+        kstore.storeAuth(response.count(),data);
+        // decrypt response
+        aes128_dec(data,&kstore.ctx);
+        // DPRINT("r "); DHEX(response.data()+6,10);
+        // DPRINT("s "); DHEX(msg.buffer(),10);
+        // compare decrypted message with original message
+        if( memcmp(data+6,msg.buffer(),10) == 0 ) {
+          DPRINTLN(F("Signature OK"));
+          return true;
+        }
+        else {
+          DPRINTLN(F("Signature FAILED"));
+        }
       }
       else {
-        DPRINTLN(F("Signature FAILED"));
+        DPRINTLN(F("waitForAesResponse failed"));
       }
-    }
-    else {
-      DPRINTLN(F("waitForAesResponse failed"));
     }
     return false;
   }
