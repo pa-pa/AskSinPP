@@ -646,33 +646,44 @@ protected:
   uint8_t sndData(uint8_t *buf, uint8_t size, uint8_t burst) {
     timeout.waitTimeout();
     wakeup();
-
-    sending=1;
-
+    sending = 1;
     // Going from RX to TX does not work if there was a reception less than 0.5
     // sec ago. Due to CCA? Using IDLE helps to shorten this period(?)
-    spi.strobe(CC1101_SIDLE );
-	  _delay_us(150);
-    spi.strobe(CC1101_SFTX );                               // flush TX buffer
+    spi.strobe(CC1101_SIDLE);  // go to idle mode
+    spi.strobe(CC1101_SFTX );  // flush TX buffer
 
-    //_delay_ms(10);
-    if( burst == true ) {         // BURST-bit set?
-	    spi.strobe(CC1101_STX);
-      _delay_ms(360);    // according to ELV, devices get activated every 300ms, so send burst for 360ms
+    uint8_t i=200;
+    do {
+      spi.strobe(CC1101_STX);
+      _delay_us(100);
+      if( --i == 0 ) {
+        // can not enter TX state - reset fifo
+        spi.strobe(CC1101_SIDLE );
+        spi.strobe(CC1101_SFTX  );
+        spi.strobe(CC1101_SNOP );
+        // back to RX mode
+        do { spi.strobe(CC1101_SRX);
+        } while (spi.readReg(CC1101_MARCSTATE, CC1101_STATUS) != MARCSTATE_RX);
+        sending = 0;
+        return false;
+      }
     }
-	
-	  // write bytecount to send
+    while(spi.readReg(CC1101_MARCSTATE, CC1101_STATUS) != MARCSTATE_TX);
+
+    _delay_ms(10);
+    if (burst) {         // BURST-bit set?
+      _delay_ms(350);    // according to ELV, devices get activated every 300ms, so send burst for 360ms
+    }
+
     spi.writeReg(CC1101_TXFIFO, size);
-	  // write bytes
     spi.writeBurst(CC1101_TXFIFO, buf, size);           // write in TX FIFO
-	
-	  flushrx();
-	
-	  if( burst == false ){
-		  spi.strobe(CC1101_STX); // send bytes
-	  }
-	
-    sending=0;
+
+    for(uint8_t i = 0; i < 200; i++) {  // after sending out all bytes the chip should go automatically in RX mode
+      if( spi.readReg(CC1101_MARCSTATE, CC1101_STATUS) == MARCSTATE_RX)
+        break;                                    //now in RX mode, good
+      _delay_us(100);
+    }
+    sending = 0;
     return true;
   }
 
