@@ -62,10 +62,14 @@ public:
     return n != 0 ? n->tick : 0;
   }
 
+  Alarm* first () const {
+    return (Alarm*)select();
+  }
+
   // correct the alarms after sleep
   void correct (uint32_t ticks) {
     ticks--;
-    Alarm* n = (Alarm*)select();
+    Alarm* n = first();
     if( n != 0 ) {
       uint32_t nextticks = n->tick-1;
       n->tick -= nextticks < ticks ? nextticks : ticks;
