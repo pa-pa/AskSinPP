@@ -175,6 +175,7 @@ public:
     PINTYPE::setOutput(SCLK);
     // SPI enable, master, speed = CLK/4
     SPCR = _BV(SPE) | _BV(MSTR);
+    PINTYPE::setHigh(CS);
     // Set SCLK = 1 and SI = 0, to avoid potential problems with pin control mode
     PINTYPE::setHigh(SCLK);
     PINTYPE::setLow(MOSI);
