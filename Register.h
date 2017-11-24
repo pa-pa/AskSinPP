@@ -166,16 +166,18 @@ public:
     clear();
   }
 
-  void dump () const {
+  void dump (const char* end = "\n") const {
+#ifndef NDEBUG
     for( uint8_t idx=0; idx < size(); ++idx ) {
-    uint8_t reg = getRegister(idx);
-    DHEX(reg);
-    DPRINT(":");
-    DHEX(readRegister(reg));
-    DPRINT(" ");
+      uint8_t reg = getRegister(idx);
+      DHEX(reg);
+      DPRINT(":");
+      DHEX(readRegister(reg));
+      DPRINT(" ");
+    }
+    DPRINT(end);
   }
-  DPRINT("\n");
-  }
+#endif
 };
 
 
