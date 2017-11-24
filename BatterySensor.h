@@ -169,6 +169,7 @@ public:
  * Measure on analog pin
  * See https://github.com/rlogiacco/BatterySense for setup
  */
+template <uint8_t SENSPIN,uint8_t ACTIVATIONPIN,uint16_t VCC=3300>
 class BatterySensorExt : public BatterySensor {
   uint8_t  m_SensePin;
   uint8_t  m_ActivationPin;
@@ -176,11 +177,11 @@ class BatterySensorExt : public BatterySensor {
   uint16_t m_RefVoltage;
 public:
 
-  BatterySensorExt (uint8_t sens,uint8_t activation=0xff) : BatterySensor (),
-    m_SensePin(sens), m_ActivationPin(activation), m_DividerRatio(2), m_RefVoltage(3300) {}
+  BatterySensorExt () : BatterySensor (),
+    m_SensePin(SENSPIN), m_ActivationPin(ACTIVATIONPIN), m_DividerRatio(2), m_RefVoltage(VCC) {}
   virtual ~BatterySensorExt () {}
 
-  void init(uint32_t period,AlarmClock& clock,uint16_t refvolt=3300,uint8_t divider=2) {
+  void init(uint32_t period,AlarmClock& clock,uint16_t refvolt=VCC,uint8_t divider=2) {
     m_DividerRatio=divider;
     m_RefVoltage = refvolt;
     pinMode(m_SensePin, INPUT);
