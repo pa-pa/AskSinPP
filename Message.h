@@ -262,6 +262,10 @@ public:
     DDECLN((uint32_t)millis());
   }
 
+  void setRepeated () {
+    flag |= RPTED;
+  }
+
   void setRpten () {
     flag |= RPTEN;
   }
