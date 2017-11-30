@@ -89,7 +89,7 @@ public:
     Peer result;
     uint16_t paddr = peerAddress(idx);
     if( paddr != 0 ) {
-      storage.getData(paddr,&result);
+      storage().getData(paddr,&result);
     }
     return result;
   }
@@ -99,7 +99,7 @@ public:
     deletepeer(p);
     uint8_t pidx = findpeer();
     if( pidx != 0xff ) {
-      storage.setData(peerAddress(pidx),p);
+      storage().setData(peerAddress(pidx),p);
       getList3(pidx).single();
       return true;
     }
@@ -111,10 +111,10 @@ public:
     deletepeer(p2);
     uint8_t pidx1 = findpeer();
     if( pidx1 != 0xff ) {
-      storage.setData(peerAddress(pidx1),p1);
+      storage().setData(peerAddress(pidx1),p1);
       uint8_t pidx2 = findpeer();
       if( pidx2 != 0xff ) {
-        storage.setData(peerAddress(pidx2),p2);
+        storage().setData(peerAddress(pidx2),p2);
         if( p1.odd() == true ) {
           getList3(pidx1).odd();
           getList3(pidx2).even();
@@ -134,7 +134,7 @@ public:
   }
 
   bool deletepeer (uint8_t idx) const {
-    return storage.setData(peerAddress(idx),Peer());
+    return storage().setData(peerAddress(idx),Peer());
   }
 
   uint8_t findpeer () const {
@@ -156,7 +156,7 @@ public:
   }
 
   void firstinit () {
-    storage.clearData(address(),size());
+    storage().clearData(address(),size());
     List1Type cl = getList1();
     cl.defaults();
   }

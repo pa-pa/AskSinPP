@@ -108,10 +108,10 @@ public:
     layoutChannels();
     dumpSize();
     // first initialize EEProm if needed
-    bool first = storage.setup(checksum());
+    bool first = storage().setup(checksum());
     if( first == true ) {
       firstinit();
-      storage.store();
+      storage().store();
     }
     this->keystore().init();
     this->setHal(hal);
@@ -140,7 +140,7 @@ public:
   void reset () {
     DPRINTLN(F("RESET"));
     if( getList0().localResetDisable() == false ) {
-      storage.reset();
+      storage().reset();
       resetFunc();
     }
   }
@@ -247,7 +247,7 @@ public:
            }
            if( success == true ) {
              ch->configChanged();
-             storage.store();
+             storage().store();
              answer = REPLAY_ACK;
            }
            else {
@@ -269,7 +269,7 @@ public:
            }
            if( success == true ) {
              ch->configChanged();
-             storage.store();
+             storage().store();
              answer = REPLAY_ACK;
            }
            else {
@@ -323,7 +323,7 @@ public:
              channel(cfgChannel).configChanged();
            }
            cfgChannel = 0xff;
-           storage.store();
+           storage().store();
            // TODO cancel alarm
            this->sendAck(msg,Message::WKMEUP);
          }

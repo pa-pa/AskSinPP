@@ -22,7 +22,7 @@ public:
   bool valid () const { return addr != 0; }
 
   uint8_t getByte (uint8_t offset) const {
-    return storage.getByte(addr + offset);
+    return storage().getByte(addr + offset);
   }
 
   uint8_t getByte (uint8_t offset, uint8_t mask, uint8_t shift) const {
@@ -30,7 +30,7 @@ public:
   }
 
   bool setByte (uint8_t offset, uint8_t data) const {
-    return storage.setByte(addr + offset, data);
+    return storage().setByte(addr + offset, data);
   }
 
   bool setByte (uint8_t offset, uint8_t data, uint8_t mask, uint8_t shift) const {
@@ -40,31 +40,31 @@ public:
   }
 
   bool isBitSet (uint8_t offset, uint8_t bit) const {
-    return (storage.getByte(addr + offset) & bit) == bit;
+    return (storage().getByte(addr + offset) & bit) == bit;
   }
 
   bool setBit (uint8_t offset, uint8_t bit, bool value) const {
     if( value == true ) {
-      return storage.setBits(addr + offset, bit);
+      return storage().setBits(addr + offset, bit);
     }
-    return storage.clearBits(addr + offset, bit);
+    return storage().clearBits(addr + offset, bit);
   }
 
   bool setData (uint8_t offset,uint8_t* buf,uint16_t size) const {
-    return storage.setData(addr + offset,buf,size);
+    return storage().setData(addr + offset,buf,size);
   }
 
   bool getData (uint8_t offset,uint8_t* buf,uint16_t size) const {
-    return storage.getData(addr + offset,buf,size);
+    return storage().getData(addr + offset,buf,size);
   }
 
   void clear (uint8_t offset,uint16_t size) {
-    storage.clearData(addr + offset,size);
+    storage().clearData(addr + offset,size);
   }
 
   void init (const uint8_t* data,uint16_t size) {
     for(uint16_t idx=0; idx<size; ++idx) {
-      storage.setByte(addr + idx,pgm_read_byte(data + idx));
+      storage().setByte(addr + idx,pgm_read_byte(data + idx));
     }
   }
 };
@@ -110,7 +110,7 @@ public:
   void dump () const {
     DHEX(address());
     DPRINT(F(" - "));
-    storage.dump(address(),getSize());
+    storage().dump(address(),getSize());
   }
 
 
@@ -156,7 +156,7 @@ public:
   void dump () const {
     DHEX(address());
     DPRINT(F(" - "));
-    storage.dump(address(),size());
+    storage().dump(address(),size());
   }
 
   operator GenericList () const {
