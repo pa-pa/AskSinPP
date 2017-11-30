@@ -176,8 +176,8 @@ public:
       DPRINT(" ");
     }
     DPRINT(end);
-  }
 #endif
+  }
 };
 
 
