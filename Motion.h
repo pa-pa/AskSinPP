@@ -169,15 +169,20 @@ public:
   static void isr () { device.channel(chan).motionDetected(); } \
 }; \
 pinMode(pin,INPUT); \
-enableInterrupt(pin,device##chan##ISRHandler::isr,RISING);
+if( digitalPinToInterrupt(pin) == NOT_AN_INTERRUPT ) \
+  enableInterrupt(pin,device##chan##ISRHandler::isr,RISING); \
+else \
+  attachInterrupt(digitalPinToInterrupt(pin),device##chan##ISRHandler::isr,RISING);
 
 #define motionChannelISR(chan,pin) class __##pin##ISRHandler { \
   public: \
   static void isr () { chan.motionDetected(); } \
 }; \
 pinMode(pin,INPUT); \
-enableInterrupt(pin,__##pin##ISRHandler::isr,RISING);
-
+if( digitalPinToInterrupt(pin) == NOT_AN_INTERRUPT ) \
+  enableInterrupt(pin,__##pin##ISRHandler::isr,RISING); \
+else \
+  attachInterrupt(digitalPinToInterrupt(pin),__##pin##ISRHandler::isr,RISING);
 
 } // end namespace
 

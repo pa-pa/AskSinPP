@@ -228,7 +228,7 @@ public:
          if( msubc == AS_CONFIG_PAIR_SERIAL && this->isDeviceSerial(msg.data())==true ) {
            this->led().set(LedStates::pairing);
            this->activity().stayAwake( seconds2ticks(20) ); // 20 seconds
-           this->sendDeviceInfo(this->getMasterID(),msg.length());
+           this->sendDeviceInfo(msg.from(),msg.length());
          }
          // CONFIG_PEER_ADD
          else if ( msubc == AS_CONFIG_PEER_ADD ) {
@@ -370,6 +370,10 @@ public:
                  break;
                case AS_ACTION_INHIBIT_ON:
                  ch->inhibit(true);
+                 answer = REPLAY_ACK;
+                 break;
+               case AS_ACTION_STOP_CHANGE:
+                 ch->stop();
                  answer = REPLAY_ACK;
                  break;
                case AS_ACTION_SET:

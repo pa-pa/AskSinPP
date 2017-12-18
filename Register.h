@@ -7,6 +7,7 @@
 #define __REGISTER_H__
 
 #include "ChannelList.h"
+#include "cm.h"
 #include "Debug.h"
 
 namespace as {
@@ -21,6 +22,7 @@ namespace as {
 #define DREG_SABOTAGEMSG     0x10
 #define DREG_LOWBATLIMIT     0x12
 #define DREG_TRANSMITTRYMAX     0x14
+#define DREG_CONFBUTTONTIME     0x15
 #define DREG_LOCALRESETDISABLE 0x18
 
 // Channel Registers used in List1
@@ -29,6 +31,12 @@ namespace as {
 #define CREG_LONGPRESSTIME 0x04
 #define CREG_AES_ACTIVE 0x08
 #define CREG_DOUBLEPRESSTIME 0x09
+#define CREG_REFERENCE_RUNNING_TIME_TOP_BOTTOM_1 0x0b
+#define CREG_REFERENCE_RUNNING_TIME_TOP_BOTTOM_2 0x0c
+#define CREG_REFERENCE_RUNNING_TIME_BOTTOM_TOP_1 0x0d
+#define CREG_REFERENCE_RUNNING_TIME_BOTTOM_TOP_2 0x0e
+#define CREG_CHANGE_OVER_DELAY 0x0f
+#define CREG_REFERENCE_RUN_COUNTER 0x10
 #define CREG_MSGFORPOS  0x20
 #define CREG_EVENTDELAYTIME 0x21
 #define CREG_LEDONTIME 0x22
@@ -69,6 +77,10 @@ namespace as {
 #define PREG_OFFDELAYSTEP 0x18
 #define PREG_OFFDELAYNEWTIME 0x19
 #define PREG_OFFDELAYOLDTIME 0x1A
+#define PREG_CTREPONOFF 0x1C
+#define PREG_MAXTIMEFIRSTDIR 0x1D
+#define PREG_JTREFONOFF 0x1E
+#define PREG_DRIVINGMODE 0x1F
 #define PREG_ELSEACTIONTYPE 0x26
 #define PREG_ELSEJTONOFF 0x27
 #define PREG_ELSEJTDELAYONOFF 0x28
@@ -79,6 +91,9 @@ namespace as {
 
 // some shortcuts
 #define MASTERID_REGS DREG_MASTER_ID1,DREG_MASTER_ID2,DREG_MASTER_ID3
+
+#define CREG_REFERENCE_RUNNING_TIME_TOP_BOTTOM CREG_REFERENCE_RUNNING_TIME_TOP_BOTTOM_1,CREG_REFERENCE_RUNNING_TIME_TOP_BOTTOM_2
+#define CREG_REFERENCE_RUNNING_TIME_BOTTOM_TOP CREG_REFERENCE_RUNNING_TIME_BOTTOM_TOP_1,CREG_REFERENCE_RUNNING_TIME_BOTTOM_TOP_2
 
 
 // This is only a helper class
@@ -272,6 +287,8 @@ public:
   uint8_t lowBatLimit () const { return this->readRegister(DREG_LOWBATLIMIT,0); }
   bool lowBatLimit (uint8_t value) const { return this->writeRegister(DREG_LOWBATLIMIT,value); }
 
+  uint8_t confButtonTime () const { return this->readRegister(DREG_CONFBUTTONTIME,0); }
+  bool confButtonTime (uint8_t value) const { return this->writeRegister(DREG_CONFBUTTONTIME,value); }
   bool localResetDisable (bool v) const { return this->writeBit(DREG_LOCALRESETDISABLE,0,v); }
   bool localResetDisable () const { return this->readBit(DREG_LOCALRESETDISABLE,0,false); }
 
@@ -306,6 +323,27 @@ public:
   bool longPressTime (uint8_t v) const { return this->writeRegister(CREG_LONGPRESSTIME,0x0f,4,v); }
   uint8_t doublePressTime () const { return this->readRegister(CREG_DOUBLEPRESSTIME,0x0f,0,0); }
   bool doublePressTime (uint8_t v) const { return this->writeRegister(CREG_DOUBLEPRESSTIME,0x0f,0,v); }
+
+  bool refRunningTimeTopButton (uint16_t value) const {
+    return this->writeRegister(CREG_REFERENCE_RUNNING_TIME_TOP_BOTTOM_1, (value >> 8) & 0xff) &&
+        this->writeRegister(CREG_REFERENCE_RUNNING_TIME_TOP_BOTTOM_2, value & 0xff);
+  }
+  uint16_t refRunningTimeTopButton () const {
+    return (this->readRegister(CREG_REFERENCE_RUNNING_TIME_TOP_BOTTOM_1,0) << 8) +
+        this->readRegister(CREG_REFERENCE_RUNNING_TIME_TOP_BOTTOM_2,0);
+  }
+  bool refRunningTimeButtonTop (uint16_t value) const {
+    return this->writeRegister(CREG_REFERENCE_RUNNING_TIME_BOTTOM_TOP_1, (value >> 8) & 0xff) &&
+        this->writeRegister(CREG_REFERENCE_RUNNING_TIME_BOTTOM_TOP_2, value & 0xff);
+  }
+  uint16_t refRunningTimeButtonTop () const {
+    return (this->readRegister(CREG_REFERENCE_RUNNING_TIME_BOTTOM_TOP_1,0) << 8) +
+        this->readRegister(CREG_REFERENCE_RUNNING_TIME_BOTTOM_TOP_2,0);
+  }
+  bool changeOverDelay(uint8_t v) const { return this->writeRegister(CREG_CHANGE_OVER_DELAY,v); }
+  uint8_t changeOverDelay() const { return this->readRegister(CREG_CHANGE_OVER_DELAY,0); }
+  bool refRunCounter(uint8_t v) const { return this->writeRegister(CREG_REFERENCE_RUN_COUNTER,v); }
+  uint8_t refRunCounter() const { return this->readRegister(CREG_REFERENCE_RUN_COUNTER,0); }
 
   uint8_t eventFilterPeriod () const { return this->readRegister(CREG_EVENTFILTER,0x0f,0,1); }
   bool eventFilterPeriod (uint8_t v) const { return this->writeRegister(CREG_EVENTFILTER,0x0f,0,v); }
@@ -359,6 +397,10 @@ public:
   bool ctOn (uint8_t v) const { return this->writeRegister(PREG_CTONOFF,0x0f,0,v); }
   uint8_t ctOff () const { return this->readRegister(PREG_CTONOFF,0x0f,4); }
   bool ctOff (uint8_t v) const { return this->writeRegister(PREG_CTONOFF,0x0f,4,v); }
+  uint8_t ctRepOn () const { return this->readRegister(PREG_CTREPONOFF,0x0f,0); }
+  bool ctRepOn (uint8_t v) const { return this->writeRegister(PREG_CTREPONOFF,0x0f,0,v); }
+  uint8_t ctRepOff () const { return this->readRegister(PREG_CTREPONOFF,0x0f,4); }
+  bool ctRepOff (uint8_t v) const { return this->writeRegister(PREG_CTREPONOFF,0x0f,4,v); }
 
   uint8_t ctValLo() const { return this->readRegister(PREG_CONDVALUELOW,0x32); }
   bool ctValLo(uint8_t v) const { return this->writeRegister(PREG_CONDVALUELOW,v); }
@@ -382,18 +424,22 @@ public:
   bool onTimeMode() const { return this->readBit(PREG_ACTIONTYPE,7,false); }
   bool onTimeMode(bool v) const { return this->writeBit(PREG_ACTIONTYPE,7,v); }
 
-  uint8_t jtOn () const { return this->readRegister(PREG_JTONOFF,0x0f,0); }
+  uint8_t jtOn () const { return this->readRegister(PREG_JTONOFF,0x0f,0,AS_CM_JT_OFFDELAY); }
   bool jtOn (uint8_t v) const { return this->writeRegister(PREG_JTONOFF,0x0f,0,v); }
-  uint8_t jtOff () const { return this->readRegister(PREG_JTONOFF,0x0f,4); }
+  uint8_t jtOff () const { return this->readRegister(PREG_JTONOFF,0x0f,4,AS_CM_JT_ONDELAY); }
   bool jtOff (uint8_t v) const { return this->writeRegister(PREG_JTONOFF,0x0f,4,v); }
-  uint8_t jtDlyOn () const { return this->readRegister(PREG_JTDELAYONOFF,0x0f,0); }
+  uint8_t jtDlyOn () const { return this->readRegister(PREG_JTDELAYONOFF,0x0f,0,AS_CM_JT_REFON); }
   bool jtDlyOn (uint8_t v) const { return this->writeRegister(PREG_JTDELAYONOFF,0x0f,0,v); }
-  uint8_t jtDlyOff () const { return this->readRegister(PREG_JTDELAYONOFF,0x0f,4); }
+  uint8_t jtDlyOff () const { return this->readRegister(PREG_JTDELAYONOFF,0x0f,4,AS_CM_JT_REFOFF); }
   bool jtDlyOff (uint8_t v) const { return this->writeRegister(PREG_JTDELAYONOFF,0x0f,4,v); }
-  uint8_t jtRampOn () const { return this->readRegister(PREG_JTRAMPONOFF,0x0f,0); }
+  uint8_t jtRampOn () const { return this->readRegister(PREG_JTRAMPONOFF,0x0f,0,AS_CM_JT_ON); }
   bool jtRampOn (uint8_t v) const { return this->writeRegister(PREG_JTRAMPONOFF,0x0f,0,v); }
-  uint8_t jtRampOff () const { return this->readRegister(PREG_JTRAMPONOFF,0x0f,4); }
+  uint8_t jtRampOff () const { return this->readRegister(PREG_JTRAMPONOFF,0x0f,4,AS_CM_JT_OFF); }
   bool jtRampOff (uint8_t v) const { return this->writeRegister(PREG_JTRAMPONOFF,0x0f,4,v); }
+  uint8_t jtRefOn () const { return this->readRegister(PREG_JTREFONOFF,0x0f,0,AS_CM_JT_RAMPON); }
+  bool jtRefOn (uint8_t v) const { return this->writeRegister(PREG_JTREFONOFF,0x0f,0,v); }
+  uint8_t jtRefOff () const { return this->readRegister(PREG_JTREFONOFF,0x0f,4,AS_CM_JT_RAMPOFF); }
+  bool jtRefOff (uint8_t v) const { return this->writeRegister(PREG_JTREFONOFF,0x0f,4,v); }
 
   bool offDelayBlink() const { return this->readBit(PREG_DELAYMODE,5,0); }
   bool offDelayBlink(bool v) const { return this->writeBit(PREG_DELAYMODE,5,v); }
@@ -408,6 +454,11 @@ public:
   bool onMinLevel(uint8_t v) const { return this->writeRegister(PREG_ONMINLEVEL,v); }
   uint8_t onLevel() const { return this->readRegister(PREG_ONLEVEL,200); }
   bool onLevel(uint8_t v) const { return this->writeRegister(PREG_ONLEVEL,v); }
+  uint8_t maxTimeFirstDir() const { return this->readRegister(PREG_MAXTIMEFIRSTDIR,254); }
+  bool maxTimeFirstDir(uint8_t v) const { return this->writeRegister(PREG_MAXTIMEFIRSTDIR,v); }
+  uint8_t drivingMode() const { return this->readRegister(PREG_DRIVINGMODE,0); }
+  bool drivingMode(uint8_t v) const { return this->writeRegister(PREG_DRIVINGMODE,v); }
+
   uint8_t rampStartStep() const { return this->readRegister(PREG_RAMPSTARTSTEP,10); }
   bool rampStartStep(uint8_t v) const { return this->writeRegister(PREG_RAMPSTARTSTEP,v); }
   uint8_t rampOnTime() const { return this->readRegister(PREG_RAMPONTIME,0x00); }

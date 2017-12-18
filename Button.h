@@ -212,12 +212,48 @@ public:
   }
 };
 
+template <class DEVTYPE,uint8_t OFFSTATE=HIGH,uint8_t ONSTATE=LOW,WiringPinMode MODE=INPUT_PULLUP>
+class InternalButton : public StateButton<HIGH,LOW,INPUT_PULLUP> {
+  DEVTYPE& device;
+  uint8_t  num;
+public:
+  typedef StateButton<HIGH,LOW,INPUT_PULLUP> ButtonType;
+
+  InternalButton (DEVTYPE& dev,uint8_t n,uint8_t longpresstime=3) : device(dev), num(n) {
+    setLongPressTime(seconds2ticks(longpresstime));
+  }
+  virtual void state (uint8_t s) {
+    ButtonType::state(s);
+    if( s == ButtonType::released ) {
+      RemoteEventMsg& msg = fillMsg(false);
+      device.channel(1).process(msg);
+    }
+    else if( s == ButtonType::longpressed ) {
+      RemoteEventMsg& msg = fillMsg(true);
+      device.channel(1).process(msg);
+    }
+  }
+  RemoteEventMsg& fillMsg (bool lg) {
+    RemoteEventMsg& msg = (RemoteEventMsg&)device.message();
+    HMID self;
+    device.getDeviceID(self);
+    uint8_t cnt = device.nextcount();
+    msg.init(cnt,num,cnt,lg,false);
+    msg.to(self);
+    msg.from(self);
+    return msg;
+  }
+};
+
 #define buttonISR(btn,pin) class btn##ISRHandler { \
   public: \
   static void isr () { btn.check(); } \
 }; \
 btn.init(pin); \
-enableInterrupt(pin,btn##ISRHandler::isr,CHANGE);
+if( digitalPinToInterrupt(pin) == NOT_AN_INTERRUPT ) \
+  enableInterrupt(pin,btn##ISRHandler::isr,CHANGE); \
+else \
+  attachInterrupt(digitalPinToInterrupt(pin),btn##ISRHandler::isr,CHANGE);
 
 }
 

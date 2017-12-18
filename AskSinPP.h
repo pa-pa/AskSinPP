@@ -22,7 +22,7 @@
   #define memcmp_P(src,dst,count) memcmp((src),(dst),(count))
 #else
   #ifdef ARDUINO_ARCH_ATMEGA32
-    inline uint8_t digitalPinToInterrupt(uint8_t pin) { return pin == 11 ? 1 : 0; } // D2 -> 0 && D3 -> 1
+    inline uint8_t digitalPinToInterrupt(uint8_t pin) { return pin == 11 ? 1 : ( pin == 10 ? 0 : NOT_AN_INTERRUPT); } // D2 -> 0 && D3 -> 1
   #endif
   // if we have no EnableInterrupt Library - and also no PCINT - use polling
   #ifndef EnableInterrupt_h

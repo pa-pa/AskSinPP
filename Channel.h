@@ -216,6 +216,8 @@ public:
     return List4Type::size() > 0;
   }
 
+  void stop () {}
+
   bool process (__attribute__((unused)) const ActionSetMsg& msg) {
     return false;
   }
@@ -270,6 +272,7 @@ public:
   virtual bool deletepeer (const Peer& p) = 0;
   virtual void firstinit () = 0;
 
+  virtual void stop () = 0;
   virtual bool process (const ActionSetMsg& msg) = 0;
   virtual bool process (const RemoteEventMsg& msg) = 0;
   virtual bool process (const SensorEventMsg& msg) = 0;
@@ -313,6 +316,7 @@ public:
   virtual bool deletepeer (const Peer& p) { return ch.deletepeer(p); }
   virtual void firstinit () { ch.firstinit(); }
 
+  virtual void stop () { ch.stop(); };
   virtual bool process (const ActionSetMsg& msg) { return ch.process(msg); }
   virtual bool process (const RemoteEventMsg& msg) { return ch.process(msg); }
   virtual bool process (const SensorEventMsg& msg) { return ch.process(msg); }

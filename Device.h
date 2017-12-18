@@ -189,7 +189,7 @@ public:
 
   bool pollRadio () {
     uint8_t num = radio().read(msg);
-    if( num > 0 ) {
+    if( num > 10 ) { // minimal msg is 10 byte
       return process(msg);
     }
     return false;

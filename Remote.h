@@ -94,15 +94,20 @@ public:
   static void isr () { device.channel(chan).pinchanged(); } \
 }; \
 device.channel(chan).button().init(pin); \
-enableInterrupt(pin,device##chan##ISRHandler::isr,CHANGE);
+if( digitalPinToInterrupt(pin) == NOT_AN_INTERRUPT ) \
+  enableInterrupt(pin,device##chan##ISRHandler::isr,CHANGE); \
+else \
+  attachInterrupt(digitalPinToInterrupt(pin),device##chan##ISRHandler::isr,CHANGE);
 
 #define remoteChannelISR(chan,pin) class __##pin##ISRHandler { \
-    public: \
-    static void isr () { chan.pinchanged(); } \
-  }; \
-  chan.button().init(pin); \
-  enableInterrupt(pin,__##pin##ISRHandler::isr,CHANGE);
-
+  public: \
+  static void isr () { chan.pinchanged(); } \
+}; \
+chan.button().init(pin); \
+if( digitalPinToInterrupt(pin) == NOT_AN_INTERRUPT ) \
+  enableInterrupt(pin,__##pin##ISRHandler::isr,CHANGE); \
+else \
+  attachInterrupt(digitalPinToInterrupt(pin),__##pin##ISRHandler::isr,CHANGE);
 
 }
 
