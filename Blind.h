@@ -486,40 +486,17 @@ class BlindChannel : public Channel<HalType,BlindList1,BlindList3,EmptyList,Peer
 
 protected:
   typedef Channel<HalType,BlindList1,BlindList3,EmptyList,PeerCount,List0Type> BaseChannel;
-  uint8_t onpin, dirpin;
   uint8_t lastmsgcnt;
 
 public:
-  BlindChannel () : BaseChannel(), onpin(0), dirpin(0), lastmsgcnt(0xff) {}
+  BlindChannel () : BaseChannel(), lastmsgcnt(0xff) {}
   virtual ~BlindChannel() {}
-
-  virtual void switchState(uint8_t oldstate,uint8_t newstate) {
-    BlindStateMachine::switchState(oldstate, newstate);
-    if( newstate == AS_CM_JT_RAMPON ) {
-      digitalWrite(dirpin,HIGH);
-      digitalWrite(onpin,HIGH);
-    }
-    else if( newstate == AS_CM_JT_RAMPOFF ) {
-      digitalWrite(dirpin,LOW);
-      digitalWrite(onpin,HIGH);
-    }
-    else {
-      digitalWrite(dirpin,LOW);
-      digitalWrite(onpin,LOW);
-    }
-  }
 
   bool changed () const { return BlindStateMachine::changed; }
 
   void changed (bool c) { BlindStateMachine::changed = c; }
 
-  void init (uint8_t on,uint8_t dir) {
-    onpin=on;
-    dirpin=dir;
-    pinMode(onpin,OUTPUT);
-    pinMode(dirpin,OUTPUT);
-    digitalWrite(dirpin,LOW);
-    digitalWrite(onpin,LOW);
+  void init () {
 //    typename BaseChannel::List1 l1 = BaseChannel::getList1();
     setState(AS_CM_JT_OFF, DELAY_INFINITE);
     changed(true);

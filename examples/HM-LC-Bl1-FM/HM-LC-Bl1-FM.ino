@@ -63,9 +63,50 @@ public:
   }
 };
 
+class BlChannel : public BlindChannel<Hal,PEERS_PER_CHANNEL,BlindList0> {
+public:
+  typedef BlindChannel<Hal,PEERS_PER_CHANNEL,BlindList0> BaseChannel;
+  BlChannel () {}
+  virtual ~BlChannel () {}
+
+  virtual void switchState(uint8_t oldstate,uint8_t newstate) {
+    BaseChannel::switchState(oldstate, newstate);
+    if( newstate == AS_CM_JT_RAMPON ) {
+      motorUp();
+    }
+    else if( newstate == AS_CM_JT_RAMPOFF ) {
+      motorDown();
+    }
+    else {
+      motorStop();
+    }
+  }
+
+  void motorUp () {
+    digitalWrite(DIR_RELAY_PIN,HIGH);
+    digitalWrite(ON_RELAY_PIN,HIGH);
+  }
+
+  void motorDown () {
+    digitalWrite(DIR_RELAY_PIN,LOW);
+    digitalWrite(ON_RELAY_PIN,HIGH);
+  }
+
+  void motorStop () {
+    digitalWrite(DIR_RELAY_PIN,LOW);
+    digitalWrite(ON_RELAY_PIN,LOW);
+  }
+
+  void init () {
+    pinMode(ON_RELAY_PIN,OUTPUT);
+    pinMode(DIR_RELAY_PIN,OUTPUT);
+    motorStop();
+    BaseChannel::init();
+  }
+};
 
 // setup the device with channel type and number of channels
-typedef MultiChannelDevice<Hal,BlindChannel<Hal,PEERS_PER_CHANNEL,BlindList0>,1,BlindList0> BlindType;
+typedef MultiChannelDevice<Hal,BlChannel,1,BlindList0> BlindType;
 
 Hal hal;
 BlindType sdev(devinfo,0x20);
@@ -88,7 +129,7 @@ void setup () {
   DINIT(57600,ASKSIN_PLUS_PLUS_IDENTIFIER);
   //storage().setByte(0,0);
   bool first = sdev.init(hal);
-  sdev.channel(1).init(ON_RELAY_PIN,DIR_RELAY_PIN);
+  sdev.channel(1).init();
 
   buttonISR(cfgBtn,CONFIG_BUTTON_PIN);
   buttonISR(btnup,UP_BUTTON_PIN);
