@@ -174,7 +174,7 @@ class BlindStateMachine {
     virtual void trigger (__attribute__((unused)) AlarmClock& clock) {
       if( sm.state == AS_CM_JT_RAMPON || sm.state == AS_CM_JT_RAMPOFF ) {
         // update level to destlevel
-        sm.updateLevel(sm.destlevel,true);
+        sm.updateLevel(sm.destlevel);
       }
       uint8_t next = sm.getNextState();
       uint32_t dly = sm.getDelayForState(next,lst);
@@ -187,40 +187,47 @@ class BlindStateMachine {
     uint16_t  done;
     uint16_t  fulltime;
     uint8_t   startlevel;
-    uint8_t   changetimeout, changestep;
   public:
-    LevelUpdate (BlindStateMachine& m) : Alarm(0), sm(m), done(0), fulltime(0), startlevel(0), changetimeout(0), changestep(0) {}
+    LevelUpdate (BlindStateMachine& m) : Alarm(0), sm(m), done(0), fulltime(0), startlevel(0) {}
     ~LevelUpdate () {}
-    void start (AlarmClock& clock,uint16_t ft,uint8_t chtimeout) {
+    void start (AlarmClock& clock,uint16_t ft) {
       startlevel = sm.status();
       fulltime = ft;
       done = 0;
-      changetimeout = chtimeout;
       set(seconds2ticks(1));
       clock.add(*this);
+      sm.changed = true;
     }
     virtual void trigger (AlarmClock& clock) {
-      bool chupd = false;
-      // changetimeout is 0.1s
-      changestep += 10;
-      if( changestep >= changetimeout ) {
-        chupd = true;
-        changestep -= changetimeout;
-      }
       // fulltime is 0.1s - so we add 10 for a second
       done += 10;
       if( done > fulltime ) done = fulltime;
       uint8_t dx = (done * 200UL) / fulltime;
       if( sm.state == AS_CM_JT_RAMPON ) {
         if( dx > (200-startlevel) ) dx = 200-startlevel;
-        sm.updateLevel(startlevel + dx,chupd);
+        sm.updateLevel(startlevel + dx);
       }
       else if( sm.state == AS_CM_JT_RAMPOFF ) {
         if( dx > startlevel ) dx = startlevel;
-        sm.updateLevel(startlevel - dx,chupd);
+        sm.updateLevel(startlevel - dx);
       }
       set(seconds2ticks(1));
       clock.add(*this);
+    }
+  };
+
+  class ChangedAlarm : public Alarm {
+    BlindStateMachine&  sm;
+  public:
+    ChangedAlarm (BlindStateMachine& s) : Alarm(0), sm(s) {}
+    virtual ~ChangedAlarm () {}
+    void set (uint32_t t,AlarmClock& clock) {
+      clock.cancel(*this);
+      Alarm::set(t);
+      clock.add(*this);
+    }
+    virtual void trigger (__attribute__((unused)) AlarmClock& clock) {
+      sm.changed = true;
     }
   };
 
@@ -249,10 +256,10 @@ public:
     }
   }
 
-  void updateLevel (uint8_t l,bool ch=false) {
+  void updateLevel (uint8_t l) {
     level = l;
     DDECLN(level);
-    changed = ch;
+    calarm.set(decis2ticks(list1.statusInfoMinDly()*5),sysclock);
   }
 
 protected:
@@ -260,20 +267,21 @@ protected:
   bool         changed;
   StateAlarm   alarm;
   LevelUpdate  update;
+  ChangedAlarm calarm;
   BlindList1   list1;
 
 public:
-  BlindStateMachine () : state(AS_CM_JT_NONE), level(0), destlevel(0), changed(false), alarm(*this), update(*this), list1(0) {}
+  BlindStateMachine () : state(AS_CM_JT_NONE), level(0), destlevel(0), changed(false), alarm(*this), update(*this), calarm(*this), list1(0) {}
   virtual ~BlindStateMachine () {}
 
   virtual void switchState(uint8_t oldstate,uint8_t newstate) {
     DPRINT("Switch from ");DHEX(oldstate);DPRINT(" to ");DHEXLN(newstate);
     switch( newstate ) {
     case AS_CM_JT_RAMPON:
-      update.start(sysclock, list1.refRunningTimeButtonTop(), list1.statusInfoMinDly()*5);
+      update.start(sysclock, list1.refRunningTimeButtonTop());
       break;
     case AS_CM_JT_RAMPOFF:
-      update.start(sysclock, list1.refRunningTimeTopButton(), list1.statusInfoMinDly()*5);
+      update.start(sysclock, list1.refRunningTimeTopButton());
       break;
     }
 
@@ -281,7 +289,6 @@ public:
     case AS_CM_JT_RAMPON:
     case AS_CM_JT_RAMPOFF:
       sysclock.cancel(update);
-      changed = true;
       break;
     }
   }
@@ -499,7 +506,8 @@ public:
   void init () {
 //    typename BaseChannel::List1 l1 = BaseChannel::getList1();
     setState(AS_CM_JT_OFF, DELAY_INFINITE);
-    changed(true);
+//    changed(true);
+    updateLevel(0);
   }
 
   void setup(Device<HalType,List0Type>* dev,uint8_t number,uint16_t addr) {
