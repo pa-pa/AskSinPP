@@ -282,7 +282,7 @@ public:
   bool cycleInfoMsg (bool value) const { return this->writeRegister(DREG_CYCLICINFOMSG,value); }
   uint8_t transmitDevTryMax () const { return this->readRegister(DREG_TRANSMITTRYMAX,6); }
   bool transmitDevTryMax (uint8_t value) const { return this->writeRegister(DREG_TRANSMITTRYMAX,value); }
-  bool sabotageMsg () const { return this->readRegister(DREG_SABOTAGEMSG,false); }
+  bool sabotageMsg () const { return this->readRegister(DREG_SABOTAGEMSG,true); }
   bool sabotageMsg (bool value) const { return this->writeRegister(DREG_SABOTAGEMSG,value); }
   uint8_t lowBatLimit () const { return this->readRegister(DREG_LOWBATLIMIT,0); }
   bool lowBatLimit (uint8_t value) const { return this->writeRegister(DREG_LOWBATLIMIT,value); }
