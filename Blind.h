@@ -8,6 +8,7 @@
 
 #include "MultiChannelDevice.h"
 #include "Register.h"
+#include "StateMachine.h"
 
 namespace as {
 
@@ -161,8 +162,7 @@ public:
 };
 
 
-class BlindStateMachine {
-  enum { DELAY_NO=0x00, DELAY_INFINITE=0xffffffff };
+class BlindStateMachine : public StateMachine<BlindPeerList> {
 
   class StateAlarm : public Alarm {
     BlindStateMachine&  sm;
@@ -216,24 +216,8 @@ class BlindStateMachine {
     }
   };
 
-  class ChangedAlarm : public Alarm {
-    BlindStateMachine&  sm;
-  public:
-    ChangedAlarm (BlindStateMachine& s) : Alarm(0), sm(s) {}
-    virtual ~ChangedAlarm () {}
-    void set (uint32_t t,AlarmClock& clock) {
-      clock.cancel(*this);
-      Alarm::set(t);
-      clock.add(*this);
-    }
-    virtual void trigger (__attribute__((unused)) AlarmClock& clock) {
-      sm.changed = true;
-    }
-  };
-
 public:
   void setState (uint8_t next,uint32_t delay,const BlindPeerList& lst=BlindPeerList(0)) {
-    // check deep to prevent infinite recursion
     if( next != AS_CM_JT_NONE ) {
       // first cancel possible running alarm
       sysclock.cancel(alarm);
@@ -259,19 +243,17 @@ public:
   void updateLevel (uint8_t l) {
     level = l;
     DDECLN(level);
-    calarm.set(decis2ticks(list1.statusInfoMinDly()*5),sysclock);
+    triggerChanged(decis2ticks(list1.statusInfoMinDly()*5));
   }
 
 protected:
   uint8_t      state, level, destlevel;
-  bool         changed;
   StateAlarm   alarm;
   LevelUpdate  update;
-  ChangedAlarm calarm;
   BlindList1   list1;
 
 public:
-  BlindStateMachine () : state(AS_CM_JT_NONE), level(0), destlevel(0), changed(false), alarm(*this), update(*this), calarm(*this), list1(0) {}
+  BlindStateMachine () : StateMachine<BlindPeerList>(), state(AS_CM_JT_NONE), level(0), destlevel(0), alarm(*this), update(*this), list1(0) {}
   virtual ~BlindStateMachine () {}
 
   virtual void switchState(uint8_t oldstate,uint8_t newstate) {
@@ -319,34 +301,6 @@ public:
       case AS_CM_JT_OFF:      return AS_CM_JT_ONDELAY;
     }
     return AS_CM_JT_NONE;
-  }
-
-  uint8_t getJumpTarget(uint8_t stat,const BlindPeerList& lst) const {
-    switch( stat ) {
-      case AS_CM_JT_ONDELAY:  return lst.jtDlyOn();
-      case AS_CM_JT_REFON:    return lst.jtRefOn();
-      case AS_CM_JT_RAMPON:   return lst.jtRampOn();
-      case AS_CM_JT_ON:       return lst.jtOn();
-      case AS_CM_JT_OFFDELAY: return lst.jtDlyOff();
-      case AS_CM_JT_REFOFF:   return lst.jtRefOff();
-      case AS_CM_JT_RAMPOFF:  return lst.jtRampOff();
-      case AS_CM_JT_OFF:      return lst.jtOff();
-    }
-    return AS_CM_JT_NONE;
-  }
-
-  uint8_t getConditionForState(uint8_t stat,const BlindPeerList& lst) const {
-    switch( stat ) {
-      case AS_CM_JT_ONDELAY:  return lst.ctDlyOn();
-      case AS_CM_JT_REFON:    return lst.ctRepOn();
-      case AS_CM_JT_RAMPON:   return lst.ctRampOn();
-      case AS_CM_JT_ON:       return lst.ctOn();
-      case AS_CM_JT_OFFDELAY: return lst.ctDlyOff();
-      case AS_CM_JT_REFOFF:   return lst.ctRepOff();
-      case AS_CM_JT_RAMPOFF:  return lst.ctRampOff();
-      case AS_CM_JT_OFF:      return lst.ctOff();
-    }
-    return AS_CM_CT_X_GE_COND_VALUE_LO;
   }
 
   uint32_t getDelayForState(uint8_t stat,const BlindPeerList& lst) {
@@ -399,32 +353,6 @@ public:
 
   bool delayActive () const { return sysclock.get(alarm) > 0; }
 
-  bool checkCondition (const BlindPeerList& lst,uint8_t value) {
-    uint8_t cond = getConditionForState(state,lst);
-    bool doit = false;
-    switch( cond ) {
-    case AS_CM_CT_X_GE_COND_VALUE_LO:
-      doit = (value >= lst.ctValLo());
-      break;
-    case AS_CM_CT_X_GE_COND_VALUE_HI:
-      doit = (value >= lst.ctValHi());
-      break;
-    case AS_CM_CT_X_LT_COND_VALUE_LO:
-      doit = (value < lst.ctValLo());
-      break;
-    case AS_CM_CT_X_LT_COND_VALUE_HI:
-      doit = (value < lst.ctValHi());
-      break;
-    case AS_CM_CT_COND_VALUE_LO_LE_X_LT_COND_VALUE_HI:
-      doit = ((lst.ctValLo() <= value) && (value < lst.ctValHi()));
-      break;
-    case AS_CM_CT_X_LT_COND_VALUE_LO_OR_X_GE_COND_VALUE_HI:
-      doit = ((value < lst.ctValLo()) || (value >= lst.ctValHi()));
-      break;
-    }
-    return doit;
-  }
-
   void remote (const BlindPeerList& lst,uint8_t counter) {
     // perform action as defined in the list
     switch (lst.actionType()) {
@@ -441,7 +369,7 @@ public:
   }
 
   void sensor (const BlindPeerList& lst,uint8_t counter,uint8_t value) {
-    if( checkCondition(lst, value) == true ) {
+    if( checkCondition(state,lst,value) == true ) {
       remote(lst,counter);
     }
   }
