@@ -6,10 +6,12 @@
 #ifndef __STATE_MACHINE_H__
 #define __STATE_MACHINE_H__
 
+#include "Alarm.h"
+
 namespace as {
 
 template <class PeerList>
-class StateMachine {
+class StateMachine : public Alarm {
 
   class ChangedAlarm : public Alarm {
     StateMachine<PeerList>&  sm;
@@ -29,10 +31,95 @@ class StateMachine {
 protected:
   enum { DELAY_NO=0x00, DELAY_INFINITE=0xffffffff };
 
+  uint8_t       state;
   bool          changed;
   ChangedAlarm  calarm;
+  PeerList      actlst;
 
-  StateMachine () : changed(false), calarm(*this) {}
+  StateMachine () : Alarm(0), state(AS_CM_JT_NONE), changed(false), calarm(*this), actlst(0) {}
+  virtual ~StateMachine () {}
+
+  virtual void trigger (__attribute__((unused)) AlarmClock& clock) {
+    uint8_t next = getNextState();
+    uint32_t dly = getDelayForState(next,actlst);
+    setState(next,dly,actlst);
+  }
+
+  void setState (uint8_t next,uint32_t delay,const PeerList& lst=PeerList(0)) {
+    if( next != AS_CM_JT_NONE ) {
+      // first cancel possible running alarm
+      sysclock.cancel(*this);
+      // if state is different
+      while (state != next) {
+        switchState(state, next);
+        state = next;
+
+        if (delay == DELAY_NO) {
+          // go immediately to the next state
+          next = getNextState();
+          delay = getDelayForState(next,lst);
+        }
+      }
+      if (delay != DELAY_INFINITE) {
+        actlst = lst;
+        set(delay);
+        sysclock.add(*this);
+      }
+    }
+  }
+
+  virtual void switchState(__attribute__((unused)) uint8_t oldstate,__attribute__((unused)) uint8_t newstate) {}
+
+  void jumpToTarget(const PeerList& lst) {
+    uint8_t next = getJumpTarget(state,lst);
+    if( next != AS_CM_JT_NONE ) {
+      // get delay
+      uint32_t dly = getDelayForState(next,lst);
+      // switch to next
+      setState(next,dly,lst);
+    }
+  }
+
+  virtual uint8_t getNextState () {
+    switch( state ) {
+      case AS_CM_JT_ONDELAY:  return AS_CM_JT_REFON;
+      case AS_CM_JT_REFON:    return AS_CM_JT_RAMPON;
+      case AS_CM_JT_RAMPON:   return AS_CM_JT_ON;
+      case AS_CM_JT_ON:       return AS_CM_JT_OFFDELAY;
+      case AS_CM_JT_OFFDELAY: return AS_CM_JT_REFOFF;
+      case AS_CM_JT_REFOFF:   return AS_CM_JT_RAMPOFF;
+      case AS_CM_JT_RAMPOFF:  return AS_CM_JT_OFF;
+      case AS_CM_JT_OFF:      return AS_CM_JT_ONDELAY;
+    }
+    return AS_CM_JT_NONE;
+  }
+
+  virtual uint32_t getDelayForState(uint8_t stat,const PeerList& lst) {
+    uint32_t delay = getDefaultDelay(stat);
+    if( lst.valid() == true ) {
+      uint8_t value = 0;
+      switch( stat ) {
+        case AS_CM_JT_ONDELAY:  value = lst.onDly(); break;
+        case AS_CM_JT_ON:       value = lst.onTime(); break;
+        case AS_CM_JT_OFFDELAY: value = lst.offDly(); break;
+        case AS_CM_JT_OFF:      value = lst.offTime(); break;
+        default:                return delay; break;
+      }
+      delay = AskSinBase::byteTimeCvt(value);
+    }
+    return delay;
+  }
+
+  virtual uint32_t getDefaultDelay(uint8_t stat) const {
+    switch( stat ) {
+      case AS_CM_JT_ON:
+      case AS_CM_JT_OFF:
+        return DELAY_INFINITE;
+    }
+    return DELAY_NO;
+  }
+
+  bool delayActive () const { return sysclock.get(*this) > 0; }
 
   void triggerChanged (uint32_t delay) {
     calarm.set(delay,sysclock);

@@ -164,24 +164,6 @@ public:
 
 class BlindStateMachine : public StateMachine<BlindPeerList> {
 
-  class StateAlarm : public Alarm {
-    BlindStateMachine&  sm;
-    BlindPeerList       lst;
-  public:
-    StateAlarm (BlindStateMachine& m) : Alarm(0), sm(m), lst(0) {}
-    ~StateAlarm () {}
-    void list(BlindPeerList l) {lst=l;}
-    virtual void trigger (__attribute__((unused)) AlarmClock& clock) {
-      if( sm.state == AS_CM_JT_RAMPON || sm.state == AS_CM_JT_RAMPOFF ) {
-        // update level to destlevel
-        sm.updateLevel(sm.destlevel);
-      }
-      uint8_t next = sm.getNextState();
-      uint32_t dly = sm.getDelayForState(next,lst);
-      sm.setState(next,dly,lst);
-    }
-  };
-
   class LevelUpdate : public Alarm {
     BlindStateMachine&  sm;
     uint16_t  done;
@@ -217,29 +199,6 @@ class BlindStateMachine : public StateMachine<BlindPeerList> {
   };
 
 public:
-  void setState (uint8_t next,uint32_t delay,const BlindPeerList& lst=BlindPeerList(0)) {
-    if( next != AS_CM_JT_NONE ) {
-      // first cancel possible running alarm
-      sysclock.cancel(alarm);
-      // if state is different
-      while (state != next) {
-        switchState(state, next);
-        state = next;
-
-        if (delay == DELAY_NO) {
-          // go immediately to the next state
-          next = getNextState();
-          delay = getDelayForState(next,lst);
-        }
-      }
-      if (delay != DELAY_INFINITE) {
-        alarm.list(lst);
-        alarm.set(delay);
-        sysclock.add(alarm);
-      }
-    }
-  }
-
   void updateLevel (uint8_t l) {
     level = l;
     DDECLN(level);
@@ -247,13 +206,20 @@ public:
   }
 
 protected:
-  uint8_t      state, level, destlevel;
-  StateAlarm   alarm;
+  uint8_t      level, destlevel;
   LevelUpdate  update;
   BlindList1   list1;
 
+  virtual void trigger (AlarmClock& clock) {
+    if( state == AS_CM_JT_RAMPON || state == AS_CM_JT_RAMPOFF ) {
+      // update level to destlevel
+      updateLevel(destlevel);
+    }
+    StateMachine<BlindPeerList>::trigger(clock);
+  }
+
 public:
-  BlindStateMachine () : StateMachine<BlindPeerList>(), state(AS_CM_JT_NONE), level(0), destlevel(0), alarm(*this), update(*this), list1(0) {}
+  BlindStateMachine () : StateMachine<BlindPeerList>(), level(0), destlevel(0), /*alarm(*this),*/ update(*this), list1(0) {}
   virtual ~BlindStateMachine () {}
 
   virtual void switchState(uint8_t oldstate,uint8_t newstate) {
@@ -279,51 +245,15 @@ public:
     list1 = l1;
   }
 
-  void jumpToTarget(const BlindPeerList& lst) {
-    uint8_t next = getJumpTarget(state,lst);
-    if( next != AS_CM_JT_NONE ) {
-      // get delay
-      uint32_t dly = getDelayForState(next,lst);
-      // switch to next
-      setState(next,dly,lst);
-    }
-  }
-
-  uint8_t getNextState () {
-    switch( state ) {
-      case AS_CM_JT_ONDELAY:  return AS_CM_JT_REFON;
-      case AS_CM_JT_REFON:    return AS_CM_JT_RAMPON;
-      case AS_CM_JT_RAMPON:   return AS_CM_JT_ON;
-      case AS_CM_JT_ON:       return AS_CM_JT_OFFDELAY;
-      case AS_CM_JT_OFFDELAY: return AS_CM_JT_REFOFF;
-      case AS_CM_JT_REFOFF:   return AS_CM_JT_RAMPOFF;
-      case AS_CM_JT_RAMPOFF:  return AS_CM_JT_OFF;
-      case AS_CM_JT_OFF:      return AS_CM_JT_ONDELAY;
-    }
-    return AS_CM_JT_NONE;
-  }
-
-  uint32_t getDelayForState(uint8_t stat,const BlindPeerList& lst) {
+  virtual uint32_t getDelayForState(uint8_t stat,const BlindPeerList& lst) {
     if( lst.valid () == true ) {
       if( stat == AS_CM_JT_RAMPON ) destlevel = 200;
       else if( stat == AS_CM_JT_RAMPOFF ) destlevel = 0;
     }
-    uint32_t delay = getDefaultDelay(stat);
-    if( lst.valid() == true ) {
-      uint8_t value = 0;
-      switch( stat ) {
-        case AS_CM_JT_ONDELAY:  value = lst.onDly(); break;
-        case AS_CM_JT_ON:       value = lst.onTime(); break;
-        case AS_CM_JT_OFFDELAY: value = lst.offDly(); break;
-        case AS_CM_JT_OFF:      value = lst.offTime(); break;
-        default:                return delay; break;
-      }
-      delay = AskSinBase::byteTimeCvt(value);
-    }
-    return delay;
+    return StateMachine<BlindPeerList>::getDelayForState(stat,lst);
   }
 
-  uint32_t getDefaultDelay(uint8_t stat) const {
+  virtual uint32_t getDefaultDelay(uint8_t stat) const {
     switch( stat ) {
       case AS_CM_JT_ON:
       case AS_CM_JT_OFF:
@@ -349,9 +279,6 @@ public:
     DPRINT("calcDriveTime: ");DDEC(fulltime);DPRINT(" - ");DDEC(dx);DPRINT(" - ");DDECLN(dt);
     return decis2ticks(dt);
   }
-
-
-  bool delayActive () const { return sysclock.get(alarm) > 0; }
 
   void remote (const BlindPeerList& lst,uint8_t counter) {
     // perform action as defined in the list
