@@ -322,7 +322,7 @@ public:
 
   void stop () {
     if( state == AS_CM_JT_RAMPON || state == AS_CM_JT_RAMPOFF ) {
-      setState(getNextState(),DELAY_INFINITE);
+      setState(getNextState(state),DELAY_INFINITE);
     }
   }
 
