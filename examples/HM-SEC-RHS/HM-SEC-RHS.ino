@@ -97,9 +97,9 @@ public:
   RHSList0(uint16_t addr) : RegList0<Reg0>(addr) {}
   void defaults () {
     clear();
-    cycleInfoMsg(false);
+    // cycleInfoMsg(false);
     transmitDevTryMax(6);
-    //sabotageMsg(false);
+    sabotageMsg(true);
   }
 };
 
