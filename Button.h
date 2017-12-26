@@ -30,15 +30,26 @@ public:
     longreleased = 6,
   };
 
+  class CheckAlarm : public Alarm {
+  public:
+    StateButton& sb;
+    CheckAlarm (StateButton& _sb) : Alarm(0), sb(_sb) {}
+    ~CheckAlarm () {}
+    virtual void trigger(__attribute__((unused)) AlarmClock& clock) {
+      sb.check();
+    }
+  };
+
 protected:
   uint8_t  stat     : 3;
   uint8_t  pinstate : 1;
   uint8_t  pin;
   uint16_t longpresstime;
+  CheckAlarm ca;
 
 public:
   StateButton() :
-      Alarm(0), stat(none), pinstate(OFFSTATE), pin(0), longpresstime(millis2ticks(400))  {
+      Alarm(0), stat(none), pinstate(OFFSTATE), pin(0), longpresstime(millis2ticks(400)), ca(*this)  {
   }
   virtual ~StateButton() {
   }
@@ -104,6 +115,12 @@ public:
 
   uint8_t state() const {
     return stat;
+  }
+
+  void irq () {
+    sysclock.cancel(ca);
+    // use alarm to run code outside of interrupt
+    sysclock.add(ca);
   }
 
   void check() {
@@ -193,7 +210,7 @@ public:
       msg.to(self);
       msg.from(self);
       if( device.channel(1).process(msg) == false ) {
-        DPRINTLN("No self peer - use toggleState");
+        DPRINTLN(F("No self peer - use toggleState"));
         // no self peer - use old toggle code
         device.channel(1).toggleState();
       }
@@ -252,7 +269,7 @@ public:
 
 #define buttonISR(btn,pin) class btn##ISRHandler { \
   public: \
-  static void isr () { btn.check(); } \
+  static void isr () { btn.irq(); } \
 }; \
 btn.init(pin); \
 if( digitalPinToInterrupt(pin) == NOT_AN_INTERRUPT ) \
