@@ -43,8 +43,8 @@
   #define RELAY4_PIN 14
   #define BUTTON1_PIN 6
   #define BUTTON2_PIN 3
-  #define BUTTON3_PIN 18
-  #define BUTTON4_PIN 19
+  #define BUTTON3_PIN 19
+  #define BUTTON4_PIN 18
 #else
   // relay output pins compatible to the HM_Relay project
   #define RELAY1_PIN 5
@@ -81,7 +81,15 @@ typedef MultiChannelDevice<Hal,SwitchChannel<Hal,PEERS_PER_CHANNEL,List0>,4> Swi
 
 Hal hal;
 SwitchType sdev(devinfo,0x20);
+#ifdef HM_SENSOR_RELAY
+ConfigButton<SwitchType> cfgBtn(sdev);
+InternalButton<SwitchType> btn1(sdev,1);
+InternalButton<SwitchType> btn2(sdev,2);
+InternalButton<SwitchType> btn3(sdev,3);
+InternalButton<SwitchType> btn4(sdev,4);
+#else
 ConfigToggleButton<SwitchType> cfgBtn(sdev);
+#endif
 
 // if A0 and A1 connected
 // we use LOW for ON and HIGH for OFF
@@ -139,7 +147,12 @@ void setup () {
   sdev.channel(4).init(RELAY4_PIN,low);
 
   buttonISR(cfgBtn,CONFIG_BUTTON_PIN);
-
+#ifdef HM_SENSOR_RELAY
+  buttonISR(btn1,BUTTON1_PIN);
+  buttonISR(btn2,BUTTON2_PIN);
+  buttonISR(btn3,BUTTON3_PIN);
+  buttonISR(btn4,BUTTON4_PIN);
+#endif
   initModelType();
   initPeerings(first);
   sdev.initDone();

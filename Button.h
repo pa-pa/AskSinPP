@@ -219,18 +219,18 @@ class InternalButton : public StateButton<HIGH,LOW,INPUT_PULLUP> {
 public:
   typedef StateButton<HIGH,LOW,INPUT_PULLUP> ButtonType;
 
-  InternalButton (DEVTYPE& dev,uint8_t n,uint8_t longpresstime=3) : device(dev), num(n) {
-    setLongPressTime(seconds2ticks(longpresstime));
+  InternalButton (DEVTYPE& dev,uint8_t n,uint8_t longpresstime=4) : device(dev), num(n) {
+    setLongPressTime(decis2ticks(longpresstime));
   }
   virtual void state (uint8_t s) {
     ButtonType::state(s);
     if( s == ButtonType::released ) {
       RemoteEventMsg& msg = fillMsg(false);
-      device.channel(1).process(msg);
+      device.process(msg);
     }
     else if( s == ButtonType::longpressed ) {
       RemoteEventMsg& msg = fillMsg(true);
-      device.channel(1).process(msg);
+      device.process(msg);
     }
   }
   RemoteEventMsg& fillMsg (bool lg) {
@@ -242,6 +242,11 @@ public:
     msg.to(self);
     msg.from(self);
     return msg;
+  }
+  Peer peer () const {
+    HMID self;
+    device.getDeviceID(self);
+    return Peer(self,num);
   }
 };
 
