@@ -232,11 +232,11 @@ public:
 template <class DEVTYPE,uint8_t OFFSTATE=HIGH,uint8_t ONSTATE=LOW,WiringPinMode MODE=INPUT_PULLUP>
 class InternalButton : public StateButton<HIGH,LOW,INPUT_PULLUP> {
   DEVTYPE& device;
-  uint8_t  num;
+  uint8_t  num, counter;
 public:
   typedef StateButton<HIGH,LOW,INPUT_PULLUP> ButtonType;
 
-  InternalButton (DEVTYPE& dev,uint8_t n,uint8_t longpresstime=4) : device(dev), num(n) {
+  InternalButton (DEVTYPE& dev,uint8_t n,uint8_t longpresstime=4) : device(dev), num(n), counter(0) {
     setLongPressTime(decis2ticks(longpresstime));
   }
   virtual void state (uint8_t s) {
@@ -244,10 +244,14 @@ public:
     if( s == ButtonType::released ) {
       RemoteEventMsg& msg = fillMsg(false);
       device.process(msg);
+      counter++;
     }
     else if( s == ButtonType::longpressed ) {
       RemoteEventMsg& msg = fillMsg(true);
       device.process(msg);
+    }
+    else if( s == ButtonType::longreleased ) {
+      counter++;
     }
   }
   RemoteEventMsg& fillMsg (bool lg) {
@@ -255,7 +259,7 @@ public:
     HMID self;
     device.getDeviceID(self);
     uint8_t cnt = device.nextcount();
-    msg.init(cnt,num,cnt,lg,false);
+    msg.init(cnt,num,counter,lg,false);
     msg.to(self);
     msg.from(self);
     return msg;
