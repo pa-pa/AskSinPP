@@ -8,8 +8,8 @@
 
 #include "MultiChannelDevice.h"
 #include "Register.h"
+#include "Sensors.h"
 
-extern uint8_t measureBrightness ();
 
 namespace as {
 
@@ -40,7 +40,7 @@ public:
   }
 };
 
-template <class HalType,int PeerCount,class List0Type=List0>
+template <class HalType,int PeerCount,class List0Type=List0,class BrightnessSensor=BrightnessFake>
 class MotionChannel : public Channel<HalType,MotionList1,EmptyList,DefList4,PeerCount,List0Type>, public Alarm {
 
   class QuietMode : public Alarm {
@@ -90,18 +90,26 @@ private:
   QuietMode        quiet;
   Cycle            cycle;
   volatile bool    isrenabled : 1;
+  BrightnessSensor brightsens;
+  uint16_t         maxbright;
 
 public:
   typedef Channel<HalType,MotionList1,EmptyList,DefList4,PeerCount,List0Type> ChannelType;
 
-  MotionChannel () : ChannelType(), Alarm(0), counter(0), quiet(*this), cycle(*this), isrenabled(true) {
+  MotionChannel () : ChannelType(), Alarm(0), counter(0), quiet(*this), cycle(*this), isrenabled(true), maxbright(1) {
     sysclock.add(cycle);
     pirInterruptOn();
+    brightsens.init();
   }
   virtual ~MotionChannel () {}
 
-  uint8_t status () const {
-    return measureBrightness();
+  uint8_t status () {
+    uint16_t bright = brightsens.brightness();
+    if( bright > maxbright ) {
+      maxbright = bright;
+    }
+    // scale to value between 0 - 200s
+    return (uint8_t)(bright * 200UL / maxbright);
   }
 
   uint8_t flags () const {

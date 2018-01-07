@@ -31,3 +31,11 @@ In FHEM you can get the key from the *hmKey*,
 *hmKey2*, *hmKey3* attributes of the VCCU. The index is the key
 number multiplied by 2.
 
+## Referenced Sensor Libraries
+
+https://github.com/spease/Sensirion.git
+https://github.com/adafruit/TSL2561-Arduino-Library
+https://github.com/adafruit/Adafruit-BMP085-Library
+
+
+

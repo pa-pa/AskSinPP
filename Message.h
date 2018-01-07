@@ -508,7 +508,7 @@ public:
 class AckStatusMsg : public Message {
 public:
   template <class ChannelType>
-  void init(const ChannelType& ch,uint8_t rssi) {
+  void init(ChannelType& ch,uint8_t rssi) {
     initWithCount(0x0e,AS_MESSAGE_RESPONSE,0x00,AS_RESPONSE_ACK_STATUS);
     subcom = ch.number();
     pload[0] = ch.status();
@@ -578,7 +578,7 @@ public:
 class InfoActuatorStatusMsg : public Message {
 public:
   template <class ChannelType>
-  void init (uint8_t count,const ChannelType& ch,uint8_t rssi) {
+  void init (uint8_t count,ChannelType& ch,uint8_t rssi) {
     Message::init(0x0e,count,0x10,BIDI|WKMEUP,0x06,ch.number());
     pload[0] = ch.status();
     pload[1] = ch.flags();

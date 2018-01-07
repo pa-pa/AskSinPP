@@ -276,8 +276,8 @@ public:
   virtual bool process (const ActionSetMsg& msg) = 0;
   virtual bool process (const RemoteEventMsg& msg) = 0;
   virtual bool process (const SensorEventMsg& msg) = 0;
-  virtual uint8_t status () const = 0;
-  virtual uint8_t flags () const = 0;
+  virtual uint8_t status () = 0;
+  virtual uint8_t flags () = 0;
 
   virtual void patchStatus (Message& msg) = 0;
   virtual void configChanged () = 0;
@@ -320,8 +320,8 @@ public:
   virtual bool process (const ActionSetMsg& msg) { return ch.process(msg); }
   virtual bool process (const RemoteEventMsg& msg) { return ch.process(msg); }
   virtual bool process (const SensorEventMsg& msg) { return ch.process(msg); }
-  virtual uint8_t status () const { return ch.status(); }
-  virtual uint8_t flags () const { return ch.flags(); }
+  virtual uint8_t status () { return ch.status(); }
+  virtual uint8_t flags () { return ch.flags(); }
 
   virtual void patchStatus (Message& msg) { ch.patchStatus(msg); }
   virtual void configChanged () { ch.configChanged(); }
