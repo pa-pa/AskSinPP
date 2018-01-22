@@ -49,8 +49,8 @@ using namespace as;
 const struct DeviceInfo PROGMEM devinfo = {
     {0x09,0x56,0x34},       // Device ID
     "papa222111",           // Device Serial
-    {0x00,0x30},            // Device Model
-    0x18,                   // Firmware Version
+    {0x00,0xC3},            // Device Model
+    0x22,                   // Firmware Version
     as::DeviceType::ThreeStateSensor, // Device Type
     {0x01,0x00}             // Info Bytes
 };
@@ -97,7 +97,7 @@ public:
   RHSList0(uint16_t addr) : RegList0<Reg0>(addr) {}
   void defaults () {
     clear();
-    // cycleInfoMsg(false);
+    cycleInfoMsg(true);
     transmitDevTryMax(6);
     sabotageMsg(true);
   }
