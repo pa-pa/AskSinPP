@@ -137,7 +137,7 @@ public:
   }
 
   uint8_t smokeState () {
-    return digitalRead(senspin) == LOW ? 200 : 0;
+    return digitalRead(senspin) == LOW ? 200 : 1;
   }
 
   void sound (bool on) {
