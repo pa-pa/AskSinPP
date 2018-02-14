@@ -211,6 +211,10 @@ public:
     msg.to(to);
     getDeviceID(msg.from());
     msg.setRpten(); // has to be set always
+    return send(msg);
+  }
+
+  bool send(Message& msg) {
     bool result = false;
     uint8_t maxsend = 6;
     led().set(LedStates::send);
@@ -219,7 +223,7 @@ public:
       DPRINT(F("<- "));
       msg.dump();
       maxsend--;
-      if( result == true && msg.ackRequired() == true && to.valid() == true ) {
+      if( result == true && msg.ackRequired() == true && msg.to().valid() == true ) {
         Message response;
         if( (result=waitResponse(msg,response,60)) ) { // 600ms
   #ifdef USE_AES
@@ -232,7 +236,7 @@ public:
           {
             result = response.isAck();
             // we request wakeup
-            // we got the fag to stay awake
+            // we got the flag to stay awake
             if( msg.isWakeMeUp() || response.isKeepAwake() ) {
               activity().stayAwake(millis2ticks(500));
             }

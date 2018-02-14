@@ -117,12 +117,15 @@ public:
         SensorEventMsg& msg = (SensorEventMsg&)device().message();
         msg.init(device().nextcount(),number(),count++,state,device().battery().low());
         msg.flags(Message::BCAST | Message::BURST); // original smoke detector is burst device
+        msg.setRpten();
+        msg.to(leader);
+        device().getDeviceID(msg.to());
 
         process(msg); // we first
 
-        device().send(msg,leader);
-        device().send(msg,leader);
-        device().send(msg,leader);
+        device().send(msg);
+        device().send(msg);
+        device().send(msg);
       }
     }
     // reactivate for next measure

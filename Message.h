@@ -180,6 +180,10 @@ public:
     return toID;
   }
 
+  HMID& to () {
+    return toID;
+  }
+
   void type (uint8_t t) {
     typ=t;
   }
