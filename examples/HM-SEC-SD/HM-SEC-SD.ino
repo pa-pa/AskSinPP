@@ -118,7 +118,7 @@ public:
         msg.init(device().nextcount(),number(),count++,state,device().battery().low());
         msg.flags(Message::BCAST | Message::BURST); // original smoke detector is burst device
         msg.setRpten();
-        msg.to(leader);
+        msg.from(leader);
         device().getDeviceID(msg.to());
 
         process(msg); // we first
