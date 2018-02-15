@@ -134,8 +134,8 @@ public:
 };
 
 
-#ifdef TwoWire_h
-template <uint8_t ID,uint16_t PAGES,uint8_t PAGESIZE>
+#if defined(TwoWire_h) || defined(_WIRE_H_)
+template <uint8 ID,uint16_t PAGES,uint8_t PAGESIZE>
 class at24cX {
 public:
   at24cX () {}
@@ -151,21 +151,21 @@ public:
 
   void store () {}
 
-  uint8_t getByte (uint16_t addr) {
-    uint8_t b = 0;
+  uint8 getByte (uint16_t addr) {
+    uint8 b = 0;
     Wire.beginTransmission(ID);
     Wire.write(addr >> 8);
     Wire.write(addr & 0xff);
     if( Wire.endTransmission() == 0 ) {
       Wire.requestFrom(ID,(uint8_t)1);
       if( Wire.available() ) {
-        b = (uint8_t)Wire.read();
+        b = Wire.read();
       }
     }
     return b;
   }
 
-  bool setByte (uint16_t addr, uint8_t d) {
+  bool setByte (uint16_t addr, uint8 d) {
     bool success = false;
     Wire.beginTransmission(ID);
     Wire.write(addr >> 8);
@@ -180,7 +180,7 @@ public:
     return success;
   }
 
-  bool setData (uint16_t addr,uint8_t* buf,uint16_t size) {
+  bool setData (uint16_t addr,uint8* buf,uint16_t size) {
     bool success = false;
     while( size > 0 ) {
       uint16_t towrite = PAGESIZE - (addr % PAGESIZE);
@@ -206,7 +206,7 @@ public:
     return success;
   }
 
-  bool getData (uint16_t addr,uint8_t* buf,uint16_t size) {
+  bool getData (uint16_t addr,uint8* buf,uint16_t size) {
     bool success = false;
     while( size > 0 ) {
       uint16_t toread = PAGESIZE - (addr % PAGESIZE);
@@ -413,9 +413,9 @@ public:
 #endif
 typedef StorageWrapper<STORAGEDRIVER > Storage;
 
-inline Storage& storage () {
-  static Storage instance;
-  return instance;
+Storage __gb_storage;
+static inline Storage& storage () {
+  return __gb_storage;
 }
 
 }

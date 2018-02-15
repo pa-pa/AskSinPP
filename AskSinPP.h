@@ -6,7 +6,7 @@
 #ifndef __ASKSINPP_h__
 #define __ASKSINPP_h__
 
-#define ASKSIN_PLUS_PLUS_VERSION "2.1.3"
+#define ASKSIN_PLUS_PLUS_VERSION "2.1.4"
 
 #define ASKSIN_PLUS_PLUS_IDENTIFIER F("AskSin++ V" ASKSIN_PLUS_PLUS_VERSION " (" __DATE__ " " __TIME__ ")")
 
@@ -16,18 +16,21 @@
   #define _delay_us(us) delayMicroseconds(us)
   inline void _delay_ms(uint32_t ms) { do { delayMicroseconds(1000); } while( (--ms) > 0); }
 
+  #define NOT_AN_INTERRUPT -1
   #define digitalPinToInterrupt(pin) (pin)
   #define enableInterrupt(pin,handler,mode) attachInterrupt(pin,handler,mode)
   #define disableInterrupt(pin) detachInterrupt(pin)
   #define memcmp_P(src,dst,count) memcmp((src),(dst),(count))
 #else
+  typedef uint8_t uint8;
+  typedef uint16_t uint16;
   #ifdef ARDUINO_ARCH_ATMEGA32
     inline uint8_t digitalPinToInterrupt(uint8_t pin) { return pin == 11 ? 1 : ( pin == 10 ? 0 : NOT_AN_INTERRUPT); } // D2 -> 0 && D3 -> 1
   #endif
   // if we have no EnableInterrupt Library - and also no PCINT - use polling
   #ifndef EnableInterrupt_h
     #define enableInterrupt(pin,handler,mode) pinpolling##pin().enable(pin,handler,mode)
-    #define disableInterrupt(pin) pinpolling##pin().disbale()
+    #define disableInterrupt(pin) pinpolling##pin().disable()
   #endif
 #endif
 
