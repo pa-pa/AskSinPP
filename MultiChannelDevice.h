@@ -210,7 +210,7 @@ public:
      ChannelType* ch = 0;
      HMID devid;
      this->getDeviceID(devid);
-     if( msg.to() == devid || this->isBoardcastMsg(msg) ) {
+     if( msg.to() == devid || this->isBroadcastMsg(msg) ) {
        // we got a message - we do not answer before 100ms
        this->radio().setSendTimeout(100);
        DPRINT(F("-> "));

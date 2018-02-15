@@ -142,8 +142,10 @@ class ThreeStateChannel : public Channel<HALTYPE,List1Type,EmptyList,List4Type,P
 
 template<class HalType,class ChannelType,int ChannelCount,class List0Type>
 class ThreeStateDevice : public MultiChannelDevice<HalType,ChannelType,ChannelCount,List0Type> {
-  #define CYCLETIME seconds2ticks(60UL*60*24) // at least one message per day
-  class CycleInfoAlarm : public Alarm {
+   #ifndef CYCLETIME
+    #define CYCLETIME seconds2ticks(60UL*60*24) // at least one message per day
+   #endif
+    class CycleInfoAlarm : public Alarm {
     ThreeStateDevice& dev;
   public:
     CycleInfoAlarm (ThreeStateDevice& d) : Alarm (CYCLETIME), dev(d) {}
