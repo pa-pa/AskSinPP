@@ -11,9 +11,12 @@
 #include <AskSinPP.h>
 #include <LowPower.h>
 
+#include <Register.h>
 #include <MultiChannelDevice.h>
-// https://github.com/spease/Sensirion.git
-#include <Sensirion.h>
+//#include <sensors/Tsl2561.h>
+//#include <sensors/Bmp180.h>
+//#include <sensors/Sht10.h>
+#include <sensors/Dht.h>
 
 // we use a Pro Mini
 // Arduino pin for the LED
@@ -76,17 +79,22 @@ public:
   }
 };
 
-class WeatherChannel : public Channel<Hal,List1,EmptyList,List4,PEERS_PER_CHANNEL,List0>, public Alarm {
+DEFREGISTER(WeatherRegsList0,DREG_BURSTRX)
+typedef RegList0<WeatherRegsList0> WeatherList0;
+
+
+class WeatherChannel : public Channel<Hal,List1,EmptyList,List4,PEERS_PER_CHANNEL,WeatherList0>, public Alarm {
 
   WeatherEventMsg msg;
-  int16_t         temp;
-  uint8_t         humidity;
 
-  Sensirion       sht10;
+  Dht<6,DHT11>      dht11;
+//  Sht10<A4,A5>    sht10;
+//  Bmp180          bmp180;
+//  Tsl2561<>       tsl2561;
   uint16_t        millis;
 
 public:
-  WeatherChannel () : Channel(), Alarm(5), temp(0), humidity(0), millis(0) {}
+  WeatherChannel () : Channel(), Alarm(5), millis(0) {}
   virtual ~WeatherChannel () {}
 
   virtual void trigger (__attribute__ ((unused)) AlarmClock& clock) {
@@ -99,7 +107,8 @@ public:
     else {
       uint8_t msgcnt = device().nextcount();
       measure();
-      msg.init(msgcnt,temp,humidity,device().battery().low());
+      msg.init(msgcnt,dht11.temperature(),dht11.humidity(),device().battery().low());
+//      msg.init(msgcnt,sht10.temperature(),sht10.humidity(),device().battery().low());
       device().sendPeerEvent(msg,*this);
 //      device().send(msg,device().getMasterID());
 
@@ -115,15 +124,15 @@ public:
 
   // here we do the measurement
   void measure () {
-    DPRINT("Measure...\n");
-    uint16_t rawData;
-    if ( sht10.measTemp(&rawData)== 0) {
-      float t = sht10.calcTemp(rawData);
-      temp = t * 10;
-      if( sht10.measHumi(&rawData)== 0 ) {
-        humidity = sht10.calcHumi(rawData, t);
-      }
-    }
+    DPRINTLN("Measure...  ");
+    dht11.measure();
+    DPRINT("T: ");DDEC(dht11.temperature());DPRINT("  H: ");DDECLN(dht11.humidity());
+//    sht10.measure();
+//    DPRINT("T: ");DDEC(sht10.temperature());DPRINT("  H: ");DDECLN(sht10.humidity());
+//    bmp180.measure();
+//    DPRINT("T: ");DDEC(bmp180.temperature());DPRINT("  P: ");DDECLN(bmp180.pressure());
+//    tsl2561.measure();
+//    DPRINT("H: ");DDECLN(tsl2561.brightness());
   }
 
   // here we calc when to send next value
@@ -138,11 +147,14 @@ public:
     return value;
   }
 
-  void setup(Device<Hal,List0>* dev,uint8_t number,uint16_t addr) {
+  void setup(Device<Hal,WeatherList0>* dev,uint8_t number,uint16_t addr) {
     Channel::setup(dev,number,addr);
+    tick = 5;
     rtc.add(*this);
-    sht10.config(A4,A5);
-    sht10.writeSR(LOW_RES);
+    dht11.init();
+//    sht10.init();
+//    bmp180.init();
+//    tsl2561.init();
   }
 
   uint8_t status () const {
@@ -156,7 +168,7 @@ public:
 };
 
 
-typedef MultiChannelDevice<Hal,WeatherChannel,1> WeatherType;
+typedef MultiChannelDevice<Hal,WeatherChannel,1,WeatherList0> WeatherType;
 WeatherType sdev(devinfo,0x20);
 
 ConfigButton<WeatherType> cfgBtn(sdev);

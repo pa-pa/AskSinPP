@@ -8,41 +8,53 @@
 
 namespace as {
 
-class BrightnessFake {
+class Sensor {
+protected:
+  bool _present;
 public:
-  BrightnessFake () {}
+  Sensor () : _present(false) {}
   void init () {}
-  bool present () { return false; }
-  uint16_t brightness () { return 0; }
+  bool present () { return _present; }
+  void measure (__attribute__((unused)) bool async) {}
 };
 
-#ifdef _TSL2561_H_
-
-template <int ADDRESS=TSL2561_ADDR_LOW>
-class BrightnessTSL2561 {
-  TSL2561 tsl;
-  bool    present;
+class Brightness : public virtual Sensor {
+protected:
+  uint16_t _brightness;
 public:
-  BrightnessTSL2561 () : tsl(ADDRESS), present(false) {}
-  void init () {
-    if( (present = tsl.begin()) == true ) {
-      tsl.setGain(TSL2561_GAIN_0X);
-      tsl.setTiming(TSL2561_INTEGRATIONTIME_402MS);
-    }
-  }
-
-  uint16_t brightness () {
-    if( present == false ) {
-      return 0;
-    }
-    uint16_t bright = tsl.getLuminosity(TSL2561_VISIBLE);
-    // TODO which gain on very high values ???
-    return bright;
-  }
+  Brightness () : _brightness(0) {}
+  // TODO - define value range for brightness
+  uint16_t brightness () { return _brightness; }
 };
 
-#endif
+class Temperature : public virtual Sensor {
+protected:
+  int16_t         _temperature;
+public:
+  Temperature () : _temperature(0) {}
+  // temperature value multiplied by 10
+  int16_t temperature () { return _temperature; }
+};
 
-}
+class Humidity : public virtual Sensor {
+protected:
+  uint8_t   _humidity;
+public:
+  Humidity () : _humidity(0) {}
+  // humidity value
+  uint8_t humidity () { return _humidity; }
+};
+
+class Pressure : public virtual Sensor {
+protected:
+  uint16_t        _pressure;
+public:
+  Pressure () : _pressure(0) {}
+  // pressure value
+  uint16_t pressure () { return _pressure; }
+};
+
+
+} // end namespace
 
 #endif

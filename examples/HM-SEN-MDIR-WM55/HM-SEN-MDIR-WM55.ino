@@ -10,9 +10,8 @@
 #include <EnableInterrupt.h>
 #include <AskSinPP.h>
 #include <LowPower.h>
-// uncomment the following 2 lines if you have a TSL2561 connected at address 0x29
-// #include <Wire.h>
-// #include <TSL2561.h>
+// uncomment the following line if you have a TSL2561 connected at address 0x29
+#include <sensors/Tsl2561.h>
 
 #include <MultiChannelDevice.h>
 #include <Remote.h>
@@ -121,8 +120,8 @@ public:
 };
 
 typedef RemoteChannel<Hal,PEERS_PER_BTNCHANNEL,BtnPirList0> BtnChannel;
-#ifdef _TSL2561_H_
-typedef MotionChannel<Hal,PEERS_PER_PIRCHANNEL,BtnPirList0,BrightnessTSL2561<TSL2561_ADDR_LOW> > PirChannel;
+#ifdef __SENSORS_TSL2561_h__
+typedef MotionChannel<Hal,PEERS_PER_PIRCHANNEL,BtnPirList0,Tsl2561<TSL2561_ADDR_LOW> > PirChannel;
 #else
 typedef MotionChannel<Hal,PEERS_PER_PIRCHANNEL,BtnPirList0> PirChannel;
 #endif

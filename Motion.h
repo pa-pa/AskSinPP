@@ -40,7 +40,7 @@ public:
   }
 };
 
-template <class HalType,int PeerCount,class List0Type=List0,class BrightnessSensor=BrightnessFake>
+template <class HalType,int PeerCount,class List0Type=List0,class BrightnessSensor=Brightness>
 class MotionChannel : public Channel<HalType,MotionList1,EmptyList,DefList4,PeerCount,List0Type>, public Alarm {
 
   class QuietMode : public Alarm {
