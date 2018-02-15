@@ -347,6 +347,10 @@ public:
     return typ==AS_MESSAGE_REMOTE_EVENT;
   }
 
+  bool isSensorEvent () const {
+    return typ==AS_MESSAGE_SENSOR_EVENT;
+  }
+
   // cast to specific read-only message types
   const ConfigPeerAddMsg& configPeerAdd () const { return *(ConfigPeerAddMsg*)this; }
   const ConfigPeerRemoveMsg& configPeerRemove () const { return *(ConfigPeerRemoveMsg*)this; }
