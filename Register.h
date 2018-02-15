@@ -13,6 +13,7 @@
 namespace as {
 
 // Device Registers used in List0
+#define DREG_BURSTRX    0x01
 #define DREG_INTKEY     0x02
 #define DREG_LEDMODE     0x05
 #define DREG_CYCLICINFOMSG     0x09
@@ -262,6 +263,8 @@ public:
 
   bool aesActive () const { return false; }
 
+  bool burstRx (bool v) const { return this->writeRegister(DREG_BURSTRX,v); }
+  bool burstRx () const { return this->readRegister(DREG_BURSTRX,false); }
   bool intKeyVisible (bool v) const { return this->writeBit(DREG_INTKEY,7,v); }
   bool intKeyVisible () const { return this->readBit(DREG_INTKEY,7,false); }
 
