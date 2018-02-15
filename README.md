@@ -8,14 +8,20 @@ C++ implementation of the AskSin protocol
 - easy configuration of the device channels by using templates
 - direct eeprom access for the channel data
 - AES signature support
+- for ATMega328, [ATMega32](https://github.com/eaconner/ATmega32-Arduino), [STM32F1](http://dan.drown.org/stm32duino/package_STM32duino_index.json)
 
-Required Arduino libraries:
-- TimerOne - https://github.com/PaulStoffregen/TimerOne
-- EnableInterrupt - https://github.com/GreyGnome/EnableInterrupt
-- Low-Power - https://github.com/rocketscream/Low-Power.git
+## Required additional Arduino libraries:
+- [EnableInterrupt](https://github.com/GreyGnome/EnableInterrupt)
+- [Low-Power](https://github.com/rocketscream/Low-Power.git)
 
-Required for different sensor examples:
-- Sensirion - https://github.com/spease/Sensirion.git
+
+## Optional required Sensor Libraries
+- [Sensor Base Library](https://github.com/adafruit/Adafruit_Sensor)
+- [DHT11/DHT22/AM2302/RHT03](https://github.com/adafruit/DHT-sensor-library)
+- [SHT10](https://github.com/spease/Sensirion.git)
+- [TSL2561](https://github.com/adafruit/TSL2561-Arduino-Library)
+- [BMP085/BMP180](https://github.com/adafruit/Adafruit-BMP085-Library)
+
 
 ## Enable AES Support
 
@@ -31,11 +37,6 @@ In FHEM you can get the key from the *hmKey*,
 *hmKey2*, *hmKey3* attributes of the VCCU. The index is the key
 number multiplied by 2.
 
-## Referenced Sensor Libraries
-
-https://github.com/spease/Sensirion.git
-https://github.com/adafruit/TSL2561-Arduino-Library
-https://github.com/adafruit/Adafruit-BMP085-Library
 
 
 
