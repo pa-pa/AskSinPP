@@ -162,10 +162,9 @@ protected:
   uint8_t    state;
   StateAlarm alarm;
 
-  ~SwitchStateMachine () {}
-
 public:
   SwitchStateMachine() : state(AS_CM_JT_NONE), alarm(*this) {}
+  ~SwitchStateMachine () {}
 
   virtual void switchState(__attribute__((unused)) uint8_t oldstate,__attribute__((unused)) uint8_t newstate) {}
 
