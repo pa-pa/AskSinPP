@@ -203,7 +203,7 @@ public:
 
   virtual bool process(__attribute__((unused)) Message& msg) { return false; }
 
-  bool isBoardcastMsg(Message msg) {
+  bool isBroadcastMsg(Message msg) {
     return (msg.to() == HMID::broadcast && msg.isPairSerial()) || ( msg.isBroadcast() && (msg.isRemoteEvent() || msg.isSensorEvent()) );
   }
 
