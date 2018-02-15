@@ -204,6 +204,13 @@ public:
   void overflow () {
     ovrfl++;
   }
+
+  void debug () {
+    if( select() != 0 ) {
+      DDEC((uint16_t)((Alarm*)select())->tick);
+      DPRINT(" ");
+    }
+  }
 };
 
 extern RTC rtc;
