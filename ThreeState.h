@@ -140,17 +140,17 @@ class ThreeStateChannel : public Channel<HALTYPE,List1Type,EmptyList,List4Type,P
   }
 };
 
-template<class HalType,class ChannelType,int ChannelCount,class List0Type>
+#define DEFCYCLETIME seconds2ticks(60UL*60*20)
+template<class HalType,class ChannelType,int ChannelCount,class List0Type,uint32_t CycleTime=DEFCYCLETIME> // at least one message per day
 class ThreeStateDevice : public MultiChannelDevice<HalType,ChannelType,ChannelCount,List0Type> {
-  #define CYCLETIME seconds2ticks(60UL*60*24) // at least one message per day
   class CycleInfoAlarm : public Alarm {
     ThreeStateDevice& dev;
   public:
-    CycleInfoAlarm (ThreeStateDevice& d) : Alarm (CYCLETIME), dev(d) {}
+    CycleInfoAlarm (ThreeStateDevice& d) : Alarm (CycleTime), dev(d) {}
     virtual ~CycleInfoAlarm () {}
 
     void trigger (AlarmClock& clock)  {
-      set(CYCLETIME);
+      set(CycleTime);
       clock.add(*this);
       for( uint8_t idx=1; idx<=dev.channels(); ++idx) {
         dev.channel(idx).changed(true); // force StatusInfoMessage to central
@@ -167,7 +167,7 @@ public:
     if( this->getList0().cycleInfoMsg() == true ) {
       DPRINTLN("Activate Cycle Msg");
       sysclock.cancel(cycle);
-      cycle.set(CYCLETIME);
+      cycle.set(CycleTime);
       sysclock.add(cycle);
     }
     else {
