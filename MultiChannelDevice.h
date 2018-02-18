@@ -437,7 +437,7 @@ public:
        return false;
      }
      // send ack/nack
-     if( msg.ackRequired() == true) {
+     if( msg.ackRequired() == true && msg.to() == devid ) {
        if( answer == REPLAY_ACK ) {
          if( ch != 0 ) this->sendAck(msg, *ch);
          else this->sendAck(msg);
