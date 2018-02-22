@@ -15,7 +15,7 @@ public:
   Sensor () : _present(false) {}
   void init () {}
   bool present () { return _present; }
-  void measure (__attribute__((unused)) bool async) {}
+  void measure (__attribute__((unused)) bool async=false) {}
 };
 
 class Brightness : public virtual Sensor {

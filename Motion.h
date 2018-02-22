@@ -96,14 +96,19 @@ private:
 public:
   typedef Channel<HalType,MotionList1,EmptyList,DefList4,PeerCount,List0Type> ChannelType;
 
-  MotionChannel () : ChannelType(), Alarm(0), counter(0), quiet(*this), cycle(*this), isrenabled(true), maxbright(1) {
+  MotionChannel () : ChannelType(), Alarm(0), counter(0), quiet(*this), cycle(*this), isrenabled(true),
+      brightsens(), maxbright(1) {}
+  virtual ~MotionChannel () {}
+
+  void setup(Device<HalType,List0Type>* dev,uint8_t number,uint16_t addr) {
+    ChannelType::setup(dev,number,addr);
     sysclock.add(cycle);
     pirInterruptOn();
     brightsens.init();
   }
-  virtual ~MotionChannel () {}
 
   uint8_t status () {
+    brightsens.measure();
     uint16_t bright = brightsens.brightness();
     if( bright > maxbright ) {
       maxbright = bright;
