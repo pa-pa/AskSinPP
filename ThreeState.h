@@ -7,12 +7,11 @@
 #define __THREESTATE_H__
 
 #include "MultiChannelDevice.h"
+#include "Sensors.h"
 
 namespace as {
 
-enum Positions { NoPos=0, PosA, PosB, PosC };
-
-template <class HALTYPE,class List0Type,class List1Type,class List4Type,int PEERCOUNT>
+template <class HALTYPE,class List0Type,class List1Type,class List4Type,int PEERCOUNT,class CPosSensor=PositionSensor>
 class ThreeStateChannel : public Channel<HALTYPE,List1Type,EmptyList,List4Type,PEERCOUNT,List0Type>, public Alarm {
 
   class EventSender : public Alarm {
@@ -29,42 +28,29 @@ class ThreeStateChannel : public Channel<HALTYPE,List1Type,EmptyList,List4Type,P
     }
   };
 
-  // pin mapping can be changed by bootloader config data
-  // map pins to pos     00   01   10   11
-  uint8_t posmap[4] = {Positions::PosC,Positions::PosC,Positions::PosB,Positions::PosA};
   volatile bool isr;
   EventSender sender;
-  uint8_t sens1, sens2, sabpin;
+  uint8_t sabpin;
   bool sabotage;
+  CPosSensor pos_sensor;
 
   public:
     typedef Channel<HALTYPE,List1Type,EmptyList,List4Type,PEERCOUNT,List0Type> BaseChannel;
 
-  ThreeStateChannel () : BaseChannel(), Alarm(0), isr(false), sender(*this), sens1(0), sens2(0), sabpin(0), sabotage(false) {}
+  ThreeStateChannel () : BaseChannel(), Alarm(0), isr(false), sender(*this), sabpin(0), sabotage(false) {}
   virtual ~ThreeStateChannel () {}
 
   void setup(Device<HALTYPE,List0Type>* dev,uint8_t number,uint16_t addr) {
     BaseChannel::setup(dev,number,addr);
   }
 
-  void init (uint8_t pin1,uint8_t pin2, uint8_t sab, const uint8_t* pmap) {
+  void init (uint8_t sab) {
     sabpin = sab;
-    init(pin1,pin2,pmap);
+    init();
   }
 
-  void init (uint8_t pin1,uint8_t pin2, const uint8_t* pmap) {
-    memcpy(posmap,pmap,4);
-    init(pin1,pin2);
-  }
-
-  void init (uint8_t pin1,uint8_t pin2, uint8_t sab) {
-    sabpin = sab;
-    init(pin1,pin2);
-  }
-
-  void init (uint8_t pin1,uint8_t pin2) {
-    sens1=pin1;
-    sens2=pin2;
+  void init () {
+    pos_sensor.init();
     // start polling
     set(seconds2ticks(1));
     sysclock.add(*this);
@@ -90,11 +76,11 @@ class ThreeStateChannel : public Channel<HALTYPE,List1Type,EmptyList,List4Type,P
   }
 
   void trigger (__attribute__ ((unused)) AlarmClock& clock)  {
-    set(seconds2ticks(1));
+    uint16_t updcycle = pos_sensor.updatecycle();
+    set(seconds2ticks(updcycle));
     clock.add(*this);
     uint8_t newstate = sender.state;
-    uint8_t pinstate = readPin(sens2) << 1 | readPin(sens1);
-    uint8_t pos = posmap[pinstate & 0x03];
+    uint8_t pos = pos_sensor.position();
     uint8_t msg = 0;
     switch( pos ) {
     case PosA:
