@@ -32,6 +32,34 @@
 // all library classes are placed in the namespace 'as'
 using namespace as;
 
+
+class MyPosition : public PositionSensor {
+public:
+  MyPosition () {}
+  uint8_t position () {
+    uint8_t pinstate = readPin(SENS1_PIN) << 1 | readPin(SENS2_PIN);
+    uint8_t pos = posmap[pinstate & 0x03];
+    //DDECLN(pos);
+    return pos;
+  }
+  uint16_t updatecycle () {
+    return 10;
+  }
+private:
+  // pin mapping can be changed by bootloader config data
+  // map pins to pos     00   01   10   11
+  uint8_t posmap[4] = {Positions::PosC,Positions::PosC,Positions::PosB,Positions::PosA};
+  uint8_t readPin(uint8_t pinnr) {
+    uint8_t value=0;
+    pinMode(pinnr,INPUT_PULLUP);
+    value = digitalRead(pinnr);
+    pinMode(pinnr,OUTPUT);
+    digitalWrite(pinnr,LOW);
+    return value;
+  }
+};
+
+
 // define all device properties
 const struct DeviceInfo PROGMEM devinfo = {
     {0x49,0x29,0xd3},       // Device ID
@@ -76,7 +104,7 @@ public:
   }
 };
 
-typedef ThreeStateChannel<HalType,WDSList0,WDSList1,DefList4,PEERS_PER_CHANNEL> ChannelType;
+typedef ThreeStateChannel<HalType,WDSList0,WDSList1,DefList4,PEERS_PER_CHANNEL,MyPosition> ChannelType;
 typedef ThreeStateDevice<HalType,ChannelType,1,WDSList0> DevType;
 
 HalType hal;
@@ -86,7 +114,7 @@ ConfigButton<DevType> cfgBtn(sdev);
 void setup () {
   DINIT(57600,ASKSIN_PLUS_PLUS_IDENTIFIER);
   sdev.init(hal);
-  sdev.channel(1).init(SENS1_PIN,SENS2_PIN);
+  sdev.channel(1).init();
   buttonISR(cfgBtn,CONFIG_BUTTON_PIN);
   hal.battery.init(seconds2ticks(60UL*60), sysclock);
   hal.battery.low(22);

@@ -8,6 +8,8 @@
 
 namespace as {
 
+enum Positions { NoPos=0, PosA, PosB, PosC };
+
 class Sensor {
 protected:
   bool _present;
@@ -15,7 +17,7 @@ public:
   Sensor () : _present(false) {}
   void init () {}
   bool present () { return _present; }
-  void measure (__attribute__((unused)) bool async=false) {}
+  void measure (__attribute__((unused)) bool async) {}
 };
 
 class Brightness : public virtual Sensor {
@@ -54,6 +56,15 @@ public:
   uint16_t pressure () { return _pressure; }
 };
 
+class PositionSensor : public virtual Sensor {
+protected:
+  uint8_t  _position;
+  uint16_t _updatecycle;
+public:
+  PositionSensor () : _position(0), _updatecycle(1) {}
+  uint8_t position () { return _position; }
+  uint16_t updatecycle () { return _updatecycle; }
+};
 
 } // end namespace
 
