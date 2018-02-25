@@ -7,20 +7,19 @@
 #define __THREESTATE_H__
 
 #include "MultiChannelDevice.h"
+#include "Sensors.h"
 
 namespace as {
 
-enum Positions { NoPos=0, PosA, PosB, PosC };
-
-template <class HALTYPE,class List0Type,class List1Type,class List4Type,int PEERCOUNT>
-class ThreeStateChannel : public Channel<HALTYPE,List1Type,EmptyList,List4Type,PEERCOUNT,List0Type>, public Alarm {
+template <class Sensor,class HALTYPE,class List0Type,class List1Type,class List4Type,int PEERCOUNT>
+class ThreeStateGenericChannel : public Channel<HALTYPE,List1Type,EmptyList,List4Type,PEERCOUNT,List0Type>, public Alarm {
 
   class EventSender : public Alarm {
   public:
-    ThreeStateChannel& channel;
+    ThreeStateGenericChannel& channel;
     uint8_t count, state;
 
-    EventSender (ThreeStateChannel& c) : Alarm(0), channel(c), count(0), state(255) {}
+    EventSender (ThreeStateGenericChannel& c) : Alarm(0), channel(c), count(0), state(255) {}
     virtual ~EventSender () {}
     virtual void trigger (__attribute__ ((unused)) AlarmClock& clock) {
       SensorEventMsg& msg = (SensorEventMsg&)channel.device().message();
@@ -29,44 +28,31 @@ class ThreeStateChannel : public Channel<HALTYPE,List1Type,EmptyList,List4Type,P
     }
   };
 
-  // pin mapping can be changed by bootloader config data
-  // map pins to pos     00   01   10   11
-  uint8_t posmap[4] = {Positions::PosC,Positions::PosC,Positions::PosB,Positions::PosA};
-  volatile bool isr;
   EventSender sender;
-  uint8_t sens1, sens2, sabpin;
+  uint8_t sabpin;
   bool sabotage;
 
-  public:
-    typedef Channel<HALTYPE,List1Type,EmptyList,List4Type,PEERCOUNT,List0Type> BaseChannel;
+protected:
+  Sensor possens;
 
-  ThreeStateChannel () : BaseChannel(), Alarm(0), isr(false), sender(*this), sens1(0), sens2(0), sabpin(0), sabotage(false) {}
-  virtual ~ThreeStateChannel () {}
+public:
+  typedef Channel<HALTYPE,List1Type,EmptyList,List4Type,PEERCOUNT,List0Type> BaseChannel;
+
+  ThreeStateGenericChannel () : BaseChannel(), Alarm(0), sender(*this), sabpin(0), sabotage(false) {}
+  virtual ~ThreeStateGenericChannel () {}
 
   void setup(Device<HALTYPE,List0Type>* dev,uint8_t number,uint16_t addr) {
     BaseChannel::setup(dev,number,addr);
   }
 
-  void init (uint8_t pin1,uint8_t pin2, uint8_t sab, const uint8_t* pmap) {
+  void init (uint8_t sab) {
     sabpin = sab;
-    init(pin1,pin2,pmap);
+    init();
   }
 
-  void init (uint8_t pin1,uint8_t pin2, const uint8_t* pmap) {
-    memcpy(posmap,pmap,4);
-    init(pin1,pin2);
-  }
-
-  void init (uint8_t pin1,uint8_t pin2, uint8_t sab) {
-    sabpin = sab;
-    init(pin1,pin2);
-  }
-
-  void init (uint8_t pin1,uint8_t pin2) {
-    sens1=pin1;
-    sens2=pin2;
+  void init () {
     // start polling
-    set(seconds2ticks(1));
+    set(possens.interval());
     sysclock.add(*this);
   }
 
@@ -90,20 +76,19 @@ class ThreeStateChannel : public Channel<HALTYPE,List1Type,EmptyList,List4Type,P
   }
 
   void trigger (__attribute__ ((unused)) AlarmClock& clock)  {
-    set(seconds2ticks(1));
+    set(possens.interval());
     clock.add(*this);
     uint8_t newstate = sender.state;
-    uint8_t pinstate = readPin(sens2) << 1 | readPin(sens1);
-    uint8_t pos = posmap[pinstate & 0x03];
     uint8_t msg = 0;
-    switch( pos ) {
-    case PosA:
+    possens.measure();
+    switch( possens.position() ) {
+    case Sensor::State::PosA:
       msg = this->getList1().msgForPosA();
       break;
-    case PosB:
+    case Sensor::State::PosB:
       msg = this->getList1().msgForPosB();
       break;
-    case PosC:
+    case Sensor::State::PosC:
       msg = this->getList1().msgForPosC();
       break;
     default:
@@ -139,6 +124,71 @@ class ThreeStateChannel : public Channel<HALTYPE,List1Type,EmptyList,List4Type,P
     }
   }
 };
+
+class TwoPinPosition : public Position {
+  // pin mapping can be changed by bootloader config data
+  // map pins to pos     00   01   10   11
+  uint8_t posmap[4] = {State::PosC,State::PosC,State::PosB,State::PosA};
+  uint8_t sens1, sens2;
+public:
+  TwoPinPosition () : sens1(0), sens2(0) { _present = true; }
+
+  void init (uint8_t pin1,uint8_t pin2, const uint8_t* pmap) {
+    memcpy(posmap,pmap,4);
+    init(pin1,pin2);
+  }
+
+  void init (uint8_t pin1,uint8_t pin2) {
+    sens1=pin1;
+    sens2=pin2;
+  }
+
+  void measure (__attribute__((unused)) bool async=false) {
+    uint8_t pinstate = readPin(sens2) << 1 | readPin(sens1);
+    _position = posmap[pinstate & 0x03];
+  }
+
+  uint8_t readPin(uint8_t pinnr) {
+    uint8_t value=0;
+    pinMode(pinnr,INPUT_PULLUP);
+    value = digitalRead(pinnr);
+    pinMode(pinnr,OUTPUT);
+    digitalWrite(pinnr,LOW);
+    return value;
+  }
+};
+
+
+template <class HALTYPE,class List0Type,class List1Type,class List4Type,int PEERCOUNT>
+class ThreeStateChannel : public ThreeStateGenericChannel<TwoPinPosition,HALTYPE,List0Type,List1Type,List4Type,PEERCOUNT> {
+public:
+  typedef ThreeStateGenericChannel<TwoPinPosition,HALTYPE,List0Type,List1Type,List4Type,PEERCOUNT> BaseChannel;
+
+  ThreeStateChannel () : BaseChannel() {};
+  ~ThreeStateChannel () {}
+
+  void init (uint8_t pin1,uint8_t pin2, uint8_t sab,const uint8_t* pmap) {
+    BaseChannel::init(sab);
+    BaseChannel::possens.init(pin1,pin2,pmap);
+  }
+
+  void init (uint8_t pin1,uint8_t pin2, const uint8_t* pmap) {
+    BaseChannel::init();
+    BaseChannel::possens.init(pin1,pin2,pmap);
+  }
+
+  void init (uint8_t pin1,uint8_t pin2, uint8_t sab) {
+    BaseChannel::init(sab);
+    BaseChannel::possens.init(pin1,pin2);
+  }
+
+  void init (uint8_t pin1,uint8_t pin2) {
+    BaseChannel::init();
+    BaseChannel::possens.init(pin1,pin2);
+  }
+};
+
+
 
 #define DEFCYCLETIME seconds2ticks(60UL*60*20)
 template<class HalType,class ChannelType,int ChannelCount,class List0Type,uint32_t CycleTime=DEFCYCLETIME> // at least one message per day

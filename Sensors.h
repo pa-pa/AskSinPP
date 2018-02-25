@@ -54,6 +54,18 @@ public:
   uint16_t pressure () { return _pressure; }
 };
 
+class Position : public virtual Sensor {
+public:
+  enum State { NoPos=0, PosA, PosB, PosC };
+protected:
+  uint8_t  _position;
+public:
+  Position () : _position(NoPos) {}
+  // return the last measured position
+  uint8_t position () { return _position; }
+  // return the measure interval in sysclock ticks
+  uint32_t interval () { return seconds2ticks(1); }
+};
 
 } // end namespace
 
