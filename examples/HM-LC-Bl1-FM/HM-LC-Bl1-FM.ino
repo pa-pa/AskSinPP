@@ -110,7 +110,7 @@ typedef MultiChannelDevice<Hal,BlChannel,1,BlindList0> BlindType;
 
 Hal hal;
 BlindType sdev(devinfo,0x20);
-ConfigToggleButton<BlindType> cfgBtn(sdev);
+ConfigButton<BlindType> cfgBtn(sdev);
 InternalButton<BlindType> btnup(sdev,1);
 InternalButton<BlindType> btndown(sdev,2);
 
