@@ -66,7 +66,7 @@ public:
     ssl.actionType(AS_CM_ACTIONTYPE_JUMP_TO_TARGET);
 //    ssl.offLevel(0);
     ssl.onLevel(200); // 201 ???
-    ssl.maxTimeFirstDir(254);
+    ssl.maxTimeFirstDir(255);
     //ssl.drivingMode(0);
 
     ssl = lg();
@@ -89,7 +89,7 @@ public:
     ssl.multiExec(true);
 //    ssl.offLevel(0);
     ssl.onLevel(200); // 201 ???
-    ssl.maxTimeFirstDir(254);
+    ssl.maxTimeFirstDir(50);
     //ssl.drivingMode(0);
   }
 
@@ -121,7 +121,7 @@ public:
     ssl.jtOff(AS_CM_JT_ONDELAY);
     ssl.jtDlyOff(AS_CM_JT_ONDELAY);
     ssl.jtOn(AS_CM_JT_ONDELAY);
-    ssl.jtDlyOn(AS_CM_JT_ONDELAY);
+    ssl.jtDlyOn(AS_CM_JT_REFON);
     ssl.jtRampOff(AS_CM_JT_OFF);
     ssl.jtRampOn(AS_CM_JT_RAMPON);
     ssl.jtRefOff(AS_CM_JT_OFF);
@@ -130,7 +130,7 @@ public:
     ssl.jtOff(AS_CM_JT_ONDELAY);
     ssl.jtDlyOff(AS_CM_JT_ONDELAY);
     ssl.jtOn(AS_CM_JT_ONDELAY);
-    ssl.jtDlyOn(AS_CM_JT_ONDELAY);
+    ssl.jtDlyOn(AS_CM_JT_REFON);
     ssl.jtRampOff(AS_CM_JT_OFF);
     ssl.jtRampOn(AS_CM_JT_RAMPON);
     ssl.jtRefOff(AS_CM_JT_OFF);
@@ -247,8 +247,14 @@ public:
 
   virtual uint32_t getDelayForState(uint8_t stat,const BlindPeerList& lst) {
     if( lst.valid () == true ) {
-      if( stat == AS_CM_JT_RAMPON ) destlevel = 200;
-      else if( stat == AS_CM_JT_RAMPOFF ) destlevel = 0;
+      if( stat == AS_CM_JT_RAMPON || stat == AS_CM_JT_RAMPOFF ) {
+        uint8_t first = lst.maxTimeFirstDir();
+        if( first != 0xff && first != 0x00 ) {
+          destlevel = level;
+          return centis2ticks(first);
+        }
+        destlevel = stat == AS_CM_JT_RAMPON ? 200 : 0;
+      }
     }
     return StateMachine<BlindPeerList>::getDelayForState(stat,lst);
   }
