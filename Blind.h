@@ -212,8 +212,10 @@ protected:
 
   virtual void trigger (AlarmClock& clock) {
     if( state == AS_CM_JT_RAMPON || state == AS_CM_JT_RAMPOFF ) {
-      // update level to destlevel
-      updateLevel(destlevel);
+      if( destlevel != 0xff ) {
+        // update level to destlevel
+        updateLevel(destlevel);
+      }
     }
     StateMachine<BlindPeerList>::trigger(clock);
   }
@@ -250,7 +252,7 @@ public:
       if( stat == AS_CM_JT_RAMPON || stat == AS_CM_JT_RAMPOFF ) {
         uint8_t first = lst.maxTimeFirstDir();
         if( first != 0xff && first != 0x00 ) {
-          destlevel = level;
+          destlevel = 0xff;
           return centis2ticks(first);
         }
         destlevel = stat == AS_CM_JT_RAMPON ? 200 : 0;
