@@ -21,6 +21,7 @@ namespace as {
 #define DREG_MASTER_ID2 0x0B
 #define DREG_MASTER_ID3 0x0C
 #define DREG_SABOTAGEMSG     0x10
+#define DREG_CYCLICINFOMSGDIS     0x11
 #define DREG_LOWBATLIMIT     0x12
 #define DREG_TRANSMITTRYMAX     0x14
 #define DREG_CONFBUTTONTIME     0x15
@@ -50,6 +51,8 @@ namespace as {
 #define CREG_STATUSINFO 0x57
 #define CREG_CHARACTERISTIC 0x58
 #define CREG_LOGICCOMBINATION 0x59
+#define CREG_TX_MINDELAY 0x7b
+#define CREG_TX_THRESHOLD_PERCENT 0xac
 
 // Peer Registers used in List3
 #define PREG_CTRAMPONOFF 0x01
@@ -287,6 +290,8 @@ public:
   bool transmitDevTryMax (uint8_t value) const { return this->writeRegister(DREG_TRANSMITTRYMAX,value); }
   bool sabotageMsg () const { return this->readRegister(DREG_SABOTAGEMSG,true); }
   bool sabotageMsg (bool value) const { return this->writeRegister(DREG_SABOTAGEMSG,value); }
+  uint8_t cyclicInfoMsgDis () const { return this->readRegister(DREG_CYCLICINFOMSGDIS,0); }
+  bool cyclicInfoMsgDis (uint8_t value) const { return this->writeRegister(DREG_CYCLICINFOMSGDIS,value); }
   uint8_t lowBatLimit () const { return this->readRegister(DREG_LOWBATLIMIT,0); }
   bool lowBatLimit (uint8_t value) const { return this->writeRegister(DREG_LOWBATLIMIT,value); }
 
@@ -380,6 +385,10 @@ public:
   uint8_t logicCombination () const { return this->readRegister(CREG_LOGICCOMBINATION,0x1f,0,1); }
   bool logicCombination (uint8_t v) { return this->writeRegister(CREG_LOGICCOMBINATION,0x1f,0,v); }
 
+  uint8_t txMindelay () const { return this->readRegister(CREG_TX_MINDELAY,0x7f,0,8); }
+  bool txMindelay (uint8_t v) { return this->writeRegister(CREG_TX_MINDELAY,0x7f,0,v); }
+  bool txThresholdPercent () const { return this->readBit(CREG_TX_THRESHOLD_PERCENT,0,true); }
+  bool txThresholdPercent (bool v) const { return this->writeBit(CREG_TX_THRESHOLD_PERCENT,0,v); }
 };
 
 
