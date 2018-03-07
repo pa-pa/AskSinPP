@@ -21,6 +21,7 @@ C++ implementation of the AskSin protocol
 - [SHT10](https://github.com/spease/Sensirion.git)
 - [TSL2561](https://github.com/adafruit/TSL2561-Arduino-Library)
 - [BMP085/BMP180](https://github.com/adafruit/Adafruit-BMP085-Library)
+- [BH1750](https://github.com/claws/BH1750)
 
 
 ## Enable AES Support
