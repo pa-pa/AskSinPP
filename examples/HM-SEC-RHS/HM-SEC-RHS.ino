@@ -39,6 +39,10 @@
 #define SENS2_PIN 15
 #define SABOTAGE_PIN 16
 
+// activate additional open detection by using a third sensor pins
+// #define SENS3_PIN 16
+// #define SABOTAGE_PIN 0
+
 // number of available peers per channel
 #define PEERS_PER_CHANNEL 10
 
@@ -119,8 +123,43 @@ public:
   }
 };
 
+#ifdef SENS3_PIN
+class ThreePinPosition : public TwoPinPosition {
+  uint8_t pin3;
+public:
+  ThreePinPosition () : pin3(0) {}
+  void init (uint8_t p1,uint8_t p2,uint8_t p3,const uint8_t* pmap) {
+    TwoPinPosition::init(p1,p2,pmap);
+    pin3 = p3;
+  }
+  void measure (__attribute__((unused)) bool async=false) {
+    TwoPinPosition::measure(async);
+    if( _position == State::PosA && readPin(pin3) == HIGH) {
+      _position = State::PosB;
+    }
+  }
+};
 
+template <class HALTYPE,class List0Type,class List1Type,class List4Type,int PEERCOUNT>
+class ThreePinChannel : public ThreeStateGenericChannel<ThreePinPosition,HALTYPE,List0Type,List1Type,List4Type,PEERCOUNT> {
+public:
+  typedef ThreeStateGenericChannel<ThreePinPosition,HALTYPE,List0Type,List1Type,List4Type,PEERCOUNT> BaseChannel;
+
+  ThreePinChannel () : BaseChannel() {};
+  ~ThreePinChannel () {}
+
+  void init (uint8_t pin1,uint8_t pin2,uint8_t pin3,uint8_t sabpin,const uint8_t* pmap) {
+    BaseChannel::init(sabpin);
+    BaseChannel::possens.init(pin1,pin2,pin3,pmap);
+  }
+
+};
+
+typedef ThreePinChannel<Hal,RHSList0,RHSList1,DefList4,PEERS_PER_CHANNEL> ChannelType;
+#else
 typedef ThreeStateChannel<Hal,RHSList0,RHSList1,DefList4,PEERS_PER_CHANNEL> ChannelType;
+#endif
+
 class RHSType : public ThreeStateDevice<Hal,ChannelType,1,RHSList0> {
 public:
   typedef ThreeStateDevice<Hal,ChannelType,1,RHSList0> TSDevice;
@@ -148,7 +187,11 @@ void setup () {
   sdev.init(hal);
   buttonISR(cfgBtn,CONFIG_BUTTON_PIN);
   const uint8_t posmap[4] = {Position::State::PosB,Position::State::PosC,Position::State::PosA,Position::State::PosB};
+#ifdef SENS3_PIN
+  sdev.channel(1).init(SENS1_PIN,SENS2_PIN,SENS3_PIN,SABOTAGE_PIN,posmap);
+#else
   sdev.channel(1).init(SENS1_PIN,SENS2_PIN,SABOTAGE_PIN,posmap);
+#endif
   sdev.initDone();
 }
 
