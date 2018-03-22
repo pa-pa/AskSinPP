@@ -43,9 +43,9 @@ const struct DeviceInfo PROGMEM devinfo = {
     {0x90,0x78,0x90},       // Device ID
     "papa111333",           // Device Serial
     {0x00,0xdb},            // Device Model
-    0x0b,                   // Firmware Version
+    0x11,                   // Firmware Version
     as::DeviceType::MotionDetector, // Device Type
-    {0x01,0x00}             // Info Bytes
+    {0x00,0x00}             // Info Bytes
 };
 
 /**
