@@ -26,6 +26,7 @@ namespace as {
 #define DREG_TRANSMITTRYMAX     0x14
 #define DREG_CONFBUTTONTIME     0x15
 #define DREG_LOCALRESETDISABLE 0x18
+#define DREG_TPARAMS           0x1b
 
 // Channel Registers used in List1
 #define CREG_EVENTFILTER 0x01
@@ -294,7 +295,9 @@ public:
   bool cyclicInfoMsgDis (uint8_t value) const { return this->writeRegister(DREG_CYCLICINFOMSGDIS,value); }
   uint8_t lowBatLimit () const { return this->readRegister(DREG_LOWBATLIMIT,0); }
   bool lowBatLimit (uint8_t value) const { return this->writeRegister(DREG_LOWBATLIMIT,value); }
-
+  uint8_t tParamSelect () const { return this->readRegister(DREG_TPARAMS,3); }
+  bool tParamSelect (uint8_t value) const { return this->writeRegister(DREG_TPARAMS,value); }
+    
   uint8_t confButtonTime () const { return this->readRegister(DREG_CONFBUTTONTIME,0); }
   bool confButtonTime (uint8_t value) const { return this->writeRegister(DREG_CONFBUTTONTIME,value); }
   bool localResetDisable (bool v) const { return this->writeBit(DREG_LOCALRESETDISABLE,0,v); }
