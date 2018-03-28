@@ -134,7 +134,10 @@ public:
 };
 
 
-#if defined(TwoWire_h) || defined(_WIRE_H_)
+#if defined(TwoWire_h) || defined(_WIRE_H_) || defined(_TWOWIRE_H_)
+
+// with help of https://github.com/JChristensen/extEEPROM
+
 template <uint8 ID,uint16_t PAGES,uint8_t PAGESIZE>
 class at24cX {
 public:
@@ -142,6 +145,8 @@ public:
 
   bool present () {
     Wire.beginTransmission(ID);
+    Wire.write(0);  //high addr byte
+    Wire.write(0);  //low addr byte
     return Wire.endTransmission() == 0;
   }
 
@@ -158,34 +163,39 @@ public:
     Wire.write(addr & 0xff);
     if( Wire.endTransmission() == 0 ) {
       Wire.requestFrom(ID,(uint8_t)1);
-      if( Wire.available() ) {
-        b = Wire.read();
-      }
+      b = Wire.read();
     }
     return b;
   }
 
   bool setByte (uint16_t addr, uint8 d) {
-    bool success = false;
+    bool success = true;
     Wire.beginTransmission(ID);
     Wire.write(addr >> 8);
     Wire.write(addr & 0xff);
     Wire.write(d);
-    success = Wire.endTransmission();
+    success = Wire.endTransmission() == 0;
     // wait for write operation finished
-    while( present() == false ) {
-      _delay_ms(1);
+    if( success == true ) {
+      success = waitComplete();
     }
-    _delay_ms(1);
     return success;
   }
 
+  uint16_t calcBlockSize(uint16_t addr, uint16_t size) {
+    uint16_t block = PAGESIZE - (addr % PAGESIZE);
+    // BUFFER_LENGTH from Wire.h - 2 byte address
+    block = (BUFFER_LENGTH - 2) < block ? BUFFER_LENGTH - 2 : block;
+    return (size < block) ? size : block;
+  }
+
+
   bool setData (uint16_t addr,uint8* buf,uint16_t size) {
-    bool success = false;
-    while( size > 0 ) {
-      uint16_t towrite = PAGESIZE - (addr % PAGESIZE);
-      if( size < towrite) towrite = size;
-//      DPRINT("Write: ");DHEX(addr);DPRINT(" ");DHEXLN(towrite);
+    // DPRINT("setData: ");DHEX(addr);DPRINT(" ");DDECLN(size);
+    bool success = true;
+    while( success == true && size > 0 ) {
+      uint16_t towrite = calcBlockSize(addr, size);
+      // DPRINT("  write: ");DHEX(addr);DPRINT(" ");DDECLN(towrite);
       Wire.beginTransmission(ID);
       Wire.write(addr >> 8);
       Wire.write(addr & 0xff);
@@ -196,10 +206,12 @@ public:
       }
       success = Wire.endTransmission() == 0;
       // wait for write operation finished
-      while( present() == false ) {
-        _delay_ms(1);
+      if( success == true ) {
+        success = waitComplete();
       }
-      _delay_ms(1);
+      else {
+        DPRINTLN("ERROR EEPROM WRITE");
+      }
       size -= towrite;
       addr += towrite;
     }
@@ -207,23 +219,20 @@ public:
   }
 
   bool getData (uint16_t addr,uint8* buf,uint16_t size) {
-    bool success = false;
-    while( size > 0 ) {
-      uint16_t toread = PAGESIZE - (addr % PAGESIZE);
-      if( size < toread) toread = size;
+    bool success = true;
+    while( success == true && size > 0 ) {
+      uint16_t toread = calcBlockSize(addr, size);
       //DPRINT("Read: ");DHEX(addr);DPRINT(" ");DHEXLN(toread);
       Wire.beginTransmission(ID);
       Wire.write(addr >> 8);
       Wire.write(addr & 0xff);
-      if( Wire.endTransmission() == 0 ) {
-        success = true;
+      success = Wire.endTransmission() == 0;
+      if( success == true ) {
         Wire.requestFrom(ID,(uint8_t)toread);
         uint8_t done = 0;
         while( done < toread ) {
           done++;
-          if( Wire.available() ) {
-            *buf++ = (uint8_t)Wire.read();
-          }
+          *buf++ = (uint8_t)Wire.read();
         }
       }
       size -= toread;
@@ -233,11 +242,11 @@ public:
   }
 
   bool clearData (uint16_t addr, uint16_t size) {
-    bool success = false;
-    while( size > 0 ) {
-      uint16_t towrite = PAGESIZE - (addr % PAGESIZE);
-      if( size < towrite) towrite = size;
-//      DPRINT("Write: ");DHEX(addr);DPRINT(" ");DHEXLN(towrite);
+    // DPRINT("clearData: ");DHEX(addr);DPRINT(" ");DDECLN(size);
+    bool success = true;
+    while( success == true && size > 0 ) {
+      uint16_t towrite = calcBlockSize(addr, size);
+      // DPRINT("  clear: ");DHEX(addr);DPRINT(" ");DDECLN(towrite);
       Wire.beginTransmission(ID);
       Wire.write(addr >> 8);
       Wire.write(addr & 0xff);
@@ -248,14 +257,29 @@ public:
       }
       success = Wire.endTransmission() == 0;
       // wait for write operation finished
-      while( present() == false ) {
-        _delay_ms(1);
+      if( success == true ) {
+        success = waitComplete();
       }
-      // _delay_ms(20);
+      else {
+        DPRINTLN("ERROR EEPROM CLEAR");
+      }
       size -= towrite;
       addr += towrite;
     }
+//    DPRINTLN("clearData done");
     return success;
+  }
+
+  bool waitComplete () {
+    //wait up to 50ms for the write to complete
+    for (uint8_t i=50; i; --i) {
+      _delay_ms(1); //no point in waiting too fast
+      if( present() == true ) {
+        return true;
+      }
+    }
+    DPRINTLN("ERROR EEPROM WAIT");
+    return false;
   }
 
 };
@@ -267,9 +291,7 @@ class CachedAt24cX : public at24cX<ID,PAGES,PAGESIZE> {
   bool     dirty;
 public:
   typedef at24cX<ID,PAGES,PAGESIZE> Base;
-  CachedAt24cX () : pageaddr(0xffff), dirty(false) {
-    DPRINT("CachedAt24c"); DDECLN((uint8_t)sizeof(pagecache));
-  }
+  CachedAt24cX () : pageaddr(0xffff), dirty(false) {}
 
   void store () {
     writecache();
@@ -278,7 +300,7 @@ public:
 protected:
   void writecache () {
     if( pageaddr != 0xffff && dirty == true ) {
-      //DPRINT("WRITECACHE "); DHEXLN(pageaddr);
+      // DPRINT("WRITECACHE "); DHEXLN(pageaddr);
       Base::setData(pageaddr, pagecache, PAGESIZE);
       dirty = false;
     }
@@ -289,7 +311,7 @@ protected:
     if( pageaddr != paddr ) {
       writecache();
       pageaddr = paddr;
-      //DPRINT("FILLCACHE "); DHEXLN(pageaddr);
+      // DPRINT("FILLCACHE "); DHEXLN(pageaddr);
       Base::getData(pageaddr,pagecache,PAGESIZE);
       dirty = false;
     }
@@ -298,7 +320,7 @@ protected:
 
   void clearcache () {
     writecache();
-    //DPRINT("CLEARCACHE\n");
+    // DPRINT("CLEARCACHE\n");
     pageaddr = 0xffff;
   }
 
@@ -411,11 +433,19 @@ public:
 #ifndef STORAGEDRIVER
 #define STORAGEDRIVER InternalEprom
 #endif
-typedef StorageWrapper<STORAGEDRIVER > Storage;
 
-Storage __gb_storage;
+extern void* __gb_store;
+
+class Storage : public StorageWrapper<STORAGEDRIVER > {
+public:
+  Storage () {
+    __gb_store = this;
+  }
+};
+
+
 static inline Storage& storage () {
-  return __gb_storage;
+  return *((Storage*)__gb_store);
 }
 
 }

@@ -6,7 +6,7 @@
 #ifndef __ASKSINPP_h__
 #define __ASKSINPP_h__
 
-#define ASKSIN_PLUS_PLUS_VERSION "2.1.4"
+#define ASKSIN_PLUS_PLUS_VERSION "2.1.5"
 
 #define ASKSIN_PLUS_PLUS_IDENTIFIER F("AskSin++ V" ASKSIN_PLUS_PLUS_VERSION " (" __DATE__ " " __TIME__ ")")
 
@@ -35,6 +35,7 @@
 #endif
 
 
+#include <Storage.h>
 #include <Pins.h>
 #include <Debug.h>
 #include <Activity.h>
@@ -48,8 +49,9 @@
 
 namespace as {
 
-class AskSinBase {
 
+class AskSinBase {
+  Storage storage;
 public:
 
   static void pgm_read(uint8_t* dest,uint16_t adr,uint8_t size) {
@@ -91,15 +93,16 @@ public:
 
 template <class StatusLed,class Battery,class Radio>
 class AskSin : public AskSinBase {
+
 public:
   typedef StatusLed LedType;
   typedef Battery   BatteryType;
   typedef Radio     RadioType;
 
-  LedType     led;
-  BatteryType battery;
-  RadioType   radio;
-  Activity    activity;
+  LedType      led;
+  BatteryType  battery;
+  RadioType    radio;
+  Activity     activity;
 
   void init (const HMID& id) {
     srand((unsigned int&)id);

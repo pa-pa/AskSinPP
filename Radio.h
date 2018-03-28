@@ -338,7 +338,7 @@ public:
 #endif
 
 
-static void* instance;
+extern void* __gb_radio;
 
 class NoRadio {
 public:
@@ -365,7 +365,7 @@ template <class SPIType ,uint8_t GDO0>
 class Radio {
 
   static void isr () {
-    ((Radio<SPIType,GDO0>*)instance)->handleInt();
+    ((Radio<SPIType,GDO0>*)__gb_radio)->handleInt();
   }
 
   class MinSendTimeout : public Alarm {
@@ -484,7 +484,7 @@ public:   //--------------------------------------------------------------------
     // ensure ISR if off before we start to init CC1101
     // OTA boot loader may leave it on
     disable();
-    instance = this;
+    __gb_radio = this;
     DPRINT(F("CC init"));
     spi.init();                                     // init the hardware to get access to the RF modul
     pinMode(GDO0,INPUT);
