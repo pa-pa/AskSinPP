@@ -234,15 +234,16 @@ public:
 };
 
 template <class DEVTYPE,uint8_t OFFSTATE=HIGH,uint8_t ONSTATE=LOW,WiringPinMode MODE=INPUT_PULLUP>
-class InternalButton : public StateButton<HIGH,LOW,INPUT_PULLUP> {
+class InternalButton : public StateButton<OFFSTATE,ONSTATE,MODE> {
   DEVTYPE& device;
   uint8_t  num, counter;
 public:
-  typedef StateButton<HIGH,LOW,INPUT_PULLUP> ButtonType;
+  typedef StateButton<OFFSTATE,ONSTATE,MODE> ButtonType;
 
   InternalButton (DEVTYPE& dev,uint8_t n,uint8_t longpresstime=4) : device(dev), num(n), counter(0) {
-    setLongPressTime(decis2ticks(longpresstime));
+    this->setLongPressTime(decis2ticks(longpresstime));
   }
+  virtual ~InternalButton () {}
   virtual void state (uint8_t s) {
     ButtonType::state(s);
     if( s == ButtonType::released ) {
