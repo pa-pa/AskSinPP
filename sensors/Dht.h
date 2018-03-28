@@ -21,13 +21,20 @@ public:
   }
   void measure (__attribute__((unused)) bool async=false) {
     if( present() == true ) {
-      _temperature = _dht.readTemperature(false,true) * 10;
-      _humidity = _dht.readHumidity();
+        float t = _dht.readTemperature(false);
+        float h = _dht.readHumidity();
+        while (isnan(t) || isnan(h))
+        {
+            DPRINTLN("DHT measure failure. Trying again...");
+            t = _dht.readTemperature(false);
+            h = _dht.readHumidity();
+            delay(500);
+        }
+        _temperature = t * 10;
+        _humidity = h;
     }
   }
 };
-
-
 }
 
 #endif
