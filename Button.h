@@ -17,7 +17,7 @@ namespace as {
 template <uint8_t OFFSTATE=HIGH,uint8_t ONSTATE=LOW,WiringPinMode MODE=INPUT_PULLUP>
 class StateButton: public Alarm {
 
-#define DEBOUNCETIME millis2ticks(200)
+#define DEBOUNCETIME millis2ticks(50)
 
 public:
   enum States {
@@ -142,6 +142,8 @@ public:
           nexttick = DEBOUNCETIME;
         }
         break;
+      default:
+        break;
       }
       if( nexttick != 0 ) {
         sysclock.cancel(*this);
@@ -164,14 +166,15 @@ public:
 typedef StateButton<HIGH,LOW,INPUT_PULLUP> Button;
 
 template <class DEVTYPE,uint8_t OFFSTATE=HIGH,uint8_t ONSTATE=LOW,WiringPinMode MODE=INPUT_PULLUP>
-class ConfigButton : public StateButton<HIGH,LOW,INPUT_PULLUP> {
+class ConfigButton : public StateButton<OFFSTATE,ONSTATE,MODE> {
   DEVTYPE& device;
 public:
-  typedef StateButton<HIGH,LOW,INPUT_PULLUP> ButtonType;
+  typedef StateButton<OFFSTATE,ONSTATE,MODE> ButtonType;
 
   ConfigButton (DEVTYPE& dev,uint8_t longpresstime=3) : device(dev) {
-    setLongPressTime(seconds2ticks(longpresstime));
+    this->setLongPressTime(seconds2ticks(longpresstime));
   }
+  virtual ~ConfigButton () {}
   virtual void state (uint8_t s) {
     uint8_t old = ButtonType::state();
     ButtonType::state(s);
@@ -180,7 +183,7 @@ public:
     }
     else if( s == ButtonType::longpressed ) {
       if( old == ButtonType::longpressed ) {
-        device.reset(); // long pressed again - reset
+//        device.reset(); // long pressed again - reset
       }
       else {
         device.led().set(LedStates::key_long);
@@ -190,14 +193,15 @@ public:
 };
 
 template <class DEVTYPE,uint8_t OFFSTATE=HIGH,uint8_t ONSTATE=LOW,WiringPinMode MODE=INPUT_PULLUP>
-class ConfigToggleButton : public StateButton<HIGH,LOW,INPUT_PULLUP> {
+class ConfigToggleButton : public StateButton<OFFSTATE,ONSTATE,MODE> {
   DEVTYPE& device;
 public:
-  typedef StateButton<HIGH,LOW,INPUT_PULLUP> ButtonType;
+  typedef StateButton<OFFSTATE,ONSTATE,MODE> ButtonType;
 
   ConfigToggleButton (DEVTYPE& dev,uint8_t longpresstime=3) : device(dev) {
-    setLongPressTime(seconds2ticks(longpresstime));
+    this->setLongPressTime(seconds2ticks(longpresstime));
   }
+  virtual ~ConfigToggleButton () {}
   virtual void state (uint8_t s) {
     uint8_t old = ButtonType::state();
     ButtonType::state(s);
