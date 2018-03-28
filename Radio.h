@@ -340,6 +340,27 @@ public:
 
 static void* instance;
 
+class NoRadio {
+public:
+  NoRadio () {}
+
+  bool detectBurst () { return false; }
+  void disable () {};
+  void enable () {}
+  void flushrx() {}
+  uint8_t getGDO0 () { return 0; }
+  void init () {}
+  bool isIdle () { return true; }
+  uint8_t read (__attribute__ ((unused)) Message& msg) { return 0; }
+  uint8_t reset () { return 0; }
+  uint8_t rssi () { return 0; }
+  void setIdle () {}
+  void setSendTimeout (__attribute__ ((unused)) uint16_t timeout) {}
+  void waitTimeout (__attribute__ ((unused)) uint16_t timeout) {}
+  void wakeup () {}
+  bool write (__attribute__ ((unused)) const Message& msg, __attribute__ ((unused)) uint8_t burst) { return false; }
+};
+
 template <class SPIType ,uint8_t GDO0>
 class Radio {
 
