@@ -40,6 +40,7 @@ namespace as {
                 
                 _temperature = t * 10;
                 _humidity = h;
+                return true;
             }
         }
     };
