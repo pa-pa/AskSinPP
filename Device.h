@@ -421,7 +421,6 @@ public:
     }
     HMID todev;
     bool burst=false;
-    uint8_t tonum=0;
     // go over all peers, get first external device
     // check if one of the peers needs a burst to wakeup
     for( uint8_t i=0; i<ch.peers(); ++i ) {
@@ -433,7 +432,6 @@ public:
           }
           typename ChannelType::List4 l4 = ch.getList4(p);
           burst |= l4.burst();
-          tonum++;
         }
       }
     }
@@ -443,12 +441,7 @@ public:
     }
     // DPRINT("BCAST to: ");todev.dump(); DPRINTLN("\n");
     msg.burstRequired(burst);
-    if( tonum > 1 ) {
-      msg.setBroadcast();
-    }
-    else {
-      msg.setAck();
-    }
+    msg.setBroadcast();
     send(msg,todev);
     // signal that we have send to peer
     hal->sendPeer();
