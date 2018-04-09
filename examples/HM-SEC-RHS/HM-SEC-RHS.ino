@@ -124,19 +124,45 @@ public:
 };
 
 #ifdef SENS3_PIN
-class ThreePinPosition : public TwoPinPosition {
-  uint8_t pin3;
+class ThreePinPosition : public Position {
+  // pin mapping can be changed by bootloader config data
+  // map pins to pos     00   01   10   11
+  uint8_t posmap[4] = {State::PosC,State::PosC,State::PosB,State::PosA};
+  uint8_t sens1, sens2, sens3;
 public:
-  ThreePinPosition () : pin3(0) {}
-  void init (uint8_t p1,uint8_t p2,uint8_t p3,const uint8_t* pmap) {
-    TwoPinPosition::init(p1,p2,pmap);
-    pin3 = p3;
+  ThreePinPosition () : sens1(0), sens2(0), sens3(0) { _present = true; }
+
+  void init (uint8_t pin1,uint8_t pin2,uint8_t pin3, const uint8_t* pmap) {
+    memcpy(posmap,pmap,4);
+    init(pin1,pin2,pin3);
   }
+
+  void init (uint8_t pin1,uint8_t pin2,uint8_t pin3) {
+    sens1=pin1;
+    sens2=pin2;
+    sens3=pin3;
+  }
+
   void measure (__attribute__((unused)) bool async=false) {
-    TwoPinPosition::measure(async);
-    if( _position == State::PosA && readPin(pin3) == HIGH) {
-      _position = State::PosB;
+    if (readPin(sens1) == LOW) {
+      _position = posmap[1];
+    } else if (readPin(sens2) == LOW) {
+      _position = posmap[2];
+    } else if (readPin(sens3) == LOW) {
+      _position = posmap[3];
     }
+    else {
+      _position = posmap[0];
+    }
+  }
+
+  uint8_t readPin(uint8_t pinnr) {
+    uint8_t value=0;
+    pinMode(pinnr,INPUT_PULLUP);
+    value = digitalRead(pinnr);
+    pinMode(pinnr,OUTPUT);
+    digitalWrite(pinnr,LOW);
+    return value;
   }
 };
 
