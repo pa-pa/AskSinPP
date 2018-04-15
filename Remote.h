@@ -74,24 +74,11 @@ public:
     uint8_t s = state();
     return s == Button::pressed || s == Button::debounce || s == Button::longpressed;
   }
-
-  void pinchanged () {
-    isr = true;
-  }
-
-  bool checkpin () {
-    bool result = isr;
-    if( isr == true ) {
-      isr = false;
-      this->check();
-    }
-    return result;
-  }
 };
 
 #define remoteISR(device,chan,pin) class device##chan##ISRHandler { \
   public: \
-  static void isr () { device.channel(chan).pinchanged(); } \
+  static void isr () { device.channel(chan).irq(); } \
 }; \
 device.channel(chan).button().init(pin); \
 if( digitalPinToInterrupt(pin) == NOT_AN_INTERRUPT ) \
@@ -101,7 +88,7 @@ else \
 
 #define remoteChannelISR(chan,pin) class __##pin##ISRHandler { \
   public: \
-  static void isr () { chan.pinchanged(); } \
+  static void isr () { chan.irq(); } \
 }; \
 chan.button().init(pin); \
 if( digitalPinToInterrupt(pin) == NOT_AN_INTERRUPT ) \

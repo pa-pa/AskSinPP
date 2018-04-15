@@ -158,12 +158,9 @@ void setup () {
 }
 
 void loop() {
-  bool pinchanged = sdev.btn1Channel().checkpin();
-  pinchanged |= sdev.btn2Channel().checkpin();
-
   bool worked = hal.runready();
   bool poll = sdev.pollRadio();
-  if( pinchanged == false && worked == false && poll == false ) {
+  if( worked == false && poll == false ) {
     // deep discharge protection
     // if we drop below critical battery level - switch off all and sleep forever
     if( hal.battery.critical() ) {

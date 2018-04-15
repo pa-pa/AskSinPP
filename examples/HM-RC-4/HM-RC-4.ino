@@ -95,15 +95,9 @@ void setup () {
 }
 
 void loop() {
-  bool pinchanged = false;
-  for( int i=1; i<=sdev.channels(); ++i ) {
-    if( sdev.channel(i).checkpin() == true) {
-      pinchanged = true;
-    }
-  }
   bool worked = hal.runready();
   bool poll = sdev.pollRadio();
-  if( pinchanged == false && worked == false && poll == false ) {
+  if( worked == false && poll == false ) {
     hal.activity.savePower<Sleep<>>(hal);
   }
 }
