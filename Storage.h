@@ -134,7 +134,7 @@ public:
 };
 
 
-#if defined(TwoWire_h) || defined(_WIRE_H_) || defined(_TWOWIRE_H_)
+#if defined(TwoWire_h) || defined(_WIRE_H_) || defined(_TWOWIRE_H_) || defined(_WIREBASE_H_)
 
 // with help of https://github.com/JChristensen/extEEPROM
 
