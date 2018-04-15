@@ -6,6 +6,7 @@
 #ifndef __DEVICE_H__
 #define __DEVICE_H__
 
+#include "AskSinPP.h"
 #include "Sign.h"
 #include "HMID.h"
 #include "Channel.h"
@@ -13,6 +14,7 @@
 #include "Message.h"
 #include "Radio.h"
 #include "Led.h"
+#include "Activity.h"
 
 #define OTA_CONFIG_START 0x7fe0 // start address of 16 byte config data in bootloader
 #define OTA_MODEL_START  0x7ff0 // start address of 2 byte model id in bootloader
