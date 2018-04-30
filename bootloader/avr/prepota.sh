@@ -3,6 +3,7 @@
 HEXFILE=$1
 QUAL=`date +%Y%m%d%H%M`
 EQ3=`basename $1 .hex`_$QUAL.eq3
+TOHEX=`basename $1 .hex`_$QUAL.hex
 
 crc=0xFFFF
 function crc16 {
@@ -42,6 +43,7 @@ function toout {
 (
 OUT=0
 
+cp "$HEXFILE" "$TOHEX"
 while read LINE
 do
 #  echo

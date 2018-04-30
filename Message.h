@@ -45,6 +45,8 @@ class SensorEventMsg;
 class ActionMsg;
 class ActionSetMsg;
 
+class ValuesMsg;
+
 class Message {
 public:
 
@@ -381,6 +383,8 @@ public:
 
   DeviceInfoMsg& deviceInfo () { return *(DeviceInfoMsg*)this; }
   SerialInfoMsg& serialInfo () { return *(SerialInfoMsg*)this; }
+
+  ValuesMsg& values () { return *(ValuesMsg*)this; }
 };
 
 
@@ -649,6 +653,28 @@ public:
     memcpy(buf+3,serial,10);
   }
   uint8_t* serial () { return data() + 3; }
+};
+
+class ValuesMsg : public Message {
+public:
+  void init(uint8_t msgcnt,uint8_t ch) {
+    Message::init(0x0b,msgcnt,0x53,BIDI|WKMEUP,ch,0);
+  }
+  template <typename T>
+  void add (T value) {
+    uint8_t* values = buffer() + len + sizeof(T) - 1;
+    uint8_t num = sizeof(T);
+    while( num > 0 ) {
+      *values = value & 0xff;
+      value >>= 8;
+      --values;
+      --num;
+    }
+    // update length of message
+    len += sizeof(T);
+    // store number of values inside this message
+    subcommand(subcommand()+1);
+  }
 };
 
 }

@@ -20,6 +20,7 @@ namespace as {
 #define DREG_MASTER_ID1 0x0A
 #define DREG_MASTER_ID2 0x0B
 #define DREG_MASTER_ID3 0x0C
+#define DREG_BACKONTIME 0x0e
 #define DREG_SABOTAGEMSG     0x10
 #define DREG_CYCLICINFOMSGDIS     0x11
 #define DREG_LOWBATLIMIT     0x12
@@ -303,6 +304,8 @@ public:
   bool localResetDisable (bool v) const { return this->writeBit(DREG_LOCALRESETDISABLE,0,v); }
   bool localResetDisable () const { return this->readBit(DREG_LOCALRESETDISABLE,0,false); }
 
+  uint8_t backOnTime () const { return this->readRegister(DREG_BACKONTIME,3); }
+  bool backOnTime (uint8_t value) const { return this->writeRegister(DREG_BACKONTIME,value); }
 };
 
 
