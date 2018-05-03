@@ -21,6 +21,8 @@
 #include <MultiChannelDevice.h>
 #include <Switch.h>
 #include <Remote.h>
+#include <Motion.h>
+#include <IButton.h>
 
 #include <Sensors.h>
 #include <sensors/Bh1750.h>
@@ -33,6 +35,8 @@
 
 #define BELL_BUTTON_PIN PB4
 #define BELL_LIGHT_PIN PA8
+#define IR_PIN PA9
+#define MOTION_PIN PB3
 
 #define DOOR_PIN PC13
 #define BUTTON_GREEN PC14
@@ -41,6 +45,7 @@
 #define IBUTTON_READER_PIN PA0
 
 #define IBUTTON_CHANNELS 6
+#define NUM_CHANNELS IBUTTON_CHANNELS+5
 
 // number of available peers per channel
 #define PEERS_PER_CHANNEL 6
@@ -87,6 +92,12 @@ public:
   BellChannel () {}
   virtual ~BellChannel () {}
 
+  void setup(Device<Hal,DoorList0>* dev,uint8_t number,uint16_t addr) {
+    RemoteChannel<Hal,PEERS_PER_CHANNEL,DoorList0>::setup(dev, number, addr);
+    pinMode(BELL_LIGHT_PIN,PWM);
+    pwmWrite(BELL_LIGHT_PIN, 2048);
+  }
+
   virtual void state(uint8_t s) {
     RemoteChannel<Hal,PEERS_PER_CHANNEL,DoorList0>::state(s);
     if( s == Button::pressed || s == Button::longpressed ) {
@@ -95,28 +106,6 @@ public:
       loff.set(seconds2ticks(device().getList0().backOnTime()));
       sysclock.add(loff);
     }
-  }
-};
-
-class ValuesMsg : public Message {
-public:
-  void init(uint8_t msgcnt,uint8_t ch) {
-    Message::init(0x0b,msgcnt,0x53,BIDI|WKMEUP,ch,0);
-  }
-  template <typename T>
-  void add (T value) {
-    uint8_t* values = buffer() + len + sizeof(T) - 1;
-    uint8_t num = sizeof(T);
-    while( num > 0 ) {
-      *values = value & 0xff;
-      value >>= 8;
-      --values;
-      --num;
-    }
-    // update length of message
-    len += sizeof(T);
-    // store number of values inside this message
-    subcommand(subcommand()+1);
   }
 };
 
@@ -155,7 +144,7 @@ public:
     msg.add(bh1750.brightness());
     device().send(msg, device().getMasterID());
 
-    set(seconds2ticks(30));
+    set(seconds2ticks(3*60));
     clock.add(*this);
   }
 
@@ -172,231 +161,48 @@ public:
 
 };
 
-DEFREGISTER(IButtonReg1,CREG_AES_ACTIVE,0xe0,0xe1,0xe2,0xe3,0xe4,0xe5,0xe6,0xe7)
-class IButtonList1 : public RegList1<IButtonReg1> {
-public:
-  IButtonList1 (uint16_t addr) : RegList1<IButtonReg1>(addr) {}
-  void defaults () {
-    clear();
-  }
-};
-
-class IButtonChannel : public Channel<Hal,IButtonList1,EmptyList,DefList4,PEERS_PER_CHANNEL,DoorList0>, Alarm {
-
-  enum { none=0, released, longpressed, longreleased };
-
-  uint8_t state, matches, repeatcnt;
-
-public:
-  typedef Channel<Hal,IButtonList1,EmptyList,DefList4,PEERS_PER_CHANNEL,DoorList0> BaseChannel;
-
-  IButtonChannel () : BaseChannel(), Alarm(0), state(0), matches(0),repeatcnt(0) {}
-  virtual ~IButtonChannel () {}
-
-  virtual void trigger (__attribute__((unused)) AlarmClock& clock) {
-    state = 0;
-    changed(true);
-  }
-
-  uint8_t status () const {
-    return state;
-  }
-
-  uint8_t flags () const {
-    return 0;
-  }
-
-  bool match (uint8_t* addr) {
-    matches <<= 1;
-    uint8_t s = none;
-    if( free() == false && isID(addr) == true ) {
-      matches |= 0b00000001;
-      // 3 or 6 matches are longpress and longlongpress
-      if( (matches & 0b00111111) == 0b00000111 || (matches & 0b00111111) == 0b00111111 ) {
-        s = longpressed;
-        DPRINTLN("longpressed");
-        // clear longlong
-        matches &= 0b11000111;
-      }
-    }
-    // check for long release
-    if( (matches & 0b00001111) == 0b00001110 ) {
-      s = longreleased;
-      DPRINTLN("longreleased");
-    }
-    // check for release
-    else if( (matches & 0b00000011) == 0b00000010 ) {
-      s = released;
-      DPRINTLN("released");
-    }
-    if( s != none ) {
-      RemoteEventMsg& msg = (RemoteEventMsg&)this->device().message();
-      msg.init(this->device().nextcount(),this->number(),repeatcnt,(s==longreleased || s==longpressed),this->device().battery().low());
-      if( s == released || s == longreleased) {
-        // send the message to every peer
-        this->device().sendPeerEvent(msg,*this);
-        repeatcnt++;
-      }
-      else if (s == longpressed) {
-        // broadcast the message
-        this->device().broadcastPeerEvent(msg,*this);
-      }
-    }
-    return (matches & 0b00000001) == 0b00000001;
-  }
-
-  bool isID (uint8_t* buf) {
-    IButtonList1 l = getList1();
-    for( uint8_t n=0; n<8; ++n ) {
-      if( l.readRegister(0xe0+n) != buf[n] ) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  void storeID (uint8_t* buf) {
-    if( learn() == true ) {
-      for( uint8_t n=0; n<8; ++n ) {
-        getList1().writeRegister(0xe0+n,buf[n]);
-      }
-      state = 0;
-      changed(true);
-      sysclock.cancel(*this);
-    }
-  }
-
-  bool free () {
-    return getList1().readRegister(0xe0) == 0;
-  }
-
-  bool learn () const {
-    return state == 200;
-  }
-
-  bool process (const ActionSetMsg& msg) {
-    state = msg.value();
-    changed(true);
-    if( state != 0 ) {
-      set(seconds2ticks(60));
-      sysclock.add(*this);
-    }
-    return true;
-  }
-
-  bool process (__attribute__((unused)) const RemoteEventMsg& msg) { return false; }
-  bool process (__attribute__((unused)) const SensorEventMsg& msg) { return false; }
-
-};
-
 typedef SwitchChannel<Hal,PEERS_PER_CHANNEL,DoorList0> OpenerChannel;
+typedef SwitchChannel<Hal,PEERS_PER_CHANNEL,DoorList0> IrChannel;
+typedef MotionChannel<Hal,PEERS_PER_CHANNEL,DoorList0,Bh1750<> > PirChannel;
+typedef IButtonChannel<Hal,PEERS_PER_CHANNEL,DoorList0> IButChannel;
 
-class DoorBellDev :  public ChannelDevice<Hal,VirtBaseChannel<Hal,DoorList0>,IBUTTON_CHANNELS+3,DoorList0> {
+class DoorBellDev :  public ChannelDevice<Hal,VirtBaseChannel<Hal,DoorList0>,NUM_CHANNELS,DoorList0> {
 public:
   VirtChannel<Hal,BellChannel,DoorList0>  bell;
-  VirtChannel<Hal,IButtonChannel,DoorList0>  ibut[IBUTTON_CHANNELS];
+  VirtChannel<Hal,IButChannel,DoorList0>  ibut[IBUTTON_CHANNELS];
   VirtChannel<Hal,OpenerChannel,DoorList0>  opener;
+  VirtChannel<Hal,IrChannel,DoorList0>  ir;
   VirtChannel<Hal,ValuesChannel,DoorList0>  values;
+  VirtChannel<Hal,PirChannel,DoorList0>  motion;
 public:
-  typedef ChannelDevice<Hal,VirtBaseChannel<Hal,DoorList0>,IBUTTON_CHANNELS+3,DoorList0> DeviceType;
+  typedef ChannelDevice<Hal,VirtBaseChannel<Hal,DoorList0>,NUM_CHANNELS,DoorList0> DeviceType;
   DoorBellDev(const DeviceInfo& info,uint16_t addr) : DeviceType(info,addr) {
     int ch=1;
     DeviceType::registerChannel(bell,ch++);
-    for( uint8_t i=0; i<IBUTTON_CHANNELS; ++i ) {
+    DeviceType::registerChannel(opener,ch++);
+    DeviceType::registerChannel(ir,ch++);
+    DeviceType::registerChannel(values,ch++);
+    DeviceType::registerChannel(motion,ch++);
+    for( uint8_t i=0; i<ibuttonCount(); ++i ) {
       DeviceType::registerChannel(ibut[i],ch++);
     }
-    DeviceType::registerChannel(opener,ch++);
-    DeviceType::registerChannel(values,ch++);
   }
   virtual ~DoorBellDev () {}
 
   BellChannel& bellChannel () { return bell; }
-  IButtonChannel& ibutChannel (uint8_t num) { return ibut[num]; }
   OpenerChannel& openerChannel () { return opener; }
+  IrChannel& irChannel () { return ir; }
   ValuesChannel& valuesChannel () { return values; }
+  PirChannel& motionChannel () { return motion; }
+  IButChannel& ibuttonChannel (uint8_t num) { return ibut[num]; }
+  uint8_t ibuttonCount () const { return IBUTTON_CHANNELS; }
 };
 
-class IButtonScanner : public Alarm {
-  OneWire   ow;
-  DoorBellDev& dev;
-  DualStatusLed<BUTTON_GREEN,BUTTON_RED> led;
-  uint8_t cnt;
-public:
-  IButtonScanner (DoorBellDev& d) : Alarm(millis2ticks(500)), ow(IBUTTON_READER_PIN), dev(d), cnt(0) {
-    led.init();
-  }
-  virtual ~IButtonScanner () {}
-
-  IButtonChannel* learning () {
-    for( uint8_t i=0; i<IBUTTON_CHANNELS; ++i ) {
-      IButtonChannel& bc = dev.ibutChannel(i);
-      if( bc.learn() == true ) {
-        return &bc;
-      }
-    }
-    return 0;
-  }
-
-  IButtonChannel* matches (uint8_t* addr) {
-    for( uint8_t i=0; i<IBUTTON_CHANNELS; ++i ) {
-      IButtonChannel& bc = dev.ibutChannel(i);
-      if( bc.match(addr) == true ) {
-        return &bc;
-      }
-    }
-    return 0;
-  }
-
-  bool scan (uint8_t* addr) {
-    ow.reset_search();
-    if ( ow.search(addr) == false || OneWire::crc8(addr, 7) != addr[7] ) {
-      memset(addr,0,8);
-      return false;
-    }
-    return true;
-  }
-
-  void trigger (AlarmClock& clock) {
-    // reactivate
-    set(millis2ticks(250));
-    clock.add(*this);
-    ++cnt;
-    // check if we have a learning channel
-    IButtonChannel* lc = learning();
-    if( lc != 0 ) {
-      uint8_t cycle = cnt & 0x01;
-      led.ledOn(cycle == 0 ? tick : 0, cycle == 0 ? 0 : tick);
-    }
-    // scan the bus now
-    uint8_t addr[8];
-    bool found = scan(addr);
-    // search matching channel
-    IButtonChannel* match = matches(addr);
-    if( found == true ) {
-      if( lc != 0 ) {
-        clock.cancel(*this);
-        set(seconds2ticks(5));
-        led.ledOff();
-        led.ledOn(tick);
-        clock.add(*this);
-        lc->storeID(addr);
-      }
-      else {
-        if( match != 0 ) {
-          led.ledOn(millis2ticks(500),0);
-        }
-        else {
-          led.ledOn(0,millis2ticks(500));
-        }
-      }
-    }
-  }
-};
 
 Hal hal;
 DoorBellDev sdev(devinfo,0x20);
 ConfigButton<DoorBellDev,LOW,HIGH,INPUT_PULLDOWN> cfgBtn(sdev);
-IButtonScanner scanner(sdev);
+IButtonScanner<DoorBellDev,IButChannel,IBUTTON_READER_PIN,BUTTON_GREEN,BUTTON_RED> scanner(sdev);
 
 BME280I2C bmp;
 
@@ -404,17 +210,33 @@ void setup () {
   delay(2000); // wait until Maple Mini USB-Serial is available
   DINIT(57600,ASKSIN_PLUS_PLUS_IDENTIFIER);
   Wire.begin();
-  sdev.init(hal);
+
+  if( sdev.init(hal) == true ) {
+    // setup internal peers on first init
+    HMID devid;
+    sdev.getDeviceID(devid);
+    Peer bpeer(devid,3);
+    sdev.bellChannel().peer(bpeer);
+    Peer ipeer(devid,1);
+    sdev.irChannel().peer(ipeer);
+    SwitchList3 list3 = sdev.irChannel().getList3(ipeer);
+    list3.sh().onTime(0x4c); // 60s
+    list3.sh().jtOn(AS_CM_JT_ON);
+    list3.lg().onTime(0x4c); // 60s
+    list3.lg().jtOn(AS_CM_JT_ON);
+  }
   remoteChannelISR(sdev.bellChannel(),BELL_BUTTON_PIN);
   buttonISR(cfgBtn,CONFIG_BUTTON_PIN);
   sdev.openerChannel().init(DOOR_PIN);
+  sdev.irChannel().init(IR_PIN);
+  motionChannelISR(sdev.motionChannel(),MOTION_PIN);
   sdev.initDone();
 
   sysclock.add(scanner);
 
-  pinMode(BELL_LIGHT_PIN,PWM);
-  pwmWrite(BELL_LIGHT_PIN, 2048);
-
+  sdev.openerChannel().changed(true);
+  sdev.irChannel().changed(true);
+/*
   DHEX(sdev.bellChannel().getList1().address()); DPRINT("  ");
   sdev.bellChannel().getList1().dump();
   for( uint8_t i=0; i<IBUTTON_CHANNELS; ++i ) {
@@ -423,6 +245,7 @@ void setup () {
   }
   DHEX(sdev.openerChannel().getList1().address()); DPRINT("  ");
   sdev.openerChannel().getList1().dump();
+*/
 }
 
 void loop() {
