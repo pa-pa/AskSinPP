@@ -55,6 +55,20 @@ namespace as {
 #define CREG_LOGICCOMBINATION 0x59
 #define CREG_TX_MINDELAY 0x7b
 #define CREG_TX_THRESHOLD_PERCENT 0xac
+#define CREG_WATER_UPPER_THRESHOLD_CH 0x06
+#define CREG_WATER_LOWER_THRESHOLD_CH 0x07
+#define CREG_CASE_DESIGN 0x5a
+#define CREG_CASE_HIGH_1 0x5e
+#define CREG_CASE_HIGH_2 0x5f
+#define CREG_FILL_LEVEL_1 0x62
+#define CREG_FILL_LEVEL_2 0x63
+#define CREG_CASE_WIDTH_1 0x66
+#define CREG_CASE_WIDTH_2 0x67
+#define CREG_CASE_LENGTH_1 0x6a
+#define CREG_CASE_LENGTH_2 0x6b
+#define CREG_MEASURE_LENGTH_1 0x6c
+#define CREG_MEASURE_LENGTH_2 0x6d
+#define CREG_USE_CUSTOM_CALIBRATION 0x6e
 
 // Peer Registers used in List3
 #define PREG_CTRAMPONOFF 0x01
@@ -100,7 +114,11 @@ namespace as {
 
 #define CREG_REFERENCE_RUNNING_TIME_TOP_BOTTOM CREG_REFERENCE_RUNNING_TIME_TOP_BOTTOM_1,CREG_REFERENCE_RUNNING_TIME_TOP_BOTTOM_2
 #define CREG_REFERENCE_RUNNING_TIME_BOTTOM_TOP CREG_REFERENCE_RUNNING_TIME_BOTTOM_TOP_1,CREG_REFERENCE_RUNNING_TIME_BOTTOM_TOP_2
-
+#define CREG_CASE_HIGH CREG_CASE_HIGH_1,CREG_CASE_HIGH_2
+#define CREG_FILL_LEVEL CREG_FILL_LEVEL_1,CREG_FILL_LEVEL_2
+#define CREG_CASE_WIDTH CREG_CASE_WIDTH_1,CREG_CASE_WIDTH_2
+#define CREG_CASE_LENGTH CREG_CASE_LENGTH_1,CREG_CASE_LENGTH_2
+#define CREG_MEASURE_LENGTH CREG_MEASURE_LENGTH_1,CREG_MEASURE_LENGTH_2
 
 // This is only a helper class
 class AskSinRegister {
@@ -395,6 +413,62 @@ public:
   bool txMindelay (uint8_t v) { return this->writeRegister(CREG_TX_MINDELAY,0x7f,0,v); }
   bool txThresholdPercent () const { return this->readBit(CREG_TX_THRESHOLD_PERCENT,0,true); }
   bool txThresholdPercent (bool v) const { return this->writeBit(CREG_TX_THRESHOLD_PERCENT,0,v); }
+  uint8_t waterUpperThreshold () const { return this->readRegister(CREG_WATER_UPPER_THRESHOLD_CH,0xff); }
+  bool waterUpperThreshold (uint8_t v) const { return this->writeRegister(CREG_WATER_UPPER_THRESHOLD_CH,v); }
+  
+  uint8_t waterLowerThreshold () const { return this->readRegister(CREG_WATER_LOWER_THRESHOLD_CH,0xff); }
+  bool waterLowerThreshold (uint8_t v) const { return this->writeRegister(CREG_WATER_LOWER_THRESHOLD_CH,v); }
+  
+  uint8_t caseDesign () const { return this->readRegister(CREG_CASE_DESIGN,0); }
+  bool caseDesign (uint8_t v) const { return this->writeRegister(CREG_CASE_DESIGN,v); }
+  
+  bool caseHigh (uint16_t value) const {
+   return this->writeRegister(CREG_CASE_HIGH_1, (value >> 8) & 0xff) &&
+     this->writeRegister(CREG_CASE_HIGH_2, value & 0xff);
+  }
+  uint16_t caseHigh () const {
+   return (this->readRegister(CREG_CASE_HIGH_1,0) << 8) +
+     this->readRegister(CREG_CASE_HIGH_2,0);
+  }
+
+  bool caseWidth (uint16_t value) const {
+   return this->writeRegister(CREG_CASE_WIDTH_1, (value >> 8) & 0xff) &&
+     this->writeRegister(CREG_CASE_WIDTH_2, value & 0xff);
+  }
+  uint16_t caseWidth () const {
+   return (this->readRegister(CREG_CASE_WIDTH_1,0) << 8) +
+     this->readRegister(CREG_CASE_WIDTH_2,0);
+  }
+ 
+  bool caseLength (uint16_t value) const {
+   return this->writeRegister(CREG_CASE_LENGTH_1, (value >> 8) & 0xff) &&
+     this->writeRegister(CREG_CASE_LENGTH_2, value & 0xff);
+  }
+  uint16_t caseLength () const {
+   return (this->readRegister(CREG_CASE_LENGTH_1,0) << 8) +
+     this->readRegister(CREG_CASE_LENGTH_2,0);
+  }
+  
+  bool measureLength (uint16_t value) const {
+   return this->writeRegister(CREG_MEASURE_LENGTH_1, (value >> 8) & 0xff) &&
+     this->writeRegister(CREG_MEASURE_LENGTH_2, value & 0xff);
+  }
+  uint16_t measureLength () const {
+   return (this->readRegister(CREG_MEASURE_LENGTH_1,0) << 8) +
+     this->readRegister(CREG_MEASURE_LENGTH_2,0);
+  }
+ 
+  bool fillLevel (uint16_t value) const {
+   return this->writeRegister(CREG_FILL_LEVEL_1, (value >> 8) & 0xff) &&
+     this->writeRegister(CREG_FILL_LEVEL_2, value & 0xff);
+  }
+  uint16_t fillLevel () const {
+   return (this->readRegister(CREG_FILL_LEVEL_1,0) << 8) +
+     this->readRegister(CREG_FILL_LEVEL_2,0);
+  }
+ 
+  bool useCustomCalibration () const { return this->readBit(CREG_USE_CUSTOM_CALIBRATION,0,true); }
+  bool useCustomCalibration (bool v) const { return this->writeBit(CREG_USE_CUSTOM_CALIBRATION,0,v); }
 };
 
 
