@@ -69,6 +69,9 @@ namespace as {
 #define CREG_MEASURE_LENGTH_1 0x6c
 #define CREG_MEASURE_LENGTH_2 0x6d
 #define CREG_USE_CUSTOM_CALIBRATION 0x6e
+#define CREG_DATA_TRANSMISSION_CONDITION 0xb0
+#define CREG_DATA_STABILITY_FILTER_TIME 0xb1
+#define CREG_DATA_INPUT_PROPERTIES 0xb2
 
 // Peer Registers used in List3
 #define PREG_CTRAMPONOFF 0x01
@@ -469,6 +472,36 @@ public:
  
   bool useCustomCalibration () const { return this->readBit(CREG_USE_CUSTOM_CALIBRATION,0,true); }
   bool useCustomCalibration (bool v) const { return this->writeBit(CREG_USE_CUSTOM_CALIBRATION,0,v); }
+    
+  uint8_t dataTransmissionCondtion() const { return this->readRegister(CREG_DATA_TRANSMISSION_CONDITION,0); }
+  bool dataTransmissionCondtion(uint8_t v) const { return this->writeRegister(CREG_DATA_TRANSMISSION_CONDITION,v); }
+  
+  uint8_t dataStabilityFilterTime () const { return this->readRegister(CREG_DATA_STABILITY_FILTER_TIME,0); }
+  bool dataStabilityFilterTime (uint8_t v) const { return this->writeRegister(CREG_DATA_STABILITY_FILTER_TIME,v); }
+      
+  bool dataInputPropertieIn0 () const { return this->readRegister(CREG_DATA_INPUT_PROPERTIES,0x01,0,false); }
+  bool dataInputPropertieIn0 (uint8_t v) { return this->writeRegister(CREG_DATA_INPUT_PROPERTIES,0x01,0,v); }
+  
+  bool dataInputPropertieIn1 () const { return this->readRegister(CREG_DATA_INPUT_PROPERTIES,0x02,0,false); }
+  bool dataInputPropertieIn1 (uint8_t v) { return this->writeRegister(CREG_DATA_INPUT_PROPERTIES,0x02,0,v); }
+  
+  bool dataInputPropertieIn2 () const { return this->readRegister(CREG_DATA_INPUT_PROPERTIES,0x04,0,false); }
+  bool dataInputPropertieIn2 (uint8_t v) { return this->writeRegister(CREG_DATA_INPUT_PROPERTIES,0x04,0,v); }
+  
+  bool dataInputPropertieIn3 () const { return this->readRegister(CREG_DATA_INPUT_PROPERTIES,0x08,0,false); }
+  bool dataInputPropertieIn3 (uint8_t v) { return this->writeRegister(CREG_DATA_INPUT_PROPERTIES,0x08,0,v); }
+  
+  bool dataInputPropertieIn4 () const { return this->readRegister(CREG_DATA_INPUT_PROPERTIES,0x10,0,false); }
+  bool dataInputPropertieIn4 (uint8_t v) { return this->writeRegister(CREG_DATA_INPUT_PROPERTIES,0x10,0,v); }
+  
+  bool dataInputPropertieIn5 () const { return this->readRegister(CREG_DATA_INPUT_PROPERTIES,0x20,0,false); }
+  bool dataInputPropertieIn5 (uint8_t v) { return this->writeRegister(CREG_DATA_INPUT_PROPERTIES,0x20,0,v); }
+  
+  bool dataInputPropertieIn6 () const { return this->readRegister(CREG_DATA_INPUT_PROPERTIES,0x40,0,false); }
+  bool dataInputPropertieIn6 (uint8_t v) { return this->writeRegister(CREG_DATA_INPUT_PROPERTIES,0x40,0,v); }
+  
+  bool dataInputPropertieIn7 () const { return this->readRegister(CREG_DATA_INPUT_PROPERTIES,0x80,0,false); }
+  bool dataInputPropertieIn7 (uint8_t v) { return this->writeRegister(CREG_DATA_INPUT_PROPERTIES,0x80,0,v); }
 };
 
 
