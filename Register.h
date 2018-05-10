@@ -72,6 +72,7 @@ namespace as {
 #define CREG_DATA_TRANSMISSION_CONDITION 0xb0
 #define CREG_DATA_STABILITY_FILTER_TIME 0xb1
 #define CREG_DATA_INPUT_PROPERTIES 0xb2
+#define CREG_CHANNEL_FUNCTION 0x92
 
 // Peer Registers used in List3
 #define PREG_CTRAMPONOFF 0x01
@@ -502,6 +503,9 @@ public:
   
   bool dataInputPropertieIn7 () const { return this->readRegister(CREG_DATA_INPUT_PROPERTIES,0x80,0,false); }
   bool dataInputPropertieIn7 (uint8_t v) { return this->writeRegister(CREG_DATA_INPUT_PROPERTIES,0x80,0,v); }
+
+  uint8_t channelFunction () const { return this->readRegister(CREG_CHANNEL_FUNCTION,0); }
+  bool channelFunction (uint8_t v) const { return this->writeRegister(CREG_CHANNEL_FUNCTION,v); }
 };
 
 
