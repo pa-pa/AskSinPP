@@ -35,16 +35,16 @@ public:
   bool measure (__attribute__((unused)) bool async=false) {
     int vo;
 
-#if ACTIVATEPIN != 0
+    if(ACTIVATEPIN != 0) {
       pinMode(ACTIVATEPIN, OUTPUT);
       digitalWrite(ACTIVATEPIN, HIGH);
-#endif
+    }
 
     vo = analogRead(SENSEPIN);
 
-#if ACTIVATEPIN != 0
+    if(ACTIVATEPIN != 0) {
       digitalWrite(ACTIVATEPIN, LOW);
-#endif
+    }
 
     float rNtc = _r0 * (1023.0 / (float)vo - 1.0);
 
