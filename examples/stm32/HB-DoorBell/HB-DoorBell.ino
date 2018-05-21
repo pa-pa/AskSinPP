@@ -234,8 +234,6 @@ void setup () {
 
   sysclock.add(scanner);
 
-  sdev.openerChannel().changed(true);
-  sdev.irChannel().changed(true);
 /*
   DHEX(sdev.bellChannel().getList1().address()); DPRINT("  ");
   sdev.bellChannel().getList1().dump();
