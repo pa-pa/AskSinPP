@@ -1,5 +1,5 @@
 
-# Please use V2 Branch for your devices. The master branch is used for active development and may be instable
+# Please use V3 Branch for your devices. The master branch is used for active development and may be instable
 
 # AskSin++
 
