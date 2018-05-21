@@ -17,7 +17,12 @@
 
 #define DEVICE_CONFIG CFG_LOWACTIVE_OFF
 
+
+//#define STORAGEDRIVER at24c32
+#define STORAGEDRIVER at24cX<0x50,128,32>
+
 #include <SPI.h>    // when we include SPI.h - we can use LibSPI class
+#include <Wire.h>
 #include <EEPROM.h> // the EEPROM library contains Flash Access Methods
 #include <AskSinPP.h>
 
@@ -33,10 +38,10 @@
 #define RELAY1_PIN PC13
 #define RELAY2_PIN PC14
 #define RELAY3_PIN PC15
-#define RELAY4_PIN PA0
+#define RELAY4_PIN PA8
 
 // number of available peers per channel
-#define PEERS_PER_CHANNEL 4
+#define PEERS_PER_CHANNEL 6
 
 
 // all library classes are placed in the namespace 'as'
@@ -59,7 +64,6 @@ typedef LibSPI<PA4> RadioSPI;
 typedef AskSin<StatusLed<LED_BUILTIN>,NoBattery,Radio<RadioSPI,PB0> > Hal;
 Hal hal;
 
-
 // setup the device with channel type and number of channels
 typedef MultiChannelDevice<Hal,SwitchChannel<Hal,PEERS_PER_CHANNEL,List0>,4> SwitchDevice;
 SwitchDevice sdev(devinfo,0x20);
@@ -79,7 +83,9 @@ void initPeerings (bool first) {
 }
 
 void setup () {
+  delay(2000);
   DINIT(57600,ASKSIN_PLUS_PLUS_IDENTIFIER);
+  Wire.begin();
   bool first = sdev.init(hal);
   // this will also trigger powerUpAction handling
   bool low = sdev.getConfigByte(CFG_LOWACTIVE_BYTE);
