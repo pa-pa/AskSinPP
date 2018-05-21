@@ -22,8 +22,8 @@
 // B0 == PIN 8 on Pro Mini
 #define CONFIG_BUTTON_PIN 8
 
-#define ON_RELAY_PIN 17
-#define DIR_RELAY_PIN 16
+#define ON_RELAY_PIN 15
+#define DIR_RELAY_PIN 14
 
 #define UP_BUTTON_PIN 6
 #define DOWN_BUTTON_PIN 3
@@ -49,6 +49,7 @@ const struct DeviceInfo PROGMEM devinfo = {
  */
 typedef AvrSPI<10,11,12,13> RadioSPI;
 typedef AskSin<StatusLed<4>,NoBattery,Radio<RadioSPI,2> > Hal;
+//typedef AskSin<StatusLed<4>,NoBattery,NoRadio> Hal;
 
 DEFREGISTER(BlindReg0,MASTERID_REGS,DREG_INTKEY,DREG_CONFBUTTONTIME,DREG_LOCALRESETDISABLE)
 
@@ -130,6 +131,9 @@ void setup () {
   //storage().setByte(0,0);
   bool first = sdev.init(hal);
   sdev.channel(1).init();
+
+//  sdev.channel(1).getList1().refRunningTimeButtonTop(270);
+//  sdev.channel(1).getList1().refRunningTimeTopButton(270);
 
   buttonISR(cfgBtn,CONFIG_BUTTON_PIN);
   buttonISR(btnup,UP_BUTTON_PIN);
