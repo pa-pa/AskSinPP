@@ -3,12 +3,16 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include <math.h>
+
 
 #include <Debug.h>
-#include <unistd.h>
 #include <AlarmClock.h>
-#include <Dimmer.h>
+//#include <Dimmer.h>
 
+
+/*
 as::DimmerStateMachine sm;
 
 class Ping : public as::Alarm {
@@ -54,9 +58,49 @@ public:
     ++cnt;
   }
 };
+*/
+
+class Al : public as::Alarm {
+public:
+  Al(uint32_t t) : as::Alarm(t) {}
+  virtual ~Al () {}
+  virtual void trigger (as::AlarmClock& c) {}
+};
+
+void print(as::Alarm* t) {
+  while( t != 0 ) {
+    std::cout << t << ": " << t->tick << std::endl;
+    t = (as::Alarm*)t->select();
+  }
+  std::cout << std::endl;
+}
 
 int main () {
 
+  Al a1(5), a2(8), a3(8);
+
+  as::sysclock.add(a1);
+  as::sysclock.add(a2);
+  as::sysclock.add(a3);
+
+  print(as::sysclock.first());
+
+  as::sysclock.cancel(a2);
+  print(as::sysclock.first());
+
+  a2.tick=8;
+  as::sysclock.add(a2);
+  print(as::sysclock.first());
+
+  as::sysclock.cancel(a1);
+  print(as::sysclock.first());
+
+  a1.tick=10;
+  as::sysclock.add(a1);
+  print(as::sysclock.first());
+
+
+  /*
   Ping ping;
   as::sysclock.add(ping);
   OnOff oo;
@@ -69,5 +113,6 @@ int main () {
 	  --as::sysclock;
 	  as::sysclock.runready();
   }
+  */
   return 0;
 }
