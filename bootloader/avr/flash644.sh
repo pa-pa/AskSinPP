@@ -19,6 +19,6 @@ if [ ! -f $BOOTLOADER ]; then
 fi
 
 # Int. RC 8MHz, Brown-out detection disabled
-avrdude -p m328p -P usb -c usbasp -B 10 -U lfuse:w:0xE2:m -U hfuse:w:0xD0:m -U efuse:w:0xFF:m -U lock:w:0xFF:m
-avrdude -p m328p -P usb -c usbasp -V -U flash:w:$BOOTLOADER
+avrdude -p m644p -P usb -c usbasp -B 10 -U lfuse:w:0xE2:m -U hfuse:w:0xD2:m -U efuse:w:0xFF:m -U lock:w:0xFF:m
+avrdude -p m644p -P usb -c usbasp -V -U flash:w:$BOOTLOADER
 

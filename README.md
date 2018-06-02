@@ -8,12 +8,18 @@ C++ implementation of the AskSin protocol
 - easy configuration of the device channels by using templates
 - direct eeprom access for the channel data
 - AES signature support
-- for ATMega328, [ATMega32](https://github.com/eaconner/ATmega32-Arduino), [STM32F1](http://dan.drown.org/stm32duino/package_STM32duino_index.json)
+- Supported MCU:
+  - ATMega328
+  - [ATMega32](https://github.com/eaconner/ATmega32-Arduino)
+  - [ATMega644](https://github.com/MCUdude/MightyCore) (Bobuino Pinout is highly suggested)
+  - [ATMega1284](https://github.com/MCUdude/MightyCore) (No OTA Bootloader support, yet)
+  - [STM32F1](http://dan.drown.org/stm32duino/package_STM32duino_index.json)
 
 ## Required additional Arduino libraries:
 - [EnableInterrupt](https://github.com/GreyGnome/EnableInterrupt)
+  - For ATMega644 and ATMega1284 the PR #49 needs to be included
 - [Low-Power](https://github.com/rocketscream/Low-Power.git)
-
+  - For ATMega644 and ATMega1284 the PR #57 needs to be included
 
 ## Optional required Sensor Libraries
 - [Sensor Base Library](https://github.com/adafruit/Adafruit_Sensor)
