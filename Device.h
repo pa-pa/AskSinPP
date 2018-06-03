@@ -16,10 +16,17 @@
 #include "Led.h"
 #include "Activity.h"
 
+#if defined(__AVR_ATmega644__) || defined(__AVR_ATmega644P__)
+#define OTA_CONFIG_START 0xffe0 // start address of 16 byte config data in bootloader
+#define OTA_MODEL_START  0xfff0 // start address of 2 byte model id in bootloader
+#define OTA_SERIAL_START 0xfff2 // start address of 10 byte serial number in bootloader
+#define OTA_HMID_START   0xfffc // start address of 3 byte device id in bootloader
+#else
 #define OTA_CONFIG_START 0x7fe0 // start address of 16 byte config data in bootloader
 #define OTA_MODEL_START  0x7ff0 // start address of 2 byte model id in bootloader
 #define OTA_SERIAL_START 0x7ff2 // start address of 10 byte serial number in bootloader
 #define OTA_HMID_START   0x7ffc // start address of 3 byte device id in bootloader
+#endif
 
 namespace as {
 
