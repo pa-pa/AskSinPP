@@ -163,6 +163,19 @@ public:
   void invert (bool value) { led1.invert(value); led2.invert(value); }
 };
 
+class NoLed {
+public:
+  NoLed () {}
+  void init () {}
+  bool active () const { return false; }
+  void ledOn (__attribute__((unused)) uint32_t ticks) {}
+  void ledOn (__attribute__((unused)) uint32_t ticks,__attribute__((unused)) uint32_t tacks) {}
+  void set(__attribute__((unused)) LedStates::Mode stat) {}
+  void ledOn () {}
+  void ledOff () {}
+  void invert (__attribute__((unused)) bool value) {}
+};
+
 }
 
 #endif
