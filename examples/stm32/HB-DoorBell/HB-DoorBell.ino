@@ -109,12 +109,13 @@ public:
   }
 };
 
-DEFREGISTER(ValuesReg1,CREG_AES_ACTIVE)
+DEFREGISTER(ValuesReg1,CREG_AES_ACTIVE,CREG_EVENTDELAYTIME)
 class ValuesList1 : public RegList1<ValuesReg1> {
 public:
   ValuesList1 (uint16_t addr) : RegList1<ValuesReg1>(addr) {}
   void defaults () {
-    clear();
+    aesActive(false);
+    eventDelaytime(0x83); // 3 minutes
   }
 };
 
@@ -144,7 +145,8 @@ public:
     msg.add(bh1750.brightness());
     device().send(msg, device().getMasterID());
 
-    set(seconds2ticks(3*60));
+    uint8_t delay = max(15,this->getList1().eventDelaytime());
+    set(AskSinBase::byteTimeCvtSeconds(delay));
     clock.add(*this);
   }
 

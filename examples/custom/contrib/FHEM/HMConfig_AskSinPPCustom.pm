@@ -11,7 +11,7 @@ $HMConfig::culHmRegDefine{"addressHi"} = {a=>224,s=>4,l=>1,min=>0,max=>0xfffffff
 $HMConfig::culHmRegDefine{"addressLo"} = {a=>228,s=>4,l=>1,min=>0,max=>0xffffffff,c=>'hex',f=>'',u=>'',d=>1,t=>"address low"};
 
 $HMConfig::culHmRegType{ibutton} = { peerNeedsBurst=>1, expectAES=>1, addressHi=>1, addressLo=>1 };
-$HMConfig::culHmRegType{values} = { };
+$HMConfig::culHmRegType{values} = { eventDlyTime=>1 };
 
 $HMConfig::culHmModel{"F201"} = {name=>"HM-LC-Sw2-FM-CustomFW",st=>'custom',cyc=>'',rxt=>'',lst=>'1,3:3p.4p,4:1p.2p',chn=>"Btn:1:2,Sw:3:4"};
 $HMConfig::culHmChanSets{"HM-LC-Sw2-FM-CustomFW00"}{fwUpdate} = "<filename>";
