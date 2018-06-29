@@ -6,7 +6,7 @@
 #ifndef __ASKSINPP_h__
 #define __ASKSINPP_h__
 
-#define ASKSIN_PLUS_PLUS_VERSION "3.1.0"
+#define ASKSIN_PLUS_PLUS_VERSION "3.1.1"
 
 #define ASKSIN_PLUS_PLUS_IDENTIFIER F("AskSin++ V" ASKSIN_PLUS_PLUS_VERSION " (" __DATE__ " " __TIME__ ")")
 
@@ -73,6 +73,11 @@ public:
     if( tTime == 0xff ) return 0xffffffff;
     const uint16_t c[8] = {1,10,50,100,600,3000,6000,36000};
     return decis2ticks( (uint32_t)(tTime & 0x1F) * c[tTime >> 5] );
+  }
+
+  static uint32_t byteTimeCvtSeconds (uint8_t tTime) {
+    const uint8_t c[2] = {1,60};
+    return seconds2ticks( (uint32_t)(tTime & 0x7F) * c[tTime >> 7] );
   }
 
   // get timer count in ticks

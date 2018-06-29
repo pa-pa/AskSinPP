@@ -107,7 +107,7 @@ public:
         sender.trigger(sysclock);
       }
       else {
-        sender.set(seconds2ticks(delay));
+        sender.set(AskSinBase::byteTimeCvtSeconds(delay));
         sysclock.add(sender);
       }
       uint16_t ledtime = (uint16_t)this->getList1().ledOntime() * 5;
