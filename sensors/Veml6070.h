@@ -72,29 +72,7 @@ public:
     if( present() == true ) {
       _uvvalue = readUV();
       DPRINT(F("UV readUV              : ")); DDECLN(_uvvalue);
-      _uvindex = 0;
-      if (_uvvalue >= 187)
-        _uvindex = 1;
-      if (_uvvalue >= 374)
-        _uvindex = 2;
-      if (_uvvalue >= 560)
-        _uvindex = 3;
-      if (_uvvalue >= 747)
-        _uvindex = 4;
-      if (_uvvalue >= 934)
-        _uvindex = 5;
-      if (_uvvalue >= 1120)
-        _uvindex = 6;
-      if (_uvvalue >= 1307)
-        _uvindex = 7;
-      if (_uvvalue >= 1494)
-        _uvindex = 8;
-      if (_uvvalue >= 1681)
-        _uvindex = 9;
-      if (_uvvalue >= 1868)
-        _uvindex = 10;
-      if (_uvvalue >= 2054)
-        _uvindex = 11;  
+      _uvindex = (_uvvalue < (12 * 187)) ? (_uvvalue + 1) / 187 : 11;
     }
   }
   uint16_t UVValue ()  { return _uvvalue; }
