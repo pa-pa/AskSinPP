@@ -20,11 +20,11 @@ public:
 
 class Brightness : public virtual Sensor {
 protected:
-  uint16_t _brightness;
+  uint32_t _brightness;
 public:
   Brightness () : _brightness(0) {}
   // TODO - define value range for brightness
-  uint16_t brightness () { return _brightness; }
+  uint32_t brightness () { return _brightness; }
 };
 
 class Temperature : public virtual Sensor {
