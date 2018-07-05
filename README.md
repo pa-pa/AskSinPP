@@ -29,7 +29,6 @@ C++ implementation of the AskSin protocol
 - [BMP085/BMP180](https://github.com/adafruit/Adafruit-BMP085-Library)
 - [BMP280/BME280](https://github.com/finitespace/BME280)
 - [BH1750](https://github.com/claws/BH1750)
-- [Max44009](https://github.com/jp112sdl/Arduino/tree/master/libraries/Max44009)
 
 
 ## Enable AES Support
