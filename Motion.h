@@ -113,8 +113,8 @@ public:
     if( bright > maxbright ) {
       maxbright = bright;
     }
-    // scale to value between 0 - 200s
-    return (uint8_t)(bright * 200UL / maxbright);
+    // scale to value between 0 - 255s
+    return (uint8_t)(bright * 255UL / maxbright);
   }
 
   uint8_t flags () const {
