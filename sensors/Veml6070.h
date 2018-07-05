@@ -44,11 +44,11 @@ typedef enum veml6070_integrationtime {
 namespace as {
 
 template <uint8_t INTEGRATION_TIME=VEML6070_1_T>
-class Sens_Veml6070 : public Sensor {
+class Veml6070 : public Sensor {
   uint16_t  _uvvalue;
   uint8_t   _uvindex;
 public:
-  Sens_Veml6070 ()  {}
+  Veml6070 ()  {}
     
   uint16_t readUV() {
         if (Wire.requestFrom(VEML6070_ADDR_H, 1) != 1) return -1;
