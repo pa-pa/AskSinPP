@@ -142,7 +142,7 @@ public:
     msg.add(bme280.temperature());
     msg.add(bme280.humidity());
     msg.add(bme280.pressure());
-    msg.add(bh1750.brightness());
+    msg.add((uint16_t)bh1750.brightness());
     device().send(msg, device().getMasterID());
 
     uint8_t delay = max(15,this->getList1().eventDelaytime());

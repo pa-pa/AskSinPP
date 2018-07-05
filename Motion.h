@@ -91,7 +91,7 @@ private:
   Cycle            cycle;
   volatile bool    isrenabled : 1;
   BrightnessSensor brightsens;
-  uint16_t         maxbright;
+  uint32_t         maxbright;
 
 public:
   typedef Channel<HalType,MotionList1,EmptyList,DefList4,PeerCount,List0Type> ChannelType;
@@ -109,12 +109,12 @@ public:
 
   uint8_t status () {
     brightsens.measure();
-    uint16_t bright = brightsens.brightness();
+    uint32_t bright = brightsens.brightness();
     if( bright > maxbright ) {
       maxbright = bright;
     }
-    // scale to value between 0 - 200s
-    return (uint8_t)(bright * 200UL / maxbright);
+    // scale to value between 0 - 255s
+    return (uint8_t)(bright * 255UL / maxbright);
   }
 
   uint8_t flags () const {
