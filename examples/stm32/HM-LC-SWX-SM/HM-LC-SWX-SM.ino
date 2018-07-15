@@ -17,12 +17,17 @@
 
 #define DEVICE_CONFIG CFG_LOWACTIVE_OFF
 
+
+//#define STORAGEDRIVER at24c32
+#define STORAGEDRIVER at24cX<0x50,128,32>
+
 #include <SPI.h>    // when we include SPI.h - we can use LibSPI class
+#include <Wire.h>
 #include <EEPROM.h> // the EEPROM library contains Flash Access Methods
 #include <AskSinPP.h>
 
 #include <MultiChannelDevice.h>
-#include <SwitchChannel.h>
+#include <Switch.h>
 
 // use builtin led
 #define LED_PIN LED_BUILTIN
@@ -33,10 +38,10 @@
 #define RELAY1_PIN PC13
 #define RELAY2_PIN PC14
 #define RELAY3_PIN PC15
-#define RELAY4_PIN PA0
+#define RELAY4_PIN PA8
 
 // number of available peers per channel
-#define PEERS_PER_CHANNEL 4
+#define PEERS_PER_CHANNEL 6
 
 
 // all library classes are placed in the namespace 'as'
@@ -59,37 +64,39 @@ typedef LibSPI<PA4> RadioSPI;
 typedef AskSin<StatusLed<LED_BUILTIN>,NoBattery,Radio<RadioSPI,PB0> > Hal;
 Hal hal;
 
-// map number of channel to pin
-// this will be called by the SwitchChannel class
-uint8_t SwitchPin (uint8_t number) {
-  switch( number ) {
-    case 2: return RELAY2_PIN;
-    case 3: return RELAY3_PIN;
-    case 4: return RELAY4_PIN;
-  }
-  return RELAY1_PIN;
-}
-
 // setup the device with channel type and number of channels
-typedef MultiChannelDevice<Hal,SwitchChannel<Hal,PEERS_PER_CHANNEL>,4> SwitchDevice;
+typedef MultiChannelDevice<Hal,SwitchChannel<Hal,PEERS_PER_CHANNEL,List0>,4> SwitchDevice;
 SwitchDevice sdev(devinfo,0x20);
 
 ConfigToggleButton<SwitchDevice,LOW,HIGH,INPUT_PULLDOWN> cfgBtn(sdev);
 
-void setup () {
-  DINIT(57600,ASKSIN_PLUS_PLUS_IDENTIFIER);
-  sdev.init(hal);
+void initPeerings (bool first) {
+  // create internal peerings - CCU2 needs this
+  if( first == true ) {
+    HMID devid;
+    sdev.getDeviceID(devid);
+    for( uint8_t i=1; i<=sdev.channels(); ++i ) {
+      Peer ipeer(devid,i);
+      sdev.channel(i).peer(ipeer);
+    }
+  }
+}
 
+void setup () {
+  delay(2000);
+  DINIT(57600,ASKSIN_PLUS_PLUS_IDENTIFIER);
+  Wire.begin();
+  bool first = sdev.init(hal);
   // this will also trigger powerUpAction handling
   bool low = sdev.getConfigByte(CFG_LOWACTIVE_BYTE);
   DPRINT("Invert ");low ? DPRINTLN("active") : DPRINTLN("disabled");
-  for( uint8_t i=1; i<=sdev.channels(); ++i ) {
-    sdev.channel(i).lowactive(low);
-  }
-
+  sdev.channel(1).init(RELAY1_PIN,low);
+  sdev.channel(2).init(RELAY2_PIN,low);
+  sdev.channel(3).init(RELAY3_PIN,low);
+  sdev.channel(4).init(RELAY4_PIN,low);
   buttonISR(cfgBtn,CONFIG_BUTTON_PIN);
-
-  // TODO - random delay
+  initPeerings(first);
+  sdev.initDone();
 }
 
 void loop() {

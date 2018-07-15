@@ -12,7 +12,7 @@
 #include <AskSinPP.h>
 
 #include <MultiChannelDevice.h>
-#include <SwitchChannel.h>
+#include <Switch.h>
 
 // see https://github.com/eaconner/ATmega32-Arduino for Arduino Pin Mapping
 
@@ -43,7 +43,7 @@ typedef StatusLed<12> LedType; // PD4
 typedef AskSin<LedType,NoBattery,Radio<RadioSPI,11> > Hal;  // PD3
 
 template<class HALTYPE,int PEERCOUNT>
-class SwChannel : public SwitchChannel<HALTYPE,PEERCOUNT> {
+class SwChannel : public SwitchChannel<HALTYPE,PEERCOUNT,List0> {
 public:
   SwChannel () {};
   virtual ~SwChannel () {};
@@ -51,7 +51,7 @@ public:
   virtual void switchState(__attribute__((unused)) uint8_t oldstate,uint8_t newstate) {
     // if ON - invert led so it will stay on after sending status
     this->device().led().invert(newstate == AS_CM_JT_ON);
-    SwitchChannel<HALTYPE,PEERCOUNT>::switchState(oldstate, newstate);
+    SwitchChannel<HALTYPE,PEERCOUNT,List0>::switchState(oldstate, newstate);
   }
 };
 
@@ -62,36 +62,25 @@ Hal hal;
 SwitchType sdev(devinfo,0x20);
 ConfigToggleButton<SwitchType> cfgBtn(sdev);
 
-// map number of channel to pin
-// this will be called by the SwitchChannel class
-uint8_t SwitchPin (__attribute__((unused)) uint8_t number) {
-  return RELAY1_PIN;
-}
-
-
-void setup () {
-  DINIT(57600,ASKSIN_PLUS_PLUS_IDENTIFIER);
-  sdev.init(hal);
-
-  for( uint8_t i=1; i<=sdev.channels(); ++i ) {
-    sdev.channel(i).lowactive(false);
-  }
-
-  buttonISR(cfgBtn,CONFIG_BUTTON_PIN);
-
+void initPeerings (bool first) {
   // create internal peerings - CCU2 needs this
-  HMID devid;
-  sdev.getDeviceID(devid);
-  for( uint8_t i=1; i<=sdev.channels(); ++i ) {
-    Peer ipeer(devid,i);
-    // create internal peer if not already done
-    uint8_t idx = 0; // make compiler happy
-    if( sdev.channel(i).peer(idx) != ipeer ) {
+  if( first == true ) {
+    HMID devid;
+    sdev.getDeviceID(devid);
+    for( uint8_t i=1; i<=sdev.channels(); ++i ) {
+      Peer ipeer(devid,i);
       sdev.channel(i).peer(ipeer);
     }
   }
-  // delay next send by random time
-  hal.waitTimeout((rand() % 3500)+1000);
+}
+
+void setup () {
+  DINIT(57600,ASKSIN_PLUS_PLUS_IDENTIFIER);
+  bool first = sdev.init(hal);
+  sdev.channel(1).init(RELAY1_PIN,false);
+  buttonISR(cfgBtn,CONFIG_BUTTON_PIN);
+  initPeerings(first);
+  sdev.initDone();
 }
 
 void loop() {

@@ -175,6 +175,7 @@ public:
     PINTYPE::setOutput(SCLK);
     // SPI enable, master, speed = CLK/4
     SPCR = _BV(SPE) | _BV(MSTR);
+    PINTYPE::setHigh(CS);
     // Set SCLK = 1 and SI = 0, to avoid potential problems with pin control mode
     PINTYPE::setHigh(SCLK);
     PINTYPE::setLow(MOSI);
@@ -337,13 +338,34 @@ public:
 #endif
 
 
-static void* instance;
+extern void* __gb_radio;
+
+class NoRadio {
+public:
+  NoRadio () {}
+
+  bool detectBurst () { return false; }
+  void disable () {};
+  void enable () {}
+  void flushrx() {}
+  uint8_t getGDO0 () { return 0; }
+  void init () {}
+  bool isIdle () { return true; }
+  uint8_t read (__attribute__ ((unused)) Message& msg) { return 0; }
+  uint8_t reset () { return 0; }
+  uint8_t rssi () { return 0; }
+  void setIdle () {}
+  void setSendTimeout (__attribute__ ((unused)) uint16_t timeout) {}
+  void waitTimeout (__attribute__ ((unused)) uint16_t timeout) {}
+  void wakeup () {}
+  bool write (__attribute__ ((unused)) const Message& msg, __attribute__ ((unused)) uint8_t burst) { return false; }
+};
 
 template <class SPIType ,uint8_t GDO0>
 class Radio {
 
   static void isr () {
-    ((Radio<SPIType,GDO0>*)instance)->handleInt();
+    ((Radio<SPIType,GDO0>*)__gb_radio)->handleInt();
   }
 
   class MinSendTimeout : public Alarm {
@@ -422,6 +444,10 @@ public:   //--------------------------------------------------------------------
     }
   }
 
+  bool isIdle () {
+    return idle;
+  }
+
   Radio () : rss(0), lqi(0), intread(0), sending(0),  idle(false) {}
 
   uint8_t reset() {
@@ -458,7 +484,7 @@ public:   //--------------------------------------------------------------------
     // ensure ISR if off before we start to init CC1101
     // OTA boot loader may leave it on
     disable();
-    instance = this;
+    __gb_radio = this;
     DPRINT(F("CC init"));
     spi.init();                                     // init the hardware to get access to the RF modul
     pinMode(GDO0,INPUT);
@@ -637,40 +663,62 @@ public:   //--------------------------------------------------------------------
   void flushrx () {
 	  spi.strobe(CC1101_SIDLE);
 	  spi.strobe(CC1101_SNOP);
-    spi.strobe(CC1101_SFRX);                                // flush Rx FIFO
+    spi.strobe(CC1101_SFRX);
+  }
+
+  bool detectBurst () {
+    if( isIdle() == true ) {
+      wakeup();
+      // let radio some time to get carrier signal
+      _delay_ms(3);
+    }
+    uint8_t state = spi.readReg(CC1101_PKTSTATUS, CC1101_STATUS);
+    // DHEXLN(state);
+    return (state & 0x01<<6) == (0x01<<6);
   }
 
 protected:
   uint8_t sndData(uint8_t *buf, uint8_t size, uint8_t burst) {
     timeout.waitTimeout();
     wakeup();
-
-    sending=1;
-
+    sending = 1;
     // Going from RX to TX does not work if there was a reception less than 0.5
     // sec ago. Due to CCA? Using IDLE helps to shorten this period(?)
-    spi.strobe(CC1101_SIDLE );
-	  _delay_us(150);
-    spi.strobe(CC1101_SFTX );                               // flush TX buffer
+    spi.strobe(CC1101_SIDLE);  // go to idle mode
+    spi.strobe(CC1101_SFTX );  // flush TX buffer
 
-    //_delay_ms(10);
-    if( burst == true ) {         // BURST-bit set?
-	    spi.strobe(CC1101_STX);
-      _delay_ms(360);    // according to ELV, devices get activated every 300ms, so send burst for 360ms
+    uint8_t i=200;
+    do {
+      spi.strobe(CC1101_STX);
+      _delay_us(100);
+      if( --i == 0 ) {
+        // can not enter TX state - reset fifo
+        spi.strobe(CC1101_SIDLE );
+        spi.strobe(CC1101_SFTX  );
+        spi.strobe(CC1101_SNOP );
+        // back to RX mode
+        do { spi.strobe(CC1101_SRX);
+        } while (spi.readReg(CC1101_MARCSTATE, CC1101_STATUS) != MARCSTATE_RX);
+        sending = 0;
+        return false;
+      }
     }
-	
-	  // write bytecount to send
+    while(spi.readReg(CC1101_MARCSTATE, CC1101_STATUS) != MARCSTATE_TX);
+
+    _delay_ms(10);
+    if (burst) {         // BURST-bit set?
+      _delay_ms(350);    // according to ELV, devices get activated every 300ms, so send burst for 360ms
+    }
+
     spi.writeReg(CC1101_TXFIFO, size);
-	  // write bytes
     spi.writeBurst(CC1101_TXFIFO, buf, size);           // write in TX FIFO
-	
-	  flushrx();
-	
-	  if( burst == false ){
-		  spi.strobe(CC1101_STX); // send bytes
-	  }
-	
-    sending=0;
+
+    for(uint8_t i = 0; i < 200; i++) {  // after sending out all bytes the chip should go automatically in RX mode
+      if( spi.readReg(CC1101_MARCSTATE, CC1101_STATUS) == MARCSTATE_RX)
+        break;                                    //now in RX mode, good
+      _delay_us(100);
+    }
+    sending = 0;
     return true;
   }
 

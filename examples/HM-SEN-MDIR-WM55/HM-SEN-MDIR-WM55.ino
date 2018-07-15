@@ -10,6 +10,8 @@
 #include <EnableInterrupt.h>
 #include <AskSinPP.h>
 #include <LowPower.h>
+// uncomment the following line if you have a TSL2561 connected at address 0x29
+#include <sensors/Tsl2561.h>
 
 #include <MultiChannelDevice.h>
 #include <Remote.h>
@@ -41,9 +43,9 @@ const struct DeviceInfo PROGMEM devinfo = {
     {0x90,0x78,0x90},       // Device ID
     "papa111333",           // Device Serial
     {0x00,0xdb},            // Device Model
-    0x0b,                   // Firmware Version
+    0x11,                   // Firmware Version
     as::DeviceType::MotionDetector, // Device Type
-    {0x01,0x00}             // Info Bytes
+    {0x00,0x00}             // Info Bytes
 };
 
 /**
@@ -117,20 +119,19 @@ public:
   }
 };
 
-uint8_t measureBrightness () {
-  DPRINTLN("measure light");
-  return 0x00;
-}
+typedef RemoteChannel<Hal,PEERS_PER_BTNCHANNEL,BtnPirList0> BtnChannel;
+#ifdef __SENSORS_TSL2561_h__
+typedef MotionChannel<Hal,PEERS_PER_PIRCHANNEL,BtnPirList0,Tsl2561<TSL2561_ADDR_LOW> > PirChannel;
+#else
+typedef MotionChannel<Hal,PEERS_PER_PIRCHANNEL,BtnPirList0> PirChannel;
+#endif
 
-typedef RemoteChannel<Hal,PEERS_PER_BTNCHANNEL> BtnChannel;
-typedef MotionChannel<Hal,PEERS_PER_PIRCHANNEL> PirChannel;
-
-class MixDevice : public ChannelDevice<Hal,VirtBaseChannel<Hal>,3,BtnPirList0> {
+class MixDevice : public ChannelDevice<Hal,VirtBaseChannel<Hal,BtnPirList0>,3,BtnPirList0> {
 public:
-  VirtChannel<Hal,BtnChannel> c1,c2;
-  VirtChannel<Hal,PirChannel> c3;
+  VirtChannel<Hal,BtnChannel,BtnPirList0> c1,c2;
+  VirtChannel<Hal,PirChannel,BtnPirList0> c3;
 public:
-  typedef ChannelDevice<Hal,VirtBaseChannel<Hal>,3,BtnPirList0> DeviceType;
+  typedef ChannelDevice<Hal,VirtBaseChannel<Hal,BtnPirList0>,3,BtnPirList0> DeviceType;
   MixDevice (const DeviceInfo& info,uint16_t addr) : DeviceType(info,addr) {
     DeviceType::registerChannel(c1,1);
     DeviceType::registerChannel(c2,2);
@@ -153,15 +154,13 @@ void setup () {
   remoteChannelISR(sdev.btn1Channel(),BUTTON1_PIN);
   remoteChannelISR(sdev.btn2Channel(),BUTTON2_PIN);
   motionChannelISR(sdev.pirChannel(),PIR_PIN);
+  sdev.initDone();
 }
 
 void loop() {
-  bool pinchanged = sdev.btn1Channel().checkpin();
-  pinchanged |= sdev.btn2Channel().checkpin();
-
   bool worked = hal.runready();
   bool poll = sdev.pollRadio();
-  if( pinchanged == false && worked == false && poll == false ) {
+  if( worked == false && poll == false ) {
     // deep discharge protection
     // if we drop below critical battery level - switch off all and sleep forever
     if( hal.battery.critical() ) {

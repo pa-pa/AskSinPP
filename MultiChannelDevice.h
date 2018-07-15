@@ -25,7 +25,7 @@ void(* resetFunc) (void) = 0;
 #define REPLAY_NACK 2
 
 template <class HalType,class ChannelType,int ChannelCount,class List0Type=List0>
-class ChannelDevice : public Device<HalType> {
+class ChannelDevice : public Device<HalType,List0Type> {
 
   List0Type    list0;
   ChannelType* devchannels[ChannelCount];
@@ -34,9 +34,9 @@ class ChannelDevice : public Device<HalType> {
 
 public:
 
-  typedef Device<HalType> DeviceType;
+  typedef Device<HalType,List0Type> DeviceType;
 
-  ChannelDevice (const DeviceInfo& i,uint16_t addr) : Device<HalType>(i,addr,list0,ChannelCount), list0(addr + this->keystore().size()), cfgChannel(0xff) {}
+  ChannelDevice (const DeviceInfo& i,uint16_t addr) : DeviceType(i,addr,list0,ChannelCount), list0(addr + this->keystore().size()), cfgChannel(0xff) {}
 
   virtual ~ChannelDevice () {}
 
@@ -108,18 +108,25 @@ public:
     layoutChannels();
     dumpSize();
     // first initialize EEProm if needed
-    bool first = storage.setup(checksum());
+    bool first = storage().setup(checksum());
     if( first == true ) {
       firstinit();
-      storage.store();
+      storage().store();
     }
     this->keystore().init();
     this->setHal(hal);
     HMID id;
     this->getDeviceID(id);
     hal.init(id);
-    this->configChanged();
     return first;
+  }
+
+  void initDone () {
+    // trigger initial config changed - to allow scan/caching of list data
+    this->configChanged();
+    for( uint8_t cdx=1; cdx<=channels(); ++cdx ) {
+      channel(cdx).configChanged();
+    }
   }
 
   void firstinit () {
@@ -132,8 +139,10 @@ public:
 
   void reset () {
     DPRINTLN(F("RESET"));
-    storage.reset();
-    resetFunc();
+    if( getList0().localResetDisable() == false ) {
+      storage().reset();
+      resetFunc();
+    }
   }
 
   void bootloader () {
@@ -201,7 +210,7 @@ public:
      ChannelType* ch = 0;
      HMID devid;
      this->getDeviceID(devid);
-     if( msg.to() == devid || (msg.to() == HMID::broadcast && this->isBoardcastMsg(msg))) {
+     if( msg.to() == devid || this->isBroadcastMsg(msg) ) {
        // we got a message - we do not answer before 100ms
        this->radio().setSendTimeout(100);
        DPRINT(F("-> "));
@@ -219,7 +228,7 @@ public:
          if( msubc == AS_CONFIG_PAIR_SERIAL && this->isDeviceSerial(msg.data())==true ) {
            this->led().set(LedStates::pairing);
            this->activity().stayAwake( seconds2ticks(20) ); // 20 seconds
-           this->sendDeviceInfo(this->getMasterID(),msg.length());
+           this->sendDeviceInfo(msg.from(),msg.length());
          }
          // CONFIG_PEER_ADD
          else if ( msubc == AS_CONFIG_PEER_ADD ) {
@@ -237,11 +246,12 @@ public:
              }
            }
            if( success == true ) {
-             storage.store();
+             ch->configChanged();
+             storage().store();
              answer = REPLAY_ACK;
            }
            else {
-             answer = REPLAY_ACK;
+             answer = REPLAY_NACK;
            }
          }
          // CONFIG_PEER_REMOVE
@@ -258,7 +268,8 @@ public:
              }
            }
            if( success == true ) {
-             storage.store();
+             ch->configChanged();
+             storage().store();
              answer = REPLAY_ACK;
            }
            else {
@@ -312,7 +323,7 @@ public:
              channel(cfgChannel).configChanged();
            }
            cfgChannel = 0xff;
-           storage.store();
+           storage().store();
            // TODO cancel alarm
            this->sendAck(msg,Message::WKMEUP);
          }
@@ -361,6 +372,10 @@ public:
                  ch->inhibit(true);
                  answer = REPLAY_ACK;
                  break;
+               case AS_ACTION_STOP_CHANGE:
+                 ch->stop();
+                 answer = REPLAY_ACK;
+                 break;
                case AS_ACTION_SET:
                  if( ch->inhibit() == false ) {
                    answer = ch->process(msg.actionSet()) ? REPLAY_ACK : REPLAY_NACK;
@@ -376,22 +391,31 @@ public:
          answer = REPLAY_ACK;
        }
        else if (mtype == AS_MESSAGE_REMOTE_EVENT || mtype == AS_MESSAGE_SENSOR_EVENT) {
+         answer = REPLAY_NACK;
          const RemoteEventMsg& pm = msg.remoteEvent();
-         uint8_t cdx = channelForPeer(pm.peer());
-         if( cdx != 0 ) {
-           ch = &channel(cdx);
-           if( ch->inhibit() == false ) {
-             if( validSignature(cdx,msg)==true ) {
+         uint8_t processed = 0;
+         for( uint8_t cdx=1; cdx<=this->channels(); ++cdx ) {
+           ChannelType* c = &channel(cdx);
+           if( c->inhibit() == false && c->has(pm.peer()) == true ) {
+             if( processed > 0 || validSignature(cdx,msg) == true ) {
+               ++processed;
+               ch = c;
                switch( mtype ) {
                case AS_MESSAGE_REMOTE_EVENT:
-                 answer = ch->process(pm) ? REPLAY_ACK : REPLAY_NACK;
+                 ch->process(pm);
                  break;
                case AS_MESSAGE_SENSOR_EVENT:
-                 answer = ch->process(msg.sensorEvent()) ? REPLAY_ACK : REPLAY_NACK;
+                 ch->process(msg.sensorEvent());
                  break;
                }
+               answer = REPLAY_ACK;
              }
            }
+         }
+         if( processed > 1 ) {
+           // we had more than one channel processed
+           // clear channel, so we only send an ACK
+           ch = 0;
          }
        }
 #ifdef USE_AES
@@ -413,7 +437,7 @@ public:
        return false;
      }
      // send ack/nack
-     if( msg.ackRequired() == true) {
+     if( msg.ackRequired() == true && msg.to() == devid ) {
        if( answer == REPLAY_ACK ) {
          if( ch != 0 ) this->sendAck(msg, *ch);
          else this->sendAck(msg);
@@ -425,18 +449,6 @@ public:
      // we always stay awake after valid communication
      this->activity().stayAwake(millis2ticks(500));
      return true;
-   }
-
-   uint8_t channelForPeer (const Peer& p) {
-     for( uint8_t x=1; x<=this->channels(); ++x ) {
-       ChannelType& ch = channel(x);
-       for( uint8_t y=0; y<ch.peers(); ++y ) {
-         if( ch.peer(y) == p ) {
-           return x;
-         }
-       }
-     }
-     return 0;
    }
 
    GenericList findList(uint8_t ch,const Peer& peer,uint8_t numlist) {

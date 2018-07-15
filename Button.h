@@ -17,7 +17,7 @@ namespace as {
 template <uint8_t OFFSTATE=HIGH,uint8_t ONSTATE=LOW,WiringPinMode MODE=INPUT_PULLUP>
 class StateButton: public Alarm {
 
-#define DEBOUNCETIME millis2ticks(200)
+#define DEBOUNCETIME millis2ticks(50)
 
 public:
   enum States {
@@ -30,15 +30,26 @@ public:
     longreleased = 6,
   };
 
+  class CheckAlarm : public Alarm {
+  public:
+    StateButton& sb;
+    CheckAlarm (StateButton& _sb) : Alarm(0), sb(_sb) {}
+    ~CheckAlarm () {}
+    virtual void trigger(__attribute__((unused)) AlarmClock& clock) {
+      sb.check();
+    }
+  };
+
 protected:
   uint8_t  stat     : 3;
   uint8_t  pinstate : 1;
   uint8_t  pin;
   uint16_t longpresstime;
+  CheckAlarm ca;
 
 public:
   StateButton() :
-      Alarm(0), stat(none), pinstate(OFFSTATE), pin(0), longpresstime(millis2ticks(400))  {
+      Alarm(0), stat(none), pinstate(OFFSTATE), pin(0), longpresstime(millis2ticks(400)), ca(*this)  {
   }
   virtual ~StateButton() {
   }
@@ -106,6 +117,12 @@ public:
     return stat;
   }
 
+  void irq () {
+    sysclock.cancel(ca);
+    // use alarm to run code outside of interrupt
+    sysclock.add(ca);
+  }
+
   void check() {
     uint8_t ps = digitalRead(pin);
     if( pinstate != ps ) {
@@ -124,6 +141,8 @@ public:
           nextstate = state() == pressed ? released : longreleased;
           nexttick = DEBOUNCETIME;
         }
+        break;
+      default:
         break;
       }
       if( nexttick != 0 ) {
@@ -147,14 +166,15 @@ public:
 typedef StateButton<HIGH,LOW,INPUT_PULLUP> Button;
 
 template <class DEVTYPE,uint8_t OFFSTATE=HIGH,uint8_t ONSTATE=LOW,WiringPinMode MODE=INPUT_PULLUP>
-class ConfigButton : public StateButton<HIGH,LOW,INPUT_PULLUP> {
+class ConfigButton : public StateButton<OFFSTATE,ONSTATE,MODE> {
   DEVTYPE& device;
 public:
-  typedef StateButton<HIGH,LOW,INPUT_PULLUP> ButtonType;
+  typedef StateButton<OFFSTATE,ONSTATE,MODE> ButtonType;
 
   ConfigButton (DEVTYPE& dev,uint8_t longpresstime=3) : device(dev) {
-    setLongPressTime(seconds2ticks(longpresstime));
+    this->setLongPressTime(seconds2ticks(longpresstime));
   }
+  virtual ~ConfigButton () {}
   virtual void state (uint8_t s) {
     uint8_t old = ButtonType::state();
     ButtonType::state(s);
@@ -173,14 +193,15 @@ public:
 };
 
 template <class DEVTYPE,uint8_t OFFSTATE=HIGH,uint8_t ONSTATE=LOW,WiringPinMode MODE=INPUT_PULLUP>
-class ConfigToggleButton : public StateButton<HIGH,LOW,INPUT_PULLUP> {
+class ConfigToggleButton : public StateButton<OFFSTATE,ONSTATE,MODE> {
   DEVTYPE& device;
 public:
-  typedef StateButton<HIGH,LOW,INPUT_PULLUP> ButtonType;
+  typedef StateButton<OFFSTATE,ONSTATE,MODE> ButtonType;
 
   ConfigToggleButton (DEVTYPE& dev,uint8_t longpresstime=3) : device(dev) {
-    setLongPressTime(seconds2ticks(longpresstime));
+    this->setLongPressTime(seconds2ticks(longpresstime));
   }
+  virtual ~ConfigToggleButton () {}
   virtual void state (uint8_t s) {
     uint8_t old = ButtonType::state();
     ButtonType::state(s);
@@ -193,7 +214,7 @@ public:
       msg.to(self);
       msg.from(self);
       if( device.channel(1).process(msg) == false ) {
-        DPRINTLN("No self peer - use toggleState");
+        DPRINTLN(F("No self peer - use toggleState"));
         // no self peer - use old toggle code
         device.channel(1).toggleState();
       }
@@ -212,12 +233,58 @@ public:
   }
 };
 
+template <class DEVTYPE,uint8_t OFFSTATE=HIGH,uint8_t ONSTATE=LOW,WiringPinMode MODE=INPUT_PULLUP>
+class InternalButton : public StateButton<OFFSTATE,ONSTATE,MODE> {
+  DEVTYPE& device;
+  uint8_t  num, counter;
+public:
+  typedef StateButton<OFFSTATE,ONSTATE,MODE> ButtonType;
+
+  InternalButton (DEVTYPE& dev,uint8_t n,uint8_t longpresstime=4) : device(dev), num(n), counter(0) {
+    this->setLongPressTime(decis2ticks(longpresstime));
+  }
+  virtual ~InternalButton () {}
+  virtual void state (uint8_t s) {
+    ButtonType::state(s);
+    if( s == ButtonType::released ) {
+      RemoteEventMsg& msg = fillMsg(false);
+      device.process(msg);
+      counter++;
+    }
+    else if( s == ButtonType::longpressed ) {
+      RemoteEventMsg& msg = fillMsg(true);
+      device.process(msg);
+    }
+    else if( s == ButtonType::longreleased ) {
+      counter++;
+    }
+  }
+  RemoteEventMsg& fillMsg (bool lg) {
+    RemoteEventMsg& msg = (RemoteEventMsg&)device.message();
+    HMID self;
+    device.getDeviceID(self);
+    uint8_t cnt = device.nextcount();
+    msg.init(cnt,num,counter,lg,false);
+    msg.to(self);
+    msg.from(self);
+    return msg;
+  }
+  Peer peer () const {
+    HMID self;
+    device.getDeviceID(self);
+    return Peer(self,num);
+  }
+};
+
 #define buttonISR(btn,pin) class btn##ISRHandler { \
   public: \
-  static void isr () { btn.check(); } \
+  static void isr () { btn.irq(); } \
 }; \
 btn.init(pin); \
-enableInterrupt(pin,btn##ISRHandler::isr,CHANGE);
+if( digitalPinToInterrupt(pin) == NOT_AN_INTERRUPT ) \
+  enableInterrupt(pin,btn##ISRHandler::isr,CHANGE); \
+else \
+  attachInterrupt(digitalPinToInterrupt(pin),btn##ISRHandler::isr,CHANGE);
 
 }
 

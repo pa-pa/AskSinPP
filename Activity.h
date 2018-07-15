@@ -33,7 +33,11 @@ public:
 
   template <class Hal>
   static void powerSave (__attribute__((unused)) Hal& hal) {
+#if defined __AVR_ATmega644P__ || defined (__AVR_ATmega1284P__)
+    LowPower.idle(SLEEP_FOREVER,ADC_OFF,ENABLETIMER2==false?TIMER2_OFF:TIMER2_ON,TIMER1_ON,TIMER0_OFF,SPI_ON,USART1_OFF,USART0_ON,TWI_OFF);
+#else
     LowPower.idle(SLEEP_FOREVER,ADC_OFF,ENABLETIMER2==false?TIMER2_OFF:TIMER2_ON,TIMER1_ON,TIMER0_OFF,SPI_ON,USART0_ON,TWI_OFF);
+#endif
   }
 
 };
@@ -161,6 +165,10 @@ public:
     }
   }
 
+  bool stayAwake () const {
+    return awake;
+  }
+
   template <class Saver,class Hal>
   void savePower (Hal& hal) {
     if( awake == false ) {
@@ -186,6 +194,40 @@ public:
   }
 
 };
+
+template <class HalType>
+class BurstDetector : public Alarm {
+  bool burst;
+  HalType& hal;
+public:
+  BurstDetector (HalType& h) : Alarm(millis2ticks(250)), burst(false), hal(h) {}
+  virtual ~BurstDetector () {}
+  virtual void trigger (AlarmClock& clock) {
+    uint32_t next = millis2ticks(250);
+    bool detect = hal.radio.detectBurst();
+    if( detect == true ) {
+      if( burst == false ) {
+        burst = true;
+        next = millis2ticks(30);
+        // DPRINTLN("1");
+      }
+      else {
+        burst = false;
+        hal.activity.stayAwake(millis2ticks(500));
+        // DPRINTLN("2");
+      }
+    }
+    else {
+      burst = false;
+    }
+    set(next);
+    clock.add(*this);
+  }
+  void enable(AlarmClock& clock) {
+    clock.add(*this);
+  }
+};
+
 
 }
 

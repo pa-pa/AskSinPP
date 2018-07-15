@@ -45,6 +45,8 @@ class SensorEventMsg;
 class ActionMsg;
 class ActionSetMsg;
 
+class ValuesMsg;
+
 class Message {
 public:
 
@@ -174,12 +176,13 @@ public:
       flag |= BCAST;
       flag &= ~BIDI;
     }
-    else {
-      flag &= ~BCAST;
-    }
   }
 
   const HMID& to () const {
+    return toID;
+  }
+
+  HMID& to () {
     return toID;
   }
 
@@ -265,6 +268,10 @@ public:
     DDECLN((uint32_t)millis());
   }
 
+  void setRepeated () {
+    flag |= RPTED;
+  }
+
   void setRpten () {
     flag |= RPTEN;
   }
@@ -291,6 +298,10 @@ public:
 
   void setBroadcast () {
     flag |= BCAST;
+  }
+
+  bool isBroadcast () const {
+    return (flag & BCAST) == BCAST;
   }
 
   bool isRepeated () const {
@@ -334,6 +345,14 @@ public:
     return typ==AS_MESSAGE_RESPONSE && (comm & AS_RESPONSE_AES_CHALLANGE) == AS_RESPONSE_AES_CHALLANGE;
   }
 
+  bool isRemoteEvent () const {
+    return typ==AS_MESSAGE_REMOTE_EVENT;
+  }
+
+  bool isSensorEvent () const {
+    return typ==AS_MESSAGE_SENSOR_EVENT;
+  }
+
   // cast to specific read-only message types
   const ConfigPeerAddMsg& configPeerAdd () const { return *(ConfigPeerAddMsg*)this; }
   const ConfigPeerRemoveMsg& configPeerRemove () const { return *(ConfigPeerRemoveMsg*)this; }
@@ -364,6 +383,8 @@ public:
 
   DeviceInfoMsg& deviceInfo () { return *(DeviceInfoMsg*)this; }
   SerialInfoMsg& serialInfo () { return *(SerialInfoMsg*)this; }
+
+  ValuesMsg& values () { return *(ValuesMsg*)this; }
 };
 
 
@@ -444,7 +465,7 @@ protected:
 public:
   void init(uint8_t msgcnt,uint8_t ch,uint8_t counter,uint8_t value,bool lowbat) {
     uint8_t flags = lowbat ? 0x80 : 0x00;
-    Message::init(0xd,msgcnt,0x41, BIDI|WKMEUP,(ch & 0x3f) | flags,counter);
+    Message::init(0xc,msgcnt,0x41, BIDI|WKMEUP,(ch & 0x3f) | flags,counter);
     *data() = value;
   }
   uint8_t value () const { return *data(); }
@@ -499,7 +520,7 @@ public:
 class AckStatusMsg : public Message {
 public:
   template <class ChannelType>
-  void init(const ChannelType& ch,uint8_t rssi) {
+  void init(ChannelType& ch,uint8_t rssi) {
     initWithCount(0x0e,AS_MESSAGE_RESPONSE,0x00,AS_RESPONSE_ACK_STATUS);
     subcom = ch.number();
     pload[0] = ch.status();
@@ -569,7 +590,7 @@ public:
 class InfoActuatorStatusMsg : public Message {
 public:
   template <class ChannelType>
-  void init (uint8_t count,const ChannelType& ch,uint8_t rssi) {
+  void init (uint8_t count,ChannelType& ch,uint8_t rssi) {
     Message::init(0x0e,count,0x10,BIDI|WKMEUP,0x06,ch.number());
     pload[0] = ch.status();
     pload[1] = ch.flags();
@@ -632,6 +653,28 @@ public:
     memcpy(buf+3,serial,10);
   }
   uint8_t* serial () { return data() + 3; }
+};
+
+class ValuesMsg : public Message {
+public:
+  void init(uint8_t msgcnt,uint8_t ch) {
+    Message::init(0x0b,msgcnt,0x53,BIDI|WKMEUP,ch,0);
+  }
+  template <typename T>
+  void add (T value) {
+    uint8_t* values = buffer() + len + sizeof(T) - 1;
+    uint8_t num = sizeof(T);
+    while( num > 0 ) {
+      *values = value & 0xff;
+      value >>= 8;
+      --values;
+      --num;
+    }
+    // update length of message
+    len += sizeof(T);
+    // store number of values inside this message
+    subcommand(subcommand()+1);
+  }
 };
 
 }

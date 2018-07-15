@@ -7,74 +7,27 @@
 #define LIBRARIES_ASKSINPP_MOTION_H_
 
 #include "MultiChannelDevice.h"
+#include "Register.h"
+#include "Sensors.h"
 
-extern uint8_t measureBrightness ();
 
 namespace as {
 
-class MotionList1Data {
+DEFREGISTER(MotionReg1,CREG_EVENTFILTER,CREG_INTERVAL,CREG_AES_ACTIVE,CREG_LEDONTIME)
+static const uint8_t MotionReg1Defaults[] = {0x11,0x74,0x00,0x64};
+class MotionList1 : public RegList1<MotionReg1> {
 public:
-  uint8_t EventFilterPeriod : 4;     // 0x01
-  uint8_t EventFilterNumber : 4;     // 0x01
-  uint8_t MinInterval       : 3;     // 0x02
-  uint8_t CaptureWithinInterval : 1; // 0x02
-  uint8_t BrightnessFilter  : 4;     // 0x02
-  uint8_t AesActive         :1;      // 0x08, s:0, e:1
-  uint8_t LedOntime;                 // 0x20
-
-  static uint8_t getOffset(uint8_t reg) {
-    switch (reg) {
-      case 0x01: return 0;
-      case 0x02: return 1;
-      case 0x08: return 2;
-      case 0x20: return 3;
-      default: break;
-    }
-    return 0xff;
-  }
-
-  static uint8_t getRegister(uint8_t offset) {
-    switch (offset) {
-      case 0:  return 0x01;
-      case 1:  return 0x02;
-      case 2:  return 0x08;
-      case 3:  return 0x20;
-      default: break;
-    }
-    return 0xff;
-  }
-};
-
-class MotionList1 : public ChannelList<MotionList1Data> {
-public:
-  MotionList1(uint16_t a) : ChannelList(a) {}
-
-  uint8_t eventFilterPeriod () const { return getByte(0,0x0f,0); }
-  bool eventFilterPeriod (uint8_t value) const { return setByte(0,value,0x0f,0); }
-  uint8_t eventFilterNumber () const { return getByte(0,0xf0,4); }
-  bool eventFilterNumber (uint8_t value) const { return setByte(0,value,0xf0,4); }
-
-  uint8_t minInterval () const { return getByte(1,0x07,0); }
-  bool minInterval (uint8_t value) const { return setByte(1,value,0x07,0); }
-  bool captureWithinInterval () const { return isBitSet(1,0x08); }
-  bool captureWithinInterval (bool value) const { return setBit(1,0x08,value); }
-  uint8_t brightnessFilter () const { return getByte(1,0xf0,4); }
-  bool brightnessFilter (uint8_t value) const { return setByte(1,value,0xf0,4); }
-
-  bool aesActive () const { return isBitSet(2,0x01); }
-  bool aesActive (bool s) const { return setBit(2,0x01,s); }
-
-  uint8_t ledOntime () const { return getByte(3); }
-  bool ledOntime (uint8_t value) const { return setByte(3,value); }
-
+  MotionList1 (uint16_t addr) : RegList1<MotionReg1>(addr) {}
   void defaults () {
-    eventFilterPeriod(1);
-    eventFilterNumber(1);
-    minInterval(4);
-    captureWithinInterval(false);
-    brightnessFilter(7);
-    aesActive(false);
-    ledOntime(100);
+    init(MotionReg1Defaults,sizeof(MotionReg1Defaults));
+//    clear();
+//    eventFilterPeriod(1);
+//    eventFilterNumber(1);
+//    minInterval(4);
+//    captureWithinInterval(false);
+//    brightnessFilter(7);
+//    aesActive(false);
+//    ledOntime(100);
   }
 };
 
@@ -87,8 +40,8 @@ public:
   }
 };
 
-template <class HalType,int PeerCount>
-class MotionChannel : public Channel<HalType,MotionList1,EmptyList,List4,PeerCount>, public Alarm {
+template <class HalType,int PeerCount,class List0Type=List0,class BrightnessSensor=Brightness>
+class MotionChannel : public Channel<HalType,MotionList1,EmptyList,DefList4,PeerCount,List0Type>, public Alarm {
 
   class QuietMode : public Alarm {
   public:
@@ -137,18 +90,31 @@ private:
   QuietMode        quiet;
   Cycle            cycle;
   volatile bool    isrenabled : 1;
+  BrightnessSensor brightsens;
+  uint32_t         maxbright;
 
 public:
-  typedef Channel<HalType,MotionList1,EmptyList,List4,PeerCount> ChannelType;
+  typedef Channel<HalType,MotionList1,EmptyList,DefList4,PeerCount,List0Type> ChannelType;
 
-  MotionChannel () : ChannelType(), Alarm(0), counter(0), quiet(*this), cycle(*this), isrenabled(true) {
-    sysclock.add(cycle);
-    pirInterruptOn();
-  }
+  MotionChannel () : ChannelType(), Alarm(0), counter(0), quiet(*this), cycle(*this), isrenabled(true),
+      brightsens(), maxbright(1) {}
   virtual ~MotionChannel () {}
 
-  uint8_t status () const {
-    return measureBrightness();
+  void setup(Device<HalType,List0Type>* dev,uint8_t number,uint16_t addr) {
+    ChannelType::setup(dev,number,addr);
+    sysclock.add(cycle);
+    pirInterruptOn();
+    brightsens.init();
+  }
+
+  uint8_t status () {
+    brightsens.measure();
+    uint32_t bright = brightsens.brightness();
+    if( bright > maxbright ) {
+      maxbright = bright;
+    }
+    // scale to value between 0 - 255s
+    return (uint8_t)(bright * 255UL / maxbright);
   }
 
   uint8_t flags () const {
@@ -216,15 +182,20 @@ public:
   static void isr () { device.channel(chan).motionDetected(); } \
 }; \
 pinMode(pin,INPUT); \
-enableInterrupt(pin,device##chan##ISRHandler::isr,RISING);
+if( digitalPinToInterrupt(pin) == NOT_AN_INTERRUPT ) \
+  enableInterrupt(pin,device##chan##ISRHandler::isr,RISING); \
+else \
+  attachInterrupt(digitalPinToInterrupt(pin),device##chan##ISRHandler::isr,RISING);
 
 #define motionChannelISR(chan,pin) class __##pin##ISRHandler { \
   public: \
   static void isr () { chan.motionDetected(); } \
 }; \
 pinMode(pin,INPUT); \
-enableInterrupt(pin,__##pin##ISRHandler::isr,RISING);
-
+if( digitalPinToInterrupt(pin) == NOT_AN_INTERRUPT ) \
+  enableInterrupt(pin,__##pin##ISRHandler::isr,RISING); \
+else \
+  attachInterrupt(digitalPinToInterrupt(pin),__##pin##ISRHandler::isr,RISING);
 
 } // end namespace
 

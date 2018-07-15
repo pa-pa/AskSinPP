@@ -5,12 +5,17 @@
 
 // define this to read the device id, serial and device type from bootloader section
 //#define USE_OTA_BOOTLOADER
-#define NDEBUG
+//#define NDEBUG
+
+// raise timer ticks to get more pin samples
+#define TICKS_PER_SECOND 500UL
+// we needs at least 10 LOW samples before we switch back to LOW
+#define PINPOLL_COUNT_LOW 10
 
 #include <AskSinPP.h>
 
 #include <MultiChannelDevice.h>
-#include <SwitchChannel.h>
+#include <Switch.h>
 #include <Remote.h>
 
 // see https://github.com/eaconner/ATmega32-Arduino for Arduino Pin Mapping
@@ -52,15 +57,16 @@ uint8_t SwitchPin (uint8_t number) {
   return RELAY1_PIN;
 }
 
-typedef SwitchChannel<Hal,PEERS_PER_SWCHANNEL>  SwChannel;
-typedef RemoteChannel<Hal,PEERS_PER_BTNCHANNEL> BtnChannel;
+typedef SwitchChannel<Hal,PEERS_PER_SWCHANNEL,List0>  SwChannel;
+typedef RemoteChannel<Hal,PEERS_PER_BTNCHANNEL,List0> BtnChannel;
 
-class MixDevice : public ChannelDevice<Hal,VirtBaseChannel<Hal>,4> {
+class MixDevice : public ChannelDevice<Hal,VirtBaseChannel<Hal,List0>,4> {
 public:
-  VirtChannel<Hal,BtnChannel> c1,c2;
-  VirtChannel<Hal,SwChannel>  c3,c4;
+  VirtChannel<Hal,BtnChannel,List0> c1,c2;
+  VirtChannel<Hal,SwChannel,List0>  c3,c4;
 public:
-  typedef ChannelDevice<Hal,VirtBaseChannel<Hal>,4> DeviceType;
+  typedef VirtBaseChannel<Hal,List0> ChannelType;
+  typedef ChannelDevice<Hal,ChannelType,4> DeviceType;
   MixDevice (const DeviceInfo& info,uint16_t addr) : DeviceType(info,addr) {
     DeviceType::registerChannel(c1,1);
     DeviceType::registerChannel(c2,2);
@@ -73,14 +79,30 @@ public:
   BtnChannel& btn2Channel () { return c2; }
   SwChannel&  sw1Channel  () { return c3; }
   SwChannel&  sw2Channel  () { return c4; }
+
+  bool pollRadio () {
+    bool worked = Device<Hal,List0>::pollRadio();
+    for( uint8_t i=1; i<=this->channels(); ++i ) {
+      ChannelType& ch = channel(i);
+      if( ch.changed() == true ) {
+        // we do not send status updates during a button is pressed
+        if( btn1Channel().pressed()==false && btn2Channel().pressed()==false ) {
+          this->sendInfoActuatorStatus(this->getMasterID(),this->nextcount(),ch);
+          worked = true;
+        }
+      }
+    }
+    return worked;
+  }
+
 };
 MixDevice sdev(devinfo,0x20);
 
 void setup () {
   DINIT(19200,ASKSIN_PLUS_PLUS_IDENTIFIER);
   bool firstinit = sdev.init(hal);
-  sdev.sw1Channel().lowactive(false);
-  sdev.sw2Channel().lowactive(false);
+  sdev.sw1Channel().init(RELAY1_PIN,false);
+  sdev.sw2Channel().init(RELAY2_PIN,false);
   remoteChannelISR(sdev.btn1Channel(),BUTTON1_PIN);
   remoteChannelISR(sdev.btn2Channel(),BUTTON2_PIN);
   if( firstinit == true ) {
@@ -93,8 +115,7 @@ void setup () {
     sdev.btn2Channel().peer(Peer(devid,4));
     storage.store();
   }
-  // delay next send by random time
-  hal.waitTimeout((rand() % 3500)+1000);
+  sdev.initDone();
 }
 
 void loop() {

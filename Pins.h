@@ -6,6 +6,13 @@
 #include <Alarm.h>
 #include <AlarmClock.h>
 
+#ifndef PINPOLL_COUNT_LOW
+#define PINPOLL_COUNT_LOW 1
+#endif
+#ifndef PINPOLL_COUNT_HIGH
+#define PINPOLL_COUNT_HIGH 1
+#endif
+
 namespace as {
 
 class ArduinoPins {
@@ -60,15 +67,36 @@ public:
     uint8_t laststate;
     uint8_t pin;
     uint8_t mode;
+    uint8_t count;
     void (*isr)(void);
 
     public:
-    PinPollingAlarm () : Alarm(1), laststate(LOW), pin(0), mode(0), isr(0) {
+    PinPollingAlarm () : Alarm(1), laststate(LOW), pin(0), mode(0), count(1), isr(0) {
       async(true);
     }
     virtual ~PinPollingAlarm () {}
+    uint8_t readPin() {
+      uint8_t p = digitalRead(pin);
+      // if state has changed - lower count - if count 0 return changed state
+      if( laststate != p ) {
+        --count;
+        // DDEC(count);
+        if( count > 0 ) {
+          p = laststate;
+        }
+        else {
+          count = (p == LOW ? PINPOLL_COUNT_LOW : PINPOLL_COUNT_HIGH);
+          // DPRINTLN("*");
+        }
+      }
+      else {
+        // we need 3 HIGH before we switch back to high
+        count = (p == LOW ? PINPOLL_COUNT_LOW : PINPOLL_COUNT_HIGH);
+      }
+      return p;
+    }
     virtual void trigger (AlarmClock& clock) {
-      uint8_t state = digitalRead(pin);
+      uint8_t state = readPin();
       if( state != laststate) {
         if( state == HIGH ) {
           if( mode == CHANGE || mode == RISING ) {

@@ -25,7 +25,9 @@ ISR(TIMER1_OVF_vect) {
   callback();
 }
 ISR(TIMER2_OVF_vect) {
+//  DPRINT(".");
   rtc.overflow();
+//  rtc.debug();
   --rtc;
 }
 #endif

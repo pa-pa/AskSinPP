@@ -6,6 +6,7 @@
 #ifndef __DEVICE_H__
 #define __DEVICE_H__
 
+#include "AskSinPP.h"
 #include "Sign.h"
 #include "HMID.h"
 #include "Channel.h"
@@ -13,11 +14,19 @@
 #include "Message.h"
 #include "Radio.h"
 #include "Led.h"
+#include "Activity.h"
 
+#if defined(__AVR_ATmega644__) || defined(__AVR_ATmega644P__)
+#define OTA_CONFIG_START 0xffe0 // start address of 16 byte config data in bootloader
+#define OTA_MODEL_START  0xfff0 // start address of 2 byte model id in bootloader
+#define OTA_SERIAL_START 0xfff2 // start address of 10 byte serial number in bootloader
+#define OTA_HMID_START   0xfffc // start address of 3 byte device id in bootloader
+#else
 #define OTA_CONFIG_START 0x7fe0 // start address of 16 byte config data in bootloader
 #define OTA_MODEL_START  0x7ff0 // start address of 2 byte model id in bootloader
 #define OTA_SERIAL_START 0x7ff2 // start address of 10 byte serial number in bootloader
 #define OTA_HMID_START   0x7ffc // start address of 3 byte device id in bootloader
+#endif
 
 namespace as {
 
@@ -57,8 +66,7 @@ struct DeviceInfo {
   uint8_t DeviceInfo[2];
 };
 
-
-template <class HalType>
+template <class HalType,class List0Type=List0>
 class Device {
 
 public:
@@ -68,7 +76,7 @@ public:
 
 private:
   HalType* hal;
-  List0&   list0;
+  List0Type&   list0;
   uint8_t  msgcount;
 
   HMID    lastdev;
@@ -82,9 +90,7 @@ protected:
   uint8_t      numChannels;
 
 public:
-  Device (const DeviceInfo& i,uint16_t addr,List0& l,uint8_t ch) : hal(0), list0(l), msgcount(0), lastmsg(0), kstore(addr), info(i), numChannels(ch) {
-    // TODO init seed
-  }
+  Device (const DeviceInfo& i,uint16_t addr,List0Type& l,uint8_t ch) : hal(0), list0(l), msgcount(0), lastmsg(0), kstore(addr), info(i), numChannels(ch) {}
   virtual ~Device () {}
 
   LedType& led ()  { return hal->led; }
@@ -186,13 +192,13 @@ public:
     return list0.masterid();
   }
 
-  const List0& getList0 () {
+  const List0Type& getList0 () {
     return list0;
   }
 
   bool pollRadio () {
     uint8_t num = radio().read(msg);
-    if( num > 0 ) {
+    if( num >= 10 ) { // minimal msg is 10 byte
       return process(msg);
     }
     return false;
@@ -206,14 +212,18 @@ public:
 
   virtual bool process(__attribute__((unused)) Message& msg) { return false; }
 
-  bool isBoardcastMsg(Message msg) {
-    return msg.isPairSerial();
+  bool isBroadcastMsg(Message msg) {
+    return (msg.to() == HMID::broadcast && msg.isPairSerial()) || ( msg.isBroadcast() && (msg.isRemoteEvent() || msg.isSensorEvent()) );
   }
 
   bool send(Message& msg,const HMID& to) {
     msg.to(to);
     getDeviceID(msg.from());
     msg.setRpten(); // has to be set always
+    return send(msg);
+  }
+
+  bool send(Message& msg) {
     bool result = false;
     uint8_t maxsend = 6;
     led().set(LedStates::send);
@@ -222,7 +232,7 @@ public:
       DPRINT(F("<- "));
       msg.dump();
       maxsend--;
-      if( result == true && msg.ackRequired() == true && to.valid() == true ) {
+      if( result == true && msg.ackRequired() == true && msg.to().valid() == true ) {
         Message response;
         if( (result=waitResponse(msg,response,60)) ) { // 600ms
   #ifdef USE_AES
@@ -235,7 +245,7 @@ public:
           {
             result = response.isAck();
             // we request wakeup
-            // we got the fag to stay awake
+            // we got the flag to stay awake
             if( msg.isWakeMeUp() || response.isKeepAwake() ) {
               activity().stayAwake(millis2ticks(500));
             }
@@ -374,6 +384,10 @@ public:
     for( int i=0; i<ch.peers(); ++i ){
       Peer p = ch.peer(i);
       if( p.valid() == true ) {
+        // skip if this is not the first peer of that device
+        if( ch.peerfor(p) < i ) {
+          continue;
+        }
         if( isDeviceID(p) == true ) {
           // we send to ourself - no ack needed
           getDeviceID(msg.from());
@@ -400,6 +414,44 @@ public:
     if( sendtopeer == false ) {
       send(msg,getMasterID());
     }
+    // signal that we have send to peer
+    hal->sendPeer();
+  }
+
+  template <class ChannelType>
+  void broadcastPeerEvent (Message& msg,const ChannelType& ch) {
+    getDeviceID(msg.from());
+    msg.clearAck();
+    // check if we are peered to ourself
+    if( ch.peerfor(msg.from()) < ch.peers() ) {
+      msg.to(msg.from());
+      // simply process
+      this->process(msg);
+    }
+    HMID todev;
+    bool burst=false;
+    // go over all peers, get first external device
+    // check if one of the peers needs a burst to wakeup
+    for( uint8_t i=0; i<ch.peers(); ++i ) {
+      Peer p = ch.peer(i);
+      if( p.valid() == true ) {
+        if( msg.from() != p ) {
+          if( todev.valid() == false ) {
+            todev = p;
+          }
+          typename ChannelType::List4 l4 = ch.getList4(p);
+          burst |= l4.burst();
+        }
+      }
+    }
+    // if we have no external device - send to master/broadcast
+    if( todev.valid() == false ) {
+      todev = getMasterID();
+    }
+    // DPRINT("BCAST to: ");todev.dump(); DPRINTLN("\n");
+    msg.burstRequired(burst);
+    msg.setBroadcast();
+    send(msg,todev);
     // signal that we have send to peer
     hal->sendPeer();
   }
@@ -446,44 +498,48 @@ public:
   }
 
   bool requestSignature(const Message& msg) {
+    // no signature for internal message processing needed
     if( isDeviceID(msg.from()) == true ) {
       return true;
     }
-    AesChallengeMsg signmsg;
-    signmsg.init(msg,kstore.getIndex());
-    kstore.challengeKey(signmsg.challenge(),kstore.getIndex());
-    // TODO re-send message handling
-    DPRINT(F("<- ")); signmsg.dump();
-    radio().write(signmsg,signmsg.burstRequired());
-    // read answer
-    if( waitForAesResponse(msg.from(),signmsg,60) == true ) {
-      AesResponseMsg& response = signmsg.aesResponse();
-  //    DPRINT("AES ");DHEX(response.data(),16);
-      // fill initial vector with message to sign
-      kstore.fillInitVector(msg);
-  //    DPRINT("IV ");DHEX(iv,16);
-      // decrypt response
-      uint8_t* data = response.data();
-      aes128_dec(data,&kstore.ctx);
-      // xor encrypted data with initial vector
-      kstore.applyVector(data);
-      // store data for sending ack
-      kstore.storeAuth(response.count(),data);
-      // decrypt response
-      aes128_dec(data,&kstore.ctx);
-  //    DPRINT("r "); DHEX(response.data()+6,10);
-  //    DPRINT("s "); DHEX(msg.buffer(),10);
-      // compare decrypted message with original message
-      if( memcmp(data+6,msg.buffer(),10) == 0 ) {
-        DPRINTLN(F("Signature OK"));
-        return true;
+    // signing only possible if sender requests ACK
+    if( msg.ackRequired() == true ) {
+      AesChallengeMsg signmsg;
+      signmsg.init(msg,kstore.getIndex());
+      kstore.challengeKey(signmsg.challenge(),kstore.getIndex());
+      // TODO re-send message handling
+      DPRINT(F("<- ")); signmsg.dump();
+      radio().write(signmsg,signmsg.burstRequired());
+      // read answer
+      if( waitForAesResponse(msg.from(),signmsg,60) == true ) {
+        AesResponseMsg& response = signmsg.aesResponse();
+        // DPRINT("AES ");DHEX(response.data(),16);
+        // fill initial vector with message to sign
+        kstore.fillInitVector(msg);
+        // DPRINT("IV ");DHEX(iv,16);
+        // decrypt response
+        uint8_t* data = response.data();
+        aes128_dec(data,&kstore.ctx);
+        // xor encrypted data with initial vector
+        kstore.applyVector(data);
+        // store data for sending ack
+        kstore.storeAuth(response.count(),data);
+        // decrypt response
+        aes128_dec(data,&kstore.ctx);
+        // DPRINT("r "); DHEX(response.data()+6,10);
+        // DPRINT("s "); DHEX(msg.buffer(),10);
+        // compare decrypted message with original message
+        if( memcmp(data+6,msg.buffer(),10) == 0 ) {
+          DPRINTLN(F("Signature OK"));
+          return true;
+        }
+        else {
+          DPRINTLN(F("Signature FAILED"));
+        }
       }
       else {
-        DPRINTLN(F("Signature FAILED"));
+        DPRINTLN(F("waitForAesResponse failed"));
       }
-    }
-    else {
-      DPRINTLN(F("waitForAesResponse failed"));
     }
     return false;
   }

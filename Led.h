@@ -139,6 +139,7 @@ public:
   void init () {  led1.init(LEDPIN1); }
   bool active () const { return led1.active(); }
   void ledOn (uint32_t ticks) { led1.ledOn(ticks); }
+  void ledOn (uint32_t ticks,__attribute__((unused)) uint32_t tacks) { led1.ledOn(ticks); }
   void set(Mode stat) { led1.set(stat,single); }
   void ledOn () { led1.ledOn(); }
   void ledOff () { led1.ledOff(); }
@@ -160,6 +161,19 @@ public:
   void ledOn () { led1.ledOn(); led2.ledOn(); }
   void ledOff () { led1.ledOff(); led2.ledOff(); }
   void invert (bool value) { led1.invert(value); led2.invert(value); }
+};
+
+class NoLed {
+public:
+  NoLed () {}
+  void init () {}
+  bool active () const { return false; }
+  void ledOn (__attribute__((unused)) uint32_t ticks) {}
+  void ledOn (__attribute__((unused)) uint32_t ticks,__attribute__((unused)) uint32_t tacks) {}
+  void set(__attribute__((unused)) LedStates::Mode stat) {}
+  void ledOn () {}
+  void ledOff () {}
+  void invert (__attribute__((unused)) bool value) {}
 };
 
 }

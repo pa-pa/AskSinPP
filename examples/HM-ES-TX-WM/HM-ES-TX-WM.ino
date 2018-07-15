@@ -274,7 +274,7 @@ public:
   }
 };
 
-class MeterChannel : public Channel<HalType,MeterList1,EmptyList,List4,PEERS_PER_CHANNEL>, public Alarm {
+class MeterChannel : public Channel<HalType,MeterList1,EmptyList,List4,PEERS_PER_CHANNEL,MeterList0>, public Alarm {
 
   const uint32_t    maxVal = 838860700;
   uint64_t          counterSum;
@@ -288,6 +288,11 @@ private:
 public:
   MeterChannel () : Channel(), Alarm(MSG_CYCLE), counterSum(0), counter(0), msgcnt(0), boot(true) {}
   virtual ~MeterChannel () {}
+
+  void firstinit () {
+    Channel<HalType,MeterList1,EmptyList,List4,PEERS_PER_CHANNEL,MeterList0>::firstinit();
+    getList1().meterType(number()==1 ? 1 : 8);  // Channel 1 default Gas / Channel 2 default IEC
+  }
 
   uint8_t status () const {
     return 0;
@@ -361,6 +366,8 @@ public:
       ((IECEventCycleMsg&)msg).init(msgcnt++,number(),counterSum,actualConsumption,device().battery().low());
       break;
     default:
+      DPRINTLN("Unknown meter type");
+      return;
       break;
     }
 
@@ -394,11 +401,17 @@ public:
   }
 
   void attach() {
-    enableInterrupt(pin,isr,CHANGE);
+    if( digitalPinToInterrupt(pin) == NOT_AN_INTERRUPT )
+      enableInterrupt(pin,isr,CHANGE);
+    else
+      attachInterrupt(digitalPinToInterrupt(pin),isr,CHANGE);
   }
 
   void detach () {
-    disableInterrupt(pin);
+    if( digitalPinToInterrupt(pin) == NOT_AN_INTERRUPT )
+      disableInterrupt(pin);
+    else
+      detachInterrupt(digitalPinToInterrupt(pin));
   }
 
   void debounce () {
@@ -408,6 +421,7 @@ public:
   }
 
   virtual void trigger (__attribute__ ((unused)) AlarmClock& clock) {
+    checkstate();
     attach();
   }
 };
@@ -452,12 +466,13 @@ void setup () {
   // add channel 1 to timer to send event
   sysclock.add(sdev.channel(1));
   sysclock.add(sdev.channel(2));
+  sdev.initDone();
 }
 
 void loop() {
   bool worked = hal.runready();
   bool poll = sdev.pollRadio();
   if( worked == false && poll == false ) {
-    hal.activity.savePower<Sleep<> >(hal);
+    hal.activity.savePower<Idle<> >(hal);
   }
 }

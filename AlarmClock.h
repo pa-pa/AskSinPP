@@ -62,10 +62,14 @@ public:
     return n != 0 ? n->tick : 0;
   }
 
+  Alarm* first () const {
+    return (Alarm*)select();
+  }
+
   // correct the alarms after sleep
   void correct (uint32_t ticks) {
     ticks--;
-    Alarm* n = (Alarm*)select();
+    Alarm* n = first();
     if( n != 0 ) {
       uint32_t nextticks = n->tick-1;
       n->tick -= nextticks < ticks ? nextticks : ticks;
@@ -92,7 +96,7 @@ public:
 
     if (cycles < TIMER1_RESOLUTION) {
       clockSelectBits = _BV(CS10);
-      pwmPeriod = cycles;
+      pwmPeriod = (unsigned short)cycles;
     }
     else if (cycles < TIMER1_RESOLUTION * 8) {
       clockSelectBits = _BV(CS11);
@@ -199,6 +203,13 @@ public:
 
   void overflow () {
     ovrfl++;
+  }
+
+  void debug () {
+    if( select() != 0 ) {
+      DDEC((uint16_t)((Alarm*)select())->tick);
+      DPRINT(" ");
+    }
   }
 };
 

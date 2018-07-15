@@ -13,7 +13,7 @@
 
 #include <avr/power.h>
 
-#if defined(__AVR_ATmega32U4__) || defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__)
+#if defined(__AVR_ATmega32U4__) || defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__) || defined(__AVR_ATmega644P__) || defined(__AVR_ATmega1284P__)
 #define ADMUX_VCCWRT1V1 (_BV(REFS0) | _BV(MUX4) | _BV(MUX3) | _BV(MUX2) | _BV(MUX1))
 #elif defined (__AVR_ATtiny24__) || defined(__AVR_ATtiny44__) || defined(__AVR_ATtiny84__)
 #define ADMUX_VCCWRT1V1 (_BV(MUX5) | _BV(MUX0))
@@ -30,9 +30,9 @@ namespace as {
 
 class NoBattery {
 public:
-  uint8_t current () { return 0; }
-  bool critical () { return false; }
-  bool low () { return false; }
+  uint8_t current () const { return 0; }
+  bool critical () const { return false; }
+  bool low () const { return false; }
 };
 
 #ifdef ARDUINO_ARCH_AVR
@@ -45,7 +45,11 @@ public:
 #define ADMUX_REF_RESV ((1 << REFS1)|(0 << REFS0))
 #define ADMUX_REF_VBG  ((1 << REFS1)|(1 << REFS0))
 
+#if defined(__AVR_ATmega32U4__) || defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__) || defined(__AVR_ATmega644P__) || defined(__AVR_ATmega1284P__)
+#define ADMUX_ADC_VBG  ((1 << MUX4)|(1 << MUX3)|(1 << MUX2)|(1 << MUX1)|(0 << MUX0))
+#else
 #define ADMUX_ADC_VBG  ((1 << MUX3)|(1 << MUX2)|(1 << MUX1)|(0 << MUX0))
+#endif
 
 #endif
 
@@ -169,6 +173,7 @@ public:
  * Measure on analog pin
  * See https://github.com/rlogiacco/BatterySense for setup
  */
+template <uint8_t SENSPIN,uint8_t ACTIVATIONPIN,uint16_t VCC=3300>
 class BatterySensorExt : public BatterySensor {
   uint8_t  m_SensePin;
   uint8_t  m_ActivationPin;
@@ -176,11 +181,11 @@ class BatterySensorExt : public BatterySensor {
   uint16_t m_RefVoltage;
 public:
 
-  BatterySensorExt (uint8_t sens,uint8_t activation=0xff) : BatterySensor (),
-    m_SensePin(sens), m_ActivationPin(activation), m_DividerRatio(2), m_RefVoltage(3300) {}
+  BatterySensorExt () : BatterySensor (),
+    m_SensePin(SENSPIN), m_ActivationPin(ACTIVATIONPIN), m_DividerRatio(2), m_RefVoltage(VCC) {}
   virtual ~BatterySensorExt () {}
 
-  void init(uint32_t period,AlarmClock& clock,uint16_t refvolt=3300,uint8_t divider=2) {
+  void init(uint32_t period,AlarmClock& clock,uint16_t refvolt=VCC,uint8_t divider=2) {
     m_DividerRatio=divider;
     m_RefVoltage = refvolt;
     pinMode(m_SensePin, INPUT);

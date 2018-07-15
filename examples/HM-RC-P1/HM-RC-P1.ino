@@ -66,7 +66,7 @@ public:
   }
 };
 
-typedef RemoteChannel<Hal,PEERS_PER_CHANNEL> ChannelType;
+typedef RemoteChannel<Hal,PEERS_PER_CHANNEL,List0> ChannelType;
 typedef MultiChannelDevice<Hal,ChannelType,1> RemoteType;
 
 Hal hal;
@@ -76,22 +76,15 @@ ConfigButton<RemoteType> cfgBtn(sdev);
 void setup () {
   DINIT(57600,ASKSIN_PLUS_PLUS_IDENTIFIER);
   sdev.init(hal);
-
   remoteISR(sdev,1,BTN1_PIN);
-
   buttonISR(cfgBtn,CONFIG_BUTTON_PIN);
+  sdev.initDone();
 }
 
 void loop() {
-  bool pinchanged = false;
-  for( int i=1; i<=sdev.channels(); ++i ) {
-    if( sdev.channel(i).checkpin() == true) {
-      pinchanged = true;
-    }
-  }
   bool worked = hal.runready();
   bool poll = sdev.pollRadio();
-  if( pinchanged == false && worked == false && poll == false ) {
+  if( worked == false && poll == false ) {
     hal.activity.savePower<Sleep<>>(hal);
   }
 }
