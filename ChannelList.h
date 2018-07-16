@@ -232,6 +232,9 @@ public:
     setByte(2,0x00);
     setByte(3,0x00);
   }
+
+  uint8_t transmitDevTryMax () const { return 6; }
+
 };
 
 

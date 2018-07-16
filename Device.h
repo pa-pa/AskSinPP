@@ -198,7 +198,9 @@ public:
 
   bool pollRadio () {
     uint8_t num = radio().read(msg);
-    if( num >= 10 ) { // minimal msg is 10 byte
+    // minimal msg is 10 byte
+    // ignore own messages from radio
+    if( num >= 10 && isDeviceID(msg.from()) == false ) {
       return process(msg);
     }
     return false;
@@ -225,7 +227,7 @@ public:
 
   bool send(Message& msg) {
     bool result = false;
-    uint8_t maxsend = 6;
+    uint8_t maxsend = list0.transmitDevTryMax();
     led().set(LedStates::send);
     while( result == false && maxsend > 0 ) {
       result = radio().write(msg,msg.burstRequired());

@@ -111,6 +111,8 @@ public:
   uint8_t samplesPerCycle () const { return getByte(sizeof(List0Data) + 5); }
   bool samplesPerCycle (uint8_t value) const { return setByte(sizeof(List0Data) + 5,value); }
 
+  uint8_t transmitDevTryMax () const { return 6; }
+
   void defaults () {
     ((List0*)this)->defaults();
   }
