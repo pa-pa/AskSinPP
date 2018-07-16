@@ -9,15 +9,16 @@ namespace as {
 
 SysClock sysclock;
 RTC rtc;
-Link pwm(0);
 
 void callback(void) {
   --sysclock;
-  SoftPWM* p = (SoftPWM*)pwm.select();
-  while( p != 0 ) {
-    p->count();
-    p = (SoftPWM*)p->select();
-  }
+}
+
+void rtccallback () {
+  //  DPRINT(".");
+    rtc.overflow();
+  //  rtc.debug();
+    --rtc;
 }
 
 #if ARDUINO_ARCH_AVR or ARDUINO_ARCH_ATMEGA32
@@ -25,10 +26,7 @@ ISR(TIMER1_OVF_vect) {
   callback();
 }
 ISR(TIMER2_OVF_vect) {
-//  DPRINT(".");
-  rtc.overflow();
-//  rtc.debug();
-  --rtc;
+  rtccallback();
 }
 #endif
 

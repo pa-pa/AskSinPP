@@ -81,6 +81,8 @@ public:
 
 
 extern void callback(void);
+extern void rtccallback(void);
+
 
 class SysClock : public AlarmClock {
 public:
@@ -163,6 +165,9 @@ extern SysClock sysclock;
 
 class RTC : public AlarmClock {
   uint8_t ovrfl;
+#if defined(ARDUINO_ARCH_STM32F1) && defined(_RTCLOCK_H_)
+  RTClock rt;
+#endif
 public:
 
   RTC () : ovrfl(0) {}
@@ -185,17 +190,22 @@ public:
     while (ASSR & (1<<TCN2UB)); //wait for registers update
     TIFR |= (1<<TOV2); //clear interrupt flags
     TIMSK |= (1<<TOIE2); //enable TOV2 interrupt
+#elif defined(ARDUINO_ARCH_STM32F1) && defined(_RTCLOCK_H_)
+    rt = RTClock(RTCSEL_LSE);
+    rt.attachSecondsInterrupt(rtccallback);
 #else
   #warning "RTC not supported"
 #endif
   }
 
-  uint16_t getCounter (bool resetovrflow) {
-#if ARDUINO_ARCH_AVR or ARDUINO_ARCH_ATMEGA32
+  uint32_t getCounter (bool resetovrflow) {
     if( resetovrflow == true ) {
       ovrfl = 0;
     }
+#if ARDUINO_ARCH_AVR or ARDUINO_ARCH_ATMEGA32
     return (256 * ovrfl) + TCNT2;
+#elif defined(ARDUINO_ARCH_STM32F1) && defined(_RTCLOCK_H_)
+    return rtc_get_count();
 #else
     return 0;
 #endif
@@ -214,45 +224,6 @@ public:
 };
 
 extern RTC rtc;
-
-
-extern Link pwm;
-
-class SoftPWM : public Link {
-private:
-  uint32_t duty, value;
-  uint8_t pin;
-
-#define STEPS 100
-#define FREQUENCE 2048
-#define R ((STEPS * log10(2))/(log10(FREQUENCE)))
-
-public:
-  SoftPWM () : Link(0), duty(0), value(0), pin(0) {}
-
-  void init (uint8_t p) {
-    pin = p;
-    pinMode(pin,OUTPUT);
-    digitalWrite(pin,LOW);
-    pwm.append(*this);
-  }
-
-  void count () {
-    ++value;
-    if( value == FREQUENCE ) {
-      digitalWrite(pin,duty > 0 ? HIGH : LOW);
-      value=0;
-    }
-    else if( value == duty ) {
-      digitalWrite(pin,LOW);
-    }
-  }
-
-  void set (uint8_t level) {
-    duty = level > 0 ? pow(2,(level/R)) : 0;
-  }
-};
-
 
 }
 
