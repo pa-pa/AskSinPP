@@ -262,8 +262,6 @@ public:
   }
 
   virtual uint32_t getDefaultDelay(uint8_t stat) const {
-    uint32_t dt;
-    
     switch( stat ) {
       case AS_CM_JT_ON:
       case AS_CM_JT_OFF:
@@ -274,21 +272,18 @@ public:
         return decis2ticks(list1.changeOverDelay());
 
       case AS_CM_JT_RAMPON:
-        dt = calcDriveTime(destlevel-level,list1.refRunningTimeButtonTop());
-        if( destlevel == 200 ) dt += 20; // we will minimal drive 2 seconds
-        return dt;
-        
+        return calcDriveTime(destlevel-level,list1.refRunningTimeButtonTop());
+
       case AS_CM_JT_RAMPOFF:
-        dt = calcDriveTime(level-destlevel,list1.refRunningTimeTopButton());
-        if( destlevel == 0 ) dt += 20; // we will minimal drive 2 seconds
-        return dt;
+        return calcDriveTime(level-destlevel,list1.refRunningTimeTopButton());
+
     }
     return DELAY_NO;
   }
 
   uint32_t calcDriveTime(uint8_t dx,uint32_t fulltime) const {
     uint32_t dt = (fulltime * dx) / 200;
-    
+    if( dt < 20 ) dt = 20; // we will minimal drive 2 seconds
     DPRINT("calcDriveTime: ");DDEC(fulltime);DPRINT(" - ");DDEC(dx);DPRINT(" - ");DDECLN(dt);
     return decis2ticks(dt);
   }
@@ -325,10 +320,10 @@ public:
 
   void setDestLevel (uint8_t value) {
     destlevel = value;
-    if( destlevel > level || destlevel == 200 ) {
+    if( destlevel > level ) {
       setState(AS_CM_JT_ONDELAY, 0);
     }
-    else if ( destlevel < level || destlevel == 0) {
+    else if ( destlevel < level ) {
       setState(AS_CM_JT_OFFDELAY, 0);
     }
   }
