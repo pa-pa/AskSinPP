@@ -272,17 +272,18 @@ public:
         return decis2ticks(list1.changeOverDelay());
 
       case AS_CM_JT_RAMPON:
-        return calcDriveTime(destlevel-level,list1.refRunningTimeButtonTop());
+        return calcDriveTime(destlevel-level,list1.refRunningTimeButtonTop(),destlevel==200);
 
       case AS_CM_JT_RAMPOFF:
-        return calcDriveTime(level-destlevel,list1.refRunningTimeTopButton());
+        return calcDriveTime(level-destlevel,list1.refRunningTimeTopButton(),destlevel==0);
 
     }
     return DELAY_NO;
   }
 
-  uint32_t calcDriveTime(uint8_t dx,uint32_t fulltime) const {
+  uint32_t calcDriveTime(uint8_t dx,uint32_t fulltime,bool extratime) const {
     uint32_t dt = (fulltime * dx) / 200;
+    if( extratime == true ) dt += 20; // we add 2 additional seconds
     if( dt < 20 ) dt = 20; // we will minimal drive 2 seconds
     DPRINT("calcDriveTime: ");DDEC(fulltime);DPRINT(" - ");DDEC(dx);DPRINT(" - ");DDECLN(dt);
     return decis2ticks(dt);
@@ -320,10 +321,10 @@ public:
 
   void setDestLevel (uint8_t value) {
     destlevel = value;
-    if( destlevel > level ) {
+    if( destlevel > level || destlevel == 200 ) {
       setState(AS_CM_JT_ONDELAY, 0);
     }
-    else if ( destlevel < level ) {
+    else if ( destlevel < level || destlevel == 0 ) {
       setState(AS_CM_JT_OFFDELAY, 0);
     }
   }
