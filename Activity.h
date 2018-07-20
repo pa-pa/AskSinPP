@@ -18,7 +18,7 @@ namespace as {
 
 #ifdef ARDUINO_ARCH_AVR
 
-template <bool ENABLETIMER2=false>
+template <bool ENABLETIMER2=false, bool ENABLEADC=false>
 class Idle {
 public:
 
@@ -34,9 +34,9 @@ public:
   template <class Hal>
   static void powerSave (__attribute__((unused)) Hal& hal) {
 #if defined __AVR_ATmega644P__ || defined (__AVR_ATmega1284P__)
-    LowPower.idle(SLEEP_FOREVER,ADC_OFF,ENABLETIMER2==false?TIMER2_OFF:TIMER2_ON,TIMER1_ON,TIMER0_OFF,SPI_ON,USART1_OFF,USART0_ON,TWI_OFF);
+    LowPower.idle(SLEEP_FOREVER,ENABLEADC==true?ADC_ON:ADC_OFF,ENABLETIMER2==false?TIMER2_OFF:TIMER2_ON,TIMER1_ON,TIMER0_OFF,SPI_ON,USART1_OFF,USART0_ON,TWI_OFF);
 #else
-    LowPower.idle(SLEEP_FOREVER,ADC_OFF,ENABLETIMER2==false?TIMER2_OFF:TIMER2_ON,TIMER1_ON,TIMER0_OFF,SPI_ON,USART0_ON,TWI_OFF);
+    LowPower.idle(SLEEP_FOREVER,ENABLEADC==true?ADC_ON:ADC_OFF,ENABLETIMER2==false?TIMER2_OFF:TIMER2_ON,TIMER1_ON,TIMER0_OFF,SPI_ON,USART0_ON,TWI_OFF);
 #endif
   }
 
