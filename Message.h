@@ -463,10 +463,13 @@ class SensorEventMsg : public RemoteEventMsg {
 protected:
   SensorEventMsg() {}
 public:
-  void init(uint8_t msgcnt,uint8_t ch,uint8_t counter,uint8_t value,bool lowbat) {
-    uint8_t flags = lowbat ? 0x80 : 0x00;
-    Message::init(0xc,msgcnt,0x41, BIDI|WKMEUP,(ch & 0x3f) | flags,counter);
-    *data() = value;
+  void init(uint8_t msgcnt,uint8_t ch,uint8_t counter,uint8_t value,bool lg,bool lowbat) {
+      uint8_t flags = lg ? 0x40 : 0x00;
+      if( lowbat == true ) {
+          flags |= 0x80; // low battery
+      }
+      Message::init(0xc,msgcnt,0x41, BIDI|WKMEUP,(ch & 0x3f) | flags,counter);
+      *data() = value;
   }
   uint8_t value () const { return *data(); }
 };
