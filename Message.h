@@ -463,6 +463,9 @@ class SensorEventMsg : public RemoteEventMsg {
 protected:
   SensorEventMsg() {}
 public:
+  void init(uint8_t msgcnt,uint8_t ch,uint8_t counter,uint8_t value,bool lowbat) {
+      init(msgcnt,ch,counter,value,false,lowbat);
+  }
   void init(uint8_t msgcnt,uint8_t ch,uint8_t counter,uint8_t value,bool lg,bool lowbat) {
       uint8_t flags = lg ? 0x40 : 0x00;
       if( lowbat == true ) {
