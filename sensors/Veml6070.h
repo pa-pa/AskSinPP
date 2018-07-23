@@ -71,7 +71,6 @@ public:
   void measure (__attribute__((unused)) bool async=false) {
     if( present() == true ) {
       _uvvalue = readUV();
-      DPRINT(F("UV readUV              : ")); DDECLN(_uvvalue);
       _uvindex = (_uvvalue < (12 * 187)) ? (_uvvalue + 1) / 187 : 11;
     }
   }
