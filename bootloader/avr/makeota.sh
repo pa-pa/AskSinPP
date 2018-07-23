@@ -4,7 +4,7 @@ BOOTLOADER=Bootloader-OTA-atmega328.hex
 
 if [ "$3" == "" ]; then
   echo "Missing argument";
-  echo "usage: makeota.sh DEVID HMID SERIAL [CONFIG]"
+  echo "usage: makeota.sh DEVMODEL HMID SERIAL [CONFIG]"
   exit 5
 fi
 
@@ -13,23 +13,23 @@ if [ ! -f "$BOOTLOADER" ]; then
   exit 5
 fi
 
-DEVID=${1^^}
+DEVMODEL=${1^^}
 HMID=${2^^}
 SERIAL=$3
 CFGSTR=${4^^}
 
-if [ ${#DEVID} != 4 ]; then
-  echo "Wrong Device ID: 2 Byte (hex) exprected"
+if [ ${#DEVMODEL} != 4 ]; then
+  echo "Wrong Device Model: 2 Byte (hex) expected"
   exit 5
 fi
 
 if [ ${#HMID} != 6 ]; then
-  echo "Wrong Homematic ID: 3 Byte (hex) exprected"
+  echo "Wrong Homematic Device ID: 3 Byte (hex) expected"
   exit 5
 fi
 
 if [ ${#SERIAL} != 10 ]; then
-  echo "Wrong Serial: 10 Byte (ascii) exprected"
+  echo "Wrong Serial: 10 Byte (ascii) expected"
   exit 5
 fi
 
@@ -37,7 +37,7 @@ while [ ${#CFGSTR} -le 31 ]; do
   CFGSTR=$CFGSTR"0"
 done
 
-LINEDEVID="027FF000"
+LINEDEVMODEL="027FF000"
 LINEHMID="037FFC00"
 LINESERIAL="0A7FF200"
 
@@ -55,8 +55,8 @@ function checksum {
 }
 
 OUTCFG=`checksum "107FE000"$CFGSTR`
-OUTDEVID=`checksum $LINEDEVID$DEVID`
-# checksum $LINEDEVID$DEVID
+OUTDEVMODEL=`checksum $LINEDEVMODEL$DEVMODEL`
+# checksum $LINEDEVMODEL$DEVMODEL
 OUTHMID=`checksum $LINEHMID$HMID`
 # checksum $LINEHMID$HMID
 
@@ -70,6 +70,6 @@ done
 OUTSERIAL=`checksum $LINESERIAL$SHEX`
 
 cat ${BOOTLOADER} | \
-  sed -e "s/:"$LINEDEVID".*/:"$OUTCFG"\n:"$OUTDEVID"/g" \
+  sed -e "s/:"$LINEDEVMODEL".*/:"$OUTCFG"\n:"$OUTDEVMODEL"/g" \
       -e "s/:"$LINEHMID".*/:"$OUTHMID"/g" \
 	  -e "s/:"$LINESERIAL".*/:"$OUTSERIAL"/g"
