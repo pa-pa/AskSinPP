@@ -253,7 +253,7 @@ public:
         uint8_t first = lst.maxTimeFirstDir();
         if( first != 0xff && first != 0x00 ) {
           destlevel = 0xff;
-          return centis2ticks(first);
+          return decis2ticks(first);
         }
         destlevel = stat == AS_CM_JT_RAMPON ? 200 : 0;
       }
@@ -284,7 +284,6 @@ public:
   uint32_t calcDriveTime(uint8_t dx,uint32_t fulltime,bool extratime) const {
     uint32_t dt = (fulltime * dx) / 200;
     if( extratime == true ) dt += 20; // we add 2 additional seconds
-    if( dt < 20 ) dt = 20; // we will minimal drive 2 seconds
     DPRINT("calcDriveTime: ");DDEC(fulltime);DPRINT(" - ");DDEC(dx);DPRINT(" - ");DDECLN(dt);
     return decis2ticks(dt);
   }
