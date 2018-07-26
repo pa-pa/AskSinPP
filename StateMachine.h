@@ -68,7 +68,7 @@ protected:
     }
   }
 
-  virtual void switchState(__attribute__((unused)) uint8_t oldstate,__attribute__((unused)) uint8_t newstat, __attribute__((unused)) uint32_t) {}
+  virtual void switchState(__attribute__((unused)) uint8_t oldstate,__attribute__((unused)) uint8_t newstate, __attribute__((unused)) uint32_t) {}
 
   void jumpToTarget(const PeerList& lst) {
     uint8_t next = getJumpTarget(state,lst);
