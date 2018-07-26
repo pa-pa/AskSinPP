@@ -51,7 +51,7 @@ protected:
       sysclock.cancel(*this);
       // if state is different
       while (state != next) {
-        switchState(state, next);
+        switchState(state, next, delay);
         state = next;
 
         if (delay == DELAY_NO) {
@@ -68,7 +68,7 @@ protected:
     }
   }
 
-  virtual void switchState(__attribute__((unused)) uint8_t oldstate,__attribute__((unused)) uint8_t newstate) {}
+  virtual void switchState(__attribute__((unused)) uint8_t oldstate,__attribute__((unused)) uint8_t newstat, __attribute__((unused)) uint32_t) {}
 
   void jumpToTarget(const PeerList& lst) {
     uint8_t next = getJumpTarget(state,lst);
