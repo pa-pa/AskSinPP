@@ -255,7 +255,7 @@ public:
           destlevel = 0xff;
           return decis2ticks(first);
         }
-        destlevel = stat == AS_CM_JT_RAMPON ? 200 : 0;
+        destlevel = stat == AS_CM_JT_RAMPON ? lst.onLevel() : lst.offLevel();
       }
     }
     return StateMachine<BlindPeerList>::getDelayForState(stat,lst);
@@ -295,10 +295,10 @@ public:
       jumpToTarget(lst);
       break;
     case AS_CM_ACTIONTYPE_TOGGLE_TO_COUNTER:
-      setDestLevel((counter & 0x01) == 0x01 ? 200 : 0);
+      setDestLevel((counter & 0x01) == 0x01 ? lst.onLevel() : lst.offLevel());
       break;
     case AS_CM_ACTIONTYPE_TOGGLE_INVERSE_TO_COUNTER:
-      setDestLevel((counter & 0x01) == 0x00 ? 200 : 0);
+      setDestLevel((counter & 0x01) == 0x00 ? lst.onLevel() : lst.offLevel());
       break;
     }
   }
