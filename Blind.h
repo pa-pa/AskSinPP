@@ -28,8 +28,8 @@ public:
     statusInfoMinDly(4);
     statusInfoRandom(1);
 
-    refRunningTimeTopButton(500);
-    refRunningTimeButtonTop(500);
+    refRunningTimeTopBottom(500);
+    refRunningTimeBottomTop(500);
     changeOverDelay(5);
     //refRunCounter(0);
   }
@@ -228,10 +228,10 @@ public:
     DPRINT("Switch from ");DHEX(oldstate);DPRINT(" to ");DHEXLN(newstate);
     switch( newstate ) {
     case AS_CM_JT_RAMPON:
-      update.start(sysclock, list1.refRunningTimeButtonTop());
+      update.start(sysclock, list1.refRunningTimeBottomTop());
       break;
     case AS_CM_JT_RAMPOFF:
-      update.start(sysclock, list1.refRunningTimeTopButton());
+      update.start(sysclock, list1.refRunningTimeTopBottom());
       break;
     }
 
@@ -272,10 +272,10 @@ public:
         return decis2ticks(list1.changeOverDelay());
 
       case AS_CM_JT_RAMPON:
-        return calcDriveTime(destlevel-level,list1.refRunningTimeButtonTop(),destlevel==200);
+        return calcDriveTime(destlevel-level,list1.refRunningTimeBottomTop(),destlevel==200);
 
       case AS_CM_JT_RAMPOFF:
-        return calcDriveTime(level-destlevel,list1.refRunningTimeTopButton(),destlevel==0);
+        return calcDriveTime(level-destlevel,list1.refRunningTimeTopBottom(),destlevel==0);
 
     }
     return DELAY_NO;

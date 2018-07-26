@@ -360,19 +360,19 @@ public:
   uint8_t doublePressTime () const { return this->readRegister(CREG_DOUBLEPRESSTIME,0x0f,0,0); }
   bool doublePressTime (uint8_t v) const { return this->writeRegister(CREG_DOUBLEPRESSTIME,0x0f,0,v); }
 
-  bool refRunningTimeTopButton (uint16_t value) const {
+  bool refRunningTimeTopBottom (uint16_t value) const {
     return this->writeRegister(CREG_REFERENCE_RUNNING_TIME_TOP_BOTTOM_1, (value >> 8) & 0xff) &&
         this->writeRegister(CREG_REFERENCE_RUNNING_TIME_TOP_BOTTOM_2, value & 0xff);
   }
-  uint16_t refRunningTimeTopButton () const {
+  uint16_t refRunningTimeTopBottom () const {
     return (this->readRegister(CREG_REFERENCE_RUNNING_TIME_TOP_BOTTOM_1,0) << 8) +
         this->readRegister(CREG_REFERENCE_RUNNING_TIME_TOP_BOTTOM_2,0);
   }
-  bool refRunningTimeButtonTop (uint16_t value) const {
+  bool refRunningTimeBottomTop (uint16_t value) const {
     return this->writeRegister(CREG_REFERENCE_RUNNING_TIME_BOTTOM_TOP_1, (value >> 8) & 0xff) &&
         this->writeRegister(CREG_REFERENCE_RUNNING_TIME_BOTTOM_TOP_2, value & 0xff);
   }
-  uint16_t refRunningTimeButtonTop () const {
+  uint16_t refRunningTimeBottomTop () const {
     return (this->readRegister(CREG_REFERENCE_RUNNING_TIME_BOTTOM_TOP_1,0) << 8) +
         this->readRegister(CREG_REFERENCE_RUNNING_TIME_BOTTOM_TOP_2,0);
   }
