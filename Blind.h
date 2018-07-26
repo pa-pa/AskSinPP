@@ -170,19 +170,27 @@ class BlindStateMachine : public StateMachine<BlindPeerList> {
     uint16_t  fulltime;
     uint8_t   startlevel;
   public:
+    bool stopped;
+  
     LevelUpdate (BlindStateMachine& m) : Alarm(0), sm(m), done(0), fulltime(0), startlevel(0) {}
     ~LevelUpdate () {}
     void start (AlarmClock& clock,uint16_t ft) {
       startlevel = sm.status();
       fulltime = ft;
       done = 0;
-      set(seconds2ticks(1));
+      stopped =  false;
+      set(millis2ticks(100));
       clock.add(*this);
-      sm.changed = true;
+      //sm.changed = true;
     }
-    virtual void trigger (AlarmClock& clock) {
-      // fulltime is 0.1s - so we add 10 for a second
-      done += 10;
+    
+    void stop(){
+      // only calculate new level when not already stopped from elsewhere 
+      // for example by change to the next state triggered by StateMachine 
+      if (stopped) return; 
+      
+      stopped = true;
+      
       if( done > fulltime ) done = fulltime;
       uint8_t dx = (done * 200UL) / fulltime;
       if( sm.state == AS_CM_JT_RAMPON ) {
@@ -193,15 +201,22 @@ class BlindStateMachine : public StateMachine<BlindPeerList> {
         if( dx > startlevel ) dx = startlevel;
         sm.updateLevel(startlevel - dx);
       }
-      set(seconds2ticks(1));
+    }
+    
+    virtual void trigger (AlarmClock& clock) {
+      // fulltime is 0.1s - so we add 1 for 100 ms
+      done += 1;
+      set(millis2ticks(100));
       clock.add(*this);
     }
   };
 
 public:
+
   void updateLevel (uint8_t l) {
     level = l;
-    DDECLN(level);
+    DPRINT("level: ");DDECLN(level);
+    update.stopped = true;
     triggerChanged(decis2ticks(list1.statusInfoMinDly()*5));
   }
 
@@ -239,12 +254,14 @@ public:
     case AS_CM_JT_RAMPON:
     case AS_CM_JT_RAMPOFF:
       sysclock.cancel(update);
+      update.stop();
       break;
     }
   }
 
   void setup(BlindList1 l1) {
     list1 = l1;
+    level = 200;
   }
 
   virtual uint32_t getDelayForState(uint8_t stat,const BlindPeerList& lst) {
@@ -319,6 +336,7 @@ public:
   }
 
   void setDestLevel (uint8_t value) {
+    DPRINT("setDestLevel: ");DDECLN(value);
     destlevel = value;
     if( destlevel > level || destlevel == 200 ) {
       setState(AS_CM_JT_ONDELAY, 0);
