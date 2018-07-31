@@ -232,6 +232,7 @@ protected:
     if( trigstate == AS_CM_JT_RAMPON || trigstate == AS_CM_JT_RAMPOFF ) {
       if( trigdest != 0xff ) {
         // update level to destlevel
+        update.cancel();
         updateLevel(trigdest);
       }
     }
