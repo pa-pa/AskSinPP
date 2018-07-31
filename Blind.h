@@ -30,7 +30,7 @@ public:
 
     refRunningTimeTopBottom(500);
     refRunningTimeBottomTop(500);
-    changeOverDelay(50);
+    changeOverDelay(5);
     //refRunCounter(0);
   }
 };
@@ -89,7 +89,7 @@ public:
     ssl.multiExec(true);
 //    ssl.offLevel(0);
     ssl.onLevel(200); // 201 ???
-    ssl.maxTimeFirstDir(50);
+    ssl.maxTimeFirstDir(5);
     //ssl.drivingMode(0);
   }
 
@@ -261,7 +261,7 @@ public:
         uint8_t first = lst.maxTimeFirstDir();
         if( first != 0xff && first != 0x00 ) {
           destlevel = 0xff;
-          return centis2ticks(first);
+          return decis2ticks(first);
         }
         destlevel = stat == AS_CM_JT_RAMPON ? lst.onLevel() : lst.offLevel();
       }
@@ -277,7 +277,7 @@ public:
 
       case AS_CM_JT_REFON:
       case AS_CM_JT_REFOFF:
-        return centis2ticks(list1.changeOverDelay());
+        return decis2ticks(list1.changeOverDelay());
 
       case AS_CM_JT_RAMPON:
         return calcDriveTime(destlevel-level,list1.refRunningTimeBottomTop(),destlevel==200);
