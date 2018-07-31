@@ -181,17 +181,26 @@ class BlindStateMachine : public StateMachine<BlindPeerList> {
       set(millis2ticks(100));
       clock.add(*this);
     }
-    void stop (AlarmClock& clock) {
+    
+    void cancel (){
       clock.cancel(*this);
-      if( done > fulltime ) done = fulltime;
-      uint8_t dx = (done * 200UL) / fulltime;
-      if( sm.state == AS_CM_JT_RAMPON ) {
-        if( dx > (200-startlevel) ) dx = 200-startlevel;
-        sm.updateLevel(startlevel + dx);
+    }
+    
+    void stop (AlarmClock& clock) {
+      if(sysclock.get(*this) > 0) {
+        if( done > fulltime ) done = fulltime;
+        uint8_t dx = (done * 200UL) / fulltime;
+        if( sm.state == AS_CM_JT_RAMPON ) {
+          if( dx > (200-startlevel) ) dx = 200-startlevel;
+          sm.updateLevel(startlevel + dx);
+        }
+        else if( sm.state == AS_CM_JT_RAMPOFF ) {
+          if( dx > startlevel ) dx = startlevel;
+          sm.updateLevel(startlevel - dx);
+        }
       }
-      else if( sm.state == AS_CM_JT_RAMPOFF ) {
-        if( dx > startlevel ) dx = startlevel;
-        sm.updateLevel(startlevel - dx);
+      else {
+        clock.cancel(*this);
       }
     }
     virtual void trigger (AlarmClock& clock) {
