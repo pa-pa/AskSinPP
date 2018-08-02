@@ -23,8 +23,8 @@
 // B0 == PIN 8 on Pro Mini
 #define CONFIG_BUTTON_PIN 8
 
-#define SENS1_PIN 6 //14
-#define SENS2_PIN 3 //15
+#define SENS1_PIN 14
+#define SENS2_PIN 15
 
 // number of available peers per channel
 #define PEERS_PER_CHANNEL 8
