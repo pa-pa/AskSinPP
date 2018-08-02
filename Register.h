@@ -677,6 +677,11 @@ public:
   }
 };
 
+DEFREGISTER(DefaultRegisterList0,DREG_INTKEY,MASTERID_REGS)
+typedef RegList0<DefaultRegisterList0> DefList0;
+
+DEFREGISTER(DefaultRegisterList1,CREG_AES_ACTIVE)
+typedef RegList1<DefaultRegisterList1> DefList1;
 
 DEFREGISTER(DefaultRegisterList4,PREG_BURST_AES)
 typedef RegList4<DefaultRegisterList4> DefList4;
