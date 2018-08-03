@@ -6,6 +6,11 @@
 // define this to read the device id, serial and device type from bootloader section
 // #define USE_OTA_BOOTLOADER
 
+// define if a single SHT10 is connected at A4/A5
+#define USE_SHT10
+// define if DS18b20 are connected
+// #define USE_DS18B20
+
 #define EI_NOTEXTERNAL
 #include <EnableInterrupt.h>
 #include <AskSinPP.h>
@@ -15,9 +20,19 @@
 #include <Device.h>
 #include <MultiChannelDevice.h>
 
-#include <Sensirion.h>
 #include <Sensors.h>
-#include <sensors/Sht10.h>
+#ifdef USE_SHT10
+  #include <Sensirion.h>
+  #include <sensors/Sht10.h>
+#endif
+#ifdef USE_DS18B20
+  #include <OneWire.h>
+  #include <sensors/Ds18b20.h>
+  // maximal number of connected DS18B20
+  #define NUM_DS18B20 4
+  // data pin of the one wire bus
+  #define ONEWIRE_PIN 6
+#endif
 
 // use builtin led
 #define LED_PIN 4
@@ -62,24 +77,44 @@ public:
 };
 
 class ValuesChannel : public Channel<Hal,ValuesList1,EmptyList,EmptyList,0,SensList0>, Alarm {
+#ifdef USE_SHT10
   Sht10<A4,A5>    sht10;
-
+#endif
+#ifdef USE_DS18B20
+  OneWire  ow;
+  Ds18b20  sensors[NUM_DS18B20];
+  uint8_t  found;
+#endif
 public:
   typedef Channel<Hal,ValuesList1,EmptyList,EmptyList,0,SensList0> BaseChannel;
 
-  ValuesChannel () : BaseChannel(), Alarm(0) {}
+  ValuesChannel () : BaseChannel(), Alarm(0)
+#ifdef USE_DS18B20
+  , ow(ONEWIRE_PIN), found(0)
+#endif
+  {}
   virtual ~ValuesChannel () {}
 
   virtual void trigger (AlarmClock& clock) {
-    sht10.measure();
-
-    DPRINT("T: ");DDEC(sht10.temperature());
-    DPRINT("   H: ");DDECLN(sht10.humidity());
-
     ValuesMsg& msg = device().message().values();
     msg.init(device().nextcount(),number());
+#ifdef USE_SHT10
+    sht10.measure();
+    DPRINT("T: ");DDEC(sht10.temperature());
+    DPRINT("   H: ");DDECLN(sht10.humidity());
     msg.add(sht10.temperature());
     msg.add(sht10.humidity());
+#endif
+#ifdef USE_DS18B20
+    Ds18b20::measure(sensors, found);
+    DPRINT("T:");
+    // send values for all sensors - will be 0 if not exists
+    for( uint8_t i=0; i<NUM_DS18B20; ++i ) {
+      DPRINT(" ");DDEC(sensors[i].temperature());
+      msg.add(sensors[i].temperature());
+    }
+    DPRINTLN("");
+#endif
     device().send(msg, device().getMasterID());
 
     uint8_t delay = max(15,this->getList1().eventDelaytime());
@@ -89,7 +124,13 @@ public:
 
   void setup(Device<Hal,SensList0>* dev,uint8_t number,uint16_t addr) {
     BaseChannel::setup(dev, number, addr);
+#ifdef USE_SHT10
     sht10.init();
+#endif
+#ifdef USE_DS18B20
+    found = Ds18b20::init(ow, sensors, NUM_DS18B20);
+    DPRINT("Number of DS18B20: ");DDECLN(found);
+#endif
     set(seconds2ticks(5));
     sysclock.add(*this);
   }
