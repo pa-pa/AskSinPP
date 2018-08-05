@@ -21,14 +21,12 @@ namespace as {
  * OVERSAMPLING are the additional oversampled bits, e.g. choosing 2 will increase the internal sample size of the ATmega ADC from 10 bit to 12 bit.
  */
 
-template <int SENSEPIN,int R0=10000,int B=3435,int ACTIVATEPIN=0,int T0=25,uint8_t OVERSAMPLING=0>
+template <uint8_t SENSEPIN,int R0=10000,int B=3435,int ACTIVATEPIN=0,int T0=25,int OVERSAMPLING=0>
 class Ntc : public Temperature {
-  float _b;
   float _t0Abs;
-  float _r0;
   
 public:
-  Ntc () : _t0Abs((float)T0 + 273.15), _r0(R0), _b(B) {}
+  Ntc () : _t0Abs((float)T0 + 273.15) {}
 
   void init () {
   }
@@ -52,10 +50,10 @@ public:
     if(ACTIVATEPIN != 0) {
       digitalWrite(ACTIVATEPIN, LOW);
     }
+    
+    float rNtc = R0 * (((1 << (10 + OVERSAMPLING)) - 1) / (float)vo - 1);
 
-    float rNtc = _r0 * ((float)((1 << (10 + OVERSAMPLING)) - 1) / (float)(vo - 1));
-
-    _temperature = (_t0Abs * _b / (_b + _t0Abs * log(rNtc / _r0))-273.15) * 10;
+    _temperature = (_t0Abs * B / (B + _t0Abs * log(rNtc / R0)) - 273.15) * 10;
 
     return true;
   }
