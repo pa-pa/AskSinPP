@@ -40,7 +40,7 @@ protected:
   virtual ~StateMachine () {}
 
   virtual void trigger (__attribute__((unused)) AlarmClock& clock) {
-    uint8_t next = getNextState(state);
+    uint8_t next = getNextState(state, actlst);
     uint32_t dly = getDelayForState(next,actlst);
     setState(next,dly,actlst);
   }
@@ -56,7 +56,7 @@ protected:
 
         if (delay == DELAY_NO) {
           // go immediately to the next state
-          next = getNextState(state);
+          next = getNextState(state, lst);
           delay = getDelayForState(next,lst);
         }
       }
@@ -70,7 +70,7 @@ protected:
 
   virtual void switchState(__attribute__((unused)) uint8_t oldstate,__attribute__((unused)) uint8_t newstate) {}
 
-  void jumpToTarget(const PeerList& lst) {
+  virtual void jumpToTarget(const PeerList& lst) {
     uint8_t next = getJumpTarget(state,lst);
     if( next != AS_CM_JT_NONE ) {
       // get delay
@@ -80,7 +80,7 @@ protected:
     }
   }
 
-  virtual uint8_t getNextState (uint8_t stat) {
+  virtual uint8_t getNextState (uint8_t stat, const PeerList& lst=PeerList(0)) {
     switch( stat ) {
       case AS_CM_JT_ONDELAY:  return AS_CM_JT_REFON;
       case AS_CM_JT_REFON:    return AS_CM_JT_RAMPON;
