@@ -282,12 +282,10 @@ public:
   }
   
   virtual uint8_t getNextState (uint8_t stat,const BlindPeerList& lst) {
-    DPRINT("getNextState: ");DDECLN(stat);
     switch( stat ) {
       case AS_CM_JT_ONDELAY:  return AS_CM_JT_REFON;
       case AS_CM_JT_REFON:    return AS_CM_JT_RAMPON;
       case AS_CM_JT_RAMPON:
-        DPRINT("level: ");DDEC(level);DPRINT(" ");DDECLN(lst.offLevel());
         if(level == lst.offLevel())
           return AS_CM_JT_OFF;
         return AS_CM_JT_ON;
