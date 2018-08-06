@@ -101,7 +101,7 @@ sub CUL_HM_Parsecustom($$$$$$) {
     my ($subType,$chn,$val,$err) = ($1,hex($2),hex($3)/2,hex($4))
                         if($p =~ m/^(..)(..)(..)(..)/);
     $chn = sprintf("%02X",$chn&0x3f);
-	my $chId = $src.$chn;
+  	my $chId = $src.$chn;
     my $shash = $modules{CUL_HM}{defptr}{$chId}
                     if($modules{CUL_HM}{defptr}{$chId});
 	
@@ -122,41 +122,41 @@ sub CUL_HM_Parsecustom($$$$$$) {
       my $chnHash = $modules{CUL_HM}{defptr}{$src.$chn};
       my $vs = ($val==100 ? "open" : ($val==0 ? "closed" : "tilted"));
       push @evtEt,[$chnHash,1,"state:".$vs];
-	  push @evtEt,[$chnHash,1,"contact:$vs$target"];
-	}
+	    push @evtEt,[$chnHash,1,"contact:$vs$target"];
+	  }
   }
   # handle sensor event
   elsif($mTp =~ m/^41/ && $p =~ m/^(..)(..)(..)/) {
     my ($chn,$cnt,$val) = (hex($1),hex($2),hex($3)/2);
     my $shash = CUL_HM_id2Hash($src);
-	$chn = sprintf("%02X",$chn & 0x3f);
+	  $chn = sprintf("%02X",$chn & 0x3f);
     # Log 1, "41 ".$model.$chn." ".$val;
     if( $HMConfig::culHmRegChan{$model.$chn} == $HMConfig::culHmRegType{threeStateSensor} ) {
       my $chnHash = $modules{CUL_HM}{defptr}{$src.$chn};
       Log 1, $model.$chn." is threeStateSensor";
       my $vs = ($val==100 ? "open" : ($val==0 ? "closed" : "tilted"));
       push @evtEt,[$chnHash,1,"state:".$vs];
-	  push @evtEt,[$chnHash,1,"contact:$vs$target"];
-	}
+	    push @evtEt,[$chnHash,1,"contact:$vs$target"];
+	  }
     elsif( $HMConfig::culHmRegChan{$model.$chn} == $HMConfig::culHmRegType{motionDetector} && $p =~ m/^(..)(..)(..)(..)/) {
-	  my ($bright,$next) = (hex($3),hex($4));
+	    my ($bright,$next) = (hex($3),hex($4));
       my $chnHash = $modules{CUL_HM}{defptr}{$src.$chn};
       Log 1, $model.$chn." is motionDetector";
-	  if( $next ) {
-	    my $stamp =  gettimeofday(); # take reception time;
-	    $next = (15 << ($next >> 4) - 4); # strange mapping of literals
+	    if( $next ) {
+	      my $stamp =  gettimeofday(); # take reception time;
+	      $next = (15 << ($next >> 4) - 4); # strange mapping of literals
         RemoveInternalTimer($chnHash->{NAME}.":motionCheck");
         InternalTimer($stamp+$next+2,"CUL_HM_motionCheck", $chnHash->{NAME}.":motionCheck", 0);
         ${chnHash}->{helper}{moStart} = $stamp if (!defined ${chnHash}->{helper}{moStart});
-	  }
-	  else {
-	    $next = "none";
-	  }
-	  push @evtEt,[$chnHash,1,"state:motion"];
+	    }
+	    else {
+	      $next = "none";
+	    }
+	    push @evtEt,[$chnHash,1,"state:motion"];
       push @evtEt,[$chnHash,1,"motion:on$target"];
       push @evtEt,[$chnHash,1,"motionCount:$cnt"."_next:$next"."s"];
       push @evtEt,[$chnHash,1,"brightness:$bright"];
-	}
+	  }
   }
   # handle remote event
   elsif($mTp =~ m/^40/ && $p =~ m/^(..)(..)/) {
@@ -206,31 +206,31 @@ sub CUL_HM_Parsecustom($$$$$$) {
   elsif($mTp =~ m/^53/ && $p =~ m/^(..)(..)(.*)/) {
     my $shash = CUL_HM_id2Hash($src);
     my ($chn,$numval) = (hex($1), hex($2)); # read channel and number of values
-	my $values = $3;
+	  my $values = $3;
     my $chnnum = sprintf("%02X",$chn&0x3f);# only 6 bit are valid
 	
 #	2018.04.15 21:56:46 1: HB-GEN-SENS01 has 4 values (090400E82803EB0000)
 #	Log(1, "Values Message for Channel: $chnnum");
     if( $HMConfig::culHmRegChan{$model.$chnnum} == $HMConfig::culHmRegType{values} ) {
       Log 1, $model.$chnnum." has $numval values ($p)";
-	  my $chnHash = $modules{CUL_HM}{defptr}{$src.$chnnum};
+	    my $chnHash = $modules{CUL_HM}{defptr}{$src.$chnnum};
       my $vfmt = AttrVal($chnHash->{NAME},"valuesformat","");
 	  # Log 1,$vfmt;
-	  if( $vfmt eq "" ) {
-	    Log 1, "Missing attribute valuesformat at $chnHash->{NAME}";
-		for( my $i=0; $i<$numval; ++$i ) {
-  		  $vfmt = $vfmt."1 ";
-		}
-	  }
-	  my @valuesfmt = parseValueFormat($vfmt);
-	  if( $numval != scalar(@valuesfmt) ) {
-	    Log 1, "Attribute valuesformat mismatch at $chnHash->{NAME} - expected $numval items but got ".scalar(@valuesfmt)." items";
-	  }
-	  my $packstr = "";
-	  my $state = "";
-	  foreach my $data (@valuesfmt) {
+	    if( $vfmt eq "" ) {
+	      Log 1, "Missing attribute valuesformat at $chnHash->{NAME}";
+		    for( my $i=0; $i<$numval; ++$i ) {
+  		    $vfmt = $vfmt."1 ";
+		    }
+	    }
+	    my @valuesfmt = parseValueFormat($vfmt);
+	    if( $numval != scalar(@valuesfmt) ) {
+	      Log 1, "Attribute valuesformat mismatch at $chnHash->{NAME} - expected $numval items but got ".scalar(@valuesfmt)." items";
+	    }
+	    my $packstr = "";
+	    my $state = "";
+	    foreach my $data (@valuesfmt) {
         #Log 1, $data->{'numbytes'}."  ".$data->{'signed'}."  ".$data->{'reading'}."  ".$data->{'factor'}."\n";
-	    $packstr = $packstr."A".($data->{'numbytes'}*2);
+	      $packstr = $packstr."A".($data->{'numbytes'}*2);
       }
       #print $packstr."\n";
       my @unpacked = map{hex($_)} unpack($packstr,$values);
@@ -238,18 +238,18 @@ sub CUL_HM_Parsecustom($$$$$$) {
       my $num = 0;
       foreach my $data (@valuesfmt) {
         my $val = $unpacked[$num++];
-	    if( $data->{'signed'} ) {
-	      my $max =  0x01 << (8*$data->{'numbytes'});
-	      my $mask = $max >> 1;
-	      $val = ($val & $mask) ? ($val - $max) : $val;
-	    }
-	    $val /= $data->{'factor'};
-	    # print $data->{'reading'}." : ".$val."\n";
+	      if( $data->{'signed'} ) {
+	        my $max =  0x01 << (8*$data->{'numbytes'});
+	        my $mask = $max >> 1;
+	        $val = ($val & $mask) ? ($val - $max) : $val;
+	      }
+	      $val /= $data->{'factor'};
+	      # print $data->{'reading'}." : ".$val."\n";
         push @evtEt,[$chnHash,1,$data->{'reading'}.":".$val];
-	    $state = $state.$val." ";
+	      $state = $state.$val." ";
       }
       push @evtEt,[$chnHash,1,"state:".$state];
-	}
+	  }
   } else {
     Log(1, "HMConfig_AskSinPPCustom received unknown message: $mFlg,$mTp,$src,$dst,$p");
   }

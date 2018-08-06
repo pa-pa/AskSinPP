@@ -28,8 +28,8 @@ public:
     statusInfoMinDly(4);
     statusInfoRandom(1);
 
-    refRunningTimeTopButton(500);
-    refRunningTimeButtonTop(500);
+    refRunningTimeTopBottom(500);
+    refRunningTimeBottomTop(500);
     changeOverDelay(5);
     //refRunCounter(0);
   }
@@ -89,7 +89,7 @@ public:
     ssl.multiExec(true);
 //    ssl.offLevel(0);
     ssl.onLevel(200); // 201 ???
-    ssl.maxTimeFirstDir(50);
+    ssl.maxTimeFirstDir(5);
     //ssl.drivingMode(0);
   }
 
@@ -170,19 +170,19 @@ class BlindStateMachine : public StateMachine<BlindPeerList> {
     uint16_t  fulltime;
     uint8_t   startlevel;
   public:
-    LevelUpdate (BlindStateMachine& m) : Alarm(0), sm(m), done(0), fulltime(0), startlevel(0) {}
+    LevelUpdate (BlindStateMachine& m) : Alarm(0), sm(m), done(0), fulltime(0), startlevel(0) {
+      async(true);
+    }
     ~LevelUpdate () {}
     void start (AlarmClock& clock,uint16_t ft) {
       startlevel = sm.status();
       fulltime = ft;
       done = 0;
-      set(seconds2ticks(1));
+      set(millis2ticks(100));
       clock.add(*this);
-      sm.changed = true;
     }
-    virtual void trigger (AlarmClock& clock) {
-      // fulltime is 0.1s - so we add 10 for a second
-      done += 10;
+    void stop (AlarmClock& clock) {
+      clock.cancel(*this);
       if( done > fulltime ) done = fulltime;
       uint8_t dx = (done * 200UL) / fulltime;
       if( sm.state == AS_CM_JT_RAMPON ) {
@@ -193,16 +193,22 @@ class BlindStateMachine : public StateMachine<BlindPeerList> {
         if( dx > startlevel ) dx = startlevel;
         sm.updateLevel(startlevel - dx);
       }
-      set(seconds2ticks(1));
+    }
+    virtual void trigger (AlarmClock& clock) {
+      // add 0.1s
+      ++done;
+      set(millis2ticks(100));
       clock.add(*this);
     }
   };
 
 public:
   void updateLevel (uint8_t l) {
-    level = l;
-    DDECLN(level);
-    triggerChanged(decis2ticks(list1.statusInfoMinDly()*5));
+    if( l != level ) {
+      level = l;
+      DPRINT("New Level: ");DDECLN(level);
+      triggerChanged(decis2ticks(list1.statusInfoMinDly()*5));
+    }
   }
 
 protected:
@@ -211,34 +217,36 @@ protected:
   BlindList1   list1;
 
   virtual void trigger (AlarmClock& clock) {
-    if( state == AS_CM_JT_RAMPON || state == AS_CM_JT_RAMPOFF ) {
-      if( destlevel != 0xff ) {
+    uint8_t trigstate = state;
+    uint8_t trigdest = destlevel;
+    StateMachine<BlindPeerList>::trigger(clock);
+    if( trigstate == AS_CM_JT_RAMPON || trigstate == AS_CM_JT_RAMPOFF ) {
+      if( trigdest != 0xff ) {
         // update level to destlevel
-        updateLevel(destlevel);
+        updateLevel(trigdest);
       }
     }
-    StateMachine<BlindPeerList>::trigger(clock);
   }
 
 public:
-  BlindStateMachine () : StateMachine<BlindPeerList>(), level(0), destlevel(0), /*alarm(*this),*/ update(*this), list1(0) {}
+  BlindStateMachine () : StateMachine<BlindPeerList>(), level(0xff), destlevel(0), /*alarm(*this),*/ update(*this), list1(0) {}
   virtual ~BlindStateMachine () {}
 
   virtual void switchState(uint8_t oldstate,uint8_t newstate) {
     DPRINT("Switch from ");DHEX(oldstate);DPRINT(" to ");DHEXLN(newstate);
     switch( newstate ) {
     case AS_CM_JT_RAMPON:
-      update.start(sysclock, list1.refRunningTimeButtonTop());
+      update.start(sysclock, list1.refRunningTimeBottomTop());
       break;
     case AS_CM_JT_RAMPOFF:
-      update.start(sysclock, list1.refRunningTimeTopButton());
+      update.start(sysclock, list1.refRunningTimeTopBottom());
       break;
     }
 
     switch (oldstate) {
     case AS_CM_JT_RAMPON:
     case AS_CM_JT_RAMPOFF:
-      sysclock.cancel(update);
+      update.stop(sysclock);
       break;
     }
   }
@@ -272,10 +280,10 @@ public:
         return decis2ticks(list1.changeOverDelay());
 
       case AS_CM_JT_RAMPON:
-        return calcDriveTime(destlevel-level,list1.refRunningTimeButtonTop(),destlevel==200);
+        return calcDriveTime(destlevel-level,list1.refRunningTimeBottomTop(),destlevel==200);
 
       case AS_CM_JT_RAMPOFF:
-        return calcDriveTime(level-destlevel,list1.refRunningTimeTopButton(),destlevel==0);
+        return calcDriveTime(level-destlevel,list1.refRunningTimeTopBottom(),destlevel==0);
 
     }
     return DELAY_NO;
@@ -369,7 +377,6 @@ public:
   void init () {
 //    typename BaseChannel::List1 l1 = BaseChannel::getList1();
     setState(AS_CM_JT_OFF, DELAY_INFINITE);
-//    changed(true);
     updateLevel(0);
   }
 

@@ -18,37 +18,42 @@ namespace as {
  * R0 is the resitance both of the NTC and of the second resistor
  * B is a material based number of the NTC. Look it up in the datasheet of the NTC. E.g. the ATC 103AT-2 has a B of 3435
  * T0 is the temperature where the NTC has the resistance R0. In most cases this is 25°C.
+ * OVERSAMPLING are the additional oversampled bits, e.g. choosing 2 will increase the internal sample size of the ATmega ADC from 10 bit to 12 bit.
  */
 
-template <int SENSEPIN,int R0=10000,int B=3435,int ACTIVATEPIN=0,int T0=25>
+template <uint8_t SENSEPIN,int R0=10000,int B=3435,int ACTIVATEPIN=0,int T0=25,int OVERSAMPLING=0>
 class Ntc : public Temperature {
-  float _b;
   float _t0Abs;
-  float _r0;
   
 public:
-  Ntc () : _t0Abs((float)T0 + 273.15), _r0(R0), _b(B) {}
+  Ntc () : _t0Abs((float)T0 + 273.15) {}
 
   void init () {
   }
 
   bool measure (__attribute__((unused)) bool async=false) {
-    int vo;
+    int vo = 0;
 
     if(ACTIVATEPIN != 0) {
       pinMode(ACTIVATEPIN, OUTPUT);
       digitalWrite(ACTIVATEPIN, HIGH);
     }
 
-    vo = analogRead(SENSEPIN);
+    for (int i = 0; i < (1 << (OVERSAMPLING * 2)); i++) {
+      vo += analogRead(SENSEPIN);
+    }
+
+    if (OVERSAMPLING > 0) {
+      vo = vo >> OVERSAMPLING;
+    }
 
     if(ACTIVATEPIN != 0) {
       digitalWrite(ACTIVATEPIN, LOW);
     }
+    
+    float rNtc = R0 * (((1 << (10 + OVERSAMPLING)) - 1) / (float)vo - 1);
 
-    float rNtc = _r0 * (1023.0 / (float)vo - 1.0);
-
-    _temperature = (_t0Abs * _b / (_b + _t0Abs * log(rNtc / _r0))-273.15) * 10;
+    _temperature = (_t0Abs * B / (B + _t0Abs * log(rNtc / R0)) - 273.15) * 10;
 
     return true;
   }

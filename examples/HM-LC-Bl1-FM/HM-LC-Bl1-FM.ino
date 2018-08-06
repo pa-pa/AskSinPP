@@ -132,8 +132,8 @@ void setup () {
   bool first = sdev.init(hal);
   sdev.channel(1).init();
 
-//  sdev.channel(1).getList1().refRunningTimeButtonTop(270);
-//  sdev.channel(1).getList1().refRunningTimeTopButton(270);
+//  sdev.channel(1).getList1().refRunningTimeBottomTop(270);
+//  sdev.channel(1).getList1().refRunningTimeTopBottom(270);
 
   buttonISR(cfgBtn,CONFIG_BUTTON_PIN);
   buttonISR(btnup,UP_BUTTON_PIN);
