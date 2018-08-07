@@ -382,6 +382,11 @@ public:
                    answer = ch->process(msg.actionSet()) ? REPLAY_ACK : REPLAY_NACK;
                  }
                  break;
+               case AS_ACTION_COMMAND:
+                 if( ch->inhibit() == false ) {
+                   answer = ch->process(msg.commandSet()) ? REPLAY_ACK : REPLAY_NACK;
+                 }
+                 break;
                }
              }
            }

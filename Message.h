@@ -44,6 +44,7 @@ class RemoteEventMsg;
 class SensorEventMsg;
 class ActionMsg;
 class ActionSetMsg;
+class ActionCommandMsg;
 
 class ValuesMsg;
 
@@ -366,6 +367,7 @@ public:
   const SensorEventMsg& sensorEvent () const { return *(SensorEventMsg*)this; }
   const ActionMsg& action () const { return *(ActionMsg*)this; }
   const ActionSetMsg& actionSet () const { return *(ActionSetMsg*)this; }
+  const ActionCommandMsg& commandSet () const { return *(ActionCommandMsg*)this; }
 
   // cast to write message types
   AckMsg& ack () { return *(AckMsg*)this; }
@@ -507,7 +509,15 @@ public:
   }
 };
 
-
+class ActionCommandMsg : public ActionMsg {
+protected:
+    ActionCommandMsg() {}
+public:
+    uint8_t channel () const { return subcommand(); }
+    uint8_t len () const { return (datasize()); }
+    uint8_t value (uint8_t idx) const { return *(data()+idx); }
+    bool eot () const { return (Message::len >= 12) ? (*(data()+(Message::len-12)) == AS_ACTION_COMMAND_EOT) : false; }
+};
 
 class AckMsg : public Message {
 public:
