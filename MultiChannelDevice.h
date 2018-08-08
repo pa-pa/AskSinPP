@@ -384,7 +384,7 @@ public:
                  break;
                case AS_ACTION_COMMAND:
                  if( ch->inhibit() == false ) {
-                   answer = ch->process(msg.commandSet()) ? REPLAY_ACK : REPLAY_NACK;
+                   answer = ch->process(msg.actionCommand()) ? REPLAY_ACK : REPLAY_NACK;
                  }
                  break;
                }
