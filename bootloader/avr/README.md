@@ -12,18 +12,23 @@ Required Windows tools
   * avrdude
   
 The first step is to create a bootloader with the specific device data
-  * Device Type   - 2 Byte Hex
-  * Device ID     - 3 Byte Hex
-  * Device Serial - 10 Byte ASCII
-  * Device Config - 16 Byte Hex (optional - all 0x00 by default)
-  
+  * Device Model  - 2  Byte Hex (=DEVMODEL, see list of known devicemodels, this is used to connect to images and more info in device.xml files)
+  * Device ID     - 3  Byte Hex (=HMID, like binary serial, unique) 
+  * Device Serial - 10 Byte ASCII (=SERIAL, easy identified and used everywhere in HM webui)
+  * Device Config - 16 Byte Hex (=CONFIG, optional - all 0x00 by default)
+
+This infos correspondent to the DeviceInfo in devices.h. But not completly. Why? Take a look:
+ * part belongs to hardware and is different even on a device with same firmware, this part is flashed
+ inside the bootloader: DEVMODEL, HMID, SERIAL, CONFIG
+ * part of the DeviceInfo belongs to firmware, e.g. `uint8_t Firmware;` so it is not part of the bootloader
+ 
 The specific boot loader can created by using the makeota.html page. Load the "Bootloader-OTA-atmega328.hex" 
 into the web browser and fill all fields. After pressing the "Create" button the bootloader can be downloaded 
 to the loacl disk. The complete page runs inside your web browser. There is no internet access needed.
 
 The bootloader can also created by the makeota.sh schell script. Call the script with the following options:
 
-`makeota.sh DEVID HMID SERIAL [CONFIG]`
+`makeota.sh DEVMODEL HMID SERIAL [CONFIG]`
    
 and redirect the output into a file.
 
