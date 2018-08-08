@@ -21,39 +21,42 @@ namespace as {
  * OVERSAMPLING are the additional oversampled bits, e.g. choosing 2 will increase the internal sample size of the ATmega ADC from 10 bit to 12 bit.
  */
 
-template <uint8_t SENSEPIN,int R0=10000,int B=3435,int ACTIVATEPIN=0,int T0=25,int OVERSAMPLING=0>
+template <uint8_t SENSEPIN,uint32_t R0=10000,uint16_t B=3435,uint8_t ACTIVATEPIN=0,int8_t T0=25,uint8_t OVERSAMPLING=0>
 class Ntc : public Temperature {
-  float _t0Abs;
-  
+  const int32_t _t0Abs = T0 * 10 + 2732;
+  const int32_t _max_ref = (1 << (10 + OVERSAMPLING)) - 10 - OVERSAMPLING;
+
 public:
-  Ntc () : _t0Abs((float)T0 + 273.15) {}
+  Ntc () {}
 
   void init () {
+    pinMode(SENSEPIN, INPUT);
   }
 
   bool measure (__attribute__((unused)) bool async=false) {
-    int vo = 0;
+    uint32_t vo = 0;
 
-    if(ACTIVATEPIN != 0) {
+    if (ACTIVATEPIN) {
       pinMode(ACTIVATEPIN, OUTPUT);
       digitalWrite(ACTIVATEPIN, HIGH);
     }
 
-    for (int i = 0; i < (1 << (OVERSAMPLING * 2)); i++) {
+    for (uint16_t i = 0; i < 1 << (OVERSAMPLING * 2); i++) {
       vo += analogRead(SENSEPIN);
     }
 
-    if (OVERSAMPLING > 0) {
+    if (ACTIVATEPIN) {
+      digitalWrite(ACTIVATEPIN, LOW);
+    }
+
+    if (OVERSAMPLING) {
       vo = vo >> OVERSAMPLING;
     }
 
-    if(ACTIVATEPIN != 0) {
-      digitalWrite(ACTIVATEPIN, LOW);
-    }
-    
-    float rNtc = R0 * (((1 << (10 + OVERSAMPLING)) - 1) / (float)vo - 1);
+    vo = _max_ref - vo;
 
-    _temperature = (_t0Abs * B / (B + _t0Abs * log(rNtc / R0)) - 273.15) * 10;
+    float rNtc = vo / (float)(_max_ref - vo);
+    _temperature = 10 * B * _t0Abs / (10 * B + (int16_t)(log(rNtc) * _t0Abs)) - 2732;
 
     return true;
   }
