@@ -91,7 +91,9 @@
 	#define AS_ACTION_SET                                 0x02
 	#define AS_ACTION_STOP_CHANGE                         0x03
 	#define AS_ACTION_RESET                               0x04
-	#define AS_ACTION_LED                                 0x80
+	#define AS_ACTION_COMMAND                             0x80
+	#define AS_ACTION_COMMAND_EOT                         0x03
+	#define AS_ACTION_COMMAND_EOL                         0x0A
 	#define AS_ACTION_LEDALL                              0x81
 	#define AS_ACTION_LEVEL                               0x81
 	#define AS_ACTION_SLEEPMODE                           0x82
