@@ -6,21 +6,26 @@
 
 namespace as {
 
+template <uint8_t PRESSEDSTATE>
 class PushButton : public Alarm {
 private:
   uint8_t pin;
 public:
-  PushButton () : Alarm(0) { async(true); }
+  PushButton () : Alarm(0) : pin(0) { async(true); }
   virtual ~PushButton () {}
 
   virtual void trigger (AlarmClock& clock) {
-    digitalWrite(pin,LOW);
+    digitalWrite(pin,PRESSEDSTATE==HIGH ? LOW : HIGH);
   }
 
-  void init (uint8_t p) { pin = p }
+  void init (uint8_t p) {
+    pin = p;
+    pinMode(p,OUTPUT);
+    digitalWrite(pin,PRESSEDSTATE==HIGH ? LOW : HIGH);
+  }
 
   void press (uint16_t millis) {
-    digitalWrite(pin,HIGH);
+    digitalWrite(pin,PRESSEDSTATE==HIGH ? HIGH : LOW);
     sysclock.cancel(*this);
     set(millis2ticks(millis));
     sysclock.add(*this);
