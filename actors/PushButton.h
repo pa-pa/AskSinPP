@@ -11,7 +11,7 @@ class PushButton : public Alarm {
 private:
   uint8_t pin;
 public:
-  PushButton () : Alarm(0) : pin(0) { async(true); }
+  PushButton () : Alarm(0), pin(0) { async(true); }
   virtual ~PushButton () {}
 
   virtual void trigger (AlarmClock& clock) {
