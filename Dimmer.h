@@ -565,6 +565,10 @@ public:
       }
     }
   }
+  
+  bool process (const ActionCommandMsg& msg) {
+    return true;
+  }
 
   bool process (const ActionSetMsg& msg) {
     setLevel( msg.value(), msg.ramp(), msg.delay() );
