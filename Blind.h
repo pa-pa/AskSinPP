@@ -392,6 +392,10 @@ public:
   void stop () {
     BlindStateMachine::stop();
   }
+  
+  bool process (const ActionCommandMsg& msg) {
+    return true;
+  }
 
   bool process (const ActionSetMsg& msg) {
     setDestLevel( msg.value() );
