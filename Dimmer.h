@@ -8,6 +8,9 @@
 
 #include "MultiChannelDevice.h"
 #include "Register.h"
+#include "actors/PWM.h"
+
+#include <stdarg.h>
 
 #define LOGIC_INACTIVE 0
 #define LOGIC_OR 1
@@ -215,7 +218,7 @@ class DimmerStateMachine {
       init(sm.getDelayForState(state,l),destlevel,l.valid() ? 0 : DELAY_INFINITE,l);
     }
     void init (uint32_t ramptime,uint8_t level,uint32_t dly,DimmerPeerList l=DimmerPeerList(0)) {
-      // DPRINT("Ramp/Level: ");DDEC(ramptime);DPRINT("/");DDECLN(level);
+      DPRINT("Ramp/Level: ");DDEC(ramptime);DPRINT("/");DDECLN(level);
       lst=l;
       destlevel = level==201 ? sm.lastonlevel : level;
       delay = dly;
@@ -236,6 +239,7 @@ class DimmerStateMachine {
         tack = 1;
         dx = uint8_t(diff / (ramptime > 0 ? ramptime : 1));
       }
+      set(tack);
 //      DPRINT("Dx/Tack: ");DDEC(dx);DPRINT("/");DDECLN(tack);
     }
     virtual void trigger (AlarmClock& clock) {
@@ -499,7 +503,7 @@ public:
   }
 
   void setLevel (uint8_t level, uint16_t ramp, uint16_t delay) {
-    // DPRINT("SetLevel: ");DHEX(level);DPRINT(" ");DHEX(ramp);DPRINT(" ");DHEXLN(delay);
+    //DPRINT("SetLevel: ");DHEX(level);DPRINT(" ");DHEX(ramp);DPRINT(" ");DHEXLN(delay);
     if( ramp==0 ) {
       alarm.destlevel=level;
       updateLevel(level);
@@ -528,18 +532,17 @@ public:
   }
 };
 
-static uint8_t physical(0);
-
 template <class HalType,int PeerCount>
 class DimmerChannel : public Channel<HalType,DimmerList1,DimmerList3,EmptyList,PeerCount>, public DimmerStateMachine {
 
-  uint8_t lastmsgcnt;
+  uint8_t  lastmsgcnt;
+  uint8_t* phys;
 
 protected:
   typedef Channel<HalType,DimmerList1,DimmerList3,EmptyList,PeerCount> BaseChannel;
 
 public:
-  DimmerChannel () : BaseChannel(), lastmsgcnt(0xff) {}
+  DimmerChannel () : BaseChannel(), lastmsgcnt(0xff), phys(0) {}
   virtual ~DimmerChannel() {}
 
   void setup(Device<HalType>* dev,uint8_t number,uint16_t addr) {
@@ -550,10 +553,16 @@ public:
 
   void changed (bool c) { DimmerStateMachine::changed = c; }
 
+  void setPhysical(uint8_t& p) {
+    phys = &p;
+  }
+
   void patchStatus (Message& msg) {
     if( msg.length() == 0x0e ) {
       msg.length(0x0f);
-      msg.data()[3] = physical;
+      if( phys != 0 ) {
+        msg.data()[3] = *phys;
+      }
     }
   }
 
@@ -595,68 +604,75 @@ public:
     }
     return false;
   }
+
+  bool process (const ActionCommandMsg& msg) {
+    return BaseChannel::process(msg);
+  }
+
 };
 
-// we use this table for the dimmer levels
-static const uint8_t pwmtable[32] PROGMEM = {
-    1, 1, 2, 2, 2, 3, 3, 4, 5, 6, 7, 8, 10, 11, 13, 16, 19, 23,
-    27, 32, 38, 45, 54, 64, 76, 91, 108, 128, 152, 181, 215, 255
-};
-
-template<class HalType,class ChannelType,int ChannelCount,class List0Type=List0>
+template<class HalType,class ChannelType,int ChannelCount,int VirtualCount,class PWM,class List0Type=List0>
 class DimmerDevice : public MultiChannelDevice<HalType,ChannelType,ChannelCount,List0Type> {
 
-  uint8_t pin;
+  PWM pwm[ChannelCount/VirtualCount];
+  uint8_t physical[ChannelCount/VirtualCount];
 
 public:
   typedef MultiChannelDevice<HalType,ChannelType,ChannelCount,List0Type> DeviceType;
 
-  DimmerDevice (const DeviceInfo& info,uint16_t addr) : DeviceType(info,addr), pin(0) {}
+  DimmerDevice (const DeviceInfo& info,uint16_t addr) : DeviceType(info,addr) {}
   virtual ~DimmerDevice () {}
 
   void firstinit () {
     DeviceType::firstinit();
-    DeviceType::channel(1).getList1().logicCombination(LOGIC_OR);
-    for( uint8_t i=2; i<=DeviceType::channels(); ++i ) {
-      DeviceType::channel(i).getList1().logicCombination(LOGIC_INACTIVE);
+    for( uint8_t i=1; i<=DeviceType::channels(); ++i ) {
+      if( i <= ChannelCount/VirtualCount ){
+        DeviceType::channel(i).getList1().logicCombination(LOGIC_OR);
+      }
+      else {
+        DeviceType::channel(i).getList1().logicCombination(LOGIC_INACTIVE);
+      }
     }
   }
 
-  void init (HalType& hal,uint8_t p) {
+  void init (HalType& hal,...) {
     DeviceType::init(hal);
-    pin = p;
-    pinMode(pin,OUTPUT);
-    for( uint8_t i=1; i<=DeviceType::channels(); ++i ) {
-      if( DeviceType::channel(i).getList1().powerUpAction() == true ) {
-        DeviceType::channel(i).setLevel(200,5,0xffff);
-      }
-      else {
-        DeviceType::channel(i).setLevel(0,5,0xffff);
+    va_list argp;
+    va_start(argp, hal);
+    for( uint8_t i=0; i<ChannelCount/VirtualCount; ++i ) {
+      uint8_t p =  va_arg(argp, int);
+      pwm[i].init(p);
+    }
+    va_end(argp);
+    initChannels();
+  }
+
+  void initChannels () {
+    for( uint8_t i=1; i<=ChannelCount/VirtualCount; ++i ) {
+      for( uint8_t j=i; j<=ChannelCount; j+=ChannelCount/VirtualCount ) {
+        DeviceType::channel(j).setPhysical(physical[i-1]);
+        if( DeviceType::channel(i).getList1().powerUpAction() == true ) {
+          DeviceType::channel(i).setLevel(200,5,0xffff);
+        }
+        else {
+          DeviceType::channel(i).setLevel(0,5,0xffff);
+        }
       }
     }
   }
 
   bool pollRadio () {
     // DPRINT("Pin ");DHEX(pin);DPRINT("  Val ");DHEXLN(calcPwm());
-    analogWrite(pin,calcPwm());
+    for( uint8_t i=0; i<ChannelCount/VirtualCount; ++i ) {
+      physical[i]  = (uint8_t)combineChannels(i+1);
+      pwm[i].set(physical[i]);
+    }
     return DeviceType::pollRadio();
   }
 
-  uint8_t calcPwm () {
-    uint8_t pwm = 0;
-    uint16_t status = combineChannels();
-    physical  = (uint8_t)status;
-    if( status > 0 ) {
-      uint8_t offset = status*31/200;
-      pwm = pgm_read_word (& pwmtable[offset]);
-    }
-    //DPRINT("PWM: "); DHEXLN(pwm);
-    return pwm;
-  }
-
-  uint16_t combineChannels () {
+  uint16_t combineChannels (uint8_t start) {
     uint16_t value = 0;
-    for( uint8_t i=1; i<DeviceType::channels(); ++i ) {
+    for( uint8_t i=start; i<=DeviceType::channels(); i+=ChannelCount/VirtualCount ) {
       uint8_t level = DeviceType::channel(i).status();
       switch( DeviceType::channel(i).getList1().logicCombination() ) {
       default:
