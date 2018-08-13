@@ -338,7 +338,11 @@ public:
     }
     BaseChannel::changed(true);
   }
-
+    
+  bool process (const ActionCommandMsg& msg) {
+    return true;
+  }
+    
   bool process (const ActionSetMsg& msg) {
     status( msg.value(), msg.delay() );
     return true;

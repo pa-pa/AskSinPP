@@ -13,6 +13,7 @@ namespace as {
 
 template <class HalType,class List0Type> class Device;
 class ActionSetMsg;
+class ActionCommandMsg;
 class RemoteEventMsg;
 class SensorEventMsg;
 
@@ -278,6 +279,7 @@ public:
 
   virtual void stop () = 0;
   virtual bool process (const ActionSetMsg& msg) = 0;
+  virtual bool process (const ActionCommandMsg& msg) = 0;
   virtual bool process (const RemoteEventMsg& msg) = 0;
   virtual bool process (const SensorEventMsg& msg) = 0;
   virtual uint8_t status () = 0;
@@ -322,6 +324,7 @@ public:
 
   virtual void stop () { ch.stop(); };
   virtual bool process (const ActionSetMsg& msg) { return ch.process(msg); }
+  virtual bool process (const ActionCommandMsg& msg) { return ch.process(msg); }
   virtual bool process (const RemoteEventMsg& msg) { return ch.process(msg); }
   virtual bool process (const SensorEventMsg& msg) { return ch.process(msg); }
   virtual uint8_t status () { return ch.status(); }
