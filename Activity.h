@@ -207,21 +207,23 @@ public:
   virtual ~BurstDetector () {}
   virtual void trigger (AlarmClock& clock) {
     uint32_t next = millis2ticks(250);
-    bool detect = hal.radio.detectBurst();
-    if( detect == true ) {
-      if( burst == false ) {
-        burst = true;
-        next = millis2ticks(30);
-        // DPRINTLN("1");
+    if( hal.activity.stayAwake() == false ) {
+      bool detect = hal.radio.detectBurst();
+      if( detect == true ) {
+        if( burst == false ) {
+          burst = true;
+          next = millis2ticks(30);
+          // DPRINTLN("1");
+        }
+        else {
+          burst = false;
+          hal.activity.stayAwake(millis2ticks(500));
+          // DPRINTLN("2");
+        }
       }
       else {
         burst = false;
-        hal.activity.stayAwake(millis2ticks(500));
-        // DPRINTLN("2");
       }
-    }
-    else {
-      burst = false;
     }
     set(next);
     clock.add(*this);
