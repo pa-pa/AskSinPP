@@ -40,12 +40,14 @@ protected:
   virtual ~StateMachine () {}
 
   virtual void trigger (__attribute__((unused)) AlarmClock& clock) {
-    uint8_t next = getNextState(state, actlst);
+    uint8_t next = getNextState(state);
     uint32_t dly = getDelayForState(next,actlst);
     setState(next,dly,actlst);
   }
 
   void setState (uint8_t next,uint32_t delay,const PeerList& lst=PeerList(0)) {
+    actlst = lst;
+    
     if( next != AS_CM_JT_NONE ) {
       // first cancel possible running alarm
       sysclock.cancel(*this);
@@ -56,12 +58,11 @@ protected:
 
         if (delay == DELAY_NO) {
           // go immediately to the next state
-          next = getNextState(state, lst);
+          next = getNextState(state);
           delay = getDelayForState(next,lst);
         }
       }
       if (delay != DELAY_INFINITE) {
-        actlst = lst;
         set(delay);
         sysclock.add(*this);
       }
@@ -70,7 +71,7 @@ protected:
 
   virtual void switchState(__attribute__((unused)) uint8_t oldstate,__attribute__((unused)) uint8_t newstate) {}
 
-  virtual void jumpToTarget(const PeerList& lst) {
+  void jumpToTarget(const PeerList& lst) {
     uint8_t next = getJumpTarget(state,lst);
     if( next != AS_CM_JT_NONE ) {
       // get delay
