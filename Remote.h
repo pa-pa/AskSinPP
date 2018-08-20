@@ -74,6 +74,13 @@ public:
     uint8_t s = state();
     return s == Button::pressed || s == Button::debounce || s == Button::longpressed;
   }
+  
+  bool configChanged() {
+    //we have to add 300ms to the value set in CCU!
+    uint16_t _longpressTime = 300 + (this->getList1().longPressTime() * 100);
+    //DPRINT("longpressTime = ");DDECLN(_longpressTime);
+    setLongPressTime(millis2ticks(_longpressTime));
+  } 
 };
 
 #define remoteISR(device,chan,pin) class device##chan##ISRHandler { \
