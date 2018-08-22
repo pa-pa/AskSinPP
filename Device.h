@@ -379,6 +379,12 @@ public:
     pm.clearAck();
     send(msg,to);
   }
+  
+  template <class ChannelType>
+  void sendMasterEvent (Message& msg,const ChannelType& ch) {
+    send(msg,getMasterID());
+    hal->sendPeer();
+  }
 
   template <class ChannelType>
   void sendPeerEvent (Message& msg,const ChannelType& ch) {
