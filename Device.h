@@ -380,8 +380,7 @@ public:
     send(msg,to);
   }
   
-  template <class ChannelType>
-  void sendMasterEvent (Message& msg,const ChannelType& ch) {
+  void sendMasterEvent (Message& msg) {
     send(msg,getMasterID());
     hal->sendPeer();
   }
