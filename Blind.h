@@ -254,6 +254,53 @@ public:
   void setup(BlindList1 l1) {
     list1 = l1;
   }
+  
+  void jumpToTarget(const BlindPeerList& lst) {
+    uint8_t next = getJumpTarget(state,lst);
+    DPRINT("jumpToTarget: ");DDEC(state);DPRINT(" ");DDECLN(next);
+    if( next != AS_CM_JT_NONE ) {
+      switch( next ) {
+        case AS_CM_JT_ONDELAY:
+        case AS_CM_JT_REFON:
+        case AS_CM_JT_RAMPON:   
+          if(setDestLevel(lst.onLevel()))
+            return;
+          break;
+        case AS_CM_JT_OFFDELAY:
+        case AS_CM_JT_REFOFF:   
+        case AS_CM_JT_RAMPOFF:  
+          if(setDestLevel(lst.offLevel()))
+            return;
+          break;
+      }
+      
+      // get delay
+      uint32_t dly = getDelayForState(next,lst);
+      // switch to next
+      setState(next,dly,lst);
+    }
+  }
+  
+  virtual uint8_t getNextState (uint8_t stat) {
+    DPRINT("getNextState: ");DDECLN(stat);
+    switch( stat ) {
+      case AS_CM_JT_ONDELAY:  return AS_CM_JT_REFON;
+      case AS_CM_JT_REFON:    return AS_CM_JT_RAMPON;
+      case AS_CM_JT_RAMPON:
+        if(actlst.valid() && level == actlst.offLevel())
+          return AS_CM_JT_OFF;
+        return AS_CM_JT_ON;
+      case AS_CM_JT_ON:       return AS_CM_JT_OFFDELAY;
+      case AS_CM_JT_OFFDELAY: return AS_CM_JT_REFOFF;
+      case AS_CM_JT_REFOFF:   return AS_CM_JT_RAMPOFF;
+      case AS_CM_JT_RAMPOFF:  
+        if(actlst.valid() && level == actlst.onLevel())
+          return AS_CM_JT_ON;
+        return AS_CM_JT_OFF;
+      case AS_CM_JT_OFF:      return AS_CM_JT_ONDELAY;
+    }
+    return AS_CM_JT_NONE;
+  }
 
   virtual uint32_t getDelayForState(uint8_t stat,const BlindPeerList& lst) {
     if( lst.valid () == true ) {
@@ -263,7 +310,7 @@ public:
           destlevel = 0xff;
           return decis2ticks(first);
         }
-        destlevel = stat == AS_CM_JT_RAMPON ? lst.onLevel() : lst.offLevel();
+        //destlevel = stat == AS_CM_JT_RAMPON ? lst.onLevel() : lst.offLevel();
       }
     }
     return StateMachine<BlindPeerList>::getDelayForState(stat,lst);
@@ -326,14 +373,19 @@ public:
     }
   }
 
-  void setDestLevel (uint8_t value) {
+  bool setDestLevel (uint8_t value) {
+    DPRINT("setDestLevel: ");DDECLN(value);
     destlevel = value;
     if( destlevel > level || destlevel == 200 ) {
       setState(AS_CM_JT_ONDELAY, 0);
+      return true;
     }
     else if ( destlevel < level || destlevel == 0 ) {
       setState(AS_CM_JT_OFFDELAY, 0);
+      return true;
     }
+    
+    return false;
   }
 
   void stop () {
