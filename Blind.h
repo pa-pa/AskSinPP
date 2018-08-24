@@ -282,6 +282,7 @@ public:
   }
   
   virtual uint8_t getNextState (uint8_t stat) {
+    DPRINT("getNextState: ");DDECLN(stat);
     switch( stat ) {
       case AS_CM_JT_ONDELAY:  return AS_CM_JT_REFON;
       case AS_CM_JT_REFON:    return AS_CM_JT_RAMPON;
@@ -373,6 +374,7 @@ public:
   }
 
   bool setDestLevel (uint8_t value) {
+    DPRINT("setDestLevel: ");DDECLN(value);
     destlevel = value;
     if( destlevel > level || destlevel == 200 ) {
       setState(AS_CM_JT_ONDELAY, 0);

@@ -81,7 +81,7 @@ protected:
     }
   }
 
-  virtual uint8_t getNextState (uint8_t stat, const PeerList& lst=PeerList(0)) {
+  virtual uint8_t getNextState (uint8_t stat) {
     switch( stat ) {
       case AS_CM_JT_ONDELAY:  return AS_CM_JT_REFON;
       case AS_CM_JT_REFON:    return AS_CM_JT_RAMPON;
