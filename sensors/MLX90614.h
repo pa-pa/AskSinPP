@@ -57,8 +57,8 @@ namespace as {
 template <byte ADDRESS=0x5a>
 class MLX90614 : public Sensor {
 public:
-    int16_t   _temperatureAmb;
-    int16_t   _temperatureObj;
+    int16_t _temperatureAmb = -400;
+    int16_t _temperatureObj = -400;
 
   void init () {
     Wire.begin();
