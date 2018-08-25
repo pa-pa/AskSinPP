@@ -1,7 +1,7 @@
 //- -----------------------------------------------------------------------------------------------------------------------
 // AskSin++
 // 2018-04-03 papa Creative Commons - http://creativecommons.org/licenses/by-nc-sa/3.0/de/
-// 2018-08-25 jp112sdl Creative Commons - http://creativecommons.org/licenses/by-nc-sa/4.0/de/
+// 2018-08-25 jp112sdl Creative Commons - http://creativecommons.org/licenses/by-nc-sa/3.0/de/
 //- -----------------------------------------------------------------------------------------------------------------------
 
 /***************************************************
@@ -63,7 +63,6 @@ public:
 
   void init () {
     Wire.begin();
-    DHEXLN(read16(MLX90614_CONFIG));
     _present = read16(MLX90614_CONFIG) != 0xffff;
     DPRINT("MLX90614 ");
     if (_present) {
