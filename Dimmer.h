@@ -238,7 +238,7 @@ class DimmerStateMachine {
       lst=l;
       destlevel = level==201 ? sm.lastonlevel : level;
       delay = dly;
-      sm.updateState(destlevel==0 ? AS_CM_JT_RAMPOFF : AS_CM_JT_RAMPON);
+      sm.updateState(destlevel==0 ? AS_CM_JT_RAMPOFF : AS_CM_JT_RAMPON, delay);
       uint8_t curlevel = sm.status();
       uint32_t diff;
       if( curlevel > destlevel ) { // dim down
@@ -290,9 +290,9 @@ class DimmerStateMachine {
     level = newlevel;
   }
 
-  void updateState (uint8_t next) {
+  void updateState (uint8_t next,uint32_t delay) {
     if( state != next ) {
-      switchState(state, next);
+      switchState(state, next,delay);
       state = next;
       if ( state == AS_CM_JT_ON || state == AS_CM_JT_OFF ) {
         triggerChanged();
@@ -311,7 +311,7 @@ class DimmerStateMachine {
       sysclock.cancel(alarm);
       // if state is different
       if (state != next) {
-        updateState(next);
+        updateState(next,delay);
       }
       if ( state == AS_CM_JT_RAMPON || state == AS_CM_JT_RAMPOFF ) {
         alarm.init(state,lst);
@@ -351,7 +351,7 @@ public:
     list1 = l1;
   }
 
-  virtual void switchState(__attribute__ ((unused)) uint8_t oldstate,uint8_t newstate) {
+  virtual void switchState(__attribute__ ((unused)) uint8_t oldstate,uint8_t newstate,__attribute__ ((unused)) uint32_t stateDelay) {
     // DPRINT("Dimmer State: ");DHEX(oldstate);DPRINT(" -> ");DHEX(newstate);DPRINT("  Level: ");DHEXLN(level);
     if( newstate == AS_CM_JT_ON ) {
       lastonlevel = level;
@@ -450,9 +450,9 @@ public:
     if( newlevel > lst.dimMaxLevel() ) {
       newlevel = lst.dimMaxLevel();
     }
-    updateState(AS_CM_JT_RAMPON);
+    updateState(AS_CM_JT_RAMPON,getDelayForState(AS_CM_JT_RAMPON, lst));
     updateLevel(newlevel);
-    updateState(AS_CM_JT_ON);
+    updateState(AS_CM_JT_ON,getDelayForState(AS_CM_JT_ON, lst));
   }
 
   void dimDown (const DimmerPeerList& lst) {
@@ -461,9 +461,11 @@ public:
     if( newlevel < lst.dimMinLevel() ) {
       newlevel = lst.dimMinLevel();
     }
-    updateState(newlevel > lst.onMinLevel() ? AS_CM_JT_RAMPON : AS_CM_JT_RAMPOFF);
+    uint8_t newstate = newlevel > lst.onMinLevel() ? AS_CM_JT_RAMPON : AS_CM_JT_RAMPOFF;
+    updateState(newstate,getDelayForState(newstate, lst));
     updateLevel(newlevel);
-    updateState(newlevel > lst.onMinLevel() ? AS_CM_JT_ON : AS_CM_JT_OFF);
+    newstate = newlevel > lst.onMinLevel() ? AS_CM_JT_ON : AS_CM_JT_OFF;
+    updateState(newstate,getDelayForState(newstate, lst));
   }
 
   void remote (const DimmerPeerList& lst,uint8_t counter) {

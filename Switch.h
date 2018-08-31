@@ -141,7 +141,7 @@ class SwitchStateMachine {
       sysclock.cancel(alarm);
       // if state is different
       if (state != next) {
-        switchState(state, next);
+        switchState(state, next,delay);
         state = next;
       }
       if (delay == DELAY_NO) {
@@ -166,7 +166,7 @@ public:
   SwitchStateMachine() : state(AS_CM_JT_NONE), alarm(*this) {}
   virtual ~SwitchStateMachine () {}
 
-  virtual void switchState(__attribute__((unused)) uint8_t oldstate,__attribute__((unused)) uint8_t newstate) {}
+  virtual void switchState(__attribute__((unused)) uint8_t oldstate,__attribute__((unused)) uint8_t newstate,__attribute__((unused)) uint32_t delay) {}
 
   void jumpToTarget(const SwitchPeerList& lst) {
     uint8_t next = getJumpTarget(state,lst);
@@ -329,7 +329,7 @@ public:
   }
 
 
-  virtual void switchState(__attribute__((unused)) uint8_t oldstate,uint8_t newstate) {
+  virtual void switchState(__attribute__((unused)) uint8_t oldstate,uint8_t newstate,__attribute__((unused)) uint32_t delay) {
     if( newstate == AS_CM_JT_ON ) {
       digitalWrite(pin,lowact ? LOW : HIGH);
     }

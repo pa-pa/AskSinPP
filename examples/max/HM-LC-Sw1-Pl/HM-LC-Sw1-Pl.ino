@@ -48,10 +48,10 @@ public:
   SwChannel () {};
   virtual ~SwChannel () {};
 
-  virtual void switchState(__attribute__((unused)) uint8_t oldstate,uint8_t newstate) {
+  virtual void switchState(__attribute__((unused)) uint8_t oldstate,uint8_t newstate,uint32_t delay) {
     // if ON - invert led so it will stay on after sending status
     this->device().led().invert(newstate == AS_CM_JT_ON);
-    SwitchChannel<HALTYPE,PEERCOUNT,List0>::switchState(oldstate, newstate);
+    SwitchChannel<HALTYPE,PEERCOUNT,List0>::switchState(oldstate, newstate, delay);
   }
 };
 
