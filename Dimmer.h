@@ -90,12 +90,12 @@ public:
 //    ssl.onTimeMode(false);
     ssl.offDelayBlink(true);
 //    ssl.offLevel(0);
-    ssl.onMinLevel(20);
-    ssl.onLevel(200); // 201 ???
+//    ssl.onMinLevel(0);
+    ssl.onLevel(201); // 201 ???
     ssl.rampStartStep(10);
-//    ssl.rampOnTime(0);
-//    ssl.rampOffTime(0);
-//    ssl.dimMinLevel(0);
+    ssl.rampOnTime(10);
+    ssl.rampOffTime(10);
+    ssl.dimMinLevel(10);
     ssl.dimMaxLevel(200);
     ssl.dimStep(5);
     ssl.offDelayStep(10);
@@ -131,12 +131,12 @@ public:
 //    ssl.onTimeMode(false);
     ssl.offDelayBlink(true);
 //    ssl.offLevel(0);
-    ssl.onMinLevel(20);
-    ssl.onLevel(200); // 201 ???
+    ssl.onMinLevel(0);
+    ssl.onLevel(201); // 201 ???
     ssl.rampStartStep(10);
-//    ssl.rampOnTime(0);
-//    ssl.rampOffTime(0);
-//    ssl.dimMinLevel(0);
+    ssl.rampOnTime(10);
+    ssl.rampOffTime(10);
+    ssl.dimMinLevel(10);
     ssl.dimMaxLevel(200);
     ssl.dimStep(5);
     ssl.offDelayStep(10);
@@ -199,6 +199,22 @@ class DimmerStateMachine {
 
 #define DELAY_NO 0x00
 #define DELAY_INFINITE 0xffffffff
+
+  class ChangedAlarm : public Alarm {
+    DimmerStateMachine&  sm;
+  public:
+    ChangedAlarm (DimmerStateMachine& s) : Alarm(0), sm(s) {}
+    virtual ~ChangedAlarm () {}
+    void set (uint32_t t,AlarmClock& clock) {
+      clock.cancel(*this);
+      Alarm::set(t);
+      clock.add(*this);
+    }
+    virtual void trigger (__attribute__((unused)) AlarmClock& clock) {
+      sm.changed = true;
+    }
+  };
+
 
   class RampAlarm : public Alarm {
   public:
@@ -272,15 +288,20 @@ class DimmerStateMachine {
 
   void updateLevel (uint8_t newlevel) {
     level = newlevel;
-//    changed = true;
   }
 
   void updateState (uint8_t next) {
     if( state != next ) {
       switchState(state, next);
       state = next;
-      changed = true;
+      if ( state == AS_CM_JT_ON || state == AS_CM_JT_OFF ) {
+        triggerChanged();
+      }
     }
+  }
+
+  void triggerChanged () {
+    calarm.set(decis2ticks(list1.statusInfoMinDly()*5),sysclock);
   }
 
   void setState (uint8_t next,uint32_t delay,const DimmerPeerList& lst=DimmerPeerList(0),uint8_t deep=0) {
@@ -313,15 +334,22 @@ class DimmerStateMachine {
   }
 
 protected:
-  uint8_t    state : 4;
-  bool       changed : 1;
-  bool       toggledimup : 1;
-  uint8_t    level, lastonlevel;
-  RampAlarm  alarm;
+  uint8_t      state : 4;
+  bool         changed : 1;
+  bool         toggledimup : 1;
+  uint8_t      level, lastonlevel;
+  RampAlarm    alarm;
+  ChangedAlarm calarm;
+  DimmerList1  list1;
 
 public:
-  DimmerStateMachine() : state(AS_CM_JT_NONE), changed(false), toggledimup(true), level(0), lastonlevel(200), alarm(*this) {}
+  DimmerStateMachine() : state(AS_CM_JT_NONE), changed(false), toggledimup(true), level(0), lastonlevel(200),
+    alarm(*this), calarm(*this), list1(0) {}
   virtual ~DimmerStateMachine () {}
+
+  void setup(DimmerList1 l1) {
+    list1 = l1;
+  }
 
   virtual void switchState(__attribute__ ((unused)) uint8_t oldstate,uint8_t newstate) {
     // DPRINT("Dimmer State: ");DHEX(oldstate);DPRINT(" -> ");DHEX(newstate);DPRINT("  Level: ");DHEXLN(level);
@@ -547,6 +575,7 @@ public:
 
   void setup(Device<HalType>* dev,uint8_t number,uint16_t addr) {
     BaseChannel::setup(dev,number,addr);
+    DimmerStateMachine::setup(this->getList1());
   }
 
   bool changed () const { return DimmerStateMachine::changed; }
@@ -664,8 +693,11 @@ public:
   bool pollRadio () {
     // DPRINT("Pin ");DHEX(pin);DPRINT("  Val ");DHEXLN(calcPwm());
     for( uint8_t i=0; i<ChannelCount/VirtualCount; ++i ) {
-      physical[i]  = (uint8_t)combineChannels(i+1);
-      pwm[i].set(physical[i]);
+      uint8_t value = (uint8_t)combineChannels(i+1);
+      if( physical[i] != value ) {
+        physical[i]  = value;
+        pwm[i].set(physical[i]);
+      }
     }
     return DeviceType::pollRadio();
   }

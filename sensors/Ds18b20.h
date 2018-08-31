@@ -7,7 +7,11 @@
 #define __SENSORS_DS18B20_h__
 
 #include <Sensors.h>
+#if defined(ARDUINO_ARCH_STM32F1)
+#include <OneWireSTM.h>
+#else
 #include <OneWire.h>
+#endif
 
 // https://www.tweaking4all.com/hardware/arduino/arduino-ds18b20-temperature-sensor/
 

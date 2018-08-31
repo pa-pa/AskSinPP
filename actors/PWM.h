@@ -58,10 +58,13 @@ public:
     if ( value == STEPS) {
       duty = FREQU;
     }
-    else {
+    else if (value > 0) {
+      // https://diarmuid.ie/blog/pwm-exponential-led-fading-on-arduino-or-other-platforms/
       duty = pow(2,(value/R)) + 4;
+      // http://harald.studiokubota.com/wordpress/index.php/2010/09/05/linear-led-fading/index.html
       //duty = exp(value/18.0) + 4;
     }
+    // DDEC(pin);DPRINT(" - ");DDECLN(duty);
     pwmWrite(pin,duty);
   }
 };
