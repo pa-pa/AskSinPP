@@ -46,6 +46,8 @@ protected:
   }
 
   void setState (uint8_t next,uint32_t delay,const PeerList& lst=PeerList(0)) {
+    actlst = lst;
+    
     if( next != AS_CM_JT_NONE ) {
       // first cancel possible running alarm
       sysclock.cancel(*this);
@@ -61,7 +63,6 @@ protected:
         }
       }
       if (delay != DELAY_INFINITE) {
-        actlst = lst;
         set(delay);
         sysclock.add(*this);
       }

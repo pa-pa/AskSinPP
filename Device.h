@@ -16,6 +16,14 @@
 #include "Led.h"
 #include "Activity.h"
 
+#ifdef USE_HW_SERIAL
+  #if defined(__AVR_ATmega644__) || defined(__AVR_ATmega644P__)
+    #include <avr/boot.h>
+  #else
+    #error Using Hardware serial is not supported on MCU type currently used
+  #endif
+#endif
+
 #if defined(__AVR_ATmega644__) || defined(__AVR_ATmega644P__)
 #define OTA_CONFIG_START 0xffe0 // start address of 16 byte config data in bootloader
 #define OTA_MODEL_START  0xfff0 // start address of 2 byte model id in bootloader
@@ -82,6 +90,10 @@ private:
   HMID    lastdev;
   uint8_t lastmsg;
 
+#ifdef USE_HW_SERIAL
+   uint8_t device_id[3] = { 0x00, 0x00, 0x00 };
+#endif
+
 protected:
   Message     msg;
   KeyStore    kstore;
@@ -147,6 +159,13 @@ public:
   void getDeviceID (HMID& id) {
 #ifdef USE_OTA_BOOTLOADER
     HalType::pgm_read((uint8_t*)&id,OTA_HMID_START,sizeof(id));
+#elif defined(USE_HW_SERIAL)
+    if (device_id[0] == 0x00) {
+      device_id[0] = boot_signature_byte_get(21);
+      device_id[1] = boot_signature_byte_get(22);
+      device_id[2] = boot_signature_byte_get(23);
+    }
+    id = HMID(device_id);
 #else
     uint8_t ids[3];
     memcpy_P(ids,info.DeviceID,3);
@@ -157,6 +176,13 @@ public:
   void getDeviceSerial (uint8_t* serial) {
 #ifdef USE_OTA_BOOTLOADER
     HalType::pgm_read((uint8_t*)serial,OTA_SERIAL_START,10);
+#elif defined(USE_HW_SERIAL)
+    for (uint8_t i = 0; i < 3; i++) {
+      serial[i] = (boot_signature_byte_get(i + 14) % 26) + 65; // Char A-Z
+    }
+    for (uint8_t i = 3; i < 10; i++) {
+      serial[i] = (boot_signature_byte_get(i + 14) % 10) + 48; // Char 0-9
+    }
 #else
     memcpy_P(serial,info.Serial,10);
 #endif
@@ -378,6 +404,11 @@ public:
     pm.entries(current);
     pm.clearAck();
     send(msg,to);
+  }
+  
+  void sendMasterEvent (Message& msg) {
+    send(msg,getMasterID());
+    hal->sendPeer();
   }
 
   template <class ChannelType>
