@@ -272,6 +272,10 @@ public:
   #endif
           {
             result = response.isAck();
+            // if we got a Nack - we stop trying to send again
+            if( response.isNack() ) {
+              maxsend = 0;
+            }
             // we request wakeup
             // we got the flag to stay awake
             if( msg.isWakeMeUp() || response.isKeepAwake() ) {
