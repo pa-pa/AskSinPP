@@ -232,7 +232,7 @@ public:
   BlindStateMachine () : StateMachine<BlindPeerList>(), level(0xff), destlevel(0), /*alarm(*this),*/ update(*this), list1(0) {}
   virtual ~BlindStateMachine () {}
 
-  virtual void switchState(uint8_t oldstate,uint8_t newstate) {
+  virtual void switchState(uint8_t oldstate,uint8_t newstate, uint32_t statedelay) {
     DPRINT("Switch from ");DHEX(oldstate);DPRINT(" to ");DHEXLN(newstate);
     switch( newstate ) {
     case AS_CM_JT_RAMPON:
