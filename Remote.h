@@ -80,7 +80,8 @@ public:
     uint16_t _longpressTime = 300 + (this->getList1().longPressTime() * 100);
     //DPRINT("longpressTime = ");DDECLN(_longpressTime);
     setLongPressTime(millis2ticks(_longpressTime));
-  } 
+    return true;
+  }
 };
 
 #define remoteISR(device,chan,pin) class device##chan##ISRHandler { \

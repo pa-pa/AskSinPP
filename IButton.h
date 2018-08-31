@@ -126,6 +126,7 @@ public:
 
   bool process (__attribute__((unused)) const RemoteEventMsg& msg) { return false; }
   bool process (__attribute__((unused)) const SensorEventMsg& msg) { return false; }
+  bool process (__attribute__((unused)) const ActionCommandMsg& msg) { return false; }
 
 };
 

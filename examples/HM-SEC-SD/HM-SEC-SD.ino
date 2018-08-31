@@ -147,13 +147,9 @@ public:
     digitalWrite(soundpin,on==true ? HIGH : LOW);
   }
 
-  bool process (__attribute__((unused)) const ActionSetMsg& msg) {
-    return false;
-  }
-
-  bool process (__attribute__((unused)) const RemoteEventMsg& msg) {
-    return false;
-  }
+  bool process (__attribute__((unused)) const ActionSetMsg& msg) { return false; }
+  bool process (__attribute__((unused)) const RemoteEventMsg& msg) { return false; }
+  bool process (__attribute__((unused)) const ActionCommandMsg& msg) { return false; }
 
 };
 

@@ -339,7 +339,7 @@ public:
     BaseChannel::changed(true);
   }
     
-  bool process (const ActionCommandMsg& msg) {
+  bool process (__attribute__((unused)) const ActionCommandMsg& msg) {
     return true;
   }
     
