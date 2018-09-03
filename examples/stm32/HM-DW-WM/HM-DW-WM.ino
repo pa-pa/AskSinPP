@@ -61,23 +61,42 @@ ConfigButton<DimmerType> cfgBtn(sdev);
 
 // https://www.mikrocontroller.net/articles/Drehgeber
 const int8_t table[16] PROGMEM = {0,0,-1,0,0,0,0,1,1,0,0,0,0,-1,0,0};
-class Encoder : public Alarm {
+class Encoder {
+
+  class EncAlarm : public Alarm {
+    Encoder& enc;
+  public:
+    EncAlarm (Encoder& e) : Alarm(0), enc(e) {
+      async(true);
+    }
+    virtual void trigger (AlarmClock& clock) {
+      enc.checkPins();
+      start(clock);
+    }
+    void start (AlarmClock& clock) {
+      set(millis2ticks(5));
+      clock.add(*this);
+    }
+    void stop (AlarmClock& clock) {
+      clock.cancel(*this);
+    }
+  };
+
   int8_t last;
   volatile int8_t delta;
   uint8_t clkpin, dtpin;
+  EncAlarm alarm;
+
 public:
-  Encoder () : Alarm(0), last(0), delta(0), clkpin(0), dtpin(0) { async(true); };
+  Encoder () : last(0), delta(0), clkpin(0), dtpin(0), alarm(*this) {};
   virtual ~Encoder () {};
 
-  virtual void trigger (AlarmClock& clock) {
+  void checkPins () {
     int8_t ll=0;
     if (digitalRead(clkpin)) ll |=2;
     if (digitalRead(dtpin))  ll |=1;
     last = ((last << 2)  & 0x0F) | ll;
     delta += pgm_read_byte(&table[last]);
-
-    set(millis2ticks(5));
-    clock.add(*this);
   }
 
   void init (uint8_t clk,uint8_t dt) {
@@ -85,8 +104,7 @@ public:
     dtpin = dt;
     pinMode(clkpin, INPUT);
     pinMode(dtpin, INPUT);
-    set(millis2ticks(5));
-    sysclock.add(*this);
+    alarm.start(sysclock);
   }
 
   int8_t read () {
