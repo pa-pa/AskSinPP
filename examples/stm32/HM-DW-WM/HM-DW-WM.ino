@@ -31,6 +31,14 @@
 #define DIMMER1_PIN PB1
 #define DIMMER2_PIN PA3
 
+#define ENCODER1_SWITCH PB15
+#define ENCODER1_CLOCK  PB13
+#define ENCODER1_DATA   PB14
+
+#define ENCODER2_SWITCH PB10
+#define ENCODER2_CLOCK  PB9
+#define ENCODER2_DATA   PB8
+
 // number of available peers per channel
 #define PEERS_PER_CHANNEL 2
 
@@ -60,24 +68,49 @@ DimmerType sdev(devinfo,0x20);
 ConfigButton<DimmerType> cfgBtn(sdev);
 
 // https://www.mikrocontroller.net/articles/Drehgeber
-const int8_t table[16] PROGMEM = {0,0,-1,0,0,0,0,1,1,0,0,0,0,-1,0,0};
-class Encoder : public Alarm {
+const int8_t encoder_table[16] PROGMEM = {0,0,-1,0,0,0,0,1,1,0,0,0,0,-1,0,0};
+template<class DeviceType>
+class Encoder : public InternalButton<DeviceType> {
+
+  class EncAlarm : public Alarm {
+    Encoder& enc;
+  public:
+    EncAlarm (Encoder& e) : Alarm(0), enc(e) {
+      async(true);
+    }
+    virtual void trigger (AlarmClock& clock) {
+      enc.checkPins();
+      start(clock);
+    }
+    void start (AlarmClock& clock) {
+      set(millis2ticks(5));
+      clock.add(*this);
+    }
+    void stop (AlarmClock& clock) {
+      clock.cancel(*this);
+    }
+  };
+
   int8_t last;
   volatile int8_t delta;
   uint8_t clkpin, dtpin;
+  EncAlarm alarm;
+
 public:
-  Encoder () : Alarm(0), last(0), delta(0), clkpin(0), dtpin(0) { async(true); };
+  Encoder (DeviceType& dev,uint8_t num) : InternalButton<DeviceType>(dev,num), last(0), delta(0), clkpin(0), dtpin(0), alarm(*this) {};
   virtual ~Encoder () {};
 
-  virtual void trigger (AlarmClock& clock) {
+  bool checkPins () {
     int8_t ll=0;
     if (digitalRead(clkpin)) ll |=2;
     if (digitalRead(dtpin))  ll |=1;
     last = ((last << 2)  & 0x0F) | ll;
-    delta += pgm_read_byte(&table[last]);
+    delta += pgm_read_byte(&encoder_table[last]);
+    return delta != 0;
+  }
 
-    set(millis2ticks(5));
-    clock.add(*this);
+  void init (uint8_t sw) {
+    InternalButton<DeviceType>::init(sw);
   }
 
   void init (uint8_t clk,uint8_t dt) {
@@ -85,8 +118,7 @@ public:
     dtpin = dt;
     pinMode(clkpin, INPUT);
     pinMode(dtpin, INPUT);
-    set(millis2ticks(5));
-    sysclock.add(*this);
+    alarm.start(sysclock);
   }
 
   int8_t read () {
@@ -100,15 +132,15 @@ public:
   }
 
   template<class ChannelType,class List3Type>
-  void process (const Peer& peer,ChannelType& channel) {
-      int8_t dx = read();
-      if( dx != 0 && channel.status() != 0 ) {
-        List3Type l3 = channel.getList3(peer);
-        if( l3.valid() ) {
-          if( dx > 0 ) channel.dimUp(l3.sh());
-          else channel.dimDown(l3.sh());
-        }
+  void process (ChannelType& channel) {
+    int8_t dx = read();
+    if( dx != 0 && channel.status() != 0 ) {
+      List3Type l3 = channel.getList3(this->peer());
+      if( l3.valid() ) {
+        if( dx > 0 ) channel.dimUp(l3.sh());
+        else channel.dimDown(l3.sh());
       }
+    }
   }
 };
 
@@ -141,31 +173,29 @@ public:
   }
 };
 
-Encoder enc1, enc2;
+Encoder<DimmerType> enc1(sdev,1);
+Encoder<DimmerType> enc2(sdev,2);
 TempSens tempsensor;
-InternalButton<DimmerType> btnCh1(sdev,1), btnCh2(sdev,2);
 
 void setup () {
   delay(5000);
   DINIT(57600,ASKSIN_PLUS_PLUS_IDENTIFIER);
-  sdev.init(hal,DIMMER1_PIN,DIMMER2_PIN);
+  bool first = sdev.init(hal,DIMMER1_PIN,DIMMER2_PIN);
   buttonISR(cfgBtn,CONFIG_BUTTON_PIN);
-  buttonISR(btnCh1,PB15);
-  enc1.init(PB13,PB14);
-  buttonISR(btnCh2,PB10);
-  enc2.init(PB9,PB8);
+  buttonISR(enc1,ENCODER1_SWITCH);
+  enc1.init(ENCODER1_CLOCK,ENCODER1_DATA);
+  buttonISR(enc2,ENCODER2_SWITCH);
+  enc2.init(ENCODER2_CLOCK,ENCODER2_DATA);
 
-  HMID devid;
-  sdev.getDeviceID(devid);
-  Peer p1(devid,1);
-  sdev.channel(1).peer(p1);
-  DimmerList3 l3 = sdev.channel(1).getList3(p1);
-  l3.lg().actionType(AS_CM_ACTIONTYPE_INACTIVE);
+  if( 1 || first == true ) {
+    sdev.channel(1).peer(enc1.peer());
+    DimmerList3 l3 = sdev.channel(1).getList3(enc1.peer());
+    l3.lg().actionType(AS_CM_ACTIONTYPE_INACTIVE);
 
-  Peer p2(devid,2);
-  sdev.channel(2).peer(p2);
-  l3 = sdev.channel(2).getList3(p2);
-  l3.lg().actionType(AS_CM_ACTIONTYPE_INACTIVE);
+    sdev.channel(2).peer(enc2.peer());
+    l3 = sdev.channel(2).getList3(enc2.peer());
+    l3.lg().actionType(AS_CM_ACTIONTYPE_INACTIVE);
+  }
 
   tempsensor.init();
 
@@ -176,8 +206,8 @@ void setup () {
 void loop () {
   HMID devid;
   sdev.getDeviceID(devid);
-  enc1.process<ChannelType,DimmerList3>(Peer(devid,1), sdev.channel(1));
-  enc2.process<ChannelType,DimmerList3>(Peer(devid,2), sdev.channel(2));
+  enc1.process<ChannelType,DimmerList3>(sdev.channel(1));
+  enc2.process<ChannelType,DimmerList3>(sdev.channel(2));
 
   bool worked = hal.runready();
   bool poll = sdev.pollRadio();

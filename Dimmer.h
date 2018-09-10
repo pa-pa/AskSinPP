@@ -666,8 +666,8 @@ public:
     }
   }
 
-  void init (HalType& hal,...) {
-    DeviceType::init(hal);
+  bool init (HalType& hal,...) {
+    bool first = DeviceType::init(hal);
     va_list argp;
     va_start(argp, hal);
     for( uint8_t i=0; i<ChannelCount/VirtualCount; ++i ) {
@@ -676,6 +676,7 @@ public:
     }
     va_end(argp);
     initChannels();
+    return first;
   }
 
   void initChannels () {
