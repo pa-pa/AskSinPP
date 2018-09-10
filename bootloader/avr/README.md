@@ -53,7 +53,7 @@ is automatically appended by the current datestamp. To transfer the firmware run
 
 CCU(1/2/3) / raspberrymatic-users (updating device firmware via webui):
  
-- create a gzipped tar-file (i.e. (`fwupdate_1.1.tar.gz`) containing 3 files
+- create a gzipped tar-file (i.e. `fwupdate_1.1.tar.gz`) containing 3 files
   - `firmware.eq3` (created with `prepareforota.sh path_to_firmware.hex` (see steps above))
   - `changelog.txt` containing a short changelog 
   - `info` containing 4 lines (i.e. for [HB-UNI-Sen-CAP-MOIST](https://github.com/jp112sdl/HB-UNI-Sen-CAP-MOIST/blob/master/HB-UNI-Sen-CAP-MOIST/HB-UNI-Sen-CAP-MOIST.ino):
