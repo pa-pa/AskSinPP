@@ -337,15 +337,25 @@ protected:
   uint8_t      state : 4;
   bool         changed : 1;
   bool         toggledimup : 1;
+  bool         erroverheat : 1;
+  bool         errreduced : 1;
   uint8_t      level, lastonlevel;
   RampAlarm    alarm;
   ChangedAlarm calarm;
   DimmerList1  list1;
 
 public:
-  DimmerStateMachine() : state(AS_CM_JT_NONE), changed(false), toggledimup(true), level(0), lastonlevel(200),
-    alarm(*this), calarm(*this), list1(0) {}
+  DimmerStateMachine() : state(AS_CM_JT_NONE), changed(false), toggledimup(true), erroverheat(false), errreduced(false),
+    level(0), lastonlevel(200), alarm(*this), calarm(*this), list1(0) {}
   virtual ~DimmerStateMachine () {}
+
+  void overheat(bool value) {
+    erroverheat = value;
+  }
+
+  void reduced (bool value) {
+    errreduced = value;
+  }
 
   void setup(DimmerList1 l1) {
     list1 = l1;
@@ -552,6 +562,12 @@ public:
 
   uint8_t flags () const {
     uint8_t f = delayActive() ? 0x40 : 0x00;
+    if( erroverheat == true ) {
+      f |= AS_CM_EXTSTATE_OVERHEAT;
+    }
+    if( errreduced == true ) {
+      f |= AS_CM_EXTSTATE_REDUCED;
+    }
     if( alarm.destlevel < level) {
       f |= AS_CM_EXTSTATE_DOWN;
     }
@@ -647,6 +663,7 @@ class DimmerDevice : public MultiChannelDevice<HalType,ChannelType,ChannelCount,
 
   PWM pwm[ChannelCount/VirtualCount];
   uint8_t physical[ChannelCount/VirtualCount];
+  uint8_t factor[ChannelCount/VirtualCount];
 
 public:
   typedef MultiChannelDevice<HalType,ChannelType,ChannelCount,List0Type> DeviceType;
@@ -673,6 +690,8 @@ public:
     for( uint8_t i=0; i<ChannelCount/VirtualCount; ++i ) {
       uint8_t p =  va_arg(argp, int);
       pwm[i].init(p);
+      physical[i] = 0;
+      factor[i] = 200; // 100%
     }
     va_end(argp);
     initChannels();
@@ -697,12 +716,35 @@ public:
     // DPRINT("Pin ");DHEX(pin);DPRINT("  Val ");DHEXLN(calcPwm());
     for( uint8_t i=0; i<ChannelCount/VirtualCount; ++i ) {
       uint8_t value = (uint8_t)combineChannels(i+1);
+      value = (((uint16_t)factor[i] * value) / 200);
       if( physical[i] != value ) {
         physical[i]  = value;
         pwm[i].set(physical[i]);
       }
     }
     return DeviceType::pollRadio();
+  }
+
+  void setTemperature (uint16_t temp) {
+    uint8_t t = temp/10;
+    for( uint8_t i=1; i<=ChannelCount/VirtualCount; ++i ) {
+      ChannelType& c = this->channel(i);
+      if( c.getList1().overTempLevel() <= t ) {
+        factor[i-1] = 0; // overtemp -> switch off
+        c.overheat(true);
+        c.reduced(false);
+      }
+      else if( c.getList1().reduceTempLevel() <= t ) {
+        factor[i-1] = c.getList1().reduceLevel();
+        c.overheat(false);
+        c.reduced(true);
+      }
+      else {
+        factor[i-1] = 200; // 100%
+        c.overheat(false);
+        c.reduced(false);
+      }
+    }
   }
 
   uint16_t combineChannels (uint8_t start) {

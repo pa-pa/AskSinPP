@@ -50,6 +50,10 @@
 	#define AS_CM_EXTSTATE_RUNNING                            0x40
 	#define AS_CM_EXTSTATE_LOWBAT                             0x80
 
+  #define AS_CM_EXTSTATE_OVERLOAD                           0x02
+  #define AS_CM_EXTSTATE_OVERHEAT                           0x04
+  #define AS_CM_EXTSTATE_REDUCED                            0x08
+
 	#define AS_CM_KEYCODE_NONE                                0
 	#define AS_CM_KEYCODE_SHORT                               1
 	#define AS_CM_KEYCODE_LONG                                2

@@ -81,6 +81,7 @@ public:
   typedef typename HalType::LedType LedType;
   typedef typename HalType::BatteryType BatteryType;
   typedef typename HalType::RadioType RadioType;
+  typedef List0Type List0;
 
 private:
   HalType* hal;
