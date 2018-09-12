@@ -49,4 +49,20 @@ is automatically appended by the current datestamp. To transfer the firmware run
 
 `flash-ota -f firmware.eq3 -s Serial` 
 
+<hr/>
+
+CCU(1/2/3) / raspberrymatic-users (updating device firmware via webui):
+ 
+- create a gzipped tar-file (i.e. `fwupdate_1.1.tar.gz`) containing 3 files
+  - `firmware.eq3` (created with `prepareforota.sh path_to_firmware.hex` (see steps above))
+  - `changelog.txt` containing a short changelog 
+  - `info` containing 4 lines (i.e. for [HB-UNI-Sen-CAP-MOIST](https://github.com/jp112sdl/HB-UNI-Sen-CAP-MOIST/blob/master/HB-UNI-Sen-CAP-MOIST/HB-UNI-Sen-CAP-MOIST.ino):
+     - `TypeCode=62225` -> [Device Model](https://github.com/jp112sdl/HB-UNI-Sen-CAP-MOIST/blob/77cb0f7961f1ac95622271b9b154303f51c6c992/HB-UNI-Sen-CAP-MOIST/HB-UNI-Sen-CAP-MOIST.ino#L63) in decimal 
+     - `Name=HB-UNI-Sen-CAP-MOIST` -> [Device Id](https://github.com/jp112sdl/JP-HB-Devices-addon/blob/a532a19f5006cbd98625bee86a20ebeef6dde12a/src/addon/firmware/rftypes/hb-uni-sen-cap-moist.xml#L4) in XML File
+     - `CCUFirmwareVersionMin=2.27.0` -> minimum required CCU FW Version
+     - `FirmwareVersion=1.1` -> [firmware version](https://github.com/jp112sdl/HB-UNI-Sen-CAP-MOIST/blob/77cb0f7961f1ac95622271b9b154303f51c6c992/HB-UNI-Sen-CAP-MOIST/HB-UNI-Sen-CAP-MOIST.ino#L64) provided by this update
+ 
+ - upload created .tar.gz on device firmware page (like normal firmware updates for hm devices)
+   - for further information on how to update device firmware, see https://www.eq-3.de/Downloads/eq3/pdf_FAQ/Manuelles_Update_Geraete-Firmware.pdf
+ 
 
