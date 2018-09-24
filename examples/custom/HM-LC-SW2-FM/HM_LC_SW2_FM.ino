@@ -113,14 +113,14 @@ void setup () {
     sdev.sw2Channel().peer(Peer(devid,2));
     sdev.btn1Channel().peer(Peer(devid,3));
     sdev.btn2Channel().peer(Peer(devid,4));
-    storage.store();
+    storage().store();
   }
   sdev.initDone();
 }
 
 void loop() {
-  bool pinchanged = sdev.btn1Channel().checkpin();
-  pinchanged |= sdev.btn2Channel().checkpin();
+//  bool pinchanged = sdev.btn1Channel().checkpin();
+//  pinchanged |= sdev.btn2Channel().checkpin();
   bool worked = hal.runready();
   bool poll = sdev.pollRadio();
 //  if( pinchanged == false && worked == false && poll == false ) {

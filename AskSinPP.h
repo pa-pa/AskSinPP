@@ -25,7 +25,7 @@
   typedef uint8_t uint8;
   typedef uint16_t uint16;
   #ifdef ARDUINO_ARCH_ATMEGA32
-    inline uint8_t digitalPinToInterrupt(uint8_t pin) { return pin == 11 ? 1 : ( pin == 10 ? 0 : NOT_AN_INTERRUPT); } // D2 -> 0 && D3 -> 1
+    inline int8_t digitalPinToInterrupt(uint8_t pin) { return pin == 11 ? 1 : ( pin == 10 ? 0 : NOT_AN_INTERRUPT); } // D2 -> 0 && D3 -> 1
   #endif
   // if we have no EnableInterrupt Library - and also no PCINT - use polling
   #ifndef EnableInterrupt_h
@@ -49,6 +49,7 @@
 
 namespace as {
 
+extern const char* __gb_chartable;
 
 class AskSinBase {
   Storage storage;
@@ -60,12 +61,35 @@ public:
     }
   }
 
+  static uint8_t toChar (uint8_t c) {
+    return *(__gb_chartable+c);
+  }
+
   static uint16_t crc16 (uint16_t crc,uint8_t d) {
     crc ^= d;
     for( uint8_t i = 8; i != 0; --i ) {
       crc = (crc >> 1) ^ ((crc & 1) ? 0xA001 : 0 );
     }
     return crc;
+  }
+
+  static uint32_t crc24(const uint8_t* data,int len) {
+    uint32_t crc = 0xB704CEL;
+    for( uint8_t i=0; i<len; ++i) {
+      crc = crc24(crc,data[i]);
+    }
+    return crc;
+  }
+
+  static uint32_t crc24(uint32_t crc,uint8_t d) {
+    crc ^= ((uint32_t)d) << 16;
+    for( uint8_t i = 0; i < 8; i++) {
+      crc <<= 1;
+      if (crc & 0x1000000) {
+        crc ^= 0x1864CFBL;
+      }
+    }
+    return crc & 0xFFFFFFL;
   }
 
   // get timer count in ticks
@@ -106,8 +130,8 @@ public:
 
   LedType      led;
   BatteryType  battery;
-  RadioType    radio;
   Activity     activity;
+  RadioType    radio;
 
   void init (const HMID& id) {
     srand((unsigned int&)id);
