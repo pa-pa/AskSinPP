@@ -45,12 +45,23 @@ public:
 
   bool runready() {
     bool worked = false;
-    Alarm* a;
-    while ((a = (Alarm*) ready.unlink()) != 0) {
-      a->trigger(*this);
-      worked = true;
+    while( runsingle()==true ) {
+      worked=true;
     }
     return worked;
+  }
+
+  bool runsingle() {
+    Alarm* a = (Alarm*) ready.unlink();
+    if (a != 0) {
+      a->trigger(*this);
+      return true;
+    }
+    return false;
+  }
+
+  bool runwait () {
+    return runsingle();
   }
 
   void add(Alarm& item);
@@ -134,25 +145,21 @@ public:
   }
 
   void disable () {
-  #ifdef ARDUINO_ARCH_AVR
-    TIMSK1 &= ~_BV(TOIE1);
-  #endif
   #ifdef ARDUINO_ARCH_ATMEGA32
     TIMSK &= ~_BV(TOIE1);
-  #endif
-  #ifdef ARDUINO_ARCH_STM32F1
+  #elif defined(ARDUINO_ARCH_AVR)
+    TIMSK1 &= ~_BV(TOIE1);
+  #elif defined(ARDUINO_ARCH_STM32F1)
     Timer2.detachInterrupt(TIMER_CH2);
   #endif
   }
 
   void enable () {
-  #ifdef ARDUINO_ARCH_AVR
-    TIMSK1 |= _BV(TOIE1);
-  #endif
   #ifdef ARDUINO_ARCH_ATMEGA32
-     TIMSK |= _BV(TOIE1);
-  #endif
-  #ifdef ARDUINO_ARCH_STM32F1
+    TIMSK |= _BV(TOIE1);
+  #elif defined(ARDUINO_ARCH_AVR)
+    TIMSK1 |= _BV(TOIE1);
+  #elif defined(ARDUINO_ARCH_STM32F1)
     Timer2.attachInterrupt(TIMER_CH2,callback);
   #endif
   }
@@ -173,7 +180,15 @@ public:
   RTC () : ovrfl(0) {}
 
   void init () {
-#if ARDUINO_ARCH_AVR
+#ifdef ARDUINO_ARCH_ATMEGA32
+    TIMSK &= ~(1<<TOIE2); //Disable timer2 interrupts
+    ASSR  |= (1<<AS2); //Enable asynchronous mode
+    TCNT2 = 0; //set initial counter value
+    TCCR2 = (1<<CS22)|(1<<CS20); // mode normal & set prescaller 128
+    while (ASSR & (1<<TCN2UB)); //wait for registers update
+    TIFR |= (1<<TOV2); //clear interrupt flags
+    TIMSK |= (1<<TOIE2); //enable TOV2 interrupt
+#elif defined(ARDUINO_ARCH_AVR)
     TIMSK2  = 0; //Disable timer2 interrupts
     ASSR  = (1<<AS2); //Enable asynchronous mode
     TCNT2 = 0; //set initial counter value
@@ -182,14 +197,6 @@ public:
     while (ASSR & ((1<<TCN2UB)|(1<<TCR2BUB))); //wait for registers update
     TIFR2  = (1<<TOV2); //clear interrupt flags
     TIMSK2  = (1<<TOIE2); //enable TOV2 interrupt
-#elif ARDUINO_ARCH_ATMEGA32
-    TIMSK &= ~(1<<TOIE2); //Disable timer2 interrupts
-    ASSR  |= (1<<AS2); //Enable asynchronous mode
-    TCNT2 = 0; //set initial counter value
-    TCCR2 = (1<<CS22)|(1<<CS20); // mode normal & set prescaller 128
-    while (ASSR & (1<<TCN2UB)); //wait for registers update
-    TIFR |= (1<<TOV2); //clear interrupt flags
-    TIMSK |= (1<<TOIE2); //enable TOV2 interrupt
 #elif defined(ARDUINO_ARCH_STM32F1) && defined(_RTCLOCK_H_)
     rt = RTClock(RTCSEL_LSE);
     rt.attachSecondsInterrupt(rtccallback);
