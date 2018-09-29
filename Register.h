@@ -69,6 +69,28 @@ namespace as {
 #define CREG_MEASURE_LENGTH_1 0x6c
 #define CREG_MEASURE_LENGTH_2 0x6d
 #define CREG_USE_CUSTOM_CALIBRATION 0x6e
+//POWER_METER REGS
+#define CREG_AVERAGING              0x7a
+#define CREG_TX_THRESHOLD_POWER_1   0x7c
+#define CREG_TX_THRESHOLD_POWER_2   0x7d
+#define CREG_TX_THRESHOLD_POWER_3   0x7e
+#define CREG_TX_THRESHOLD_CURRENT_1 0x7f
+#define CREG_TX_THRESHOLD_CURRENT_2 0x80
+#define CREG_TX_THRESHOLD_VOLTAGE_1 0x81
+#define CREG_TX_THRESHOLD_VOLTAGE_2 0x82
+#define CREG_TX_THRESHOLD_FREQUENCY 0x83
+#define CREG_COND_TX                0x84
+#define CREG_COND_TX_DECISION_ABOVE 0x85
+#define CREG_COND_TX_DECISION_BELOW 0x86
+#define CREG_COND_TX_THRESHOLD_HI_1 0x87 
+#define CREG_COND_TX_THRESHOLD_HI_2 0x88
+#define CREG_COND_TX_THRESHOLD_HI_3 0x89 
+#define CREG_COND_TX_THRESHOLD_HI_4 0x8a 
+#define CREG_COND_TX_THRESHOLD_LO_1 0x8b
+#define CREG_COND_TX_THRESHOLD_LO_2 0x8c
+#define CREG_COND_TX_THRESHOLD_LO_3 0x8d
+#define CREG_COND_TX_THRESHOLD_LO_4 0x8e
+
 #define CREG_DATA_TRANSMISSION_CONDITION 0xb0
 #define CREG_DATA_STABILITY_FILTER_TIME 0xb1
 #define CREG_DATA_INPUT_PROPERTIES 0xb2
@@ -123,6 +145,11 @@ namespace as {
 #define CREG_CASE_WIDTH CREG_CASE_WIDTH_1,CREG_CASE_WIDTH_2
 #define CREG_CASE_LENGTH CREG_CASE_LENGTH_1,CREG_CASE_LENGTH_2
 #define CREG_MEASURE_LENGTH CREG_MEASURE_LENGTH_1,CREG_MEASURE_LENGTH_2
+#define CREG_TX_THRESHOLD_POWER CREG_TX_THRESHOLD_POWER_1,CREG_TX_THRESHOLD_POWER_2,CREG_TX_THRESHOLD_POWER_3
+#define CREG_TX_THRESHOLD_CURRENT CREG_TX_THRESHOLD_CURRENT_1,CREG_TX_THRESHOLD_CURRENT_2
+#define CREG_TX_THRESHOLD_VOLTAGE CREG_TX_THRESHOLD_VOLTAGE_1,CREG_TX_THRESHOLD_VOLTAGE_2
+#define CREG_COND_TX_THRESHOLD_HI CREG_COND_TX_THRESHOLD_HI_1,CREG_COND_TX_THRESHOLD_HI_2,CREG_COND_TX_THRESHOLD_HI_3,CREG_COND_TX_THRESHOLD_HI_4
+#define CREG_COND_TX_THRESHOLD_LO CREG_COND_TX_THRESHOLD_LO_1,CREG_COND_TX_THRESHOLD_LO_2,CREG_COND_TX_THRESHOLD_LO_3,CREG_COND_TX_THRESHOLD_LO_4
 
 // This is only a helper class
 class AskSinRegister {
@@ -473,6 +500,95 @@ public:
  
   bool useCustomCalibration () const { return this->readBit(CREG_USE_CUSTOM_CALIBRATION,0,true); }
   bool useCustomCalibration (bool v) const { return this->writeBit(CREG_USE_CUSTOM_CALIBRATION,0,v); }
+  
+  uint8_t averaging () const { return this->readRegister(CREG_AVERAGING,0); }
+  bool averaging (uint8_t v) const { return this->writeRegister(CREG_AVERAGING,v); }
+
+  bool txThresholdPower (uint32_t value) const {
+   return
+     this->writeRegister(CREG_TX_THRESHOLD_POWER_1, (value >> 16) & 0xff) &&
+     this->writeRegister(CREG_TX_THRESHOLD_POWER_2, (value >>  8) & 0xff) &&
+     this->writeRegister(CREG_TX_THRESHOLD_POWER_3, (value      ) & 0xff);
+  }
+  uint32_t txThresholdPower () const {
+   return
+     ((uint32_t)this->readRegister(CREG_TX_THRESHOLD_POWER_1,0) << 16) |
+     ((uint32_t)this->readRegister(CREG_TX_THRESHOLD_POWER_2,0) <<  8) |
+     ((uint32_t)this->readRegister(CREG_TX_THRESHOLD_POWER_3,0)      );
+  }
+  
+  bool txThresholdCurrent (uint16_t value) const {
+   return
+     this->writeRegister(CREG_TX_THRESHOLD_CURRENT_1, (value >> 8) & 0xff) &&
+     this->writeRegister(CREG_TX_THRESHOLD_CURRENT_2, (value     ) & 0xff);
+  }
+  uint16_t txThresholdCurrent () const {
+   return
+    (this->readRegister(CREG_TX_THRESHOLD_CURRENT_1,0) << 8) |
+    (this->readRegister(CREG_TX_THRESHOLD_CURRENT_2,0)     );
+  }
+  
+ bool txThresholdVoltage (uint16_t value) const {
+   return
+     this->writeRegister(CREG_TX_THRESHOLD_VOLTAGE_1, (value >> 8) & 0xff) &&
+     this->writeRegister(CREG_TX_THRESHOLD_VOLTAGE_2, (value     ) & 0xff);
+  }
+  uint16_t txThresholdVoltage () const {
+   return
+     (this->readRegister(CREG_TX_THRESHOLD_VOLTAGE_1,0) << 8) |
+     (this->readRegister(CREG_TX_THRESHOLD_VOLTAGE_2,0)     );
+  }
+  
+  uint8_t txThresholdFrequency () const { return this->readRegister(CREG_TX_THRESHOLD_FREQUENCY,0); }
+  bool txThresholdFrequency (uint8_t v) const { return this->writeRegister(CREG_TX_THRESHOLD_FREQUENCY,v); }
+
+  uint8_t condTxDecisionAbove () const { return this->readRegister(CREG_COND_TX_DECISION_ABOVE,0xff); }
+  bool condTxDecisionAbove (uint8_t v) const { return this->writeRegister(CREG_COND_TX_DECISION_ABOVE,v); }
+  
+  uint8_t condTxDecisionBelow () const { return this->readRegister(CREG_COND_TX_DECISION_BELOW,0xff); }
+  bool condTxDecisionBelow (uint8_t v) const { return this->writeRegister(CREG_COND_TX_DECISION_BELOW,v); }
+    
+  bool condTxFalling () const { return this->readRegister(CREG_COND_TX,0x01,0,false); }
+  bool condTxFalling (uint8_t v) { return this->writeRegister(CREG_COND_TX,0x01,0,v); }
+  
+  bool condTxRising () const { return this->readRegister(CREG_COND_TX,0x02,0,false); }
+  bool condTxRising (uint8_t v) { return this->writeRegister(CREG_COND_TX,0x02,0,v); }
+  
+  bool condTxCyclicBelow () const { return this->readRegister(CREG_COND_TX,0x04,0,false); }
+  bool condTxCyclicBelow (uint8_t v) { return this->writeRegister(CREG_COND_TX,0x04,0,v); }
+  
+  bool condTxCyclicAbove () const { return this->readRegister(CREG_COND_TX,0x08,0,false); }
+  bool condTxCyclicAbove (uint8_t v) { return this->writeRegister(CREG_COND_TX,0x08,0,v); }  
+    
+  bool condTxThresholdHi (uint32_t value) const {
+   return 
+     this->writeRegister(CREG_COND_TX_THRESHOLD_HI_1, (value >> 24) & 0xff) &&
+     this->writeRegister(CREG_COND_TX_THRESHOLD_HI_2, (value >> 16) & 0xff) &&
+     this->writeRegister(CREG_COND_TX_THRESHOLD_HI_3, (value >>  8) & 0xff) &&
+     this->writeRegister(CREG_COND_TX_THRESHOLD_HI_4, (value      ) & 0xff);
+  }
+  uint32_t condTxThresholdHi () const {
+   return
+     ((uint32_t)this->readRegister(CREG_COND_TX_THRESHOLD_HI_1,0) << 24) | 
+     ((uint32_t)this->readRegister(CREG_COND_TX_THRESHOLD_HI_2,0) << 16) |
+     ((uint32_t)this->readRegister(CREG_COND_TX_THRESHOLD_HI_3,0) <<  8) | 
+     ((uint32_t)this->readRegister(CREG_COND_TX_THRESHOLD_HI_4,0)      );
+  }
+  
+  bool condTxThresholdLo (uint32_t value) const {
+   return 
+     this->writeRegister(CREG_COND_TX_THRESHOLD_LO_1, (value >> 24) & 0xff) &&
+     this->writeRegister(CREG_COND_TX_THRESHOLD_LO_2, (value >> 16) & 0xff) &&
+     this->writeRegister(CREG_COND_TX_THRESHOLD_LO_3, (value >>  8) & 0xff) &&
+     this->writeRegister(CREG_COND_TX_THRESHOLD_LO_4, (value      ) & 0xff);
+  }
+  uint32_t condTxThresholdLo () const {
+   return 
+     ((uint32_t)this->readRegister(CREG_COND_TX_THRESHOLD_LO_1,0) << 24) |
+     ((uint32_t)this->readRegister(CREG_COND_TX_THRESHOLD_LO_2,0) << 16) |
+     ((uint32_t)this->readRegister(CREG_COND_TX_THRESHOLD_LO_3,0) <<  8) |
+     ((uint32_t)this->readRegister(CREG_COND_TX_THRESHOLD_LO_4,0)      );
+  }
     
   uint8_t dataTransmissionCondtion() const { return this->readRegister(CREG_DATA_TRANSMISSION_CONDITION,0); }
   bool dataTransmissionCondtion(uint8_t v) const { return this->writeRegister(CREG_DATA_TRANSMISSION_CONDITION,v); }
