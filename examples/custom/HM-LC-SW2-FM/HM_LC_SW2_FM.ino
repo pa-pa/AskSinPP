@@ -1,6 +1,7 @@
 //- -----------------------------------------------------------------------------------------------------------------------
 // AskSin++
 // 2016-10-31 papa Creative Commons - http://creativecommons.org/licenses/by-nc-sa/3.0/de/
+// 2018-10-01 stan23 Creative Commons - http://creativecommons.org/licenses/by-nc-sa/3.0/de/
 //- -----------------------------------------------------------------------------------------------------------------------
 
 // define this to read the device id, serial and device type from bootloader section
@@ -18,7 +19,7 @@
 #include <Switch.h>
 #include <Remote.h>
 
-// see https://github.com/eaconner/ATmega32-Arduino for Arduino Pin Mapping
+// use MightyCore Standard pinout
 
 #define RELAY1_PIN 0 // PB0
 #define RELAY2_PIN 1 // PB1
@@ -119,11 +120,6 @@ void setup () {
 }
 
 void loop() {
-//  bool pinchanged = sdev.btn1Channel().checkpin();
-//  pinchanged |= sdev.btn2Channel().checkpin();
   bool worked = hal.runready();
   bool poll = sdev.pollRadio();
-//  if( pinchanged == false && worked == false && poll == false ) {
-//    hal.activity.savePower<Idle<> >(hal);
-//  }
 }

@@ -10,7 +10,7 @@
 
 namespace as {
 
-#if ARDUINO_ARCH_AVR or ARDUINO_ARCH_ATMEGA32
+#if ARDUINO_ARCH_AVR
 // we use this table for the dimmer levels
 static const uint8_t pwmtable[32] PROGMEM = {
     1, 1, 2, 2, 2, 3, 3, 4, 5, 6, 7, 8, 10, 11, 13, 16, 19, 23,

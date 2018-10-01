@@ -152,7 +152,7 @@ namespace as {
 
 
 
-#if ARDUINO_ARCH_AVR or ARDUINO_ARCH_ATMEGA32
+#if ARDUINO_ARCH_AVR
 
 template <uint8_t CS,uint8_t MOSI,uint8_t MISO,uint8_t SCLK, class PINTYPE=ArduinoPins>
 class AvrSPI {
