@@ -24,10 +24,6 @@
 #else
   typedef uint8_t uint8;
   typedef uint16_t uint16;
-  #ifdef ARDUINO_AVR_ATmega32
-  // does not compile for ATmega32
-  //  inline int8_t digitalPinToInterrupt(uint8_t pin) { return pin == 11 ? 1 : ( pin == 10 ? 0 : NOT_AN_INTERRUPT); } // D2 -> 0 && D3 -> 1
-  #endif
   // if we have no EnableInterrupt Library - and also no PCINT - use polling
   #ifndef EnableInterrupt_h
     #define enableInterrupt(pin,handler,mode) pinpolling##pin().enable(pin,handler,mode)
