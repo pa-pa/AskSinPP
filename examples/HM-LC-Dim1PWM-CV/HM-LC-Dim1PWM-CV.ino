@@ -54,9 +54,19 @@ HalType hal;
 DimmerType sdev(devinfo,0x20);
 ConfigToggleButton<DimmerType> cfgBtn(sdev);
 
+void initPeerings (bool first) {
+  HMID devid;
+  sdev.getDeviceID(devid);
+  for (int i = 0; i < 3; i++) {
+    Peer ipeer(devid, i + 1);
+    sdev.channel(i + 1).peer(ipeer);
+  }
+}
+
 void setup () {
   DINIT(57600,ASKSIN_PLUS_PLUS_IDENTIFIER);
-  sdev.init(hal,DIMMER_PIN);
+  bool first = sdev.init(hal,DIMMER_PIN);
+  initPeerings(first);
   buttonISR(cfgBtn,CONFIG_BUTTON_PIN);
   sdev.initDone();
 }
