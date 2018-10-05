@@ -39,7 +39,7 @@ using namespace as;
 const struct DeviceInfo PROGMEM devinfo = {
     {0x83,0x2A,0xE1},       // Device ID
     "HMSwC00001",           // Device Serial
-    {0xf2,0x01},            // Device Model
+    {0xF5,0x01},            // Device Model
     0x01,                   // Firmware Version
     as::DeviceType::Switch, // Device Type
     {0x01,0x00}             // Info Bytes
@@ -51,6 +51,16 @@ typedef StatusLed<12> LedType; // PD4
 typedef AskSin<LedType,NoBattery,Radio<RadioSPI,11> > Hal; // PD3
 Hal hal;
 
+DEFREGISTER(Reg0, MASTERID_REGS, DREG_INTKEY)
+class SwList0 : public RegList0<Reg0> {
+  public:
+    SwList0(uint16_t addr) : RegList0<Reg0>(addr) {}
+    void defaults() {
+      clear();
+      intKeyVisible(true);
+    }
+};
+
 uint8_t SwitchPin (uint8_t number) {
   switch( number ) {
     case 4: return RELAY2_PIN;
@@ -58,31 +68,31 @@ uint8_t SwitchPin (uint8_t number) {
   return RELAY1_PIN;
 }
 
-typedef SwitchChannel<Hal,PEERS_PER_SWCHANNEL,List0>  SwChannel;
-typedef RemoteChannel<Hal,PEERS_PER_BTNCHANNEL,List0> BtnChannel;
+typedef SwitchChannel<Hal, PEERS_PER_SWCHANNEL, SwList0>  SwChannel;
+typedef RemoteChannel<Hal, PEERS_PER_BTNCHANNEL, SwList0> BtnChannel;
 
-class MixDevice : public ChannelDevice<Hal,VirtBaseChannel<Hal,List0>,4> {
+class MixDevice : public ChannelDevice<Hal, VirtBaseChannel<Hal, SwList0>, 4, SwList0> {
 public:
-  VirtChannel<Hal,BtnChannel,List0> c1,c2;
-  VirtChannel<Hal,SwChannel,List0>  c3,c4;
+  VirtChannel<Hal, SwChannel, SwList0>  swc1, swc2;
+  VirtChannel<Hal, BtnChannel, SwList0> btc1, btc2;
 public:
-  typedef VirtBaseChannel<Hal,List0> ChannelType;
-  typedef ChannelDevice<Hal,ChannelType,4> DeviceType;
-  MixDevice (const DeviceInfo& info,uint16_t addr) : DeviceType(info,addr) {
-    DeviceType::registerChannel(c1,1);
-    DeviceType::registerChannel(c2,2);
-    DeviceType::registerChannel(c3,3);
-    DeviceType::registerChannel(c4,4);
+  typedef VirtBaseChannel<Hal, SwList0> ChannelType;
+  typedef ChannelDevice<Hal, ChannelType, 4, SwList0> DeviceType;
+  MixDevice (const DeviceInfo& info,uint16_t addr) : DeviceType(info, addr) {
+    DeviceType::registerChannel(swc1, 1);
+    DeviceType::registerChannel(swc2, 2);
+    DeviceType::registerChannel(btc1, 3);
+    DeviceType::registerChannel(btc2, 4);
   }
   virtual ~MixDevice () {}
 
-  BtnChannel& btn1Channel () { return c1; }
-  BtnChannel& btn2Channel () { return c2; }
-  SwChannel&  sw1Channel  () { return c3; }
-  SwChannel&  sw2Channel  () { return c4; }
+  BtnChannel& btn1Channel () { return btc1; }
+  BtnChannel& btn2Channel () { return btc2; }
+  SwChannel&  sw1Channel  () { return swc1; }
+  SwChannel&  sw2Channel  () { return swc2; }
 
   bool pollRadio () {
-    bool worked = Device<Hal,List0>::pollRadio();
+    bool worked = Device<Hal,SwList0>::pollRadio();
     for( uint8_t i=1; i<=this->channels(); ++i ) {
       ChannelType& ch = channel(i);
       if( ch.changed() == true ) {
@@ -120,11 +130,6 @@ void setup () {
 }
 
 void loop() {
-//  bool pinchanged = sdev.btn1Channel().checkpin();
-//  pinchanged |= sdev.btn2Channel().checkpin();
   bool worked = hal.runready();
   bool poll = sdev.pollRadio();
-//  if( pinchanged == false && worked == false && poll == false ) {
-//    hal.activity.savePower<Idle<> >(hal);
-//  }
 }
