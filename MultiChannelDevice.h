@@ -127,6 +127,8 @@ public:
     for( uint8_t cdx=1; cdx<=channels(); ++cdx ) {
       channel(cdx).configChanged();
     }
+    // trigger save of storage
+    storage().store();
   }
 
   void firstinit () {
