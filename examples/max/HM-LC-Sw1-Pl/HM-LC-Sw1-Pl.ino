@@ -14,9 +14,9 @@
 #include <MultiChannelDevice.h>
 #include <Switch.h>
 
-// see https://github.com/eaconner/ATmega32-Arduino for Arduino Pin Mapping
+// use MightyCore Standard pinout for ATmega32
 
-#define CONFIG_BUTTON_PIN 31 // PA0
+#define CONFIG_BUTTON_PIN 24 // PA0
 #define RELAY1_PIN 0 // PB0
 
 // number of available peers per channel
