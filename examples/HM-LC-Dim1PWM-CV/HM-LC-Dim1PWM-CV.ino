@@ -56,7 +56,10 @@ ConfigToggleButton<DimmerType> cfgBtn(sdev);
 
 void setup () {
   DINIT(57600,ASKSIN_PLUS_PLUS_IDENTIFIER);
-  sdev.init(hal,DIMMER_PIN);
+  if( sdev.init(hal,DIMMER_PIN) ) {
+    // first init - setup connection between config button and first channel
+    sdev.channel(1).peer(cfgBtn.peer());
+  }
   buttonISR(cfgBtn,CONFIG_BUTTON_PIN);
   sdev.initDone();
 }

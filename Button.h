@@ -213,7 +213,7 @@ public:
       msg.init(cnt,1,cnt,false,false);
       msg.to(self);
       msg.from(self);
-      if( device.channel(1).process(msg) == false ) {
+      if( device.process(msg) == false ) {
         DPRINTLN(F("No self peer. Create internal peering to toggle state!"));
         // no self peer - use old toggle code
         // device.channel(1).toggleState();
@@ -230,6 +230,11 @@ public:
         device.led().set(LedStates::key_long);
       }
     }
+  }
+  Peer peer () const {
+    HMID self;
+    device.getDeviceID(self);
+    return Peer(self,1);
   }
 };
 
