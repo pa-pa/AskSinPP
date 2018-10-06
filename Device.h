@@ -19,6 +19,7 @@
 #ifdef USE_HW_SERIAL
   #if defined(__AVR_ATmega644__) || defined(__AVR_ATmega644P__)
     #include <avr/boot.h>
+  #elif defined (ARDUINO_ARCH_STM32F1)
   #else
     #error Using Hardware serial is not supported on MCU type currently used
   #endif
@@ -92,7 +93,7 @@ private:
   uint8_t lastmsg;
 
 #ifdef USE_HW_SERIAL
-   uint8_t device_id[3] = { 0x00, 0x00, 0x00 };
+   uint8_t device_id[3];
 #endif
 
 protected:
@@ -103,7 +104,11 @@ protected:
   uint8_t      numChannels;
 
 public:
-  Device (const DeviceInfo& i,uint16_t addr,List0Type& l,uint8_t ch) : hal(0), list0(l), msgcount(0), lastmsg(0), kstore(addr), info(i), numChannels(ch) {}
+  Device (const DeviceInfo& i,uint16_t addr,List0Type& l,uint8_t ch) : hal(0), list0(l), msgcount(0), lastmsg(0), kstore(addr), info(i), numChannels(ch) {
+#ifdef USE_HW_SERIAL
+    device_id[0]=0x00;
+#endif
+  }
   virtual ~Device () {}
 
   LedType& led ()  { return hal->led; }
@@ -162,9 +167,16 @@ public:
     HalType::pgm_read((uint8_t*)&id,OTA_HMID_START,sizeof(id));
 #elif defined(USE_HW_SERIAL)
     if (device_id[0] == 0x00) {
+  #ifdef ARDUINO_ARCH_STM32F1
+      uint32_t crc = AskSinBase::crc24((uint8_t*)0x1FFFF7E8,12);
+      device_id[0] = (uint8_t)(crc & 0x000000ff);
+      device_id[1] = (uint8_t)(crc >> 8 & 0x000000ff);
+      device_id[2] = (uint8_t)(crc >> 16 & 0x000000ff);
+  #else
       device_id[0] = boot_signature_byte_get(21);
       device_id[1] = boot_signature_byte_get(22);
       device_id[2] = boot_signature_byte_get(23);
+  #endif
     }
     id = HMID(device_id);
 #else
@@ -178,12 +190,22 @@ public:
 #ifdef USE_OTA_BOOTLOADER
     HalType::pgm_read((uint8_t*)serial,OTA_SERIAL_START,10);
 #elif defined(USE_HW_SERIAL)
+  #ifdef ARDUINO_ARCH_STM32F1
+    memcpy_P(serial,info.Serial,4);
+    uint8_t* s = serial+4;
+    for( int i=0; i<3; ++i ) {
+      uint8_t d = device_id[i];
+      *s++ = AskSinBase::toChar(d >> 4);
+      *s++ = AskSinBase::toChar(d & 0x0f);
+    }
+  #else
     for (uint8_t i = 0; i < 3; i++) {
       serial[i] = (boot_signature_byte_get(i + 14) % 26) + 65; // Char A-Z
     }
     for (uint8_t i = 3; i < 10; i++) {
       serial[i] = (boot_signature_byte_get(i + 14) % 10) + 48; // Char 0-9
     }
+  #endif
 #else
     memcpy_P(serial,info.Serial,10);
 #endif
