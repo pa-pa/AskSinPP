@@ -6,8 +6,9 @@
 // define this to read the device id, serial and device type from bootloader section
 // #define USE_OTA_BOOTLOADER
 
-//#define STORAGEDRIVER at24cX<0x50,128,32>
+#define STORAGEDRIVER at24cX<0x50,128,32>
 #define TICKS_PER_SECOND 500UL
+#define USE_HW_SERIAL
 
 #include <SPI.h>    // when we include SPI.h - we can use LibSPI class
 #include <Wire.h>
@@ -40,7 +41,7 @@
 #define ENCODER2_DATA   PB8
 
 // number of available peers per channel
-#define PEERS_PER_CHANNEL 2
+#define PEERS_PER_CHANNEL 6
 
 // all library classes are placed in the namespace 'as'
 using namespace as;
@@ -103,6 +104,7 @@ TempSens tempsensor;
 void setup () {
   delay(5000);
   DINIT(57600,ASKSIN_PLUS_PLUS_IDENTIFIER);
+  Wire.begin();
   bool first = sdev.init(hal,DIMMER1_PIN,DIMMER2_PIN);
   buttonISR(cfgBtn,CONFIG_BUTTON_PIN);
   buttonISR(enc1,ENCODER1_SWITCH);
@@ -124,6 +126,8 @@ void setup () {
 
   sdev.initDone();
   sdev.led().invert(true);
+
+  DDEVINFO(sdev);
 }
 
 void loop () {

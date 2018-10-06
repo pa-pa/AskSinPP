@@ -661,15 +661,31 @@ public:
 template<class HalType,class ChannelType,int ChannelCount,int VirtualCount,class PWM,class List0Type=List0>
 class DimmerDevice : public MultiChannelDevice<HalType,ChannelType,ChannelCount,List0Type> {
 
-  PWM pwm[ChannelCount/VirtualCount];
+  PWM pwms[ChannelCount/VirtualCount];
   uint8_t physical[ChannelCount/VirtualCount];
   uint8_t factor[ChannelCount/VirtualCount];
+
+  class ChannelCombiner : public Alarm {
+    DimmerDevice<HalType,ChannelType,ChannelCount,VirtualCount,PWM,List0Type>& dev;
+  public:
+    ChannelCombiner (DimmerDevice<HalType,ChannelType,ChannelCount,VirtualCount,PWM,List0Type>& d) : Alarm(0), dev(d) {}
+    virtual ~ChannelCombiner () {}
+    virtual void trigger (AlarmClock& clock) {
+      dev.updatePhysical();
+      set(millis2ticks(10));
+      clock.add(*this);
+    }
+  } cb;
 
 public:
   typedef MultiChannelDevice<HalType,ChannelType,ChannelCount,List0Type> DeviceType;
 
-  DimmerDevice (const DeviceInfo& info,uint16_t addr) : DeviceType(info,addr) {}
+  DimmerDevice (const DeviceInfo& info,uint16_t addr) : DeviceType(info,addr), cb(*this) {}
   virtual ~DimmerDevice () {}
+
+  PWM pwm (uint8_t n) {
+    return pwms[n];
+  }
 
   void firstinit () {
     DeviceType::firstinit();
@@ -689,12 +705,13 @@ public:
     va_start(argp, hal);
     for( uint8_t i=0; i<ChannelCount/VirtualCount; ++i ) {
       uint8_t p =  va_arg(argp, int);
-      pwm[i].init(p);
+      pwms[i].init(p);
       physical[i] = 0;
       factor[i] = 200; // 100%
     }
     va_end(argp);
     initChannels();
+    cb.trigger(sysclock);
     return first;
   }
 
@@ -712,17 +729,16 @@ public:
     }
   }
 
-  bool pollRadio () {
+  void updatePhysical () {
     // DPRINT("Pin ");DHEX(pin);DPRINT("  Val ");DHEXLN(calcPwm());
     for( uint8_t i=0; i<ChannelCount/VirtualCount; ++i ) {
       uint8_t value = (uint8_t)combineChannels(i+1);
       value = (((uint16_t)factor[i] * value) / 200);
       if( physical[i] != value ) {
         physical[i]  = value;
-        pwm[i].set(physical[i]);
+        pwms[i].set(physical[i]);
       }
     }
-    return DeviceType::pollRadio();
   }
 
   void setTemperature (uint16_t temp) {
