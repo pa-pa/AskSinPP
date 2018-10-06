@@ -10,7 +10,7 @@ C++ implementation of the AskSin protocol
 - AES signature support
 - Supported MCU:
   - ATMega328
-  - [ATMega32](https://github.com/eaconner/ATmega32-Arduino)
+  - [ATMega32](https://github.com/MCUdude/MightyCore) (Bobuino Pinout is highly suggested)
   - [ATMega644](https://github.com/MCUdude/MightyCore) (Bobuino Pinout is highly suggested)
   - [ATMega1284](https://github.com/MCUdude/MightyCore) (No OTA Bootloader support, yet)
   - [STM32F1](http://dan.drown.org/stm32duino/package_STM32duino_index.json)
