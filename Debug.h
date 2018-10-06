@@ -24,6 +24,7 @@
   #define DDECLN(b)
 
   #define DINIT(baudrate,msg)
+  #define DDEVINFO(dev)
 
 #else
 
@@ -61,6 +62,15 @@
   #define DINIT(baudrate,msg) \
     Serial.begin(baudrate); \
     DPRINTLN(msg);
+
+  #define DDEVINFO(dev) \
+    HMID devid; \
+    dev.getDeviceID(devid); \
+    DPRINT(F("ID: "));devid.dump(); \
+    uint8_t serial[11]; \
+    dev.getDeviceSerial(serial); \
+    serial[10]=0; \
+    DPRINT(F("  Serial: "));DPRINTLN((char*)serial);
 
 #else
 
