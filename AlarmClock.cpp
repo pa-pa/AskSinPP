@@ -21,7 +21,7 @@ void rtccallback () {
     --rtc;
 }
 
-#if ARDUINO_ARCH_AVR or ARDUINO_ARCH_ATMEGA32
+#if ARDUINO_ARCH_AVR
 ISR(TIMER1_OVF_vect) {
   callback();
 }

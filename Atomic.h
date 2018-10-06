@@ -5,7 +5,7 @@
 #ifdef ARDUINO
   #include <Arduino.h>
 
-#if ARDUINO_ARCH_AVR or ARDUINO_ARCH_ATMEGA32
+#if ARDUINO_ARCH_AVR
   #include <util/atomic.h>
 #else
 

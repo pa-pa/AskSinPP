@@ -10,13 +10,14 @@
 #include <AlarmClock.h>
 #include <Radio.h>
 
-#ifdef ARDUINO_ARCH_AVR
+#ifndef ARDUINO_AVR_ATmega32 && ifdef ARDUINO_ARCH_AVR
 #include <LowPower.h>
 #endif
 
 namespace as {
 
-#ifdef ARDUINO_ARCH_AVR
+#ifndef ARDUINO_AVR_ATmega32 && ifdef ARDUINO_ARCH_AVR
+
 
 template <bool ENABLETIMER2=false, bool ENABLEADC=false>
 class Idle {
@@ -190,7 +191,7 @@ public:
   void sleepForever (Hal& hal) {
     hal.radio.setIdle();
     while( true ) {
-#ifdef ARDUINO_ARCH_AVR
+#ifndef ARDUINO_AVR_ATmega32 && ifdef ARDUINO_ARCH_AVR
       LowPower.powerDown(SLEEP_FOREVER,ADC_OFF,BOD_OFF);
 #endif
     }
