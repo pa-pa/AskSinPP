@@ -98,7 +98,7 @@ extern void rtccallback(void);
 class SysClock : public AlarmClock {
 public:
   void init() {
-  #if ARDUINO_ARCH_AVR or ARDUINO_ARCH_ATMEGA32
+  #if ARDUINO_ARCH_AVR
   #define TIMER1_RESOLUTION 65536UL  // Timer1 is 16 bit
     // use Time1 on AVR
     TCCR1B = _BV(WGM13);        // set mode as phase and frequency correct pwm, stop the timer
@@ -145,7 +145,7 @@ public:
   }
 
   void disable () {
-  #ifdef ARDUINO_ARCH_ATMEGA32
+  #ifdef ARDUINO_AVR_ATmega32
     TIMSK &= ~_BV(TOIE1);
   #elif defined(ARDUINO_ARCH_AVR)
     TIMSK1 &= ~_BV(TOIE1);
@@ -155,7 +155,7 @@ public:
   }
 
   void enable () {
-  #ifdef ARDUINO_ARCH_ATMEGA32
+  #ifdef ARDUINO_AVR_ATmega32
     TIMSK |= _BV(TOIE1);
   #elif defined(ARDUINO_ARCH_AVR)
     TIMSK1 |= _BV(TOIE1);
@@ -180,7 +180,7 @@ public:
   RTC () : ovrfl(0) {}
 
   void init () {
-#ifdef ARDUINO_ARCH_ATMEGA32
+#ifdef ARDUINO_AVR_ATmega32
     TIMSK &= ~(1<<TOIE2); //Disable timer2 interrupts
     ASSR  |= (1<<AS2); //Enable asynchronous mode
     TCNT2 = 0; //set initial counter value
@@ -209,7 +209,7 @@ public:
     if( resetovrflow == true ) {
       ovrfl = 0;
     }
-#if ARDUINO_ARCH_AVR or ARDUINO_ARCH_ATMEGA32
+#if ARDUINO_ARCH_AVR
     return (256 * ovrfl) + TCNT2;
 #elif defined(ARDUINO_ARCH_STM32F1) && defined(_RTCLOCK_H_)
     return rtc_get_count();
