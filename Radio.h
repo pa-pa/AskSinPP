@@ -375,7 +375,11 @@ class Radio {
     virtual ~MinSendTimeout () {}
     void waitTimeout () {
       // wait until time out over
-      while( wait==true ) _delay_us(1);
+      while( wait==true ) {
+        // if( sysclock.runwait() == false ) {
+          _delay_ms(1);
+        // }
+      }
       set(millis2ticks(100));
       // signal new wait cycle
       wait = true;
