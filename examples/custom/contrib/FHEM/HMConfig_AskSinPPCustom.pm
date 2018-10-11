@@ -64,6 +64,24 @@ $HMConfig::culHmChanSets{"HB-GEN-SENS00"}{fwUpdate} = "<filename>";
 $HMConfig::culHmChanSets{"HB-GEN-SENS01"} = $HMConfig::culHmSubTypeSets{"Values"};
 $HMConfig::culHmRegChan {"HB-GEN-SENS01"} = $HMConfig::culHmRegType{values};
 
+$HMConfig::culHmModel{"F206"} = {name=>"HB-IBUT-8",st=>'custom',cyc=>'',rxt=>'',lst=>'1,4:1p.2p.3p.4p.5p.6p.7p.8p',chn=>"Id:1:8"};
+$HMConfig::culHmChanSets{"HB-IBUT-800"}{fwUpdate} = "<filename>";
+$HMConfig::culHmChanSets{"HB-IBUT-801"} = $HMConfig::culHmSubTypeSets{"iButton"};
+$HMConfig::culHmChanSets{"HB-IBUT-802"} = $HMConfig::culHmSubTypeSets{"iButton"};
+$HMConfig::culHmChanSets{"HB-IBUT-803"} = $HMConfig::culHmSubTypeSets{"iButton"};
+$HMConfig::culHmChanSets{"HB-IBUT-804"} = $HMConfig::culHmSubTypeSets{"iButton"};
+$HMConfig::culHmChanSets{"HB-IBUT-805"} = $HMConfig::culHmSubTypeSets{"iButton"};
+$HMConfig::culHmChanSets{"HB-IBUT-806"} = $HMConfig::culHmSubTypeSets{"iButton"};
+$HMConfig::culHmChanSets{"HB-IBUT-807"} = $HMConfig::culHmSubTypeSets{"iButton"};
+$HMConfig::culHmChanSets{"HB-IBUT-808"} = $HMConfig::culHmSubTypeSets{"iButton"};
+$HMConfig::culHmRegChan {"HB-IBUT-801"} = $HMConfig::culHmRegType{ibutton};
+$HMConfig::culHmRegChan {"HB-IBUT-802"} = $HMConfig::culHmRegType{ibutton};
+$HMConfig::culHmRegChan {"HB-IBUT-803"} = $HMConfig::culHmRegType{ibutton};
+$HMConfig::culHmRegChan {"HB-IBUT-804"} = $HMConfig::culHmRegType{ibutton};
+$HMConfig::culHmRegChan {"HB-IBUT-805"} = $HMConfig::culHmRegType{ibutton};
+$HMConfig::culHmRegChan {"HB-IBUT-806"} = $HMConfig::culHmRegType{ibutton};
+$HMConfig::culHmRegChan {"HB-IBUT-807"} = $HMConfig::culHmRegType{ibutton};
+$HMConfig::culHmRegChan {"HB-IBUT-808"} = $HMConfig::culHmRegType{ibutton};
 
 sub parseValueFormat {
   my @v;
