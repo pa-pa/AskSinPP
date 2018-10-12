@@ -29,6 +29,8 @@ namespace as {
 #define DREG_LOCALRESETDISABLE 0x18
 #define DREG_TPARAMS           0x1b
 
+#define DREG_BUTTON_MODE       0x32  // iButton Mode - Remote or State
+
 // Channel Registers used in List1
 #define CREG_EVENTFILTER 0x01
 #define CREG_INTERVAL 0x02
@@ -355,6 +357,9 @@ public:
 
   uint8_t backOnTime () const { return this->readRegister(DREG_BACKONTIME,3); }
   bool backOnTime (uint8_t value) const { return this->writeRegister(DREG_BACKONTIME,value); }
+
+  uint8_t buttonMode () const { return this->readRegister(DREG_BUTTON_MODE,0); }
+  bool buttonMode (uint8_t value) const { return this->writeRegister(DREG_BUTTON_MODE,value); }
 };
 
 

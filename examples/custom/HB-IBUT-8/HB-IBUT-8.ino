@@ -38,8 +38,8 @@ const struct DeviceInfo PROGMEM devinfo = {
     {0xfa,0x2a,0xce},       // Device ID
     "papafa2ace",           // Device Serial
     {0xf2,0x06},            // Device Model
-    0x01,                   // Firmware Version
-    as::DeviceType::Remote, // Device Type
+    0x02,                   // Firmware Version
+    as::DeviceType::Sensor, // Device Type
     {0x00,0x00}             // Info Bytes
 };
 
@@ -50,11 +50,17 @@ typedef AvrSPI<10,11,12,13> RadioSPI;
 typedef DualStatusLed<LED2_PIN,LED1_PIN> LedType;
 typedef AskSin<LedType,BatterySensor,Radio<RadioSPI,2> > Hal;
 
-typedef IButtonChannel<Hal,PEERS_PER_CHANNEL> IButChannel;
-
-class IButDev : public MultiChannelDevice<Hal,IButChannel,NUM_CHANNELS> {
+DEFREGISTER(IButReg0,MASTERID_REGS,DREG_BUTTON_MODE)
+class IButList0 : public RegList0<IButReg0> {
 public:
-  typedef MultiChannelDevice<Hal,IButChannel,NUM_CHANNELS> DevType;
+  IButList0 (uint16_t addr) : RegList0<IButReg0>(addr) {}
+};
+
+typedef IButtonChannel<Hal,PEERS_PER_CHANNEL,IButList0> IButChannel;
+
+class IButDev : public MultiChannelDevice<Hal,IButChannel,NUM_CHANNELS,IButList0> {
+public:
+  typedef MultiChannelDevice<Hal,IButChannel,NUM_CHANNELS,IButList0> DevType;
   IButDev (const DeviceInfo& i,uint16_t addr) : DevType(i,addr) {}
   virtual ~IButDev () {}
   // return ibutton channel from 0 - n-1

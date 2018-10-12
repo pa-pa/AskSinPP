@@ -46,11 +46,22 @@ public:
     return 0;
   }
 
-  bool match (uint8_t* addr) {
+  void start () {
     matches <<= 1;
-    uint8_t s = none;
+  }
+
+  bool check (uint8_t* addr) {
     if( free() == false && isID(addr) == true ) {
       matches |= 0b00000001;
+      return true;
+    }
+    return false;
+  }
+
+  void finish () {
+    // channel is in remote mode
+    if( this->device().getList0().buttonMode() == 0 ) {
+      uint8_t s = none;
       // 3 or 6 matches are longpress and longlongpress
       if( (matches & 0b00111111) == 0b00000111 || (matches & 0b00111111) == 0b00111111 ) {
         s = longpressed;
@@ -58,31 +69,47 @@ public:
         // clear longlong
         matches &= 0b11000111;
       }
+      // check for long release
+      else if( (matches & 0b00001111) == 0b00001110 ) {
+        s = longreleased;
+        DPRINTLN("longreleased");
+      }
+      // check for release
+      else if( (matches & 0b00000011) == 0b00000010 ) {
+        s = released;
+        DPRINTLN("released");
+      }
+      if( s != none ) {
+        RemoteEventMsg& msg = (RemoteEventMsg&)this->device().message();
+        msg.init(this->device().nextcount(),this->number(),repeatcnt,(s==longreleased || s==longpressed),this->device().battery().low());
+        if( s == released || s == longreleased) {
+          // send the message to every peer
+          this->device().sendPeerEvent(msg,*this);
+          repeatcnt++;
+        }
+        else if (s == longpressed) {
+          // broadcast the message
+          this->device().broadcastPeerEvent(msg,*this);
+        }
+      }
     }
-    // check for long release
-    if( (matches & 0b00001111) == 0b00001110 ) {
-      s = longreleased;
-      DPRINTLN("longreleased");
-    }
-    // check for release
-    else if( (matches & 0b00000011) == 0b00000010 ) {
-      s = released;
-      DPRINTLN("released");
-    }
-    if( s != none ) {
-      RemoteEventMsg& msg = (RemoteEventMsg&)this->device().message();
-      msg.init(this->device().nextcount(),this->number(),repeatcnt,(s==longreleased || s==longpressed),this->device().battery().low());
-      if( s == released || s == longreleased) {
-        // send the message to every peer
+    // channel is in state mode
+    else {
+      uint8_t newstate = ((matches & 0b00000111) == 0b00000111) ? 100 : 0;
+      if( state != newstate ) {
+        state = newstate;
+        SensorEventMsg& msg = (SensorEventMsg&)this->device().message();
+        msg.init(this->device().nextcount(),this->number(),repeatcnt++,state,this->device().battery().low());
         this->device().sendPeerEvent(msg,*this);
-        repeatcnt++;
-      }
-      else if (s == longpressed) {
-        // broadcast the message
-        this->device().broadcastPeerEvent(msg,*this);
       }
     }
-    return (matches & 0b00000001) == 0b00000001;
+  }
+
+  bool match (uint8_t* addr) {
+    start();
+    bool res = check(addr);
+    finish();
+    return res;
   }
 
   bool isID (uint8_t* buf) {
@@ -124,10 +151,9 @@ public:
     return true;
   }
 
-  bool process (__attribute__((unused)) const RemoteEventMsg& msg) { return false; }
-  bool process (__attribute__((unused)) const SensorEventMsg& msg) { return false; }
+  bool process (__attribute__((unused)) const RemoteEventMsg& msg)   { return false; }
+  bool process (__attribute__((unused)) const SensorEventMsg& msg)   { return false; }
   bool process (__attribute__((unused)) const ActionCommandMsg& msg) { return false; }
-
 };
 
 
@@ -163,6 +189,16 @@ public:
     return 0;
   }
 
+  IButtonChannel* find (uint8_t* addr) {
+    for( uint8_t i=0; i<dev.ibuttonCount(); ++i ) {
+      IButtonChannel& bc = dev.ibuttonChannel(i);
+      if( bc.isID(addr) == true ) {
+        return &bc;
+      }
+    }
+    return 0;
+  }
+
   bool scan (uint8_t* addr) {
     ow.reset_search();
     if ( ow.search(addr) == false || OneWire::crc8(addr, 7) != addr[7] ) {
@@ -170,6 +206,73 @@ public:
       return false;
     }
     return true;
+  }
+
+  void start () {
+    for( uint8_t i=0; i<dev.ibuttonCount(); ++i ) {
+      IButtonChannel& bc = dev.ibuttonChannel(i);
+      bc.start();
+    }
+  }
+
+  void finish () {
+    for( uint8_t i=0; i<dev.ibuttonCount(); ++i ) {
+      IButtonChannel& bc = dev.ibuttonChannel(i);
+      bc.finish();
+    }
+  }
+
+  bool check (uint8_t* addr) {
+    bool res = false;
+    for( uint8_t i=0; i<dev.ibuttonCount(); ++i ) {
+      IButtonChannel& bc = dev.ibuttonChannel(i);
+      res |= bc.check(addr);
+    }
+    return res;
+  }
+
+  void scanMulti () {
+    uint8_t found=0;
+    uint8_t known=0;
+    uint8_t addr[8];
+    start();
+    ow.reset_search();
+    while( ow.search(addr) == 1 ) {
+      if( OneWire::crc8(addr,7) == addr[7] ) {
+        if( addr[0] == 0x01 ) { // family code DS2401/DS1990A
+          found++;
+          if( check(addr) == true ) {
+            known++;
+          }
+        }
+      }
+    }
+    finish();
+    // signal for remote mode
+    if( found > 0 && dev.getList0().buttonMode() == 0 ) {
+      if( found == known ) {
+        led.ledOn(millis2ticks(500),0);
+      }
+      else {
+        led.ledOn(0,millis2ticks(500));
+      }
+    }
+  }
+
+  bool learn (IButtonChannel* lc) {
+    uint8_t addr[8];
+    ow.reset_search();
+    while( ow.search(addr) == 1 ) {
+      if( OneWire::crc8(addr,7) == addr[7] ) {
+        if( addr[0] == 0x01 ) { // family code DS2401/DS1990A
+          if( find(addr) == 0 ) {
+            lc->storeID(addr);
+            return true;
+          }
+        }
+      }
+    }
+    return false;
   }
 
   void trigger (AlarmClock& clock) {
@@ -182,29 +285,18 @@ public:
     if( lc != 0 ) {
       uint8_t cycle = cnt & 0x01;
       led.ledOn(cycle == 0 ? tick : 0, cycle == 0 ? 0 : tick);
-    }
-    // scan the bus now
-    uint8_t addr[8];
-    bool found = scan(addr);
-    // search matching channel
-    IButtonChannel* match = matches(addr);
-    if( found == true ) {
-      if( lc != 0 ) {
+      // if we have learned a new ID
+      if( learn(lc) == true ) {
         clock.cancel(*this);
         set(seconds2ticks(5));
         led.ledOff();
         led.ledOn(tick);
         clock.add(*this);
-        lc->storeID(addr);
       }
-      else {
-        if( match != 0 ) {
-          led.ledOn(millis2ticks(500),0);
-        }
-        else {
-          led.ledOn(0,millis2ticks(500));
-        }
-      }
+    }
+    else {
+      // scan the bus now
+      scanMulti();
     }
   }
 };
