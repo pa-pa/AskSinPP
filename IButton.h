@@ -95,7 +95,10 @@ public:
     }
     // channel is in state mode
     else {
-      uint8_t newstate = ((matches & 0b00000111) == 0b00000111) ? 100 : 0;
+      uint8_t newstate = state;
+      uint8_t mask = (matches & 0b00000111);
+      if( mask == 0b00000111) newstate = 100;
+      else if( mask == 0b00000000) newstate = 0;
       if( state != newstate ) {
         state = newstate;
         SensorEventMsg& msg = (SensorEventMsg&)this->device().message();
