@@ -28,8 +28,11 @@ public:
     pinMode(pin,OUTPUT);
   }
   void set(uint8_t value) {
-    uint8_t offset = value*31/STEPS;
-    uint8_t pwm = pgm_read_word (& pwmtable[offset]);
+    uint8_t pwm = 0;
+    if( value > 0 ) {
+      uint8_t offset = value*31/STEPS;
+      pwm = pgm_read_word (& pwmtable[offset]);
+    }
     analogWrite(pin,pwm);
   }
 };
