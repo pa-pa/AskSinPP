@@ -309,9 +309,6 @@ public:
 
   void init (uint8_t p,bool value=false) {
     pin=p;
-    #ifdef __PCF8574Output_H__
-    IODriver::init();
-    #endif
     IODriver::setOutput(pin);
     lowact = value;
     typename BaseChannel::List1 l1 = BaseChannel::getList1();
