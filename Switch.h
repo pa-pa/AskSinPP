@@ -294,7 +294,7 @@ public:
 };
 
 
-template <class HalType,int PeerCount,class List0Type>
+template <class HalType,int PeerCount,class List0Type,class IODriver=ArduinoPins>
 class SwitchChannel : public Channel<HalType,SwitchList1,SwitchList3,EmptyList,PeerCount,List0Type>, public SwitchStateMachine {
 
 protected:
@@ -309,7 +309,7 @@ public:
 
   void init (uint8_t p,bool value=false) {
     pin=p;
-    pinMode(pin,OUTPUT);
+    IODriver::setOutput(pin);
     lowact = value;
     typename BaseChannel::List1 l1 = BaseChannel::getList1();
     status(l1.powerUpAction() == true ? 200 : 0, 0xffff );
@@ -331,10 +331,12 @@ public:
 
   virtual void switchState(__attribute__((unused)) uint8_t oldstate,uint8_t newstate,__attribute__((unused)) uint32_t delay) {
     if( newstate == AS_CM_JT_ON ) {
-      digitalWrite(pin,lowact ? LOW : HIGH);
+      if( lowact == true ) IODriver::setLow(pin);
+      else IODriver::setHigh(pin);
     }
     else if ( newstate == AS_CM_JT_OFF ) {
-      digitalWrite(pin,lowact ? HIGH : LOW);
+      if( lowact == true ) IODriver::setHigh(pin);
+      else IODriver::setLow(pin);
     }
     BaseChannel::changed(true);
   }
