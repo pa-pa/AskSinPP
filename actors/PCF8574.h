@@ -52,26 +52,86 @@ struct PCF8574Buffer { uint8_t data, mode; };
   };
   
   template<>
+  inline PCF8574Buffer& PCF8574Output<0x20>::getBuffer () {
+      static PCF8574Buffer b;
+      return b;
+  }
+  template<>
+  inline PCF8574Buffer& PCF8574Output<0x21>::getBuffer () {
+      static PCF8574Buffer b;
+      return b;
+  }
+  template<>
+  inline PCF8574Buffer& PCF8574Output<0x22>::getBuffer () {
+      static PCF8574Buffer b;
+      return b;
+  }
+  template<>
+  inline PCF8574Buffer& PCF8574Output<0x23>::getBuffer () {
+      static PCF8574Buffer b;
+      return b;
+  }
+  template<>
+  inline PCF8574Buffer& PCF8574Output<0x24>::getBuffer () {
+      static PCF8574Buffer b;
+      return b;
+  }  
+  template<>
+  inline PCF8574Buffer& PCF8574Output<0x25>::getBuffer () {
+      static PCF8574Buffer b;
+      return b;
+  }  
+  template<>
+  inline PCF8574Buffer& PCF8574Output<0x26>::getBuffer () {
+      static PCF8574Buffer b;
+      return b;
+  }
+  template<>
+  inline PCF8574Buffer& PCF8574Output<0x27>::getBuffer () {
+      static PCF8574Buffer b;
+      return b;
+  }
+  
+  template<>
   inline PCF8574Buffer& PCF8574Output<0x38>::getBuffer () {
       static PCF8574Buffer b;
       return b;
   }
   template<>
-  inline PCF8574Buffer& PCF8574Output<0x40>::getBuffer () {
+  inline PCF8574Buffer& PCF8574Output<0x39>::getBuffer () {
       static PCF8574Buffer b;
       return b;
   }
   template<>
-  inline PCF8574Buffer& PCF8574Output<0x42>::getBuffer () {
+  inline PCF8574Buffer& PCF8574Output<0x3A>::getBuffer () {
       static PCF8574Buffer b;
       return b;
   }
   template<>
-  inline PCF8574Buffer& PCF8574Output<0x44>::getBuffer () {
+  inline PCF8574Buffer& PCF8574Output<0x3B>::getBuffer () {
       static PCF8574Buffer b;
       return b;
   }
-  
+  template<>
+  inline PCF8574Buffer& PCF8574Output<0x3C>::getBuffer () {
+      static PCF8574Buffer b;
+      return b;
+  }  
+  template<>
+  inline PCF8574Buffer& PCF8574Output<0x3D>::getBuffer () {
+      static PCF8574Buffer b;
+      return b;
+  }  
+  template<>
+  inline PCF8574Buffer& PCF8574Output<0x3E>::getBuffer () {
+      static PCF8574Buffer b;
+      return b;
+  }
+  template<>
+  inline PCF8574Buffer& PCF8574Output<0x3F>::getBuffer () {
+      static PCF8574Buffer b;
+      return b;
+  }
 }
 
 #endif
