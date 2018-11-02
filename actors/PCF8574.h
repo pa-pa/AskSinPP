@@ -13,8 +13,9 @@
 namespace as {
 
 struct PCF8574Buffer { uint8_t data, mode; };
-  template <byte ADDRESS=0x38>
-  class PCF8574Output {
+
+template <byte ADDRESS=0x38>
+class PCF8574Output {
       static PCF8574Buffer& getBuffer();
   private:
       static void writeWire(uint8_t buffer) {
@@ -41,9 +42,9 @@ struct PCF8574Buffer { uint8_t data, mode; };
           return ((getBuffer().data & bit(pin)) == 0) ? LOW : HIGH;
       }
       inline static void dump () {
-          Serial.print("Address: "); Serial.print(ADDRESS);
-          Serial.print("   Mode: "); Serial.print(getBuffer().mode,BIN);
-          Serial.print("   Data: "); Serial.println(getBuffer().data,BIN);
+        DPRINT("Address: "); DHEX(ADDRESS);
+        DPRINT("   Mode: "); DHEX(getBuffer().mode);
+        DPRINT("   Data: "); DHEXLN(getBuffer().data);
       }
       
       inline static void init () { 
