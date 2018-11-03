@@ -516,7 +516,7 @@ public:
     uint8_t channel () const { return subcommand(); }
     uint8_t len () const { return (datasize()); }
     uint8_t value (uint8_t idx) const { return *(data()+idx); }
-    bool eot () const { return (length() >= 12) ? (*(data()+length()-12) == AS_ACTION_COMMAND_EOT) : false; }
+    bool eot (uint8_t eot_char=AS_ACTION_COMMAND_EOT) const { return (length() >= 12) ? (*(data()+length()-12) == eot_char) : false; }
 };
 
 class AckMsg : public Message {
