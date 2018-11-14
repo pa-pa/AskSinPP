@@ -341,16 +341,16 @@ public:
   bool powerSupply (uint8_t value) const { return this->writeRegister(DREG_POWERSUPPLY,value); }
   
   bool wakeupBehaviourStatusSignalizationConfirmation(bool v) const { return this->writeRegister(DREG_WAKEUPBEHAVIOUR,0x01,0,v); }
-  bool wakeupBehaviourStatusSignalizationConfirmation() const { return this->readRegister(DREG_WAKEUPBEHAVIOUR, 0x01,0,0); }
+  bool wakeupBehaviourStatusSignalizationConfirmation() const { return this->readRegister(DREG_WAKEUPBEHAVIOUR, 0x01,0,false); }
   bool wakeupBehaviourStatusMsgConfirmation(bool v) const { return this->writeRegister(DREG_WAKEUPBEHAVIOUR,0x01,1,v); }
-  bool wakeupBehaviourStatusMsgConfirmation() const { return this->readRegister(DREG_WAKEUPBEHAVIOUR, 0x01,1,0); }
+  bool wakeupBehaviourStatusMsgConfirmation() const { return this->readRegister(DREG_WAKEUPBEHAVIOUR, 0x01,1,false); }
   bool wakeupBehaviourStatusMsgResistance(bool v) const { return this->writeRegister(DREG_WAKEUPBEHAVIOUR,0x01,2,v); }
-  bool wakeupBehaviourStatusMsgResistance() const { return this->readRegister(DREG_WAKEUPBEHAVIOUR, 0x01,2,0); }
+  bool wakeupBehaviourStatusMsgResistance() const { return this->readRegister(DREG_WAKEUPBEHAVIOUR, 0x01,2,false); }
   
   bool displayInverting(bool v) const { return this->writeRegister(DREG_DISPLAY,0x01,6,v); }
-  bool displayInverting() const { return this->readRegister(DREG_DISPLAY, 0x01,6,0); }
+  bool displayInverting() const { return this->readRegister(DREG_DISPLAY, 0x01,6,false); }
   bool statusMessageTextAlignmentLeftAligned(bool v) const { return this->writeRegister(DREG_DISPLAY,0x01,7,v); }
-  bool statusMessageTextAlignmentLeftAligned() const { return this->readRegister(DREG_DISPLAY, 0x01,7,0); }
+  bool statusMessageTextAlignmentLeftAligned() const { return this->readRegister(DREG_DISPLAY, 0x01,7,false); }
   
   uint8_t ledMode () const { return this->readRegister(DREG_LEDMODE,0x03,6,0); }
   bool ledMode (uint8_t value) const { return this->writeRegister(DREG_LEDMODE,0x03,6,value); }
