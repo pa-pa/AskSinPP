@@ -16,6 +16,8 @@ namespace as {
 #define DREG_BURSTRX    0x01
 #define DREG_INTKEY     0x02
 #define DREG_LEDMODE     0x05
+#define DREG_DISPLAY     0x05 //added twice, it's more plausible in sketch
+#define DREG_POWERSUPPLY 0x08
 #define DREG_CYCLICINFOMSG     0x09
 #define DREG_MASTER_ID1 0x0A
 #define DREG_MASTER_ID2 0x0B
@@ -28,7 +30,7 @@ namespace as {
 #define DREG_CONFBUTTONTIME     0x15
 #define DREG_LOCALRESETDISABLE 0x18
 #define DREG_TPARAMS           0x1b
-
+#define DREG_WAKEUPBEHAVIOUR   0x21
 #define DREG_BUTTON_MODE       0x32  // iButton Mode - Remote or State
 
 // Channel Registers used in List1
@@ -335,6 +337,21 @@ public:
     this->writeRegister(DREG_MASTER_ID3,mid.id2());
   };
 
+  uint8_t powerSupply () const { return this->readRegister(DREG_POWERSUPPLY,0); }
+  bool powerSupply (uint8_t value) const { return this->writeRegister(DREG_POWERSUPPLY,value); }
+  
+  bool wakeupBehaviourStatusSignalizationConfirmation(bool v) const { return this->writeRegister(DREG_WAKEUPBEHAVIOUR,0x01,0,v); }
+  bool wakeupBehaviourStatusSignalizationConfirmation() const { return this->readRegister(DREG_WAKEUPBEHAVIOUR, 0x01,0,false); }
+  bool wakeupBehaviourStatusMsgConfirmation(bool v) const { return this->writeRegister(DREG_WAKEUPBEHAVIOUR,0x01,1,v); }
+  bool wakeupBehaviourStatusMsgConfirmation() const { return this->readRegister(DREG_WAKEUPBEHAVIOUR, 0x01,1,false); }
+  bool wakeupBehaviourStatusMsgResistance(bool v) const { return this->writeRegister(DREG_WAKEUPBEHAVIOUR,0x01,2,v); }
+  bool wakeupBehaviourStatusMsgResistance() const { return this->readRegister(DREG_WAKEUPBEHAVIOUR, 0x01,2,false); }
+  
+  bool displayInverting(bool v) const { return this->writeRegister(DREG_DISPLAY,0x01,6,v); }
+  bool displayInverting() const { return this->readRegister(DREG_DISPLAY, 0x01,6,false); }
+  bool statusMessageTextAlignmentLeftAligned(bool v) const { return this->writeRegister(DREG_DISPLAY,0x01,7,v); }
+  bool statusMessageTextAlignmentLeftAligned() const { return this->readRegister(DREG_DISPLAY, 0x01,7,false); }
+  
   uint8_t ledMode () const { return this->readRegister(DREG_LEDMODE,0x03,6,0); }
   bool ledMode (uint8_t value) const { return this->writeRegister(DREG_LEDMODE,0x03,6,value); }
   bool cycleInfoMsg () const { return this->readRegister(DREG_CYCLICINFOMSG,false); }
