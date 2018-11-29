@@ -17,7 +17,7 @@
 #include "Activity.h"
 
 #ifdef USE_HW_SERIAL
-  #if defined(__AVR_ATmega644__) || defined(__AVR_ATmega644P__)
+  #if defined(__AVR_ATmega644__) || defined(__AVR_ATmega644P__) || defined(__AVR_ATmega1284__) || defined(__AVR_ATmega1284P__)
     #include <avr/boot.h>
   #elif defined (ARDUINO_ARCH_STM32F1)
   #else
@@ -25,7 +25,7 @@
   #endif
 #endif
 
-#if defined(__AVR_ATmega644__) || defined(__AVR_ATmega644P__)
+#if defined(__AVR_ATmega644__) || defined(__AVR_ATmega644P__) || defined(__AVR_ATmega1284__) || defined(__AVR_ATmega1284P__)
 #define OTA_CONFIG_START 0xffe0 // start address of 16 byte config data in bootloader
 #define OTA_MODEL_START  0xfff0 // start address of 2 byte model id in bootloader
 #define OTA_SERIAL_START 0xfff2 // start address of 10 byte serial number in bootloader
