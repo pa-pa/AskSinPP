@@ -232,7 +232,7 @@ public:
   BlindStateMachine () : StateMachine<BlindPeerList>(), level(0xff), destlevel(0), /*alarm(*this),*/ update(*this), list1(0) {}
   virtual ~BlindStateMachine () {}
 
-  virtual void switchState(uint8_t oldstate,uint8_t newstate, uint32_t statedelay) {
+  virtual void switchState(uint8_t oldstate,uint8_t newstate,__attribute__ ((unused)) uint32_t statedelay) {
     DPRINT("Switch from ");DHEX(oldstate);DPRINT(" to ");DHEXLN(newstate);
     switch( newstate ) {
     case AS_CM_JT_RAMPON:
@@ -253,6 +253,11 @@ public:
 
   void setup(BlindList1 l1) {
     list1 = l1;
+  }
+
+  void init () {
+    setState(AS_CM_JT_OFF, BlindStateMachine::DELAY_INFINITE);
+    updateLevel(0);
   }
   
   void jumpToTarget(const BlindPeerList& lst) {
@@ -282,7 +287,7 @@ public:
   }
   
   virtual uint8_t getNextState (uint8_t stat) {
-    DPRINT("getNextState: ");DDECLN(stat);
+    //DPRINT("getNextState: ");DDECLN(stat);
     switch( stat ) {
       case AS_CM_JT_ONDELAY:  return AS_CM_JT_REFON;
       case AS_CM_JT_REFON:    return AS_CM_JT_RAMPON;
@@ -341,6 +346,10 @@ public:
     if( extratime == true ) dt += 20; // we add 2 additional seconds
     DPRINT("calcDriveTime: ");DDEC(fulltime);DPRINT(" - ");DDEC(dx);DPRINT(" - ");DDECLN(dt);
     return decis2ticks(dt);
+  }
+
+  bool set (uint8_t value,__attribute__ ((unused)) uint16_t ramp,__attribute__ ((unused)) uint16_t delay) {
+    return setDestLevel(value);
   }
 
   void remote (const BlindPeerList& lst,uint8_t counter) {
@@ -407,85 +416,6 @@ public:
       f |= AS_CM_EXTSTATE_DOWN; // DOWN flag
     }
     return f;
-  }
-};
-
-
-template <class HalType,int PeerCount,class List0Type>
-class BlindChannel : public Channel<HalType,BlindList1,BlindList3,EmptyList,PeerCount,List0Type>, public BlindStateMachine {
-
-protected:
-  typedef Channel<HalType,BlindList1,BlindList3,EmptyList,PeerCount,List0Type> BaseChannel;
-  uint8_t lastmsgcnt;
-
-public:
-  BlindChannel () : BaseChannel(), lastmsgcnt(0xff) {}
-  virtual ~BlindChannel() {}
-
-  bool changed () const { return BlindStateMachine::changed; }
-
-  void changed (bool c) { BlindStateMachine::changed = c; }
-
-  void init () {
-//    typename BaseChannel::List1 l1 = BaseChannel::getList1();
-    setState(AS_CM_JT_OFF, DELAY_INFINITE);
-    updateLevel(0);
-  }
-
-  void setup(Device<HalType,List0Type>* dev,uint8_t number,uint16_t addr) {
-    BaseChannel::setup(dev,number,addr);
-    BlindStateMachine::setup(this->getList1());
-  }
-
-  uint8_t flags () const {
-    return BlindStateMachine::flags();
-  }
-
-  void stop () {
-    BlindStateMachine::stop();
-  }
-  
-  bool process (const ActionCommandMsg& msg) {
-    return true;
-  }
-
-  bool process (const ActionSetMsg& msg) {
-    setDestLevel( msg.value() );
-    return true;
-  }
-
-  bool process (const RemoteEventMsg& msg) {
-    bool lg = msg.isLong();
-    Peer p(msg.peer());
-    uint8_t cnt = msg.counter();
-    typename BaseChannel::List3 l3 = BaseChannel::getList3(p);
-    if( l3.valid() == true ) {
-      // l3.dump();
-      typename BaseChannel::List3::PeerList pl = lg ? l3.lg() : l3.sh();
-      // pl.dump();
-      if( lg == false || cnt != lastmsgcnt || pl.multiExec() == true ) {
-        lastmsgcnt = cnt;
-        remote(pl,cnt);
-      }
-      return true;
-    }
-    return false;
-  }
-
-  bool process (const SensorEventMsg& msg) {
-    bool lg = msg.isLong();
-    Peer p(msg.peer());
-    uint8_t cnt = msg.counter();
-    uint8_t value = msg.value();
-    typename BaseChannel::List3 l3 = BaseChannel::getList3(p);
-    if( l3.valid() == true ) {
-      // l3.dump();
-      typename BaseChannel::List3::PeerList pl = lg ? l3.lg() : l3.sh();
-      // pl.dump();
-      sensor(pl,cnt,value);
-      return true;
-    }
-    return false;
   }
 };
 

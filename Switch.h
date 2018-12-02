@@ -159,12 +159,18 @@ class SwitchStateMachine {
   }
 
 protected:
-  uint8_t    state;
+  uint8_t      state : 4;
+  bool         change : 1;
   StateAlarm alarm;
 
 public:
-  SwitchStateMachine() : state(AS_CM_JT_NONE), alarm(*this) {}
+  SwitchStateMachine() : state(AS_CM_JT_NONE), change(false), alarm(*this) {}
   virtual ~SwitchStateMachine () {}
+
+  bool changed () const { return change; }
+  void changed (bool c) { change=c; }
+
+  void setup(__attribute__ ((unused)) BaseList l1) {}
 
   virtual void switchState(__attribute__((unused)) uint8_t oldstate,__attribute__((unused)) uint8_t newstate,__attribute__((unused)) uint32_t delay) {}
 
@@ -237,6 +243,11 @@ public:
 
   bool delayActive () const { return sysclock.get(alarm) > 0; }
 
+  bool set (uint8_t value,__attribute__ ((unused)) uint16_t ramp,uint16_t delay) {
+    status(value, delay);
+    return true;
+  }
+
   void remote (const SwitchPeerList& lst,uint8_t counter) {
     // perform action as defined in the list
     switch (lst.actionType()) {
@@ -280,6 +291,8 @@ public:
     }
   }
 
+  void stop () {}
+
   void status (uint8_t stat, uint16_t delay) {
     setState( stat == 0 ? AS_CM_JT_OFF : AS_CM_JT_ON, AskSinBase::intTimeCvt(delay) );
   }
@@ -293,18 +306,16 @@ public:
   }
 };
 
-
 template <class HalType,int PeerCount,class List0Type,class IODriver=ArduinoPins>
-class SwitchChannel : public Channel<HalType,SwitchList1,SwitchList3,EmptyList,PeerCount,List0Type>, public SwitchStateMachine {
+class SwitchChannel : public ActorChannel<HalType,SwitchList1,SwitchList3,PeerCount,List0Type,SwitchStateMachine> {
 
 protected:
-  typedef Channel<HalType,SwitchList1,SwitchList3,EmptyList,PeerCount,List0Type> BaseChannel;
+  typedef ActorChannel<HalType,SwitchList1,SwitchList3,PeerCount,List0Type,SwitchStateMachine> BaseChannel;
   uint8_t lowact;
   uint8_t pin;
-  uint8_t lastmsgcnt;
 
 public:
-  SwitchChannel () : BaseChannel(), lowact(false), pin(0), lastmsgcnt(0xff) {}
+  SwitchChannel () : BaseChannel(), lowact(false), pin(0) {}
   virtual ~SwitchChannel() {}
 
   void init (uint8_t p,bool value=false) {
@@ -312,16 +323,12 @@ public:
     IODriver::setOutput(pin);
     lowact = value;
     typename BaseChannel::List1 l1 = BaseChannel::getList1();
-    status(l1.powerUpAction() == true ? 200 : 0, 0xffff );
-    BaseChannel::changed(true);
-  }
-
-  void setup(Device<HalType,List0Type>* dev,uint8_t number,uint16_t addr) {
-    BaseChannel::setup(dev,number,addr);
+    this->set(l1.powerUpAction() == true ? 200 : 0, 0, 0xffff );
+    this->changed(true);
   }
 
   uint8_t flags () const {
-    uint8_t flags = SwitchStateMachine::flags();
+    uint8_t flags = BaseChannel::flags();
     if( this->device().battery().low() == true ) {
       flags |= 0x80;
     }
@@ -338,50 +345,7 @@ public:
       if( lowact == true ) IODriver::setHigh(pin);
       else IODriver::setLow(pin);
     }
-    BaseChannel::changed(true);
-  }
-    
-  bool process (__attribute__((unused)) const ActionCommandMsg& msg) {
-    return true;
-  }
-    
-  bool process (const ActionSetMsg& msg) {
-    status( msg.value(), msg.delay() );
-    return true;
-  }
-
-  bool process (const RemoteEventMsg& msg) {
-    bool lg = msg.isLong();
-    Peer p(msg.peer());
-    uint8_t cnt = msg.counter();
-    typename BaseChannel::List3 l3 = BaseChannel::getList3(p);
-    if( l3.valid() == true ) {
-      // l3.dump();
-      typename BaseChannel::List3::PeerList pl = lg ? l3.lg() : l3.sh();
-      // pl.dump();
-      if( lg == false || cnt != lastmsgcnt || pl.multiExec() == true ) {
-        lastmsgcnt = cnt;
-        remote(pl,cnt);
-      }
-      return true;
-    }
-    return false;
-  }
-
-  bool process (const SensorEventMsg& msg) {
-    bool lg = msg.isLong();
-    Peer p(msg.peer());
-    uint8_t cnt = msg.counter();
-    uint8_t value = msg.value();
-    typename BaseChannel::List3 l3 = BaseChannel::getList3(p);
-    if( l3.valid() == true ) {
-      // l3.dump();
-      typename BaseChannel::List3::PeerList pl = lg ? l3.lg() : l3.sh();
-      // pl.dump();
-      sensor(pl,cnt,value);
-      return true;
-    }
-    return false;
+    this->changed(true);
   }
 };
 

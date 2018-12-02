@@ -64,9 +64,10 @@ public:
   }
 };
 
-class BlChannel : public BlindChannel<Hal,PEERS_PER_CHANNEL,BlindList0> {
+class BlChannel : public ActorChannel<Hal,BlindList1,BlindList3,PEERS_PER_CHANNEL,BlindList0,BlindStateMachine> {
 public:
-  typedef BlindChannel<Hal,PEERS_PER_CHANNEL,BlindList0> BaseChannel;
+  typedef ActorChannel<Hal,BlindList1,BlindList3,PEERS_PER_CHANNEL,BlindList0,BlindStateMachine> BaseChannel;
+
   BlChannel () {}
   virtual ~BlChannel () {}
 
@@ -118,11 +119,7 @@ InternalButton<BlindType> btndown(sdev,2);
 void initPeerings (bool first) {
   // create internal peerings - CCU2 needs this
   if( first == true ) {
-    HMID devid;
-    sdev.getDeviceID(devid);
-    Peer p1(devid,1);
-    Peer p2(devid,2);
-    sdev.channel(1).peer(p1,p2);
+    sdev.channel(1).peer(btnup.peer(),btndown.peer());
   }
 }
 

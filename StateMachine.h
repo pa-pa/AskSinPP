@@ -24,19 +24,19 @@ class StateMachine : public Alarm {
       clock.add(*this);
     }
     virtual void trigger (__attribute__((unused)) AlarmClock& clock) {
-      sm.changed = true;
+      sm.changed(true);
     }
   };
 
 protected:
   enum { DELAY_NO=0x00, DELAY_INFINITE=0xffffffff };
 
-  uint8_t       state;
-  bool          changed;
+  uint8_t       state : 4;
+  bool          change : 1;
   ChangedAlarm  calarm;
   PeerList      actlst;
 
-  StateMachine () : Alarm(0), state(AS_CM_JT_NONE), changed(false), calarm(*this), actlst(0) {}
+  StateMachine () : Alarm(0), state(AS_CM_JT_NONE), change(false), calarm(*this), actlst(0) {}
   virtual ~StateMachine () {}
 
   virtual void trigger (__attribute__((unused)) AlarmClock& clock) {
@@ -44,6 +44,9 @@ protected:
     uint32_t dly = getDelayForState(next,actlst);
     setState(next,dly,actlst);
   }
+
+  bool changed () const { return change; }
+  void changed (bool c) { change=c; }
 
   void setState (uint8_t next,uint32_t delay,const PeerList& lst=PeerList(0)) {
     actlst = lst;

@@ -211,7 +211,7 @@ class DimmerStateMachine {
       clock.add(*this);
     }
     virtual void trigger (__attribute__((unused)) AlarmClock& clock) {
-      sm.changed = true;
+      sm.change = true;
     }
   };
 
@@ -235,6 +235,10 @@ class DimmerStateMachine {
     }
     void init (uint32_t ramptime,uint8_t level,uint32_t dly,DimmerPeerList l=DimmerPeerList(0)) {
       DPRINT("Ramp/Level: ");DDEC(ramptime);DPRINT("/");DDECLN(level);
+      // check that we start with the defined minimum
+//      if( sm.status() < lst.onMinLevel() ) {
+//        sm.updateLevel(lst.onMinLevel());
+//      }
       lst=l;
       destlevel = level==201 ? sm.lastonlevel : level;
       delay = dly;
@@ -335,7 +339,7 @@ class DimmerStateMachine {
 
 protected:
   uint8_t      state : 4;
-  bool         changed : 1;
+  bool         change : 1;
   bool         toggledimup : 1;
   bool         erroverheat : 1;
   bool         errreduced : 1;
@@ -345,9 +349,12 @@ protected:
   DimmerList1  list1;
 
 public:
-  DimmerStateMachine() : state(AS_CM_JT_NONE), changed(false), toggledimup(true), erroverheat(false), errreduced(false),
+  DimmerStateMachine() : state(AS_CM_JT_NONE), change(false), toggledimup(true), erroverheat(false), errreduced(false),
     level(0), lastonlevel(200), alarm(*this), calarm(*this), list1(0) {}
   virtual ~DimmerStateMachine () {}
+
+  bool changed () const { return change; }
+  void changed (bool c) { change=c; }
 
   void overheat(bool value) {
     erroverheat = value;
@@ -478,6 +485,11 @@ public:
     updateState(newstate,getDelayForState(newstate, lst));
   }
 
+  bool set (uint8_t value,uint16_t ramp,uint16_t delay) {
+    setLevel(value,ramp,delay);
+    return true;
+  }
+
   void remote (const DimmerPeerList& lst,uint8_t counter) {
     // perform action as defined in the list
     switch (lst.actionType()) {
@@ -556,6 +568,8 @@ public:
     }
   }
 
+  void stop () {}
+
   uint8_t status () const {
     return level;
   }
@@ -578,27 +592,13 @@ public:
   }
 };
 
-template <class HalType,int PeerCount>
-class DimmerChannel : public Channel<HalType,DimmerList1,DimmerList3,EmptyList,PeerCount>, public DimmerStateMachine {
-
-  uint8_t  lastmsgcnt;
+template <class HalType,int PeerCount,class List0Type=List0>
+class DimmerChannel : public ActorChannel<HalType,DimmerList1,DimmerList3,PeerCount,List0Type,DimmerStateMachine> {
   uint8_t* phys;
-
 protected:
-  typedef Channel<HalType,DimmerList1,DimmerList3,EmptyList,PeerCount> BaseChannel;
-
+  typedef ActorChannel<HalType,DimmerList1,DimmerList3,PeerCount,List0Type,DimmerStateMachine> BaseChannel;
 public:
-  DimmerChannel () : BaseChannel(), lastmsgcnt(0xff), phys(0) {}
-  virtual ~DimmerChannel() {}
-
-  void setup(Device<HalType>* dev,uint8_t number,uint16_t addr) {
-    BaseChannel::setup(dev,number,addr);
-    DimmerStateMachine::setup(this->getList1());
-  }
-
-  bool changed () const { return DimmerStateMachine::changed; }
-
-  void changed (bool c) { DimmerStateMachine::changed = c; }
+  DimmerChannel () : BaseChannel(), phys(0) {}
 
   void setPhysical(uint8_t& p) {
     phys = &p;
@@ -612,50 +612,6 @@ public:
       }
     }
   }
-  
-  bool process (const ActionSetMsg& msg) {
-    setLevel( msg.value(), msg.ramp(), msg.delay() );
-    return true;
-  }
-
-  bool process (const RemoteEventMsg& msg) {
-    bool lg = msg.isLong();
-    Peer p(msg.peer());
-    uint8_t cnt = msg.counter();
-    typename BaseChannel::List3 l3 = BaseChannel::getList3(p);
-    if( l3.valid() == true ) {
-      // l3.dump();
-      typename BaseChannel::List3::PeerList pl = lg ? l3.lg() : l3.sh();
-      // pl.dump();
-      if( lg == false || cnt != lastmsgcnt || pl.multiExec() == true ) {
-        lastmsgcnt = cnt;
-        remote(pl,cnt);
-      }
-      return true;
-    }
-    return false;
-  }
-
-  bool process (const SensorEventMsg& msg) {
-    bool lg = msg.isLong();
-    Peer p(msg.peer());
-    uint8_t cnt = msg.counter();
-    uint8_t value = msg.value();
-    typename BaseChannel::List3 l3 = BaseChannel::getList3(p);
-    if( l3.valid() == true ) {
-      // l3.dump();
-      typename BaseChannel::List3::PeerList pl = lg ? l3.lg() : l3.sh();
-      // pl.dump();
-      sensor(pl,cnt,value);
-      return true;
-    }
-    return false;
-  }
-
-  bool process (const ActionCommandMsg& msg) {
-    return BaseChannel::process(msg);
-  }
-
 };
 
 template<class HalType,class ChannelType,int ChannelCount,int VirtualCount,class PWM,class List0Type=List0>

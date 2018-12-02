@@ -20,8 +20,8 @@ class SensorEventMsg;
 template<class HalType,class List1Type,class List3Type,class List4Type,int PeerCount,class List0Type=List0>
 class Channel {
   Device<HalType,List0Type>*   dev;
-  bool      change; // the status is changed, we may need to send a status
-  bool      inhi;
+  bool      change : 1; // the status is changed, we may need to send a status
+  bool      inhi   : 1;
   uint8_t   num   ; // channels per device
   uint16_t  addr  ; // start address in eeprom
 
@@ -252,6 +252,79 @@ public:
   }
 };
 
+template <class HalType,class List1Type,class List3Type,int PeerCount,class List0Type,class StateMachine>
+class ActorChannel : public Channel<HalType,List1Type,List3Type,EmptyList,PeerCount,List0Type>, public StateMachine {
+public:
+  typedef Channel<HalType,List1Type,List3Type,EmptyList,PeerCount,List0Type> BaseChannel;
+  uint8_t lastmsgcnt;
+
+public:
+  ActorChannel () : BaseChannel(), lastmsgcnt(0xff) {}
+  ~ActorChannel() {}
+
+  bool changed () const { return StateMachine::changed(); }
+  void changed (bool c) { StateMachine::changed(c); }
+
+  void setup(Device<HalType,List0Type>* dev,uint8_t number,uint16_t addr) {
+    BaseChannel::setup(dev,number,addr);
+    StateMachine::setup(this->getList1());
+  }
+
+  uint8_t flags () const {
+    return StateMachine::flags();
+  }
+
+  uint8_t status () const {
+    return StateMachine::status();
+  }
+
+  void stop () {
+    StateMachine::stop();
+  }
+
+  bool process (__attribute__((unused)) const ActionCommandMsg& msg) {
+    return true;
+  }
+
+  bool process (const ActionSetMsg& msg) {
+    StateMachine::set( msg.value(), msg.ramp(), msg.delay() );
+    return true;
+  }
+
+  bool process (const RemoteEventMsg& msg) {
+    bool lg = msg.isLong();
+    Peer p(msg.peer());
+    uint8_t cnt = msg.counter();
+    List3Type l3 = BaseChannel::getList3(p);
+    if( l3.valid() == true ) {
+      // l3.dump();
+      typename List3Type::PeerList pl = lg ? l3.lg() : l3.sh();
+      // pl.dump();
+      if( lg == false || cnt != lastmsgcnt || pl.multiExec() == true ) {
+        lastmsgcnt = cnt;
+        StateMachine::remote(pl,cnt);
+      }
+      return true;
+    }
+    return false;
+  }
+
+  bool process (const SensorEventMsg& msg) {
+    bool lg = msg.isLong();
+    Peer p(msg.peer());
+    uint8_t cnt = msg.counter();
+    uint8_t value = msg.value();
+    List3Type l3 = BaseChannel::getList3(p);
+    if( l3.valid() == true ) {
+      // l3.dump();
+      typename List3Type::PeerList pl = lg ? l3.lg() : l3.sh();
+      // pl.dump();
+      StateMachine::sensor(pl,cnt,value);
+      return true;
+    }
+    return false;
+  }
+};
 
 
 template <class HalType,class List0Type=List0>
