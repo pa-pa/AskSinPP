@@ -207,16 +207,13 @@ public:
     ButtonType::state(s);
     if( s == ButtonType::released ) {
       RemoteEventMsg& msg = (RemoteEventMsg&)device.message();
-      HMID self;
-      device.getDeviceID(self);
       uint8_t cnt = device.nextcount();
       msg.init(cnt,1,cnt,false,false);
-      msg.to(self);
-      msg.from(self);
+      device.getDeviceID(msg.to());
+      device.getDeviceID(msg.from());
+      msg.clearAck();
       if( device.process(msg) == false ) {
         DPRINTLN(F("No self peer. Create internal peering to toggle state!"));
-        // no self peer - use old toggle code
-        // device.channel(1).toggleState();
       }
     }
     else if( s == ButtonType::longreleased ) {
@@ -266,12 +263,11 @@ public:
   }
   RemoteEventMsg& fillMsg (bool lg) {
     RemoteEventMsg& msg = (RemoteEventMsg&)device.message();
-    HMID self;
-    device.getDeviceID(self);
     uint8_t cnt = device.nextcount();
     msg.init(cnt,num,counter,lg,false);
-    msg.to(self);
-    msg.from(self);
+    device.getDeviceID(msg.to());
+    device.getDeviceID(msg.from());
+    msg.clearAck();
     return msg;
   }
   Peer peer () const {
