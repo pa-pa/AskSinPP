@@ -138,10 +138,11 @@ class BatterySensorUni : public BatterySensor {
   uint8_t  m_SensePin; // A1
   uint8_t  m_ActivationPin; // D7
   uint8_t  m_Factor; // 57 = 470k + 100k / 10
+  uint16_t m_bandgapVoltage;
 public:
 
   BatterySensorUni () : BatterySensor (),
-  m_SensePin(SENSPIN), m_ActivationPin(ACTIVATIONPIN), m_Factor(57) {}
+  m_SensePin(SENSPIN), m_ActivationPin(ACTIVATIONPIN), m_Factor(57), m_bandgapVoltage(VCC) {}
   virtual ~BatterySensorUni () {}
 
   void init(uint32_t period,AlarmClock& clock,uint8_t factor=57) {
@@ -152,6 +153,15 @@ public:
   }
 
   virtual uint8_t voltage () {
+    if (m_bandgapVoltage == 0) {
+      ADMUX &= ~(ADMUX_REFMASK | ADMUX_ADCMASK);
+      ADMUX |= ADMUX_REF_AVCC;      // select AVCC as reference
+      ADMUX |= ADMUX_ADC_VBG;       // measure bandgap reference voltage
+      _delay_ms(350);               // a delay rather than a dummy measurement is needed to give a stable reading!
+      ADCSRA |= (1 << ADSC);        // start conversion
+      while (ADCSRA & (1 << ADSC)); // wait to finish
+      m_bandgapVoltage = 1115UL * 1024 / ADC;
+    }
     pinMode(m_ActivationPin,OUTPUT);
     digitalWrite(m_ActivationPin,LOW);
     digitalWrite(m_SensePin,LOW);
@@ -159,7 +169,7 @@ public:
     analogRead(m_SensePin);
     _delay_ms(2); // allow the ADC to stabilize
     uint32_t value = analogRead(m_SensePin);
-    uint16_t vin = (value * VCC * m_Factor) / 1024 / 1000;
+    uint16_t vin = (value * m_bandgapVoltage * m_Factor) / 1024 / 1000;
 
     digitalWrite(m_SensePin,HIGH);
     pinMode(m_ActivationPin,INPUT);
