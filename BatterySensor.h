@@ -105,7 +105,7 @@ public:
     clock.add(*this);
   }
 
-  virtual uint8_t voltage() {
+  uint16_t voltageHighRes() {
     uint16_t vcc = 0;
 #ifdef ARDUINO_ARCH_AVR
     // Read 1.1V reference against AVcc
@@ -118,15 +118,19 @@ public:
     ADCSRA |= (1 << ADSC);        // start conversion
     while (ADCSRA & (1 << ADSC)); // wait to finish
 
-    vcc = 1100UL * 1023 / ADC / 100;
+    vcc = 1100UL * 1023 / ADC;
 #elif defined ARDUINO_ARCH_STM32F1
     int millivolts = 1200 * 4096 / adc_read(ADC1, 17);  // ADC sample to millivolts
-    vcc = millivolts / 100;
+    vcc = millivolts;
 #endif
-    DPRINT(F("Bat: ")); DDECLN(vcc);
-    return (uint8_t) vcc;
+    return vcc;
   }
 
+  virtual uint8_t voltage() {
+    uint8_t vcc = voltageHighRes() / 100;
+    DPRINT(F("Bat: ")); DDECLN(vcc);
+    return vcc;
+  }
 
 };
 
@@ -169,7 +173,7 @@ public:
   }
   
   uint16_t readRefVcc () {
-     return VCC != 0 ? VCC : BatterySensor::voltage() * 100;
+     return VCC != 0 ? VCC : BatterySensor::voltageHighRes();
   }
 };
 
