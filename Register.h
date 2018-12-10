@@ -352,7 +352,7 @@ public:
   bool statusMessageTextAlignmentLeftAligned(bool v) const { return this->writeRegister(DREG_DISPLAY,0x01,7,v); }
   bool statusMessageTextAlignmentLeftAligned() const { return this->readRegister(DREG_DISPLAY, 0x01,7,false); }
   
-  uint8_t ledMode () const { return this->readRegister(DREG_LEDMODE,0x03,6,0); }
+  uint8_t ledMode () const { return this->readRegister(DREG_LEDMODE,0x03,6,1); }
   bool ledMode (uint8_t value) const { return this->writeRegister(DREG_LEDMODE,0x03,6,value); }
   bool cycleInfoMsg () const { return this->readRegister(DREG_CYCLICINFOMSG,false); }
   bool cycleInfoMsg (bool value) const { return this->writeRegister(DREG_CYCLICINFOMSG,value); }

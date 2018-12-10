@@ -225,6 +225,8 @@ public:
   bool aesActive () const { return false; }
   bool sabotageMsg () const { return false; }
   bool localResetDisable () const { return false; }
+  uint8_t ledMode () const { return 0x01; } // default LED is on
+
 
   void defaults () {
     setByte(0,0x01);

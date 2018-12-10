@@ -277,7 +277,10 @@ public:
   bool send(Message& msg) {
     bool result = false;
     uint8_t maxsend = list0.transmitDevTryMax();
-    led().set(LedStates::send);
+    bool ledmode = list0.ledMode();
+    if( ledmode == 1 ) {
+      led().set(LedStates::send);
+    }
     while( result == false && maxsend > 0 ) {
       result = radio().write(msg,msg.burstRequired());
       DPRINT(F("<- "));
@@ -309,8 +312,9 @@ public:
         DPRINT(F("waitAck: ")); DHEX((uint8_t)result); DPRINTLN(F(""));
       }
     }
-    if( result == true ) led().set(LedStates::ack);
-    else led().set(LedStates::nack);
+    if( ledmode == 1 ) {
+      led().set( result == true ? LedStates::ack : LedStates::nack);
+    }
     return result;
   }
 
