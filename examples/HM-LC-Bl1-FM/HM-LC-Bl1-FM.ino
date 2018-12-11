@@ -48,7 +48,7 @@ const struct DeviceInfo PROGMEM devinfo = {
  * Configure the used hardware
  */
 typedef AvrSPI<10,11,12,13> RadioSPI;
-typedef AskSin<StatusLed<4>,NoBattery,Radio<RadioSPI,2> > Hal;
+typedef AskSin<StatusLed<LED_PIN>,NoBattery,Radio<RadioSPI,2> > Hal;
 //typedef AskSin<StatusLed<4>,NoBattery,NoRadio> Hal;
 
 DEFREGISTER(BlindReg0,MASTERID_REGS,DREG_INTKEY,DREG_CONFBUTTONTIME,DREG_LOCALRESETDISABLE)

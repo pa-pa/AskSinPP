@@ -16,6 +16,7 @@
 #include <ThreeState.h>
 
 #define CONFIG_BUTTON_PIN 8
+#define LED_PIN           4
 
 #define RELAY1_PIN 17
 #define RELAY2_PIN 16
@@ -43,7 +44,7 @@ const struct DeviceInfo PROGMEM devinfo = {
 
 // Configure the used hardware
 typedef AvrSPI<10,11,12,13> RadioSPI;
-typedef AskSin<StatusLed<4>,NoBattery,Radio<RadioSPI,2> > Hal;
+typedef AskSin<StatusLed<LED_PIN>,NoBattery,Radio<RadioSPI,2> > Hal;
 Hal hal;
 
 DEFREGISTER(Reg0,DREG_INTKEY,DREG_CYCLICINFOMSG,MASTERID_REGS)
