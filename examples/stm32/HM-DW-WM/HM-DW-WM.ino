@@ -80,8 +80,10 @@ public:
 
   void init () {
     Ds18b20::init(ow, &temp, 1);
-    set(seconds2ticks(15));
-    sysclock.add(*this);
+    if( temp.present()==true ) {
+      set(seconds2ticks(15));
+      sysclock.add(*this);
+    }
   }
 
   virtual void trigger (AlarmClock& clock) {
@@ -105,7 +107,7 @@ void setup () {
   delay(5000);
   DINIT(57600,ASKSIN_PLUS_PLUS_IDENTIFIER);
   Wire.begin();
-  bool first = sdev.init(hal,DIMMER1_PIN,DIMMER2_PIN);
+  bool first = sdev.init(hal,DIMMER1_PIN,DIMMER2_PIN,PA2,PA9,PA8);
   buttonISR(cfgBtn,CONFIG_BUTTON_PIN);
   buttonISR(enc1,ENCODER1_SWITCH);
   enc1.init(ENCODER1_CLOCK,ENCODER1_DATA);

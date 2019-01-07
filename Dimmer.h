@@ -30,6 +30,12 @@
 #define LOGIC_INVERSMINUS 15
 #define LOGIC_INVERSMUL 16
 
+// rampos & rampoff for dimmer is refon & refoff
+#undef AS_CM_JT_RAMPON
+#define AS_CM_JT_RAMPON AS_CM_JT_REFON
+#undef AS_CM_JT_RAMPOFF
+#define AS_CM_JT_RAMPOFF AS_CM_JT_REFOFF
+
 namespace as {
 
 DEFREGISTER(DimmerReg1,CREG_AES_ACTIVE,CREG_TRANSMITTRYMAX,CREG_OVERTEMPLEVEL,
@@ -90,8 +96,8 @@ public:
 //    ssl.onTimeMode(false);
     ssl.offDelayBlink(true);
 //    ssl.offLevel(0);
-//    ssl.onMinLevel(0);
-    ssl.onLevel(201); // 201 ???
+    ssl.onMinLevel(2);
+    ssl.onLevel(200); // 201 ???
     ssl.rampStartStep(10);
     ssl.rampOnTime(10);
     ssl.rampOffTime(10);
@@ -131,8 +137,8 @@ public:
 //    ssl.onTimeMode(false);
     ssl.offDelayBlink(true);
 //    ssl.offLevel(0);
-    ssl.onMinLevel(0);
-    ssl.onLevel(201); // 201 ???
+    ssl.onMinLevel(2);
+    ssl.onLevel(200); // 201 ???
     ssl.rampStartStep(10);
     ssl.rampOnTime(10);
     ssl.rampOffTime(10);
@@ -236,9 +242,9 @@ class DimmerStateMachine {
     void init (uint32_t ramptime,uint8_t level,uint32_t dly,DimmerPeerList l=DimmerPeerList(0)) {
       DPRINT("Ramp/Level: ");DDEC(ramptime);DPRINT("/");DDECLN(level);
       // check that we start with the defined minimum
-//      if( sm.status() < lst.onMinLevel() ) {
-//        sm.updateLevel(lst.onMinLevel());
-//      }
+      if( sm.status() < lst.onMinLevel() ) {
+        sm.updateLevel(lst.onMinLevel());
+      }
       lst=l;
       destlevel = level==201 ? sm.lastonlevel : level;
       delay = dly;
@@ -291,6 +297,7 @@ class DimmerStateMachine {
   };
 
   void updateLevel (uint8_t newlevel) {
+    // DPRINT("UpdLevel: ");DDECLN(newlevel);
     level = newlevel;
   }
 
@@ -555,14 +562,14 @@ public:
   }
 
   void setLevel (uint8_t level, uint16_t ramp, uint16_t delay) {
-    //DPRINT("SetLevel: ");DHEX(level);DPRINT(" ");DHEX(ramp);DPRINT(" ");DHEXLN(delay);
+    // DPRINT("SetLevel: ");DHEX(level);DPRINT(" ");DHEX(ramp);DPRINT(" ");DHEXLN(delay);
+    sysclock.cancel(alarm);
     if( ramp==0 ) {
       alarm.destlevel=level;
       updateLevel(level);
       setState(level==0 ? AS_CM_JT_OFF : AS_CM_JT_ON, AskSinBase::intTimeCvt(delay));
     }
     else {
-      sysclock.cancel(alarm);
       alarm.init(AskSinBase::intTimeCvt(ramp), level, AskSinBase::intTimeCvt(delay));
       sysclock.add(alarm);
     }
@@ -676,10 +683,10 @@ public:
       for( uint8_t j=i; j<=ChannelCount; j+=ChannelCount/VirtualCount ) {
         DeviceType::channel(j).setPhysical(physical[i-1]);
         if( DeviceType::channel(i).getList1().powerUpAction() == true ) {
-          DeviceType::channel(i).setLevel(200,5,0xffff);
+          DeviceType::channel(i).setLevel(200,0,0xffff);
         }
         else {
-          DeviceType::channel(i).setLevel(0,5,0xffff);
+          DeviceType::channel(i).setLevel(0,0,0xffff);
         }
       }
     }
@@ -691,6 +698,7 @@ public:
       uint8_t value = (uint8_t)combineChannels(i+1);
       value = (((uint16_t)factor[i] * value) / 200);
       if( physical[i] != value ) {
+        // DPRINT("Ch: ");DDEC(i+1);DPRINT(" Phy: ");DDECLN(value);
         physical[i]  = value;
         pwms[i].set(physical[i]);
       }
