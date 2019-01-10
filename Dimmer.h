@@ -349,6 +349,7 @@ protected:
   bool         change : 1;
   bool         toggledimup : 1;
   bool         erroverheat : 1;
+  bool 		   erroroverload : 1;
   bool         errreduced : 1;
   uint8_t      level, lastonlevel;
   RampAlarm    alarm;
@@ -356,7 +357,7 @@ protected:
   DimmerList1  list1;
 
 public:
-  DimmerStateMachine() : state(AS_CM_JT_NONE), change(false), toggledimup(true), erroverheat(false), errreduced(false),
+  DimmerStateMachine() : state(AS_CM_JT_NONE), change(false), toggledimup(true), erroverheat(false), erroroverload(false), errreduced(false),
     level(0), lastonlevel(200), alarm(*this), calarm(*this), list1(0) {}
   virtual ~DimmerStateMachine () {}
 
@@ -367,6 +368,12 @@ public:
     erroverheat = value;
   }
 
+  void overload(bool value){
+	 erroroverload = value;
+  }
+  bool getoverload(){
+	  return erroroverload;
+  }
   void reduced (bool value) {
     errreduced = value;
   }
@@ -586,6 +593,11 @@ public:
     if( erroverheat == true ) {
       f |= AS_CM_EXTSTATE_OVERHEAT;
     }
+	if( erroroverload == true) {
+	  f |= AS_CM_EXTSTATE_OVERLOAD;
+	}
+
+
     if( errreduced == true ) {
       f |= AS_CM_EXTSTATE_REDUCED;
     }
@@ -804,6 +816,258 @@ public:
     return value;
   }
 
+};
+
+//Dimmer Device with dimmer channels and remote channels 
+template<class HalType,class DimChannelType,class BtnChannelType,int DimChannelCount,int DimVirtualCount,int BtnChannelCount,class PWM, class List0Type=List0>
+class DimmerAcDevice : public ChannelDevice<HalType, VirtBaseChannel<HalType, List0Type>, DimChannelCount + BtnChannelCount, List0Type> {
+   
+  
+  PWM pwms[DimChannelCount/DimVirtualCount];
+  uint8_t physical[DimChannelCount/DimVirtualCount];
+  uint8_t factor[DimChannelCount/DimVirtualCount];
+  
+  uint8_t overloadcounter = 0;
+  uint8_t counter = 0;
+  
+   class ChannelCombiner : public Alarm {
+     DimmerAcDevice<HalType,DimChannelType,BtnChannelType,DimChannelCount,DimVirtualCount,BtnChannelCount,PWM,List0Type>& dev;
+     public:
+     ChannelCombiner (DimmerAcDevice<HalType,DimChannelType,BtnChannelType,DimChannelCount,DimVirtualCount,BtnChannelCount,PWM,List0Type>& d) : Alarm(0), dev(d) {}
+     virtual ~ChannelCombiner () {}
+     virtual void trigger (AlarmClock& clock) {
+       dev.updatePhysical();
+       set(millis2ticks(10));
+       clock.add(*this);
+     }
+   } cb;
+    
+  
+  public:
+	//TODO: make generic
+    VirtChannel<HalType, DimChannelType, List0Type> dmc1,dmc2,dmc3;
+	VirtChannel<HalType, BtnChannelType, List0Type> btc1, btc2;
+	
+	
+  public:
+    typedef ChannelDevice<HalType, VirtBaseChannel<HalType, List0Type>, DimChannelCount + BtnChannelCount, List0Type> DeviceType;
+    DimmerAcDevice (const DeviceInfo& info, uint16_t addr) : DeviceType(info, addr), cb(*this) {
+		//TODO: make generic
+		DeviceType::registerChannel(btc1,1);
+		DeviceType::registerChannel(btc2,2);
+		DeviceType::registerChannel(dmc1,3);
+		DeviceType::registerChannel(dmc2,4);
+		DeviceType::registerChannel(dmc3,5);
+    }
+    virtual ~DimmerAcDevice () {}
+  
+  DimChannelType& dimChannels (uint8_t i){
+	  //TODO: make generic
+	  switch (i){
+		case 1 :  return dmc1;
+		case 2 :  return dmc2;
+		case 3 :  return dmc3;
+	  }
+  }
+    
+    BtnChannelType& btnChannels (uint8_t i) {
+	  //TODO: make generic
+	  switch (i){
+		case 1 : return btc1;
+		case 2 : return btc2;
+	  }
+    }
+    
+  
+   PWM pwm (uint8_t n) {
+     return pwms[n];
+   }
+   
+   void firstinit () {
+     DeviceType::firstinit();
+     for( uint8_t i=1; i<=DimChannelCount; ++i ) {
+       if( i <= DimChannelCount/DimVirtualCount ){
+         dimChannels(i).getList1().logicCombination(LOGIC_OR);
+       }
+       else {
+         dimChannels(i).getList1().logicCombination(LOGIC_INACTIVE);
+       }
+     }
+   }
+  
+  
+  
+  bool init (HalType& hal,...) {
+    bool first = DeviceType::init(hal);
+    va_list argp;
+    va_start(argp, hal);
+    for( uint8_t i=0; i<DimChannelCount/DimVirtualCount; ++i ) {
+      uint8_t p =  va_arg(argp, int);
+	  uint8_t z = va_arg(argp, int);
+	  bool m = va_arg(argp, int);
+      pwms[i].init(z,p,m);
+      physical[i] = 0;
+      factor[i] = 200; // 100%
+    }
+    va_end(argp);
+    initChannels();
+    cb.trigger(sysclock);
+    return first;
+  }
+  
+   
+   
+   void initChannels () {
+     for( uint8_t i=1; i<=DimChannelCount/DimVirtualCount; ++i ) {
+       for( uint8_t j=i; j<=DimChannelCount; j+=DimChannelCount/DimVirtualCount ) {
+         dimChannels(j).setPhysical(physical[i-1]);
+         if( dimChannels(i).getList1().powerUpAction() == true ) {
+           dimChannels(i).setLevel(200,0,0xffff);
+         }
+         else {
+           dimChannels(i).setLevel(0,0,0xffff);
+         }
+       }
+     }
+   }
+   
+   
+     void updatePhysical () {
+       // DPRINT("Pin ");DHEX(pin);DPRINT("  Val ");DHEXLN(calcPwm());
+       for( uint8_t i=0; i<DimChannelCount/DimVirtualCount; ++i ) {
+         uint8_t value = (uint8_t)combineChannels(i+1);
+         value = (((uint16_t)factor[i] * value) / 200);
+         if( physical[i] != value ) {
+           physical[i]  = value;
+           pwms[i].set(physical[i]);
+         }
+       }
+     }
+   
+    void setTemperature (uint16_t temp) {
+      uint8_t t = temp/10;
+      for( uint8_t i=1; i<=DimChannelCount/DimVirtualCount; ++i ) {
+        DimChannelType& c = dimChannels(i);
+        if( c.getList1().overTempLevel() <= t ) {
+          factor[i-1] = 0; // overtemp -> switch off
+          c.overheat(true);
+          c.reduced(false);
+        }
+        else if( c.getList1().reduceTempLevel() <= t ) {
+          factor[i-1] = c.getList1().reduceLevel();
+          c.overheat(false);
+          c.reduced(true);
+        }
+        else {
+          factor[i-1] = 200; // 100%
+          c.overheat(false);
+          c.reduced(false);
+        }
+      }
+    }
+
+    void setOverload (bool overloadpin=false) {
+      counter++;
+      if ( overloadpin == true){
+          overloadcounter++;
+          
+      }
+      for( uint8_t i=1; i<=DimChannelCount/DimVirtualCount; ++i ) {
+        DimChannelType& c = dimChannels(i);
+        if ( counter > 5 ){
+            if((counter - overloadcounter) <= 2 ){
+              factor[i-1] = 0;
+              c.overload(true);
+          }
+          else{
+             counter = 0;
+             overloadcounter = 0;
+          }
+          
+        }
+        else if ( c.getoverload()) {
+              c.overload(false);
+              factor[i-1] = 200;
+          }
+        }
+    }
+     
+     uint16_t combineChannels (uint8_t start) {
+       uint16_t value = 0;
+       for( uint8_t i=start; i<=DimChannelCount; i+=DimChannelCount/DimVirtualCount ) {
+         uint8_t level = dimChannels(i).status();
+         switch( dimChannels(i).getList1().logicCombination() ) {
+           default:
+           case LOGIC_INACTIVE:
+           break;
+           case LOGIC_OR:
+           value = value > level ? value : level;
+           break;
+           case LOGIC_AND:
+           value = value < level ? value : level;
+           break;
+           case LOGIC_XOR:
+           value = value==0 ? level : (level==0 ? value : 0);
+           break;
+           case LOGIC_NOR:
+           value = 200 - (value > level ? value : level);
+           break;
+           case LOGIC_NAND:
+           value = 200 - (value < level ? value : level);
+           break;
+           case LOGIC_ORINVERS:
+           level = 200 - level;
+           value = value > level ? value : level;
+           break;
+           case LOGIC_ANDINVERS:
+           level = 200 - level;
+           value = value < level ? value : level;
+           break;
+           case LOGIC_PLUS:
+           value += level;
+           if( value > 200 ) value = 200;
+           break;
+           case LOGIC_MINUS:
+           if( level > value ) value = 0;
+           else value -= level;
+           break;
+           case LOGIC_MUL:
+           value = value * level / 200;
+           break;
+           case LOGIC_PLUSINVERS:
+           level = 200 - level;
+           value += level;
+           if( value > 200 ) value = 200;
+           break;
+           break;
+           case LOGIC_MINUSINVERS:
+           level = 200 - level;
+           if( level > value ) value = 0;
+           else value -= level;
+           break;
+           case LOGIC_MULINVERS:
+           level = 200 - level;
+           value = value * level / 200;
+           break;
+           case LOGIC_INVERSPLUS:
+           value += level;
+           if( value > 200 ) value = 200;
+           value = 200 - value;
+           break;
+           case LOGIC_INVERSMINUS:
+           if( level > value ) value = 0;
+           else value -= level;
+           value = 200 - value;
+           break;
+           case LOGIC_INVERSMUL:
+           value = value * level / 200;
+           value = 200 - value;
+           break;
+         }
+       }
+       // DHEXLN(value);
+       return value;
+     }
 };
 
 }

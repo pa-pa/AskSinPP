@@ -101,6 +101,18 @@ $HMConfig::culHmChanSets{"HB-UNI-Sen-LEV-US01"} = {};
 $HMConfig::culHmRegChan {"HB-UNI-Sen-LEV-US"}   = { pairCentral=>1, lowBatLimit=>1, sendInterval=>1 };
 $HMConfig::culHmRegChan {"HB-UNI-Sen-LEV-US01"} = { distanceOffset=>1, sensorType=>1, caseDesign=>1, caseHeight=>1, caseWidth=>1, caseLength=>1 };
 
+$HMConfig::culHmModel{"F299"} = {name=>"HB-LC-Dim1TPBU-FM",st=>'dimmer',cyc=>'',rxt=>'',lst=>'1,3:3p.4p.5p,4:1p.2p',chn=>"Btn:1:2,Dim:3:3,Dim_V:4:5"};
+$HMConfig::culHmChanSets{"HB-LC-Dim1TPBU-FM00"}{fwUpdate} = "<filename>";
+$HMConfig::culHmChanSets{"HB-LC-Dim1TPBU-FM01"} = $HMConfig::culHmSubTypeSets{"THSensor"};
+$HMConfig::culHmChanSets{"HB-LC-Dim1TPBU-FM02"} = $HMConfig::culHmSubTypeSets{"THSensor"};
+$HMConfig::culHmChanSets{"HB-LC-Dim1TPBU-FM03"} = $HMConfig::culHmSubTypeSets{"dimmer"};
+$HMConfig::culHmChanSets{"HB-LC-Dim1TPBU-FM04"} = $HMConfig::culHmSubTypeSets{"dimmer"};
+$HMConfig::culHmChanSets{"HB-LC-Dim1TPBU-FM05"} = $HMConfig::culHmSubTypeSets{"dimmer"};
+$HMConfig::culHmRegChan {"HB-LC-Dim1TPBU-FM01"} = $HMConfig::culHmRegType{remote};
+$HMConfig::culHmRegChan {"HB-LC-Dim1TPBU-FM02"} = $HMConfig::culHmRegType{remote};
+$HMConfig::culHmRegModel{"HB-LC-Dim1TPBU-FM"}  = $HMConfig::culHmRegModel{"HM-LC-Dim1TPBU-FM"};
+
+
 
 sub HMConfig_AskSinPPCustom_Initialize () {
   # Log 1,"Rerun Literal reverse mapping";
