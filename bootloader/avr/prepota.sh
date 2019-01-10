@@ -24,7 +24,7 @@ function crc16 {
 BLOCKSIZE=128
 INBLOCK=0
 function blockstart {
-  if (( $INBLOCK == 0 )); then echo -n "0080"; fi
+  if (( $INBLOCK == 0 )); then printf '%04x' $BLOCKSIZE; fi
   INBLOCK=$(( ($INBLOCK+1) & ($BLOCKSIZE-1) ))
 }
 
