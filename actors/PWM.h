@@ -7,7 +7,7 @@
 #define __PWM_H__
 
 #include <Arduino.h>
-
+#include "PhaseCut.h"
 namespace as {
 
 #if ARDUINO_ARCH_AVR
@@ -36,6 +36,36 @@ public:
     analogWrite(pin,pwm);
   }
 };
+
+template<uint8_t STEPS=200>
+class ZC_Control {
+	uint8_t  outpin;
+	uint8_t  zeropin;
+	bool	 mode = false; // false = trailing-edge phase cut; true = leading-edge phase cut
+	PhaseCut phaseCut;
+	public:
+	ZC_Control () : outpin(0),zeropin(0) {}
+	~ZC_Control () {}
+		
+	void init(uint8_t z,uint8_t p,bool m) {
+    zeropin = z;
+	outpin = p;
+	mode = m;
+    phaseCut.init(zeropin, outpin, false); 
+	phaseCut.Start();
+  }
+  void set(uint8_t value){
+		if ( value > 0 ) {
+			if (!phaseCut.isrunning()){
+				phaseCut.Start();
+			}
+			phaseCut.SetDimmer(value);
+		}
+	  else{
+		phaseCut.Stop();
+	  }  
+   }
+};
 #endif
 
 #ifdef ARDUINO_ARCH_STM32F1
@@ -63,10 +93,7 @@ public:
     }
     else if (value > 0) {
       // https://diarmuid.ie/blog/pwm-exponential-led-fading-on-arduino-or-other-platforms/
-      // duty = pow(2,(value/R)) + 4;
-      // duty = pow(2,(value/20.9)+6.5);
-      // duty = pow(1.37,(value/15.0)+22.0)-500;
-      duty = pow(1.28,(value/13.0)+29.65)-1300;
+       duty = pow(2,(value/R)) + 4;
       // http://harald.studiokubota.com/wordpress/index.php/2010/09/05/linear-led-fading/index.html
       //duty = exp(value/18.0) + 4;
     }
