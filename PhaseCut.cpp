@@ -1,36 +1,46 @@
+//- -----------------------------------------------------------------------------------------------------------------------
+// AskSin++
+// 2017-03-29 papa Creative Commons - http://creativecommons.org/licenses/by-nc-sa/3.0/de/
+// 2019-01-11 scuba82: highly inspired by https://github.com/blackhack/ArduLibraries/tree/master/DimmerOne
+//- -----------------------------------------------------------------------------------------------------------------------
+/*
+	Fires an interrupt, each time the zero-cross detection pin changes. Output pin will be held up high (trailing-edge phase cut) for a certain time,
+	correspondig to the called dim value. The pre defined values are calculated for 50Hz mains, 8Mhz CPU frequence and a prescaler of 1024.
+	PHASECUTMODE == 1 -> leading-edge phase cut; PHASECUTMODE == 0 	trailing-edge phase cut
+*/
+
 #include "PhaseCut.h"
 
 
-PhaseCut phasecut;
+PhaseCut phaseCut;
 
 PhaseCut::PhaseCut()
 {
     isInit = false;
-	delaycount = 0;
 }
 
-void PhaseCut::init(uint8_t zero_crossing_pin, uint8_t output_pin, bool mode)
+void PhaseCut::init(uint8_t output_pin)
 {
     if (isInit)
         return;
     isInit = true;
-
-    ZERO_CROSS_PIN = zero_crossing_pin;
+    ZERO_CROSS_PIN = ZEROPIN;
     OUTPUT_PIN = output_pin;
-	_mode = mode;
+    _timer = 0;
 	running = false;
 
     pinMode(OUTPUT_PIN, OUTPUT);
     pinMode(ZERO_CROSS_PIN, INPUT);
-    // Arduino have some default options in init() that we dont want (this may broken further calls to analogWrite())
+
     TCCR2A = 0;
     TCCR2B = 0;
+
     uint8_t oldSREG = SREG;
     cli();
-    CalcDelay();
+    SetTimer();
     SREG = oldSREG;
-    // Enable COMPA and COMPB interruptions of TIMER1
-    TIMSK2 |= (1 << OCIE2A) | (1 << OCIE2B);
+
+    TIMSK2 |= (1 << OCIE2A);     // Enable COMPA and COMPB interruptions of TIMER2
     _valid_zero_crossing = true;
 }
 
@@ -38,57 +48,51 @@ bool PhaseCut::Start()
 {
     if (!isInit)
         return false;
-
     uint8_t oldSREG = SREG;
     cli();
-    CalcDelay();
     SREG = oldSREG;
     attachInterrupt(digitalPinToInterrupt(ZERO_CROSS_PIN), ZeroCrossEventCaller, CHANGE);
 	running = true;
     return true;
 }
+
 bool PhaseCut::Stop()
 {
     if (!isInit)
         return false;
-
     detachInterrupt(digitalPinToInterrupt(ZERO_CROSS_PIN));
 	digitalWrite(OUTPUT_PIN, LOW);
 	running = false;
     return false;
 }
+
 bool PhaseCut::isrunning()
 {
 	return running;
 }
-bool PhaseCut::SetDimmer(uint8_t value)
+bool PhaseCut::SetDimValue(double value)
 {
     if (!isInit)
         return false;
-    _dim_value = value;
+	_timer = value;
+	 
     return true;
 }
 
-void PhaseCut::CalcDelay()
+void PhaseCut::SetTimer()
 {
-	if (_mode){
-		delaycount = map(_dim_value,0,200,75,7);
-		OCR2A = delaycount;
-	}
-	else{
-		delaycount = map(_dim_value,0,200,7,75);
-		OCR2A = delaycount; 
-	}
+        OCR2A = _timer; 
 }
 
 void ZeroCrossEventCaller()
 {
-    phasecut.ZeroCrossEvent();
+    phaseCut.ZeroCrossEvent();
 }
+
 
 ISR(TIMER2_COMPA_vect)
 {
-    phasecut.ComparatorAEvent();
+    phaseCut.CmpAEvent();
 }
 
 void PhaseCut::ZeroCrossEvent()
@@ -96,26 +100,30 @@ void PhaseCut::ZeroCrossEvent()
     if (!_valid_zero_crossing)
         return;
     _valid_zero_crossing = false;
-	if (_mode){
-		if ( _dim_value > 0 ) digitalWrite(OUTPUT_PIN, LOW);
-	}
-	else{
-		if ( _dim_value > 0 ) digitalWrite(OUTPUT_PIN, HIGH);
-	}
-    TCNT2 = 0;
-    TCCR2B |= (1 << WGM21) | (1 << CS20) | (1 << CS21) | (1 << CS22) ;     // Enable/start CTC and set prescaler to 1024
-
+	phaseCut.Fire();
+    TCNT2 = 0;   // Restart counter (no need to call cli() inside an ISR)
+    TCCR2B |= (1 << WGM21) | (1 << CS20) | (1 << CS21) | (1 << CS22) ; // Enable/start CTC and set prescaler to 1024
 }
 
-void PhaseCut::ComparatorAEvent()
-{	
-		if (_mode){
-			digitalWrite(OUTPUT_PIN, HIGH);
-		}
-		else{
-			digitalWrite(OUTPUT_PIN, LOW);
-		}
+void PhaseCut::Fire()
+{
+			#if PHASECUTMODE == 1
+				digitalWrite(OUTPUT_PIN, LOW);
+			#else
+				if ( _timer > 0 ) digitalWrite(OUTPUT_PIN, HIGH);
+			#endif
+	
+}
+
+void PhaseCut::CmpAEvent()
+{
+			#if PHASECUTMODE == 1
+				if ( _timer < 75 )digitalWrite(OUTPUT_PIN, HIGH);
+			#else
+				digitalWrite(OUTPUT_PIN, LOW);
+			#endif
+			
 		TCCR2B = 0; // Disable/stop CTC
-		CalcDelay();
-		_valid_zero_crossing = true; // Next zero cross is a valid one
+		SetTimer();
+		_valid_zero_crossing = true;
 }

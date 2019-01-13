@@ -5,34 +5,41 @@
 // 2019-01-10 scuba82 Creative Commons - http://creativecommons.org/licenses/by-nc-sa/3.0/de/
 //- -----------------------------------------------------------------------------------------------------------------------
 
+// Creates a HM-LC-Dim1TPBU like device, both buttons can be used as remote 
+
 // define this to read the device id, serial and device type from bootloader section
 // #define USE_OTA_BOOTLOADER
 
 // Arduino IDE Settings
-// use support for 644PA from MightyCore: https://github.com/MCUdude/MightyCore
+// use support for 644 from MightyCore: https://github.com/MCUdude/MightyCore
+// developed and tested on original HM-LC-Dim1TPBU-FM hardware 
 // settings:
 // Board:        ATMega644
 // Pinout:       Standard
 // Clock:        8MHz external
 // Variant:      644
-// BOD:          2.7V
+// BOD:          disabled
 // Compiler LTO: Enabled
 
+//suppress DEBUG output over serial
 #define NDEBUG
 
+// configure to use external EEProm 24c32 over I2C 
+#define STORAGEDRIVER at24cX<0x50,128,32> 
+
 #define EI_NOTEXTERNAL
+#include <Wire.h>
 #include <EnableInterrupt.h>
 #include <AskSinPP.h>
 #include <Dimmer.h>
 #include <Remote.h>
 #include <MultiChannelDevice.h>
-#include <Sensors.h>
 #include <Sensors/Ntc.h>
 
-// PIN definitions
+// PIN definitions like on HM-LC-Dim1TPBU-FM
 #define DIMMERPIN          22  //PC6
-#define BTN_PIN_1          23  //8  //PD0(RxD)
-#define BTN_PIN_2          12  //PD4 
+#define BTN_PIN_1          12  //PD4
+#define BTN_PIN_2           8  //PD0(RxD)
 #define LED_PIN             0  //PB0
 #define CONFIG_BUTTON_PIN  15  //PD7
 #define GDO0_PIN           10  //PD2
@@ -48,7 +55,7 @@
 #define NTC_OVERSAMPLING 2 // number of additional bits by oversampling (should be between 0 and 6, highly increases number of measurements)
 
 // Phase Cut mode 
-#define PHASECUT_MODE false // false = trailing-edge phase cut; true = leading-edge phase cut
+#define PHASECUTMODE 0 // 0 = trailing-edge phase cut; 1 = leading-edge phase cut
 
 // number of available peers per channel
 #define PEERS_PER_DimChannel     4
@@ -62,7 +69,7 @@ const struct DeviceInfo PROGMEM devinfo = {
     {0x11,0x12,0x99},       // Device ID
     "scub111299",           // Device Serial
     {0xF2,0x99},            // Device Model
-    0x25,                   // Firmware Version
+    0x33,                   // Firmware Version
     as::DeviceType::Dimmer, // Device Type
     {0x01,0x00}             // Info Bytes
 };
@@ -75,7 +82,7 @@ typedef StatusLed<LED_PIN> LedType;
 typedef AskSin<LedType, NoBattery, RadioType> Hal;
 Hal hal;
 
-DEFREGISTER(Reg0, MASTERID_REGS, DREG_INTKEY, DREG_CYCLICINFOMSG)
+DEFREGISTER(Reg0, MASTERID_REGS, DREG_INTKEY, DREG_CYCLICINFOMSG,DREG_LOCALRESETDISABLE)
 class DmList0 : public RegList0<Reg0> {
   public:
     DmList0(uint16_t addr) : RegList0<Reg0>(addr) {}
@@ -87,9 +94,7 @@ class DmList0 : public RegList0<Reg0> {
 
 typedef DimmerChannel<Hal, PEERS_PER_DimChannel, DmList0> DimChannel;
 typedef RemoteChannel<Hal, PEERS_PER_RemoteChannel, DmList0> BtnChannel;
-typedef DimmerAcDevice<Hal, DimChannel, BtnChannel, 3, 3, 2, ZC_Control<>, DmList0> DimDevice;
-
-
+typedef DimmerRemoteDevice<Hal, DimChannel, BtnChannel, 3, 3, 2, ZC_Control<>, DmList0> DimDevice;
 
 DimDevice sdev(devinfo, 0x20);
 ConfigButton<DimDevice> cfgBtn(sdev);
@@ -97,9 +102,11 @@ ConfigButton<DimDevice> cfgBtn(sdev);
 class OverloadSens : public Alarm {
   uint8_t overloadcount = 0;
   uint8_t counter;
+  
   public:
   OverloadSens () : Alarm(0) {}
   virtual ~OverloadSens () {}
+  
   void init () {
     pinMode(LOADPIN,INPUT);
     set(seconds2ticks(15));
@@ -129,7 +136,6 @@ class TempSens : public Alarm {
 
   virtual void trigger (AlarmClock& clock) {
     ntc.measure();
-    DPRINT("Temp: ");DDECLN(ntc.temperature());
     sdev.setTemperature(ntc.temperature());
     set(seconds2ticks(2));
     clock.add(*this);
@@ -142,24 +148,23 @@ void initPeerings (bool first) {
   if ( first == true ) {
     HMID devid;
     sdev.getDeviceID(devid);
-    sdev.dimChannels(3).peer(Peer(devid, 1), Peer(devid, 2));
+    sdev.dimChannels(1).peer(Peer(devid, 1), Peer(devid, 2));
     sdev.btnChannels(1).peer(Peer(devid, 3));
-	sdev.btnChannels(2).peer(Peer(devid, 3));
+	  sdev.btnChannels(2).peer(Peer(devid, 3));
   }
 }
 
 void setup () {
   DINIT(57600, ASKSIN_PLUS_PLUS_IDENTIFIER);
-  bool first = sdev.init(hal,DIMMERPIN,ZEROPIN,PHASECUT_MODE);
-  sdev.firstinit();
-
+  Wire.begin();
+  bool first = sdev.init(hal,DIMMERPIN);
   remoteChannelISR(sdev.btnChannels(1), BTN_PIN_1);
   remoteChannelISR(sdev.btnChannels(2), BTN_PIN_2);
   buttonISR(cfgBtn, CONFIG_BUTTON_PIN);
   tempsensor.init();
   overload.init();
   initPeerings(first);
-
+  storage().store();
   sdev.initDone();
 }
 

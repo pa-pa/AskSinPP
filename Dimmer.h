@@ -35,7 +35,6 @@
 #define AS_CM_JT_RAMPON AS_CM_JT_REFON
 #undef AS_CM_JT_RAMPOFF
 #define AS_CM_JT_RAMPOFF AS_CM_JT_REFOFF
-
 namespace as {
 
 DEFREGISTER(DimmerReg1,CREG_AES_ACTIVE,CREG_TRANSMITTRYMAX,CREG_OVERTEMPLEVEL,
@@ -297,7 +296,7 @@ class DimmerStateMachine {
   };
 
   void updateLevel (uint8_t newlevel) {
-    // DPRINT("UpdLevel: ");DDECLN(newlevel);
+	// DPRINT("UpdLevel: ");DDECLN(newlevel);
     level = newlevel;
   }
 
@@ -367,7 +366,6 @@ public:
   void overheat(bool value) {
     erroverheat = value;
   }
-
   void overload(bool value){
 	 erroroverload = value;
   }
@@ -383,7 +381,7 @@ public:
   }
 
   virtual void switchState(__attribute__ ((unused)) uint8_t oldstate,uint8_t newstate,__attribute__ ((unused)) uint32_t stateDelay) {
-    // DPRINT("Dimmer State: ");DHEX(oldstate);DPRINT(" -> ");DHEX(newstate);DPRINT("  Level: ");DHEXLN(level);
+   //  DPRINT("Dimmer State: ");DHEX(oldstate);DPRINT(" -> ");DHEX(newstate);DPRINT("  Level: ");DHEXLN(level);
     if( newstate == AS_CM_JT_ON ) {
       lastonlevel = level;
     }
@@ -569,7 +567,7 @@ public:
   }
 
   void setLevel (uint8_t level, uint16_t ramp, uint16_t delay) {
-    // DPRINT("SetLevel: ");DHEX(level);DPRINT(" ");DHEX(ramp);DPRINT(" ");DHEXLN(delay);
+   // DPRINT("SetLevel: ");DHEX(level);DPRINT(" ");DHEX(ramp);DPRINT(" ");DHEXLN(delay);
     sysclock.cancel(alarm);
     if( ramp==0 ) {
       alarm.destlevel=level;
@@ -577,6 +575,7 @@ public:
       setState(level==0 ? AS_CM_JT_OFF : AS_CM_JT_ON, AskSinBase::intTimeCvt(delay));
     }
     else {
+		
       alarm.init(AskSinBase::intTimeCvt(ramp), level, AskSinBase::intTimeCvt(delay));
       sysclock.add(alarm);
     }
@@ -596,8 +595,6 @@ public:
 	if( erroroverload == true) {
 	  f |= AS_CM_EXTSTATE_OVERLOAD;
 	}
-
-
     if( errreduced == true ) {
       f |= AS_CM_EXTSTATE_REDUCED;
     }
@@ -632,6 +629,7 @@ public:
     }
   }
 };
+
 
 template<class HalType,class ChannelType,int ChannelCount,int VirtualCount,class PWM,class List0Type=List0>
 class DimmerDevice : public MultiChannelDevice<HalType,ChannelType,ChannelCount,List0Type> {
@@ -679,8 +677,8 @@ public:
     va_list argp;
     va_start(argp, hal);
     for( uint8_t i=0; i<ChannelCount/VirtualCount; ++i ) {
-      uint8_t p =  va_arg(argp, int);
-      pwms[i].init(p);
+		  uint8_t p =  va_arg(argp, int);
+		  pwms[i].init(p);
       physical[i] = 0;
       factor[i] = 200; // 100%
     }
@@ -820,7 +818,7 @@ public:
 
 //Dimmer Device with dimmer channels and remote channels 
 template<class HalType,class DimChannelType,class BtnChannelType,int DimChannelCount,int DimVirtualCount,int BtnChannelCount,class PWM, class List0Type=List0>
-class DimmerAcDevice : public ChannelDevice<HalType, VirtBaseChannel<HalType, List0Type>, DimChannelCount + BtnChannelCount, List0Type> {
+class DimmerRemoteDevice : public ChannelDevice<HalType, VirtBaseChannel<HalType, List0Type>, DimChannelCount + BtnChannelCount, List0Type> {
    
   
   PWM pwms[DimChannelCount/DimVirtualCount];
@@ -831,9 +829,9 @@ class DimmerAcDevice : public ChannelDevice<HalType, VirtBaseChannel<HalType, Li
   uint8_t counter = 0;
   
    class ChannelCombiner : public Alarm {
-     DimmerAcDevice<HalType,DimChannelType,BtnChannelType,DimChannelCount,DimVirtualCount,BtnChannelCount,PWM,List0Type>& dev;
+     DimmerRemoteDevice<HalType,DimChannelType,BtnChannelType,DimChannelCount,DimVirtualCount,BtnChannelCount,PWM,List0Type>& dev;
      public:
-     ChannelCombiner (DimmerAcDevice<HalType,DimChannelType,BtnChannelType,DimChannelCount,DimVirtualCount,BtnChannelCount,PWM,List0Type>& d) : Alarm(0), dev(d) {}
+     ChannelCombiner (DimmerRemoteDevice<HalType,DimChannelType,BtnChannelType,DimChannelCount,DimVirtualCount,BtnChannelCount,PWM,List0Type>& d) : Alarm(0), dev(d) {}
      virtual ~ChannelCombiner () {}
      virtual void trigger (AlarmClock& clock) {
        dev.updatePhysical();
@@ -848,10 +846,11 @@ class DimmerAcDevice : public ChannelDevice<HalType, VirtBaseChannel<HalType, Li
     VirtChannel<HalType, DimChannelType, List0Type> dmc1,dmc2,dmc3;
 	VirtChannel<HalType, BtnChannelType, List0Type> btc1, btc2;
 	
+
 	
   public:
     typedef ChannelDevice<HalType, VirtBaseChannel<HalType, List0Type>, DimChannelCount + BtnChannelCount, List0Type> DeviceType;
-    DimmerAcDevice (const DeviceInfo& info, uint16_t addr) : DeviceType(info, addr), cb(*this) {
+    DimmerRemoteDevice (const DeviceInfo& info, uint16_t addr) : DeviceType(info, addr), cb(*this) {
 		//TODO: make generic
 		DeviceType::registerChannel(btc1,1);
 		DeviceType::registerChannel(btc2,2);
@@ -859,7 +858,7 @@ class DimmerAcDevice : public ChannelDevice<HalType, VirtBaseChannel<HalType, Li
 		DeviceType::registerChannel(dmc2,4);
 		DeviceType::registerChannel(dmc3,5);
     }
-    virtual ~DimmerAcDevice () {}
+    virtual ~DimmerRemoteDevice () {}
   
   DimChannelType& dimChannels (uint8_t i){
 	  //TODO: make generic
@@ -902,12 +901,10 @@ class DimmerAcDevice : public ChannelDevice<HalType, VirtBaseChannel<HalType, Li
     va_list argp;
     va_start(argp, hal);
     for( uint8_t i=0; i<DimChannelCount/DimVirtualCount; ++i ) {
-      uint8_t p =  va_arg(argp, int);
-	  uint8_t z = va_arg(argp, int);
-	  bool m = va_arg(argp, int);
-      pwms[i].init(z,p,m);
-      physical[i] = 0;
-      factor[i] = 200; // 100%
+		  uint8_t p =  va_arg(argp, int);
+		  pwms[i].init(p);
+		  physical[i] = 0;
+		  factor[i] = 200; // 100%
     }
     va_end(argp);
     initChannels();
@@ -969,27 +966,25 @@ class DimmerAcDevice : public ChannelDevice<HalType, VirtBaseChannel<HalType, Li
     void setOverload (bool overloadpin=false) {
       counter++;
       if ( overloadpin == true){
-          overloadcounter++;
-          
+          overloadcounter++;  
       }
       for( uint8_t i=1; i<=DimChannelCount/DimVirtualCount; ++i ) {
         DimChannelType& c = dimChannels(i);
         if ( counter > 5 ){
             if((counter - overloadcounter) <= 2 ){
-              factor[i-1] = 0;
+              factor[i-1] = 0; // overload -> switch off
               c.overload(true);
-          }
-          else{
-             counter = 0;
-             overloadcounter = 0;
-          }
-          
-        }
-        else if ( c.getoverload()) {
+			}
+			else{
+				counter = 0;
+				overloadcounter = 0;
+			}  
+		}
+        else if ( c.getoverload()) { 
               c.overload(false);
-              factor[i-1] = 200;
-          }
-        }
+              factor[i-1] = 200; // recover from overload
+         }
+       }
     }
      
      uint16_t combineChannels (uint8_t start) {
