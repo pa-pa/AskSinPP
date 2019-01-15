@@ -277,78 +277,48 @@ public:
   }
 };
 
-template<class DeviceType>
-class Encoder : public InternalButton<DeviceType> {
-
-  class EncAlarm : public Alarm {
-    Encoder& enc;
-  public:
-    EncAlarm (Encoder& e) : Alarm(0), enc(e) {
-      async(true);
-    }
-    virtual void trigger (AlarmClock& clock) {
-      enc.checkPins();
-      start(clock);
-    }
-    void start (AlarmClock& clock) {
-      set(millis2ticks(5));
-      clock.add(*this);
-    }
-    void stop (AlarmClock& clock) {
-      clock.cancel(*this);
-    }
-  };
-
-  static int8_t table(int index) {
-    // https://www.mikrocontroller.net/articles/Drehgeber
-    const int8_t encoder_table[16] PROGMEM = {0,0,-1,0,0,0,0,1,1,0,0,0,0,-1,0,0};
-    return pgm_read_byte(&encoder_table[index]);
+class BaseEncoder {
+  int8_t  counter;
+  uint8_t datapin;
+public:
+  BaseEncoder () : counter(0), datapin(0) {}
+  void encirq () {
+    uint8_t data = digitalRead(datapin);
+    counter += data == LOW ? 1 : -1;
   }
+  void init (uint8_t cpin,uint8_t dpin) {
+    pinMode(cpin, INPUT_PULLUP);
+    pinMode(dpin, INPUT_PULLUP);
+    datapin = dpin;
+  }
+  int8_t read () {
+    int8_t result;
+    ATOMIC_BLOCK( ATOMIC_RESTORESTATE )
+    {
+      result = counter;
+      counter = 0;
+    }
+    return result;
+  }
+};
 
-  int8_t last;
-  volatile int8_t delta;
-  uint8_t clkpin, dtpin;
-  EncAlarm alarm;
+template<class DeviceType>
+class InternalEncoder : public InternalButton<DeviceType>, public BaseEncoder {
 
 public:
-  Encoder (DeviceType& dev,uint8_t num) : InternalButton<DeviceType>(dev,num), last(0), delta(0), clkpin(0), dtpin(0), alarm(*this) {};
-  virtual ~Encoder () {};
-
-  bool checkPins () {
-    int8_t ll=0;
-    if (digitalRead(clkpin)) ll |=2;
-    if (digitalRead(dtpin))  ll |=1;
-    last = ((last << 2)  & 0x0F) | ll;
-    delta += table(last);
-    return delta != 0;
-  }
+  InternalEncoder (DeviceType& dev,uint8_t num) : InternalButton<DeviceType>(dev,num), BaseEncoder() {};
+  virtual ~InternalEncoder () {};
 
   void init (uint8_t sw) {
     InternalButton<DeviceType>::init(sw);
   }
-
-  void init (uint8_t clk,uint8_t dt) {
-    clkpin = clk;
-    dtpin = dt;
-    pinMode(clkpin, INPUT);
-    pinMode(dtpin, INPUT);
-    alarm.start(sysclock);
+  void init (uint8_t cpin,uint8_t dpin) {
+    BaseEncoder::init(cpin,dpin);
   }
-
-  int8_t read () {
-    int8_t val=0;
-    ATOMIC_BLOCK( ATOMIC_RESTORESTATE )
-    {
-      val = delta;
-      delta = val & 1;
-    }
-    return val >> 1;
-  }
-
   template<class ChannelType>
   void process (ChannelType& channel) {
     int8_t dx = read();
-    if( dx != 0 && channel.status() != 0 ) {
+    if( dx != 0 ) {
       typename ChannelType::List3 l3 = channel.getList3(this->peer());
       if( l3.valid() ) {
         if( dx > 0 ) channel.dimUp(l3.sh());
@@ -367,6 +337,16 @@ if( digitalPinToInterrupt(pin) == NOT_AN_INTERRUPT ) \
   enableInterrupt(pin,btn##ISRHandler::isr,CHANGE); \
 else \
   attachInterrupt(digitalPinToInterrupt(pin),btn##ISRHandler::isr,CHANGE);
+
+#define encoderISR(enc,clkpin,datapin) class enc##ENCISRHandler { \
+  public: \
+  static void isr () { enc.encirq(); } \
+}; \
+enc.init(clkpin,datapin); \
+if( digitalPinToInterrupt(clkpin) == NOT_AN_INTERRUPT ) \
+  enableInterrupt(clkpin,enc##ENCISRHandler::isr,FALLING); \
+else \
+  attachInterrupt(digitalPinToInterrupt(clkpin),enc##ENCISRHandler::isr,FALLING);
 
 }
 

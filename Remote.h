@@ -84,6 +84,39 @@ public:
   }
 };
 
+template<class DeviceType,int DownChannel,int UpChannel>
+class RemoteEncoder : public BaseEncoder, public Alarm {
+  int8_t last;
+  DeviceType& sdev;
+public:
+  RemoteEncoder(DeviceType& d) : BaseEncoder(), Alarm(0), last(0), sdev(d) {}
+  virtual ~RemoteEncoder() {}
+
+  void process () {
+    int8_t dir = read();
+    if( dir != 0 ) {
+      if( dir < 0 ) dir = -1;
+      else          dir =  1;
+      sysclock.cancel(*this);
+      if( last != 0 && last != dir ) {
+        trigger(sysclock);
+      }
+      sdev.channel(dir < 0 ? DownChannel : UpChannel).state(StateButton<>::longpressed);
+      set(millis2ticks(400));
+      last = dir;
+      sysclock.add(*this);
+    }
+  }
+
+  virtual void trigger (__attribute__((unused)) AlarmClock& clock) {
+    if( last != 0 ) {
+      sdev.channel(last < 0 ? DownChannel : UpChannel).state(StateButton<>::longreleased);
+      last = 0;
+    }
+  }
+};
+
+
 #define remoteISR(device,chan,pin) class device##chan##ISRHandler { \
   public: \
   static void isr () { device.channel(chan).irq(); } \

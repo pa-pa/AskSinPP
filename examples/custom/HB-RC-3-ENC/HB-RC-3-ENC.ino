@@ -4,7 +4,7 @@
 //- -----------------------------------------------------------------------------------------------------------------------
 
 // define this to read the device id, serial and device type from bootloader section
-#define USE_OTA_BOOTLOADER
+// #define USE_OTA_BOOTLOADER
 
 #define EI_NOTEXTERNAL
 #include <EnableInterrupt.h>
@@ -19,8 +19,8 @@
 #define CONFIG_BUTTON_PIN 8
 // Arduino pins for the buttons
 #define BTN1_PIN 14  // A0
-#define ENC1_PIN 15  // A1
-#define ENC2_PIN 16  // A2
+#define CLK_PIN  15  // A1
+#define DATA_PIN 16  // A2
 
 
 // number of available peers per channel
@@ -73,56 +73,14 @@ typedef MultiChannelDevice<Hal,ChannelType,3> RemoteType;
 Hal hal;
 RemoteType sdev(devinfo,0x20);
 ConfigButton<RemoteType> cfgBtn(sdev);
-
-class RemoteEncoder : public Alarm {
-
-  uint8_t direction, lastdir;
-
-public:
-  RemoteEncoder() : Alarm(0), direction(0), lastdir(0) {}
-  virtual ~RemoteEncoder() {}
-
-  void isr() {
-    uint8_t data = digitalRead(ENC1_PIN);
-    direction = data == LOW ? 1 : 2;
-  }
-
-  void process () {
-    if( direction != 0 ) {
-      sysclock.cancel(*this);
-      if( lastdir != 0 && lastdir != direction ) {
-        trigger(sysclock);
-      }
-      sdev.channel(direction == 1 ? 2 : 3).state(StateButton<>::longpressed);
-      set(millis2ticks(400));
-      lastdir = direction;
-      sysclock.add(*this);
-      direction = 0;
-    }
-  }
-
-  virtual void trigger (AlarmClock& clock) {
-    if( lastdir != 0 ) {
-      sdev.channel(lastdir == 1 ? 2 : 3).state(StateButton<>::longreleased);
-      lastdir = 0;
-    }
-  }
-};
-
-RemoteEncoder encoder;
-void encIsr () {
-  encoder.isr();
-}
+RemoteEncoder<RemoteType,2,3> enc(sdev);
 
 void setup () {
   DINIT(57600,ASKSIN_PLUS_PLUS_IDENTIFIER);
   sdev.init(hal);
-  remoteISR(sdev,1,BTN1_PIN);
   buttonISR(cfgBtn,CONFIG_BUTTON_PIN);
-
-  sdev.channel(2).init(ENC1_PIN);
-  sdev.channel(3).init(ENC2_PIN);
-  enableInterrupt(ENC2_PIN,encIsr,FALLING);
+  remoteISR(sdev,1,BTN1_PIN);
+  encoderISR(enc,CLK_PIN,DATA_PIN);
 
   sdev.initDone();
 }
@@ -130,7 +88,7 @@ void setup () {
 void loop() {
   bool worked = hal.runready();
   bool poll = sdev.pollRadio();
-  encoder.process();
+  enc.process();
   if( worked == false && poll == false ) {
     hal.activity.savePower<Sleep<>>(hal);
   }

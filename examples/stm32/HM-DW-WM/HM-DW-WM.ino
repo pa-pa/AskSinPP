@@ -68,8 +68,8 @@ HalType hal;
 DimmerType sdev(devinfo,0x20);
 DimmerControl<HalType,DimmerType,PWM16<> > control(sdev);
 ConfigButton<DimmerType> cfgBtn(sdev);
-Encoder<DimmerType> enc1(sdev,1);
-Encoder<DimmerType> enc2(sdev,2);
+InternalEncoder<DimmerType> enc1(sdev,1);
+InternalEncoder<DimmerType> enc2(sdev,2);
 
 class TempSens : public Alarm {
   Ds18b20  temp;
@@ -111,9 +111,9 @@ void setup () {
   bool first = control.init(hal,DIMMER1_PIN,DIMMER2_PIN,PA2,PA9,PA8);
   buttonISR(cfgBtn,CONFIG_BUTTON_PIN);
   buttonISR(enc1,ENCODER1_SWITCH);
-  enc1.init(ENCODER1_CLOCK,ENCODER1_DATA);
+  encoderISR(enc1,ENCODER1_CLOCK,ENCODER1_DATA);
   buttonISR(enc2,ENCODER2_SWITCH);
-  enc2.init(ENCODER2_CLOCK,ENCODER2_DATA);
+  encoderISR(enc2,ENCODER2_CLOCK,ENCODER2_DATA);
 
   if( first == true ) {
     sdev.channel(1).peer(enc1.peer());
@@ -134,8 +134,6 @@ void setup () {
 }
 
 void loop () {
-  HMID devid;
-  sdev.getDeviceID(devid);
   enc1.process<ChannelType>(sdev.channel(1));
   enc2.process<ChannelType>(sdev.channel(2));
 
