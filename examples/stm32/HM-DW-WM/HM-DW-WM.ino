@@ -62,10 +62,11 @@ const struct DeviceInfo PROGMEM devinfo = {
 typedef LibSPI<PA4> RadioSPI;
 typedef AskSin<StatusLed<LED_BUILTIN>,NoBattery,Radio<RadioSPI,PB0> > HalType;
 typedef DimmerChannel<HalType,PEERS_PER_CHANNEL> ChannelType;
-typedef DimmerDevice<HalType,ChannelType,6,3,PWM16<> > DimmerType;
+typedef DimmerDevice<HalType,ChannelType,6,1> DimmerType;
 
 HalType hal;
 DimmerType sdev(devinfo,0x20);
+DimmerControl<HalType,DimmerType,PWM16<> > control(sdev);
 ConfigButton<DimmerType> cfgBtn(sdev);
 Encoder<DimmerType> enc1(sdev,1);
 Encoder<DimmerType> enc2(sdev,2);
@@ -94,7 +95,7 @@ public:
     else {
       temp.read();
       DPRINT("Temp: ");DDECLN(temp.temperature());
-      sdev.setTemperature(temp.temperature());
+      control.setTemperature(temp.temperature());
       set(seconds2ticks(60));
     }
     measure = !measure;
@@ -107,7 +108,7 @@ void setup () {
   delay(5000);
   DINIT(57600,ASKSIN_PLUS_PLUS_IDENTIFIER);
   Wire.begin();
-  bool first = sdev.init(hal,DIMMER1_PIN,DIMMER2_PIN,PA2,PA9,PA8);
+  bool first = control.init(hal,DIMMER1_PIN,DIMMER2_PIN,PA2,PA9,PA8);
   buttonISR(cfgBtn,CONFIG_BUTTON_PIN);
   buttonISR(enc1,ENCODER1_SWITCH);
   enc1.init(ENCODER1_CLOCK,ENCODER1_DATA);

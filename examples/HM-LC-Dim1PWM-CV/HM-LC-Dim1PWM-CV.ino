@@ -48,15 +48,16 @@ typedef Radio<SPIType,2> RadioType;
 typedef StatusLed<LED_PIN> LedType;
 typedef AskSin<LedType,NoBattery,RadioType> HalType;
 typedef DimmerChannel<HalType,PEERS_PER_CHANNEL> ChannelType;
-typedef DimmerDevice<HalType,ChannelType,3,3,PWM8<> > DimmerType;
+typedef DimmerDevice<HalType,ChannelType,3,3> DimmerType;
 
 HalType hal;
 DimmerType sdev(devinfo,0x20);
+DimmerControl<HalType,DimmerType,PWM8<> > control(sdev);
 ConfigToggleButton<DimmerType> cfgBtn(sdev);
 
 void setup () {
   DINIT(57600,ASKSIN_PLUS_PLUS_IDENTIFIER);
-  if( sdev.init(hal,DIMMER_PIN) ) {
+  if( control.init(hal,DIMMER_PIN) ) {
     // first init - setup connection between config button and first channel
     sdev.channel(1).peer(cfgBtn.peer());
   }

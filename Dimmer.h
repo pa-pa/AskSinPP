@@ -242,7 +242,7 @@ class DimmerStateMachine {
     void init (uint32_t ramptime,uint8_t level,uint32_t dly,DimmerPeerList l=DimmerPeerList(0)) {
       DPRINT("Ramp/Level: ");DDEC(ramptime);DPRINT("/");DDECLN(level);
       // check that we start with the defined minimum
-      if( sm.status() < lst.onMinLevel() ) {
+      if( lst.valid() && sm.status() < lst.onMinLevel() ) {
         sm.updateLevel(lst.onMinLevel());
       }
       lst=l;
@@ -266,7 +266,7 @@ class DimmerStateMachine {
         dx = uint8_t(diff / (ramptime > 0 ? ramptime : 1));
       }
       set(tack);
-//      DPRINT("Dx/Tack: ");DDEC(dx);DPRINT("/");DDECLN(tack);
+      //DPRINT("Level/Dx/Tack: ");DDEC(curlevel);DPRINT("/");DDEC(dx);DPRINT("/");DDECLN(tack);
     }
     virtual void trigger (AlarmClock& clock) {
       uint8_t curlevel = sm.status();
@@ -621,52 +621,70 @@ public:
   }
 };
 
-template<class HalType,class ChannelType,int ChannelCount,int VirtualCount,class PWM,class List0Type=List0>
+template<class HalType,class ChannelType,int ChannelCount,int VirtualCount,class List0Type=List0>
 class DimmerDevice : public MultiChannelDevice<HalType,ChannelType,ChannelCount,List0Type> {
+public:
+  typedef MultiChannelDevice<HalType,ChannelType,ChannelCount,List0Type> DeviceType;
 
-  PWM pwms[ChannelCount/VirtualCount];
-  uint8_t physical[ChannelCount/VirtualCount];
-  uint8_t factor[ChannelCount/VirtualCount];
+  DimmerDevice (const DeviceInfo& info,uint16_t addr) : DeviceType(info,addr) {}
+  virtual ~DimmerDevice () {}
+
+  /* the following definitions are needed for the DimmerControler */
+  static int const channelCount = ChannelCount;
+  static int const virtualCount = VirtualCount;
+  typedef ChannelType DimmerChannelType;
+  DimmerChannelType& dimmerChannel(uint8_t ch) {
+    return this->channel(ch);
+  }
+};
+
+template<class HalType,class DimmerType,class PWM>
+class DimmerControl {
+private:
+  DimmerType& dimmer;
+  PWM pwms[DimmerType::channelCount/DimmerType::virtualCount];
+  uint8_t physical[DimmerType::channelCount/DimmerType::virtualCount];
+  uint8_t factor[DimmerType::channelCount/DimmerType::virtualCount];
 
   class ChannelCombiner : public Alarm {
-    DimmerDevice<HalType,ChannelType,ChannelCount,VirtualCount,PWM,List0Type>& dev;
+    DimmerControl<HalType,DimmerType,PWM>& control;
   public:
-    ChannelCombiner (DimmerDevice<HalType,ChannelType,ChannelCount,VirtualCount,PWM,List0Type>& d) : Alarm(0), dev(d) {}
+    ChannelCombiner (DimmerControl<HalType,DimmerType,PWM>& d) : Alarm(0), control(d) {}
     virtual ~ChannelCombiner () {}
     virtual void trigger (AlarmClock& clock) {
-      dev.updatePhysical();
+      control.updatePhysical();
       set(millis2ticks(10));
       clock.add(*this);
     }
   } cb;
 
 public:
-  typedef MultiChannelDevice<HalType,ChannelType,ChannelCount,List0Type> DeviceType;
+  DimmerControl (DimmerType& dim) : dimmer(dim), cb(*this) {}
+  ~DimmerControl () {}
 
-  DimmerDevice (const DeviceInfo& info,uint16_t addr) : DeviceType(info,addr), cb(*this) {}
-  virtual ~DimmerDevice () {}
-
-  PWM pwm (uint8_t n) {
-    return pwms[n];
-  }
+  uint8_t channelCount  () { return DimmerType::channelCount; }
+  uint8_t virtualCount  () { return DimmerType::virtualCount; }
+  uint8_t physicalCount () { return DimmerType::channelCount/DimmerType::virtualCount; }
 
   void firstinit () {
-    DeviceType::firstinit();
-    for( uint8_t i=1; i<=DeviceType::channels(); ++i ) {
-      if( i <= ChannelCount/VirtualCount ){
-        DeviceType::channel(i).getList1().logicCombination(LOGIC_OR);
+    for( uint8_t i=1; i<=channelCount(); ++i ) {
+      if( i <= physicalCount() ){
+        dimmer.dimmerChannel(i).getList1().logicCombination(LOGIC_OR);
       }
       else {
-        DeviceType::channel(i).getList1().logicCombination(LOGIC_INACTIVE);
+        dimmer.dimmerChannel(i).getList1().logicCombination(LOGIC_INACTIVE);
       }
     }
   }
 
   bool init (HalType& hal,...) {
-    bool first = DeviceType::init(hal);
+    bool first = dimmer.init(hal);
+    if( first == true ) {
+      firstinit();
+    }
     va_list argp;
     va_start(argp, hal);
-    for( uint8_t i=0; i<ChannelCount/VirtualCount; ++i ) {
+    for( uint8_t i=0; i<physicalCount(); ++i ) {
       uint8_t p =  va_arg(argp, int);
       pwms[i].init(p);
       physical[i] = 0;
@@ -679,24 +697,20 @@ public:
   }
 
   void initChannels () {
-    for( uint8_t i=1; i<=ChannelCount/VirtualCount; ++i ) {
-      for( uint8_t j=i; j<=ChannelCount; j+=ChannelCount/VirtualCount ) {
-        DeviceType::channel(j).setPhysical(physical[i-1]);
-        if( DeviceType::channel(i).getList1().powerUpAction() == true ) {
-          DeviceType::channel(i).setLevel(200,0,0xffff);
-        }
-        else {
-          DeviceType::channel(i).setLevel(0,0,0xffff);
-        }
+    for( uint8_t i=1; i<=physicalCount(); ++i ) {
+      for( uint8_t j=i; j<=channelCount(); j+=physicalCount() ) {
+        dimmer.dimmerChannel(j).setPhysical(physical[i-1]);
+        bool powerup = dimmer.dimmerChannel(j).getList1().powerUpAction();
+        dimmer.dimmerChannel(j).setLevel(powerup == true ? 200 : 0,0,0xffff);
       }
     }
   }
 
   void updatePhysical () {
     // DPRINT("Pin ");DHEX(pin);DPRINT("  Val ");DHEXLN(calcPwm());
-    for( uint8_t i=0; i<ChannelCount/VirtualCount; ++i ) {
+    for( uint8_t i=0; i<physicalCount(); ++i ) {
       uint8_t value = (uint8_t)combineChannels(i+1);
-      value = (((uint16_t)factor[i] * value) / 200);
+      value = (((uint16_t)factor[i] * (uint16_t)value) / 200);
       if( physical[i] != value ) {
         // DPRINT("Ch: ");DDEC(i+1);DPRINT(" Phy: ");DDECLN(value);
         physical[i]  = value;
@@ -705,33 +719,11 @@ public:
     }
   }
 
-  void setTemperature (uint16_t temp) {
-    uint8_t t = temp/10;
-    for( uint8_t i=1; i<=ChannelCount/VirtualCount; ++i ) {
-      ChannelType& c = this->channel(i);
-      if( c.getList1().overTempLevel() <= t ) {
-        factor[i-1] = 0; // overtemp -> switch off
-        c.overheat(true);
-        c.reduced(false);
-      }
-      else if( c.getList1().reduceTempLevel() <= t ) {
-        factor[i-1] = c.getList1().reduceLevel();
-        c.overheat(false);
-        c.reduced(true);
-      }
-      else {
-        factor[i-1] = 200; // 100%
-        c.overheat(false);
-        c.reduced(false);
-      }
-    }
-  }
-
   uint16_t combineChannels (uint8_t start) {
     uint16_t value = 0;
-    for( uint8_t i=start; i<=DeviceType::channels(); i+=ChannelCount/VirtualCount ) {
-      uint8_t level = DeviceType::channel(i).status();
-      switch( DeviceType::channel(i).getList1().logicCombination() ) {
+    for( uint8_t i=start; i<=channelCount(); i+=physicalCount() ) {
+      uint8_t level = dimmer.dimmerChannel(i).status();
+      switch( dimmer.dimmerChannel(i).getList1().logicCombination() ) {
       default:
       case LOGIC_INACTIVE:
         break;
@@ -804,6 +796,27 @@ public:
     return value;
   }
 
+  void setTemperature (uint16_t temp) {
+    uint8_t t = temp/10;
+    for( uint8_t i=1; i<=physicalCount(); ++i ) {
+      typename DimmerType::DimmerChannelType& c = dimmer.dimmerChannel(i);
+      if( c.getList1().overTempLevel() <= t ) {
+        factor[i-1] = 0; // overtemp -> switch off
+        c.overheat(true);
+        c.reduced(false);
+      }
+      else if( c.getList1().reduceTempLevel() <= t ) {
+        factor[i-1] = c.getList1().reduceLevel();
+        c.overheat(false);
+        c.reduced(true);
+      }
+      else {
+        factor[i-1] = 200; // 100%
+        c.overheat(false);
+        c.reduced(false);
+      }
+    }
+  }
 };
 
 }
