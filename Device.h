@@ -147,6 +147,10 @@ public:
     hal = &h;
   }
 
+  HalType& getHal () {
+    return *hal;
+  }
+
   uint8_t getConfigByte (uint8_t offset) {
     uint8_t data=0;
 #ifdef USE_OTA_BOOTLOADER
