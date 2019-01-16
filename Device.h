@@ -82,6 +82,7 @@ public:
   typedef typename HalType::LedType LedType;
   typedef typename HalType::BatteryType BatteryType;
   typedef typename HalType::RadioType RadioType;
+  typedef typename HalType::BuzzerType BuzzerType;
   typedef List0Type List0;
 
 private:
@@ -115,6 +116,7 @@ public:
   BatteryType& battery ()  { return hal->battery; }
   const BatteryType& battery () const { return hal->battery; }
   RadioType& radio () { return hal->radio; }
+  BuzzerType& buzzer () { return hal->buzzer; }
   KeyStore& keystore () { return this->kstore; }
   Activity& activity () { return hal->activity; }
 

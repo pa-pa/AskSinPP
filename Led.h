@@ -176,6 +176,67 @@ public:
   void invert (__attribute__((unused)) bool value) {}
 };
 
+
+template<uint8_t PIN, class PINTYPE=ArduinoPins>
+class Buzzer : public Alarm {
+  bool enable;
+public:
+  Buzzer () : Alarm(0), enable(false) {
+    async(true);
+  }
+  virtual ~Buzzer () {}
+
+  void init () {
+    PINTYPE::setOutput(PIN);
+  }
+
+  void enabled(bool value) {
+    enable = value;
+  }
+
+  bool on (uint32_t ticks) {
+    if( on() == true ) {
+      set(ticks);
+      sysclock.add(*this);
+      return true;
+    }
+    return false;
+  }
+
+  bool on () {
+    if( enable == true ) {
+      sysclock.cancel(*this);
+      PINTYPE::setHigh(PIN);
+      return true;
+    }
+    return false;
+  }
+
+  void off () {
+    PINTYPE::setLow(PIN);
+  }
+
+  bool active () {
+    return PINTYPE::getState() == HIGH;
+  }
+
+  virtual void trigger (__attribute__ ((unused)) AlarmClock& clock) {
+    off();
+  }
+};
+
+class NoBuzzer {
+public:
+  NoBuzzer () {}
+  ~NoBuzzer () {}
+  void init () {}
+  void enabled(__attribute__ ((unused)) bool value) {}
+  bool on (__attribute__ ((unused)) uint32_t ticks) { return false; }
+  bool on () { return false; }
+  void off () {}
+  bool active () { return false; }
+};
+
 }
 
 #endif

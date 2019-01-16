@@ -6,7 +6,7 @@
 #ifndef __ASKSINPP_h__
 #define __ASKSINPP_h__
 
-#define ASKSIN_PLUS_PLUS_VERSION "3.1.4"
+#define ASKSIN_PLUS_PLUS_VERSION "3.1.5"
 
 #define ASKSIN_PLUS_PLUS_IDENTIFIER F("AskSin++ V" ASKSIN_PLUS_PLUS_VERSION " (" __DATE__ " " __TIME__ ")")
 
@@ -117,22 +117,25 @@ public:
 
 };
 
-template <class StatusLed,class Battery,class Radio>
+template <class StatusLed,class Battery,class Radio,class Buzzer=NoBuzzer>
 class AskSin : public AskSinBase {
 
 public:
   typedef StatusLed LedType;
   typedef Battery   BatteryType;
   typedef Radio     RadioType;
+  typedef Buzzer    BuzzerType;
 
   LedType      led;
   BatteryType  battery;
   Activity     activity;
   RadioType    radio;
+  BuzzerType   buzzer;
 
   void init (const HMID& id) {
     srand((unsigned int&)id);
     led.init();
+    buzzer.init();
     radio.init();
     radio.enable();
     // start the system timer
