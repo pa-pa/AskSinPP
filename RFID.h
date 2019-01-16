@@ -101,8 +101,7 @@ public:
       if( (matches & 0b00111111) == 0b00000111 || (matches & 0b00111111) == 0b00111111 ) {
         s = longpressed;
         DPRINTLN("longpressed");
-        if (this->device().getList0().buzzerEnabled() == true)
-          this->device().getHal().buzzer.ledOn();
+        this->device().getHal().buzzer.BuzzOn();
         // clear longlong
         matches &= 0b11000111;
       }
@@ -110,15 +109,13 @@ public:
       else if( (matches & 0b00001111) == 0b00001110 ) {
         s = longreleased;
         DPRINTLN("longreleased");
-        if (this->device().getList0().buzzerEnabled() == true)
-            this->device().getHal().buzzer.ledOff();
+        this->device().getHal().buzzer.BuzzOff();
       }
       // check for release
       else if( (matches & 0b00000011) == 0b00000010 ) {
         s = released;
         DPRINTLN("released");
-        if (this->device().getList0().buzzerEnabled() == true)
-          this->device().getHal().buzzer.ledOn(millis2ticks(100));
+        this->device().getHal().buzzer.Buzz(millis2ticks(100));
       }
       if( s != none ) {
         RemoteEventMsg& msg = (RemoteEventMsg&)this->device().message();
@@ -301,8 +298,7 @@ public:
     readRfid(addr);
     if( check(addr) == true ) {
       led.ledOn(millis2ticks(500),0);
-      if (dev.getList0().buzzerEnabled() == true)
-        dev.getHal().buzzer.ledOn(millis2ticks(50));
+        dev.getHal().buzzer.Buzz(millis2ticks(50));
     }
     finish();
   }
