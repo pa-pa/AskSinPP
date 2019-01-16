@@ -349,6 +349,7 @@ protected:
   bool         change : 1;
   bool         toggledimup : 1;
   bool         erroverheat : 1;
+  bool 		   erroroverload : 1;
   bool         errreduced : 1;
   uint8_t      level, lastonlevel;
   RampAlarm    alarm;
@@ -356,7 +357,7 @@ protected:
   DimmerList1  list1;
 
 public:
-  DimmerStateMachine() : state(AS_CM_JT_NONE), change(false), toggledimup(true), erroverheat(false), errreduced(false),
+  DimmerStateMachine() : state(AS_CM_JT_NONE), change(false), toggledimup(true), erroverheat(false), erroroverload(false), errreduced(false),
     level(0), lastonlevel(200), alarm(*this), calarm(*this), list1(0) {}
   virtual ~DimmerStateMachine () {}
 
@@ -367,6 +368,12 @@ public:
     erroverheat = value;
   }
 
+  void overload(bool value){
+	 erroroverload = value;
+  }
+  bool getoverload(){
+	  return erroroverload;
+  }
   void reduced (bool value) {
     errreduced = value;
   }
@@ -586,6 +593,9 @@ public:
     if( erroverheat == true ) {
       f |= AS_CM_EXTSTATE_OVERHEAT;
     }
+	if( erroroverload == true) {
+	  f |= AS_CM_EXTSTATE_OVERLOAD;
+	}
     if( errreduced == true ) {
       f |= AS_CM_EXTSTATE_REDUCED;
     }
@@ -638,6 +648,38 @@ public:
   }
 };
 
+
+template<class HalType,class DimChannelType,class BtnChannelType,int DimChannelCount,int DimVirtualCount,int RmtChannelCount, class List0Type=List0>
+class DimmerAndRemoteDevice : public ChannelDevice<HalType, VirtBaseChannel<HalType, List0Type>, DimChannelCount + RmtChannelCount, List0Type> {
+
+public:
+	VirtChannel<HalType, DimChannelType, List0Type> dmc[DimChannelCount];
+	VirtChannel<HalType, BtnChannelType, List0Type> rmc[RmtChannelCount];	
+  public:
+    typedef ChannelDevice<HalType, VirtBaseChannel<HalType, List0Type>, DimChannelCount + RmtChannelCount, List0Type> DeviceType;
+	 DimmerAndRemoteDevice (const DeviceInfo& info, uint16_t addr) : DeviceType(info, addr) {
+		for( uint8_t i=0; i<RmtChannelCount; ++i ) {
+			DeviceType::registerChannel(dmc[i], i+1);
+		}
+		for( uint8_t j=0; j<DimChannelCount; ++j ) {
+			DeviceType::registerChannel(dmc[j], j+RmtChannelCount+1);
+		}
+    }
+    virtual ~DimmerAndRemoteDevice () {}
+	
+	/* the following definitions are needed for the DimmerControler */
+	static int const channelCount = DimChannelCount;
+	static int const virtualCount = DimVirtualCount;
+	typedef DimChannelType DimmerChannelType;
+    DimmerChannelType& dimmerChannel(uint8_t ch) {
+		return this->dmc[ch-1];
+    }
+	typedef BtnChannelType RemoteChannelType;
+	RemoteChannelType& remoteChannel(uint8_t re){
+		return this->rmc[re-1];
+	}
+};
+
 template<class HalType,class DimmerType,class PWM>
 class DimmerControl {
 private:
@@ -645,6 +687,8 @@ private:
   PWM pwms[DimmerType::channelCount/DimmerType::virtualCount];
   uint8_t physical[DimmerType::channelCount/DimmerType::virtualCount];
   uint8_t factor[DimmerType::channelCount/DimmerType::virtualCount];
+  uint8_t counter;
+  uint8_t overloadcounter;
 
   class ChannelCombiner : public Alarm {
     DimmerControl<HalType,DimmerType,PWM>& control;
@@ -795,6 +839,33 @@ public:
     // DHEXLN(value);
     return value;
   }
+  
+  
+  void setOverload (bool overload=false) {
+      counter++;
+      if ( overload ){
+          overloadcounter++;
+          
+      }
+      for( uint8_t i=1; i<=physicalCount(); ++i ) {
+        typename DimmerType::DimmerChannelType& c = dimmer.dimmerChannel(i);
+        if ( counter > 5 ){
+            if((counter - overloadcounter) <= 2 ){
+              factor[i-1] = 0;
+              c.overload(true);
+          }
+          else{
+             counter = 0;
+             overloadcounter = 0;
+          }
+          
+        }
+        else if ( c.getoverload()) {
+              c.overload(false);
+              factor[i-1] = 200;
+          }
+        }
+    }
 
   void setTemperature (uint16_t temp) {
     uint8_t t = temp/10;
