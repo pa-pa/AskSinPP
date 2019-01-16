@@ -379,8 +379,8 @@ public:
   uint8_t buttonMode () const { return this->readRegister(DREG_BUTTON_MODE,0); }
   bool buttonMode (uint8_t value) const { return this->writeRegister(DREG_BUTTON_MODE,value); }
 
-  bool buzzerEnable (bool v) const { return this->writeBit(DREG_BUZZER_ENABLED,0,v); }
-  bool buzzerEnable () const { return this->readBit(DREG_BUZZER_ENABLED,0,false); }
+  bool buzzerEnabled (bool v) const { return this->writeBit(DREG_BUZZER_ENABLED,0,v); }
+  bool buzzerEnabled () const { return this->readBit(DREG_BUZZER_ENABLED,0,false); }
 };
 
 
