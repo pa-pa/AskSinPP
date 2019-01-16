@@ -18,41 +18,41 @@
 #include "Arduino.h"
 //#include "Debug.h"
 
+namespace as {
+	class PhaseCut
+	{
+	public:
+		PhaseCut();
 
-class PhaseCut
-{
-public:
-    PhaseCut();
+		void init(uint8_t output_pin);
 
-    void init(uint8_t output_pin);
+		bool Start();
+		bool Stop();
+		bool isrunning();
 
-    bool Start();
-    bool Stop();
-	bool isrunning();
+		bool SetDimValue(double value);
 
-    bool SetDimValue(double value);
+		double GetDimValue() { return _timer; }
 
-    double GetDimValue() { return _timer; }
+		// Do not call this!
+		void ZeroCrossEvent();
+		void CmpAEvent();
+		void Fire();
 
-    // Do not call this!
-    void ZeroCrossEvent();
-    void CmpAEvent();
-	void Fire();
+	private:
+		void SetTimer();
 
-private:
-    void SetTimer();
+		uint8_t ZERO_CROSS_PIN;
+		uint8_t OUTPUT_PIN;
+		double _timer;
 
-    uint8_t ZERO_CROSS_PIN;
-    uint8_t OUTPUT_PIN;
-    double _timer;
+		bool _valid_zero_crossing;
+		bool isInit;
+		bool running;
+	};
 
-    bool _valid_zero_crossing;
-    bool isInit;
-	bool running;
-};
+	void ZeroCrossEventCaller();
 
-void ZeroCrossEventCaller();
-
-extern PhaseCut phaseCut;
-
+	extern PhaseCut phaseCut;
+}
 #endif
