@@ -292,7 +292,7 @@ public:
     datapin = dpin;
   }
   int8_t read () {
-    int8_t result;
+    int8_t result=0;
     ATOMIC_BLOCK( ATOMIC_RESTORESTATE )
     {
       result = counter;
