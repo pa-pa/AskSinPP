@@ -101,7 +101,7 @@ public:
       if( (matches & 0b00111111) == 0b00000111 || (matches & 0b00111111) == 0b00111111 ) {
         s = longpressed;
         DPRINTLN("longpressed");
-        this->device().getHal().buzzer.BuzzOn();
+        this->device().buzzer().on();
         // clear longlong
         matches &= 0b11000111;
       }
@@ -109,13 +109,13 @@ public:
       else if( (matches & 0b00001111) == 0b00001110 ) {
         s = longreleased;
         DPRINTLN("longreleased");
-        this->device().getHal().buzzer.BuzzOff();
+        this->device().buzzer().off();
       }
       // check for release
       else if( (matches & 0b00000011) == 0b00000010 ) {
         s = released;
         DPRINTLN("released");
-        this->device().getHal().buzzer.Buzz(millis2ticks(100));
+        this->device().buzzer().on(millis2ticks(100));
       }
       if( s != none ) {
         RemoteEventMsg& msg = (RemoteEventMsg&)this->device().message();
@@ -293,12 +293,21 @@ public:
   }
    
   void scan () {
+    static uint8_t last_addr[ID_ADDR_SIZE];
     uint8_t addr[ID_ADDR_SIZE];
+
     start();
     readRfid(addr);
+    DADDR(addr);
+
+    if (memcmp(addr, last_addr, ID_ADDR_SIZE) != 0) {
+  	  DPRINT("MEM DIFFER");
+      dev.buzzer().on(millis2ticks(100));
+      memcpy(last_addr,addr,ID_ADDR_SIZE);
+    }
+
     if( check(addr) == true ) {
       led.ledOn(millis2ticks(500),0);
-        dev.getHal().buzzer.Buzz(millis2ticks(50));
     }
     finish();
   }
