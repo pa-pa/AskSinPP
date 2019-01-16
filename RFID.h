@@ -9,6 +9,7 @@
 
 #include "MultiChannelDevice.h"
 #include "Register.h"
+#include <MFRC522.h>
 
 #define   ID_ADDR_SIZE 4
 
@@ -32,7 +33,7 @@ class ChipIdMsg : public Message {
       unsigned char * pin = addr;
       const char * hex = "0123456789ABCDEF";
       char * pout = hexstr;
-      int i = 0;
+      uint8_t i = 0;
       for(; i < (sizeof(addr) * 2)-1; ++i){
         *pout++ = hex[(*pin>>4)&0xF];
         *pout++ = hex[(*pin++)&0xF];
@@ -100,6 +101,8 @@ public:
       if( (matches & 0b00111111) == 0b00000111 || (matches & 0b00111111) == 0b00111111 ) {
         s = longpressed;
         DPRINTLN("longpressed");
+        if (this->device().getList0().buzzerEnabled() == true)
+          this->device().getHal().buzzer.ledOn();
         // clear longlong
         matches &= 0b11000111;
       }
@@ -107,11 +110,15 @@ public:
       else if( (matches & 0b00001111) == 0b00001110 ) {
         s = longreleased;
         DPRINTLN("longreleased");
+        if (this->device().getList0().buzzerEnabled() == true)
+            this->device().getHal().buzzer.ledOff();
       }
       // check for release
       else if( (matches & 0b00000011) == 0b00000010 ) {
         s = released;
         DPRINTLN("released");
+        if (this->device().getList0().buzzerEnabled() == true)
+          this->device().getHal().buzzer.ledOn(millis2ticks(100));
       }
       if( s != none ) {
         RemoteEventMsg& msg = (RemoteEventMsg&)this->device().message();
@@ -294,6 +301,8 @@ public:
     readRfid(addr);
     if( check(addr) == true ) {
       led.ledOn(millis2ticks(500),0);
+      if (dev.getList0().buzzerEnabled() == true)
+        dev.getHal().buzzer.ledOn(millis2ticks(50));
     }
     finish();
   }
