@@ -32,6 +32,7 @@ namespace as {
 #define DREG_TPARAMS           0x1b
 #define DREG_WAKEUPBEHAVIOUR   0x21
 #define DREG_BUTTON_MODE       0x32  // iButton Mode - Remote or State
+#define DREG_BUZZER_ENABLED    0x33  // enable Buzzer (used in HB-Devices)
 
 // Channel Registers used in List1
 #define CREG_EVENTFILTER 0x01
@@ -377,6 +378,9 @@ public:
 
   uint8_t buttonMode () const { return this->readRegister(DREG_BUTTON_MODE,0); }
   bool buttonMode (uint8_t value) const { return this->writeRegister(DREG_BUTTON_MODE,value); }
+
+  bool buzzerEnabled (bool v) const { return this->writeBit(DREG_BUZZER_ENABLED,0,v); }
+  bool buzzerEnabled () const { return this->readBit(DREG_BUZZER_ENABLED,0,false); }
 };
 
 
