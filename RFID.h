@@ -220,6 +220,18 @@ public:
       this->changed(true);
     }
 
+    if (msg.len() == 1 && msg.value(0) == 0xba) {
+    	this->device().getHal().buzzer.on(millis2ticks(100),millis2ticks(50),-1);
+    }
+
+    if (msg.len() == 1 && msg.value(0) == 0xb1) {
+    	this->device().getHal().buzzer.on();
+    }
+
+    if (msg.len() == 1 && msg.value(0) == 0xb0) {
+    	this->device().getHal().buzzer.on(0);
+    }
+
     if (msg.len() == 1 && msg.value(0) == 0xfe) {
     	sendChipID();
     }
