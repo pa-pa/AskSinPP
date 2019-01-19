@@ -9,7 +9,12 @@
 
 #include "MultiChannelDevice.h"
 #include "Register.h"
+#ifdef USE_I2C_READER
+#include <Wire.h>
+#include <MFRC522_I2C.h>
+#else
 #include <MFRC522.h>
+#endif
 
 #define   ID_ADDR_SIZE 4
 
@@ -26,23 +31,41 @@ public:
 
 class ChipIdMsg : public Message {
   public:
+
+	bool free(uint8_t*addr) {
+	 bool f = true;
+	 for (uint8_t n = 0; n < ID_ADDR_SIZE; n++) {
+	  if (addr[n] != 0x00) {
+		  f = false;
+		  break;
+	  }
+	 }
+	 return f;
+	}
+
     void init(uint8_t msgcnt, uint8_t ch, uint8_t*addr) {
       Message::init(0x13, msgcnt, 0x53, BIDI , 0x00, ch);
-      //convert address to hex-string - from https://stackoverflow.com/questions/6357031/how-do-you-convert-a-byte-array-to-a-hexadecimal-string-in-c
-      char hexstr[8];
-      unsigned char * pin = addr;
-      const char * hex = "0123456789ABCDEF";
-      char * pout = hexstr;
-      uint8_t i = 0;
-      for(; i < (sizeof(addr) * 2)-1; ++i){
+      char hexstr[ID_ADDR_SIZE * 2];
+      if (free(addr)) {
+    	  for (uint8_t n = 0; n < (ID_ADDR_SIZE * 2); n++)
+            hexstr[n] = 0x20;
+      } else {
+        //convert address to hex-string - from https://stackoverflow.com/questions/6357031/how-do-you-convert-a-byte-array-to-a-hexadecimal-string-in-c
+        unsigned char * pin = addr;
+        const char * hex = "0123456789ABCDEF";
+        char * pout = hexstr;
+        uint8_t i = 0;
+        for(; i < (sizeof(addr) * 2)-1; ++i){
+          *pout++ = hex[(*pin>>4)&0xF];
+          *pout++ = hex[(*pin++)&0xF];
+        }
         *pout++ = hex[(*pin>>4)&0xF];
-        *pout++ = hex[(*pin++)&0xF];
+        *pout++ = hex[(*pin)&0xF];
+        *pout = 0;
+
       }
-      *pout++ = hex[(*pin>>4)&0xF];
-      *pout++ = hex[(*pin)&0xF];
-      *pout = 0;
       //DPRINT("hexstr=");DPRINTLN(hexstr);
-      memcpy(pload, hexstr, 8);
+      memcpy(pload, hexstr, (ID_ADDR_SIZE * 2));
     }
 };
 
@@ -186,14 +209,25 @@ public:
   }
 
   bool process (const ActionCommandMsg& msg) {    
-    if (msg.len() == ID_ADDR_SIZE) {
+    if ( (msg.len() == ID_ADDR_SIZE) || (msg.len() == 1 && msg.value(0) == 0xcc) ) {
       for( uint8_t n=0; n < ID_ADDR_SIZE; ++n ) {
-        this->getList1().writeRegister(0xe0+n,msg.value(n));
+    	uint8_t val =  msg.len() == 1 ? 0x00:msg.value(n);
+        this->getList1().writeRegister(0xe0+n,val);
       }
       state = 0;
+      this->device().getHal().buzzer.on(millis2ticks(300), millis2ticks(200),2);
       sendChipID();
       this->changed(true);
     }
+
+    if (msg.len() == 1 && msg.value(0) == 0xfe) {
+    	sendChipID();
+    }
+
+    if (msg.len() == 2 && msg.value(0) == 0xff) {
+    	this->device().getHal().standbyLedInvert(msg.value(1) == 0x01);
+    }
+
     return true; 
   }
 
@@ -282,29 +316,29 @@ public:
   }
 
   bool readRfid(uint8_t *addr) {
-   uint8_t read1[ID_ADDR_SIZE];
+   uint8_t iD[ID_ADDR_SIZE];
+   static uint8_t last_addr[ID_ADDR_SIZE];
+
+   bool success = false;
+
    memset(addr,0,ID_ADDR_SIZE); 
-   if (getRfidAddress(read1)) {
-     memcpy(addr,read1,ID_ADDR_SIZE);
-    return true;
-   } else {
-     return false;
+   if (getRfidAddress(iD)) {
+     memcpy(addr,iD,ID_ADDR_SIZE);
+     if (memcmp(addr, last_addr, ID_ADDR_SIZE) != 0) {
+         dev.buzzer().on(millis2ticks(100));
+     }
+     success = true;
    }
+   memcpy(last_addr,addr,ID_ADDR_SIZE);
+
+   return success;
   }
    
   void scan () {
-    static uint8_t last_addr[ID_ADDR_SIZE];
     uint8_t addr[ID_ADDR_SIZE];
 
     start();
     readRfid(addr);
-    DADDR(addr);
-
-    if (memcmp(addr, last_addr, ID_ADDR_SIZE) != 0) {
-  	  DPRINT("MEM DIFFER");
-      dev.buzzer().on(millis2ticks(100));
-      memcpy(last_addr,addr,ID_ADDR_SIZE);
-    }
 
     if( check(addr) == true ) {
       led.ledOn(millis2ticks(500),0);
@@ -317,6 +351,7 @@ public:
     while( readRfid(addr) == true ) {
       if( find(addr) == 0 ) {
         lc->storeID(addr);
+        dev.buzzer().on(millis2ticks(40), millis2ticks(50),10);
         return true;
       }
     }
@@ -324,15 +359,16 @@ public:
   }
 
   void trigger (AlarmClock& clock) {
-    // reactivate
-    set(millis2ticks(200));
-    clock.add(*this);
+	// reactivate
+	set(millis2ticks(500));
+	clock.add(*this);
     ++cnt;
     // check if we have a learning channel
     RFIDChannel* lc = learning();
     if( lc != 0 ) {
       uint8_t cycle = cnt & 0x01;
       led.ledOn(cycle == 0 ? tick : 0, cycle == 0 ? 0 : tick);
+      dev.buzzer().on(millis2ticks(40));
       // if we have learned a new ID
       if( learn(lc) == true ) {
         clock.cancel(*this);

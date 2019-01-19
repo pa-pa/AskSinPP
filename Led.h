@@ -228,7 +228,7 @@ public:
   }
 
   bool active () {
-    return PINTYPE::getState() == HIGH;
+    return PINTYPE::getState(PIN) == HIGH;
   }
 
   virtual void trigger (__attribute__ ((unused)) AlarmClock& clock) {
@@ -236,13 +236,13 @@ public:
       off();
       repeat--;
       if( repeat > 0 && ontime > 0 ) {
-        set(ontime);
+        set(offtime);
         clock.add(*this);
       }
     }
     else if( repeat > 0 && ontime > 0 ) {
       on();
-      set(offtime);
+      set(ontime);
       clock.add(*this);
     }
   }
