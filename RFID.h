@@ -215,6 +215,7 @@ public:
         this->getList1().writeRegister(0xe0+n,val);
       }
       state = 0;
+      this->device().getHal().buzzer.on(millis2ticks(300), millis2ticks(200),2);
       sendChipID();
       this->changed(true);
     }
@@ -329,6 +330,7 @@ public:
      success = true;
    }
    memcpy(last_addr,addr,ID_ADDR_SIZE);
+
    return success;
   }
    
@@ -349,7 +351,7 @@ public:
     while( readRfid(addr) == true ) {
       if( find(addr) == 0 ) {
         lc->storeID(addr);
-        dev.buzzer().on(millis2ticks(1000));
+        dev.buzzer().on(millis2ticks(40), millis2ticks(50),10);
         return true;
       }
     }
@@ -357,9 +359,8 @@ public:
   }
 
   void trigger (AlarmClock& clock) {
-	DPRINTLN("TRIGGER");
 	// reactivate
-	set(millis2ticks(600));
+	set(millis2ticks(500));
 	clock.add(*this);
     ++cnt;
     // check if we have a learning channel
@@ -367,7 +368,7 @@ public:
     if( lc != 0 ) {
       uint8_t cycle = cnt & 0x01;
       led.ledOn(cycle == 0 ? tick : 0, cycle == 0 ? 0 : tick);
-      dev.buzzer().on(millis2ticks(30));
+      dev.buzzer().on(millis2ticks(40));
       // if we have learned a new ID
       if( learn(lc) == true ) {
         clock.cancel(*this);
@@ -381,10 +382,6 @@ public:
       // scan the bus now
       scan();
     }
-  }
-
-  void irq() {
-
   }
 };
 
