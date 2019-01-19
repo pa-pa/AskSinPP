@@ -180,8 +180,10 @@ public:
 template<uint8_t PIN, class PINTYPE=ArduinoPins>
 class Buzzer : public Alarm {
   bool enable;
+  uint8_t repeat;
+  uint16_t ontime, offtime;
 public:
-  Buzzer () : Alarm(0), enable(false) {
+  Buzzer () : Alarm(0), enable(false), repeat(0), ontime(0), offtime(0) {
     async(true);
   }
   virtual ~Buzzer () {}
@@ -194,13 +196,22 @@ public:
     enable = value;
   }
 
-  bool on (uint32_t ticks) {
+  bool on (uint16_t onticks,uint16_t offticks,uint8_t repeat) {
     if( on() == true ) {
-      set(ticks);
-      sysclock.add(*this);
+      ontime=onticks;
+      offtime=offticks;
+      this->repeat=repeat;
+      if( ontime > 0 ) {
+        set(ontime);
+        sysclock.add(*this);
+      }
       return true;
     }
     return false;
+  }
+
+  bool on (uint16_t ticks) {
+    return on(ticks,0,1);
   }
 
   bool on () {
@@ -221,7 +232,19 @@ public:
   }
 
   virtual void trigger (__attribute__ ((unused)) AlarmClock& clock) {
-    off();
+    if( active() ) {
+      off();
+      repeat--;
+      if( repeat > 0 && ontime > 0 ) {
+        set(ontime);
+        clock.add(*this);
+      }
+    }
+    else if( repeat > 0 && ontime > 0 ) {
+      on();
+      set(offtime);
+      clock.add(*this);
+    }
   }
 };
 
@@ -231,7 +254,8 @@ public:
   ~NoBuzzer () {}
   void init () {}
   void enabled(__attribute__ ((unused)) bool value) {}
-  bool on (__attribute__ ((unused)) uint32_t ticks) { return false; }
+  bool on (__attribute__ ((unused))uint16_t onticks,__attribute__ ((unused))uint16_t offticks,__attribute__ ((unused))uint8_t repeat) { return false; }
+  bool on (__attribute__ ((unused)) uint16_t ticks) { return false; }
   bool on () { return false; }
   void off () {}
   bool active () { return false; }
