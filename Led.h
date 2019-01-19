@@ -196,7 +196,7 @@ public:
     enable = value;
   }
 
-  bool on (uint16_t onticks,uint16_t offticks,uint8_t repeat) {
+  bool on (uint16_t onticks,uint16_t offticks,int repeat) {
     if( on() == true ) {
       ontime=onticks;
       offtime=offticks;
@@ -211,7 +211,8 @@ public:
   }
 
   bool on (uint16_t ticks) {
-    return on(ticks,0,1);
+	  if (ticks == 0)  { repeat = 0; ontime = 0; return off(); }
+	  else return on(ticks,0,1) ;
   }
 
   bool on () {
@@ -223,8 +224,9 @@ public:
     return false;
   }
 
-  void off () {
+  bool off () {
     PINTYPE::setLow(PIN);
+    return true;
   }
 
   bool active () {
@@ -234,13 +236,13 @@ public:
   virtual void trigger (__attribute__ ((unused)) AlarmClock& clock) {
     if( active() ) {
       off();
-      repeat--;
-      if( repeat > 0 && ontime > 0 ) {
+      if (repeat != -1) repeat--;
+      if( ( repeat > 0 || repeat == -1) && ontime > 0 ) {
         set(offtime);
         clock.add(*this);
       }
     }
-    else if( repeat > 0 && ontime > 0 ) {
+    else if( (repeat > 0 || repeat == -1) && ontime > 0 ) {
       on();
       set(ontime);
       clock.add(*this);
