@@ -211,8 +211,7 @@ public:
   }
 
   bool on (uint16_t ticks) {
-	  if (ticks == 0)  { repeat = 0; ontime = 0; return off(); }
-	  else return on(ticks,0,1) ;
+    return on(ticks,0,1) ;
   }
 
   bool on () {
@@ -224,9 +223,17 @@ public:
     return false;
   }
 
-  bool off () {
+  bool off (bool force) {
+    if ( force == true ) {
+      repeat = 0;
+      ontime = 0;
+    }
     PINTYPE::setLow(PIN);
     return true;
+  }
+    
+  bool off () {
+    return off(false);
   }
 
   bool active () {

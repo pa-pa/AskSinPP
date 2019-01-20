@@ -229,7 +229,7 @@ public:
     }
 
     if (msg.len() == 1 && msg.value(0) == 0xb0) {
-    	this->device().getHal().buzzer.on(0);
+    	this->device().getHal().buzzer.off(true);
     }
 
     if (msg.len() == 1 && msg.value(0) == 0xfe) {
