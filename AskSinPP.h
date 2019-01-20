@@ -37,6 +37,7 @@
 #include <Debug.h>
 #include <Activity.h>
 #include <Led.h>
+#include <Buzzer.h>
 #include <AlarmClock.h>
 #include <Message.h>
 #include <Button.h>
