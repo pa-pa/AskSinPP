@@ -237,12 +237,12 @@ public:
     if( active() ) {
       off();
       if (repeat != -1) repeat--;
-      if( ( repeat > 0 || repeat == -1) && ontime > 0 ) {
+      if( (repeat != 0) && ontime > 0 ) {
         set(offtime);
         clock.add(*this);
       }
     }
-    else if( (repeat > 0 || repeat == -1) && ontime > 0 ) {
+    else if( (repeat != 0) && ontime > 0 ) {
       on();
       set(ontime);
       clock.add(*this);
