@@ -180,7 +180,7 @@ public:
 template<uint8_t PIN, class PINTYPE=ArduinoPins>
 class Buzzer : public Alarm {
   bool enable;
-  uint8_t repeat;
+  int8_t repeat;
   uint16_t ontime, offtime;
 public:
   Buzzer () : Alarm(0), enable(false), repeat(0), ontime(0), offtime(0) {
@@ -196,7 +196,7 @@ public:
     enable = value;
   }
 
-  bool on (uint16_t onticks,uint16_t offticks,uint8_t repeat) {
+  bool on (uint16_t onticks,uint16_t offticks,int8_t repeat) {
     if( on() == true ) {
       ontime=onticks;
       offtime=offticks;
@@ -211,7 +211,7 @@ public:
   }
 
   bool on (uint16_t ticks) {
-    return on(ticks,0,1);
+    return on(ticks,0,1) ;
   }
 
   bool on () {
@@ -223,8 +223,17 @@ public:
     return false;
   }
 
-  void off () {
+  bool off (bool force) {
+    if ( force == true ) {
+      repeat = 0;
+      ontime = 0;
+    }
     PINTYPE::setLow(PIN);
+    return true;
+  }
+    
+  bool off () {
+    return off(false);
   }
 
   bool active () {
@@ -234,13 +243,13 @@ public:
   virtual void trigger (__attribute__ ((unused)) AlarmClock& clock) {
     if( active() ) {
       off();
-      repeat--;
-      if( repeat > 0 && ontime > 0 ) {
+      if (repeat != -1) repeat--;
+      if( (repeat != 0) && ontime > 0 ) {
         set(offtime);
         clock.add(*this);
       }
     }
-    else if( repeat > 0 && ontime > 0 ) {
+    else if( (repeat != 0) && ontime > 0 ) {
       on();
       set(ontime);
       clock.add(*this);
