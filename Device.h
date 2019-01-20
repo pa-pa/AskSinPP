@@ -14,6 +14,7 @@
 #include "Message.h"
 #include "Radio.h"
 #include "Led.h"
+#include "Buzzer.h"
 #include "Activity.h"
 
 #ifdef USE_HW_SERIAL
