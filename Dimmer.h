@@ -649,17 +649,17 @@ public:
 };
 
 
-template<class HalType,class DimChannelType,class BtnChannelType,int DimChannelCount,int DimVirtualCount,int RmtChannelCount, class List0Type=List0>
+template<class HalType,class DimChannelType,class RmtChannelType,int DimChannelCount,int DimVirtualCount,int RmtChannelCount, class List0Type=List0>
 class DimmerAndRemoteDevice : public ChannelDevice<HalType, VirtBaseChannel<HalType, List0Type>, DimChannelCount + RmtChannelCount, List0Type> {
 
 public:
 	VirtChannel<HalType, DimChannelType, List0Type> dmc[DimChannelCount];
-	VirtChannel<HalType, BtnChannelType, List0Type> rmc[RmtChannelCount];	
+	VirtChannel<HalType, RmtChannelType, List0Type> rmc[RmtChannelCount];	
   public:
     typedef ChannelDevice<HalType, VirtBaseChannel<HalType, List0Type>, DimChannelCount + RmtChannelCount, List0Type> DeviceType;
 	 DimmerAndRemoteDevice (const DeviceInfo& info, uint16_t addr) : DeviceType(info, addr) {
 		for( uint8_t i=0; i<RmtChannelCount; ++i ) {
-			DeviceType::registerChannel(dmc[i], i+1);
+			DeviceType::registerChannel(rmc[i], i+1);
 		}
 		for( uint8_t j=0; j<DimChannelCount; ++j ) {
 			DeviceType::registerChannel(dmc[j], j+RmtChannelCount+1);
@@ -674,7 +674,7 @@ public:
     DimmerChannelType& dimmerChannel(uint8_t ch) {
 		return this->dmc[ch-1];
     }
-	typedef BtnChannelType RemoteChannelType;
+	typedef RmtChannelType RemoteChannelType;
 	RemoteChannelType& remoteChannel(uint8_t re){
 		return this->rmc[re-1];
 	}
