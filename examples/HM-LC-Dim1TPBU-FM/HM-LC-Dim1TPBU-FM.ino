@@ -32,8 +32,8 @@
 
 // PIN definitions
 #define DIMMERPIN          22  //PC6
-#define BTN_PIN_1          23  //8  //PD0(RxD)
-#define BTN_PIN_2          12  //PD4 
+#define BTN_PIN_1          12  //PD4
+#define BTN_PIN_2           8  //PD0(RxD)
 #define LED_PIN             0  //PB0
 #define CONFIG_BUTTON_PIN  15  //PD7
 #define GDO0_PIN           10  //PD2
