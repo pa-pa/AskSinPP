@@ -180,7 +180,7 @@ public:
 template<uint8_t PIN, class PINTYPE=ArduinoPins>
 class Buzzer : public Alarm {
   bool enable;
-  uint8_t repeat;
+  int8_t repeat;
   uint16_t ontime, offtime;
 public:
   Buzzer () : Alarm(0), enable(false), repeat(0), ontime(0), offtime(0) {
@@ -196,7 +196,7 @@ public:
     enable = value;
   }
 
-  bool on (uint16_t onticks,uint16_t offticks,int repeat) {
+  bool on (uint16_t onticks,uint16_t offticks,int8_t repeat) {
     if( on() == true ) {
       ontime=onticks;
       offtime=offticks;
