@@ -11,7 +11,6 @@ $HMConfig::culHmSubTypeSets{"Values"}  = { };
 $HMConfig::culHmRegDefine{"addressHi"}  = {a=>224,s=>4,l=>1,min=>0,max=>0xffffffff,c=>'hex',p=>'n',f=>'',u=>'',d=>1,t=>"address high"};
 $HMConfig::culHmRegDefine{"addressLo"}  = {a=>228,s=>4,l=>1,min=>0,max=>0xffffffff,c=>'hex',p=>'n',f=>'',u=>'',d=>1,t=>"address low"};
 $HMConfig::culHmRegDefine{"buttonMode"} = {a=>50 ,s=>1,l=>0,min=>0,max=>1,         c=>'lit',p=>'n',f=>'',u=>'',d=>1,t=>"button mode",lit=>{remote=>0,state=>1}};
-
 # HB-UNI-Sen-LEV-US
 $HMConfig::culHmRegDefine{"sendInterval"}   = {a=>32, s=>2,l=>0,min=>10,max=>3600, c=>'',   p=>'n',f=>'',u=>'s', d=>1,t=>"send interval"};
 $HMConfig::culHmRegDefine{"distanceOffset"} = {a=>1 , s=>2,l=>1,min=>0,max=>600,   c=>'',   p=>'n',f=>'',u=>'cm',d=>1,t=>"distance offset"};
@@ -20,10 +19,8 @@ $HMConfig::culHmRegDefine{"caseDesign"}     = {a=>90, s=>1,l=>1,min=>0,max=>2,  
 $HMConfig::culHmRegDefine{"caseHeight"}     = {a=>94, s=>2,l=>1,min=>30,max=>10000,c=>'',   p=>'n',f=>'',u=>'cm',d=>1,t=>"case height"};
 $HMConfig::culHmRegDefine{"caseWidth"}      = {a=>102,s=>2,l=>1,min=>30,max=>10000,c=>'',   p=>'n',f=>'',u=>'cm',d=>1,t=>"case width"};
 $HMConfig::culHmRegDefine{"caseLength"}     = {a=>106,s=>2,l=>1,min=>30,max=>10000,c=>'',   p=>'n',f=>'',u=>'cm',d=>1,t=>"case length"};
-
 $HMConfig::culHmRegType{ibutton}   = { peerNeedsBurst=>1, expectAES=>1, addressHi=>1, addressLo=>1 };
 $HMConfig::culHmRegType{values}    = { eventDlyTime=>1 };
-
 $HMConfig::culHmModel{"F201"} = {name=>"HM-LC-Sw2-FM-CustomFW",st=>'custom',cyc=>'',rxt=>'',lst=>'1,3:3p.4p,4:1p.2p',chn=>"Btn:1:2,Sw:3:4"};
 $HMConfig::culHmChanSets{"HM-LC-Sw2-FM-CustomFW00"}{fwUpdate} = "<filename>";
 $HMConfig::culHmChanSets{"HM-LC-Sw2-FM-CustomFW01"} = $HMConfig::culHmSubTypeSets{"THSensor"};
@@ -34,7 +31,6 @@ $HMConfig::culHmRegChan {"HM-LC-Sw2-FM-CustomFW01"} = $HMConfig::culHmRegType{re
 $HMConfig::culHmRegChan {"HM-LC-Sw2-FM-CustomFW02"} = $HMConfig::culHmRegType{remote};
 $HMConfig::culHmRegChan {"HM-LC-Sw2-FM-CustomFW03"} = $HMConfig::culHmRegType{switch};
 $HMConfig::culHmRegChan {"HM-LC-Sw2-FM-CustomFW04"} = $HMConfig::culHmRegType{switch};
-
 $HMConfig::culHmModel{"F335"} = {name=>"HM-LC-Sw1-FM-Cus",st=>'custom',cyc=>'',rxt=>'',lst=>'1,3:3p,3:1p.2p',chn=>"Btn:1:2,Sw:3:3"};
 $HMConfig::culHmChanSets{"HM-LC-Sw1-FM-Cus00"}{fwUpdate} = "<filename>";
 $HMConfig::culHmChanSets{"HM-LC-Sw1-FM-Cus01"} = $HMConfig::culHmSubTypeSets{"THSensor"};
@@ -43,7 +39,6 @@ $HMConfig::culHmChanSets{"HM-LC-Sw1-FM-Cus03"} = $HMConfig::culHmSubTypeSets{"sw
 $HMConfig::culHmRegChan {"HM-LC-Sw1-FM-Cus01"} = $HMConfig::culHmRegType{remote};
 $HMConfig::culHmRegChan {"HM-LC-Sw1-FM-Cus02"} = $HMConfig::culHmRegType{remote};
 $HMConfig::culHmRegChan {"HM-LC-Sw1-FM-Cus03"} = $HMConfig::culHmRegType{switch};
-
 $HMConfig::culHmModel{"F202"} = {name=>"HB-SW2-SENS",st=>'custom',cyc=>'',rxt=>'',lst=>'1,3:1p.2p,4:3p',chn=>"Sw:1:2,Sen:3:3"};
 $HMConfig::culHmChanSets{"HB-SW2-SENS00"}{fwUpdate} = "<filename>";
 $HMConfig::culHmChanSets{"HB-SW2-SENS01"} = $HMConfig::culHmSubTypeSets{"switch"};
@@ -52,7 +47,6 @@ $HMConfig::culHmChanSets{"HB-SW2-SENS03"} = $HMConfig::culHmSubTypeSets{"THSenso
 $HMConfig::culHmRegChan {"HB-SW2-SENS01"} = $HMConfig::culHmRegType{switch};
 $HMConfig::culHmRegChan {"HB-SW2-SENS02"} = $HMConfig::culHmRegType{switch};
 $HMConfig::culHmRegChan {"HB-SW2-SENS03"} = $HMConfig::culHmRegType{threeStateSensor};
-
 $HMConfig::culHmModel{"F203"} = {name=>"HB-DoorBell",st=>'custom',cyc=>'',rxt=>'',lst=>'1,3:2p.3p.5p,4:1p.6p.7p.8p.9p.10p.11p',chn=>"Bell:1:1,Sw:2:2,Ir:3:3,Values:4:4,Motion:5:5,Id:6:11"};
 $HMConfig::culHmChanSets{"HB-DoorBell00"}{fwUpdate} = "<filename>";
 $HMConfig::culHmChanSets{"HB-DoorBell01"} = $HMConfig::culHmSubTypeSets{"THSensor"};
@@ -78,12 +72,10 @@ $HMConfig::culHmRegChan {"HB-DoorBell08"} = $HMConfig::culHmRegType{ibutton};
 $HMConfig::culHmRegChan {"HB-DoorBell09"} = $HMConfig::culHmRegType{ibutton};
 $HMConfig::culHmRegChan {"HB-DoorBell0A"} = $HMConfig::culHmRegType{ibutton};
 $HMConfig::culHmRegChan {"HB-DoorBell0B"} = $HMConfig::culHmRegType{ibutton};
-
 $HMConfig::culHmModel{"F205"} = {name=>"HB-GEN-SENS",st=>'custom',cyc=>'',rxt=>'c',lst=>'1',chn=>"Values:1:1"};
 $HMConfig::culHmChanSets{"HB-GEN-SENS00"}{fwUpdate} = "<filename>";
 $HMConfig::culHmChanSets{"HB-GEN-SENS01"} = $HMConfig::culHmSubTypeSets{"Values"};
 $HMConfig::culHmRegChan {"HB-GEN-SENS01"} = $HMConfig::culHmRegType{values};
-
 $HMConfig::culHmModel{"F206"} = {name=>"HB-IBUT-8",st=>'custom',cyc=>'',rxt=>'',lst=>'1,4',chn=>"Id:1:8"};
 $HMConfig::culHmChanSets{"HB-IBUT-800"}{fwUpdate} = "<filename>";
 $HMConfig::culHmChanSets{"HB-IBUT-801"} = $HMConfig::culHmSubTypeSets{"iButton"};
@@ -103,24 +95,19 @@ $HMConfig::culHmRegChan {"HB-IBUT-805"} = $HMConfig::culHmRegType{ibutton};
 $HMConfig::culHmRegChan {"HB-IBUT-806"} = $HMConfig::culHmRegType{ibutton};
 $HMConfig::culHmRegChan {"HB-IBUT-807"} = $HMConfig::culHmRegType{ibutton};
 $HMConfig::culHmRegChan {"HB-IBUT-808"} = $HMConfig::culHmRegType{ibutton};
-
 $HMConfig::culHmModel{"F9D2"} = {name=>"HB-UNI-Sen-LEV-US",st=>'custom',cyc=>'',rxt=>'c:l',lst=>'1',chn=>"Level:1:1"};
 $HMConfig::culHmChanSets{"HB-UNI-Sen-LEV-US00"}{fwUpdate} = "<filename>";
 $HMConfig::culHmChanSets{"HB-UNI-Sen-LEV-US01"} = {};
 $HMConfig::culHmRegChan {"HB-UNI-Sen-LEV-US"}   = { pairCentral=>1, lowBatLimit=>1, sendInterval=>1 };
 $HMConfig::culHmRegChan {"HB-UNI-Sen-LEV-US01"} = { distanceOffset=>1, sensorType=>1, caseDesign=>1, caseHeight=>1, caseWidth=>1, caseLength=>1 };
-
 #Custom registers for HB-LC-Dim1PBU-FM
 for my $reading0 (keys %{$HMConfig::culHmRegType{dimmer}}) {
-
 	$HMConfig::culHmRegType{custom_dimmer}{$reading0} = 1;
 }
 for my $reading1 (keys %{$HMConfig::culHmRegModel{"HM-LC-Dim1TPBU-FM"}}) {
-
 		$HMConfig::culHmRegType{custom_dimmer}{$reading1} = 1;
 }
-
-$HMConfig::culHmModel{"F299"} = {name=>"HB-LC-Dim1PBU-FM",st=>'custom',cyc=>'',rxt=>'',lst=>'1,3:3p.4p.5p,4:1p.2p',chn=>"Btn:1:2,Dim:3:3,Dim_V:4:5"};
+$HMConfig::culHmModel{"F299"} = {name=>"HB-LC-Dim1PBU-FM",st=>'custom_DimmerAndRemote',cyc=>'',rxt=>'',lst=>'1,3:3p.4p.5p,4:1p.2p',chn=>"Btn:1:2,Dim:3:3,Dim_V:4:5"};
 $HMConfig::culHmChanSets{"HB-LC-Dim1PBU-FM00"}{fwUpdate} = "<filename>";
 $HMConfig::culHmChanSets{"HB-LC-Dim1PBU-FM01"} = $HMConfig::culHmSubTypeSets{"THSensor"};
 $HMConfig::culHmChanSets{"HB-LC-Dim1PBU-FM02"} = $HMConfig::culHmSubTypeSets{"THSensor"};
@@ -133,6 +120,7 @@ $HMConfig::culHmRegChan {"HB-LC-Dim1PBU-FM03"} = $HMConfig::culHmRegType{custom_
 $HMConfig::culHmRegChan {"HB-LC-Dim1PBU-FM04"} = $HMConfig::culHmRegType{custom_dimmer};
 $HMConfig::culHmRegChan {"HB-LC-Dim1PBU-FM05"} = $HMConfig::culHmRegType{custom_dimmer};
 
+
 sub HMConfig_AskSinPPCustom_Initialize () {
   # Log 1,"Rerun Literal reverse mapping";
   foreach my $rN  (keys %HMConfig::culHmRegDefine){ #create literal inverse for fast search
@@ -143,7 +131,6 @@ sub HMConfig_AskSinPPCustom_Initialize () {
     }
   }
 }
-
 sub parseValueFormat {
   my @v;
   foreach my $value ( split / /,$_[0] ) {
@@ -162,23 +149,24 @@ sub parseValueFormat {
   }
   return @v;
 }
-
-
 sub CUL_HM_Parsecustom($$$$$$) {
   my($mFlg,$mTp,$src,$dst,$p,$target) = @_;
   my @evtEt = ();
-
 #  Log 1,"General  entering with $mFlg,$mTp,$src,$dst,$p,$target";
 #  Log 1, $src;
 #  Log 1, CUL_HM_id2Hash($src)->{NAME};
   my $model = AttrVal(CUL_HM_id2Hash($src)->{NAME},"model","");
 #  Log 1, $model;
-
   # handle Ack_Status or Info_Status message here
   if (($mTp eq "02" && $p =~ m/^01/) || ($mTp eq "10" && $p =~ m/^06/) ) {
     # split payload
-    my ($subType,$chn,$val,$err,$xx,$pl) = ($1,hex($2),hex($3)/2,hex($4),hex($5),hex($6)/2)
-                        if($p =~ m/^(..)(..)(..)(..)(..)(..)/);
+    my ($subType,$chn,$val,$err,$xx,$pl);
+    if($p =~ m/^(..)(..)(..)(..)/){
+       ($subType,$chn,$val,$err) = ($1,hex($2),hex($3)/2,hex($4));
+    }
+    if($p =~ m/^(..)(..)(..)(..)(..)(..)/){
+        ($subType,$chn,$val,$err,$xx,$pl) = ($1,hex($2),hex($3)/2,hex($4),hex($5),hex($6)/2);
+    }
     $chn = sprintf("%02X",$chn&0x3f);
   	my $chId = $src.$chn;
     my $shash = $modules{CUL_HM}{defptr}{$chId}
@@ -189,7 +177,6 @@ sub CUL_HM_Parsecustom($$$$$$) {
       Log3 $shash->{NAME}, 4, $model.$chn." is switch";
       # user string
       my $vs = ($val==100 ? "on":($val==0 ? "off":"$val %"));
-
       push @evtEt,[$shash,1,"level:$val %"];
       push @evtEt,[$shash,1,"pct:$val"];      # duplicate to level - necessary for "slider"
       push @evtEt,[$shash,1,"deviceMsg:$vs$target"] if($chn ne "00");
@@ -203,9 +190,7 @@ sub CUL_HM_Parsecustom($$$$$$) {
       push @evtEt,[$chnHash,1,"state:".$vs];
 	    push @evtEt,[$chnHash,1,"contact:$vs$target"];
 	  }
-
   # update state of a dimmer
-
      if( $HMConfig::culHmRegChan{$model.$chn} == $HMConfig::culHmRegType{dimmer} ||  $HMConfig::culHmRegChan{$model.$chn} == $HMConfig::culHmRegType{custom_dimmer}) {
 	 	 
 	my $mId = CUL_HM_getMId($shash);
@@ -314,7 +299,6 @@ sub CUL_HM_Parsecustom($$$$$$) {
 	  push @evtEt,[$shash,1,"timedOn:".(($err&0x40)?"running":"off")];
 	  
     }
-
 }
   # handle sensor event
   elsif($mTp =~ m/^41/ && $p =~ m/^(..)(..)(..)/) {
@@ -361,7 +345,6 @@ sub CUL_HM_Parsecustom($$$$$$) {
     my $shash = CUL_HM_id2Hash($src);
     my ($chn, $bno) = (hex($1), hex($2));# button number/event count
     my $buttonID = sprintf("%02X",$chn&0x3f);# only 6 bit are valid
-
     # update state of a remote  
     if( $HMConfig::culHmRegChan{$model.$buttonID} == $HMConfig::culHmRegType{remote} ||
         $HMConfig::culHmRegChan{$model.$buttonID} == $HMConfig::culHmRegType{ibutton} ) {
@@ -369,7 +352,6 @@ sub CUL_HM_Parsecustom($$$$$$) {
       my $state = "";
       my $chnHash = $modules{CUL_HM}{defptr}{$src.$buttonID};
       Log3 $chnHash->{NAME}, 4, $model.$buttonID." is remote";
-
       if ($chnHash){# use userdefined name - ignore this irritating on-off naming
         $btnName = $chnHash->{NAME};
       }
@@ -462,8 +444,8 @@ sub CUL_HM_Parsecustom($$$$$$) {
   } else {
     Log(1, "HMConfig_AskSinPPCustom received unknown message: $mFlg,$mTp,$src,$dst,$p");
   }
-
   return @evtEt;
 }
+*CUL_HM_Parsecustom_DimmerAndRemote = \&CUL_HM_Parsecustom;
 
 1;
