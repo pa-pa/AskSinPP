@@ -16,11 +16,11 @@
 #include <MFRC522.h>
 #endif
 
-#define   ID_ADDR_SIZE 4
+#define   ID_ADDR_SIZE 8
 
 namespace as {
 
-DEFREGISTER(RFIDReg1,CREG_AES_ACTIVE,0xe0,0xe1,0xe2,0xe3)
+DEFREGISTER(RFIDReg1,CREG_AES_ACTIVE,0xe0,0xe1,0xe2,0xe3,0x04,0xe5,0xe6,0xe7)
 class RFIDList1 : public RegList1<RFIDReg1> {
 public:
   RFIDList1 (uint16_t addr) : RegList1<RFIDReg1>(addr) {}
@@ -44,7 +44,6 @@ class ChipIdMsg : public Message {
 	}
 
     void init(uint8_t msgcnt, uint8_t ch, uint8_t*addr) {
-      Message::init(0x13, msgcnt, 0x53, BIDI , 0x00, ch);
       char hexstr[ID_ADDR_SIZE * 2];
       if (free(addr)) {
     	  for (uint8_t n = 0; n < (ID_ADDR_SIZE * 2); n++)
@@ -55,7 +54,7 @@ class ChipIdMsg : public Message {
         const char * hex = "0123456789ABCDEF";
         char * pout = hexstr;
         uint8_t i = 0;
-        for(; i < (sizeof(addr) * 2)-1; ++i){
+        for(; i < ID_ADDR_SIZE-1; ++i){
           *pout++ = hex[(*pin>>4)&0xF];
           *pout++ = hex[(*pin++)&0xF];
         }
@@ -65,7 +64,10 @@ class ChipIdMsg : public Message {
 
       }
       //DPRINT("hexstr=");DPRINTLN(hexstr);
-      memcpy(pload, hexstr, (ID_ADDR_SIZE * 2));
+      Message::init(0x1a, msgcnt, 0x53, BIDI , ch , hexstr[0]);
+      for (uint8_t i = 1; i < (ID_ADDR_SIZE * 2); i++) {
+    	  pload[i-1] = hexstr[i];
+      }
     }
 };
 
@@ -189,7 +191,11 @@ public:
       this->getList1().readRegister(0xe0) == 0x00 &&
       this->getList1().readRegister(0xe1) == 0x00 &&
       this->getList1().readRegister(0xe2) == 0x00 &&
-      this->getList1().readRegister(0xe3) == 0x00 
+      this->getList1().readRegister(0xe3) == 0x00 &&
+      this->getList1().readRegister(0xe4) == 0x00 &&
+      this->getList1().readRegister(0xe5) == 0x00 &&
+      this->getList1().readRegister(0xe6) == 0x00 &&
+      this->getList1().readRegister(0xe7) == 0x00
     };
   }
 
@@ -322,7 +328,9 @@ public:
       if (!m.PICC_IsNewCardPresent())
        return false;
     if (!m.PICC_ReadCardSerial()) return false; 
-    memcpy(addr,m.uid.uidByte,ID_ADDR_SIZE);
+    memset(addr,0x00,ID_ADDR_SIZE);
+    memcpy(addr,m.uid.uidByte,m.uid.size);
+
     //DADDR(addr);
     return true;
   }
