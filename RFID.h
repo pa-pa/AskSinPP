@@ -73,7 +73,7 @@ class ChipIdMsg : public Message {
 
 template<class HALTYPE,int PEERCOUNT,class List0Type=List0>
 class RFIDChannel : public Channel<HALTYPE,RFIDList1,EmptyList,DefList4,PEERCOUNT,List0Type>, Alarm {
-  ChipIdMsg chipIdMsg;
+//  ChipIdMsg chipIdMsg;
 
   enum { none=0, released, longpressed, longreleased };
 
@@ -116,6 +116,7 @@ public:
     for( uint8_t n=0; n< ID_ADDR_SIZE; ++n ) {
       buf[n] = l.readRegister(0xe0+n);
     }
+    ChipIdMsg& chipIdMsg = (ChipIdMsg&)this->device().message();
     chipIdMsg.init(this->device().nextcount(), this->number(), buf);
     this->device().sendPeerEvent(chipIdMsg, *this);
   }
