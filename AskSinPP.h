@@ -10,6 +10,10 @@
 
 #define ASKSIN_PLUS_PLUS_IDENTIFIER F("AskSin++ V" ASKSIN_PLUS_PLUS_VERSION " (" __DATE__ " " __TIME__ ")")
 
+
+#define CONFIG_FREQ1 0
+#define CONFIG_FREQ2 1
+
 #include <stdint.h>
 
 #ifdef ARDUINO_ARCH_STM32F1
@@ -145,6 +149,19 @@ public:
     led.set(LedStates::welcome);
     // delay first send by random time
     radio.setSendTimeout((rand() % 3500)+1000);
+  }
+
+  void config (const StorageConfig& sc) {
+    if( sc.valid() == true ) {
+      uint8_t f1 = sc.getByte(CONFIG_FREQ1);
+      uint8_t f2 = sc.getByte(CONFIG_FREQ2);
+      if( f1 != 0 ) {
+        DPRINT("Config Freq: 0x21");DHEX(f1);DHEXLN(f2);
+        radio.initReg(CC1101_FREQ2, 0x21);
+        radio.initReg(CC1101_FREQ1, f1);
+        radio.initReg(CC1101_FREQ0, f2);
+      }
+    }
   }
 
   bool runready () {

@@ -118,6 +118,7 @@ public:
     HMID id;
     this->getDeviceID(id);
     hal.init(id);
+    hal.config(getConfigArea());
     return first;
   }
 

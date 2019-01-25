@@ -448,6 +448,46 @@ static inline Storage& storage () {
   return *((Storage*)__gb_store);
 }
 
+#define STORAGE_CFG_START 0x04
+class StorageConfig {
+  uint8_t  size;
+public:
+  StorageConfig (uint8_t s) : size(s) {}
+
+  uint8_t checksum () const {
+    uint8_t sum = 0x5e;
+    for( uint8_t i=0; i<size-1; ++i ) {
+      sum ^= getByte(i);
+    }
+    return sum;
+  }
+
+  void validate () {
+    setByte(size-1,checksum());
+  }
+
+  bool valid () const {
+    return getByte(size-1) == checksum();
+  }
+
+  void clear () {
+    storage().clearData(STORAGE_CFG_START, size);
+  }
+
+  uint8_t getSize () const {
+    return size-1;
+  }
+
+  uint8_t getByte (uint8_t offset) const {
+    return storage().getByte(STORAGE_CFG_START+offset);
+  }
+
+  void setByte(uint8_t offset,uint8_t data) {
+    storage().setByte(STORAGE_CFG_START+offset,data);
+  }
+
+};
+
 }
 
 #endif

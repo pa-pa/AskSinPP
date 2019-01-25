@@ -154,6 +154,10 @@ public:
     return *hal;
   }
 
+  StorageConfig getConfigArea () {
+    return StorageConfig(kstore.address()-STORAGE_CFG_START);
+  }
+
   uint8_t getConfigByte (uint8_t offset) {
     uint8_t data=0;
 #ifdef USE_OTA_BOOTLOADER
