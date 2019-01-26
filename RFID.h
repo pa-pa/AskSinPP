@@ -230,10 +230,10 @@ public:
 
     if (msg.value(0) == 0xba) {
       if (msg.len() == 3)
-    	this->device().getHal().buzzer.on(millis2ticks(msg.value(1)),millis2ticks(msg.value(2)), -1);
+    	this->device().getHal().buzzer.on(decis2ticks(msg.value(1)),decis2ticks(msg.value(2)), -1);
       
       if (msg.len() == 4)
-        this->device().getHal().buzzer.on(millis2ticks(msg.value(1)),millis2ticks(msg.value(2)),msg.value(3));
+        this->device().getHal().buzzer.on(decis2ticks(msg.value(1)),decis2ticks(msg.value(2)),msg.value(3));
     }
       
     if (msg.len() == 1 && msg.value(0) == 0xb1) {
