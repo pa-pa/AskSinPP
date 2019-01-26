@@ -43,9 +43,12 @@ typedef Radio<RadioSPI,2> RadioType;
 typedef DualStatusLed<5,4> LedType;
 typedef AskSin<LedType,NoBattery,RadioType> HalType;
 
-HMID central; //(0xee,0xee,0xee); // count only messages from that device
-#define RANGE 0x80
-#define SCANTIME seconds2ticks(60)
+HMID central; //(0xee,0xee,0xee);    // count only messages from that device
+#define STARTFREQ 0x656A             // frequency we start scanning
+#define MINFREQ (STARTFREQ - 0x300)  // frequency we abort scanning
+#define SEARCHSTEP 0x50              // step with during search
+#define BOUNDSTEP 0x10               // step width during upper/lower bound analysis
+#define SCANTIME seconds2ticks(60)   // maximal time to wait for a valid message
 //#define ACTIVE_PING
 
 class TestDevice : public Device<HalType,DefList0>, Alarm {
@@ -53,38 +56,71 @@ class TestDevice : public Device<HalType,DefList0>, Alarm {
   uint16_t freq, start, end;
   uint8_t received, rssi;
 public:
-  bool done;
+  enum SearchMode { Search, Up, Down, Done };
+  SearchMode mode;
   HMID id;
 
   typedef Device<HalType,DefList0> BaseDevice;
-  TestDevice (const DeviceInfo& i,uint16_t addr) : BaseDevice(i,addr,l0,0), Alarm(0), l0(addr), freq(0x656A),
-      start(0xffff), end(0), received(0), rssi(0), done(false) {}
+  TestDevice (const DeviceInfo& i,uint16_t addr) : BaseDevice(i,addr,l0,0), Alarm(0), l0(addr),
+      freq(STARTFREQ), start(STARTFREQ), end(STARTFREQ),
+      received(0), rssi(0), mode(Search)  {}
   virtual ~TestDevice () {}
 
-  virtual void trigger (AlarmClock& clock) {
+  virtual void trigger (__attribute__ ((unused)) AlarmClock& clock) {
     DPRINT("  ");DDEC(received);DPRINT("/");DDECLN(rssi);
-    if( received > 0 ) {
-      start = min(start,freq);
-      end   = max(end,freq);
+
+    if( mode == Search ) {
+      if( received > 0 ) {
+        start = end = freq;
+        mode = Up; // start find upper bound
+        DPRINTLN("Search for upper bound");
+        setFreq(freq + BOUNDSTEP);
+      }
+      else {
+        if( freq < MINFREQ ) mode = Done;
+        if( freq <= STARTFREQ ) setFreq(STARTFREQ + (STARTFREQ-freq) + SEARCHSTEP);
+        else setFreq(STARTFREQ - (freq-STARTFREQ));
+      }
     }
-    if( freq < 0x656A + RANGE) {
-      setFreq(freq+0x10);
+    else if(mode == Up) {
+      if( received > 0 ) {
+        end = freq;
+        setFreq(end + BOUNDSTEP);
+      }
+      else {
+        mode = Down; // start find lower bound
+        DPRINTLN("Search for lower bound");
+        setFreq(start - BOUNDSTEP);
+      }
     }
-    else {
+    else if(mode == Down) {
+      if( received > 0 ) {
+        start = freq;
+        setFreq(start - BOUNDSTEP);
+      }
+      else {
+        mode = Done;
+      }
+    }
+    if( mode == Done ) {
       DPRINT("\nDone: 0x21");DHEX(start);DPRINT(" - 0x21");DHEXLN(end);
-      freq = start+((end - start)/2);
-      DPRINT("Setting: 0x21");DHEX((uint8_t)(freq>>8));DHEXLN((uint8_t)(freq&0xff));
-      done = true;
+      if( start == end && start == STARTFREQ ) {
+        DPRINT("Could not receive any message");
+      }
+      else {
+        freq = start+((end - start)/2);
+        DPRINT("Calculated Freq: 0x21");DHEX((uint8_t)(freq>>8));DHEXLN((uint8_t)(freq&0xff));
 
-      // store frequency
-      DPRINT("Store into config area: ");DHEX((uint8_t)(freq>>8));DHEXLN((uint8_t)(freq&0xff));
-      StorageConfig sc = getConfigArea();
-      sc.clear();
-      sc.setByte(CONFIG_FREQ1, freq>>8);
-      sc.setByte(CONFIG_FREQ2, freq&0xff);
-      sc.validate();
+        // store frequency
+        DPRINT("Store into config area: ");DHEX((uint8_t)(freq>>8));DHEXLN((uint8_t)(freq&0xff));
+        StorageConfig sc = getConfigArea();
+        sc.clear();
+        sc.setByte(CONFIG_FREQ1, freq>>8);
+        sc.setByte(CONFIG_FREQ2, freq&0xff);
+        sc.validate();
 
-      this->getHal().activity.savePower<Sleep<> >(this->getHal());
+        this->getHal().activity.savePower<Sleep<> >(this->getHal());
+      }
     }
   }
 
@@ -95,7 +131,7 @@ public:
       //msg.from().dump(); DPRINT("->"); DDECLN(radio().rssi());
       rssi = max(rssi,radio().rssi());
       received++;
-      if( received > 2 ) {
+      if( received > 0 ) {
         trigger(sysclock);
       }
     }
@@ -106,8 +142,9 @@ public:
     this->setHal(hal);
     this->getDeviceID(id);
     hal.init(id);
-    hal.config(getConfigArea());
-    setFreq(0x656A - RANGE);
+
+    DPRINTLN("Start searching ...");
+    setFreq(STARTFREQ);
     return false;
   }
 
@@ -134,8 +171,8 @@ class InfoSender : public Alarm {
     uint8_t number() const {return 1; }
     uint8_t status() const {return 0; }
     uint8_t flags()  const {return 0; }
-    void patchStatus(Message& msg) {}
-    void changed(bool b) {}
+    void patchStatus(__attribute__ ((unused)) Message& msg) {}
+    void changed(__attribute__ ((unused)) bool b) {}
   };
   uint8_t cnt;
   channel ch;
@@ -152,7 +189,7 @@ public:
     sdev.getDeviceID(msg.from());
     sdev.radio().write(msg,msg.burstRequired());
     sdev.led().ledOn(millis2ticks(100), 0);
-    if( sdev.done == false ) {
+    if( sdev.mode != TestDevice::SearchMode::Done ) {
       set(seconds2ticks(1));
       clock.add(*this);
     }
