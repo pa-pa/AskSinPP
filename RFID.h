@@ -364,10 +364,13 @@ public:
     uint8_t addr[ID_ADDR_SIZE];
 
     start();
-    readRfid(addr);
+    bool readID = readRfid(addr);
 
     if( check(addr) == true ) {
       led.ledOn(millis2ticks(500),0);
+    } else {
+    	if (readID == true )
+    		dev.buzzer().on(millis2ticks(40),millis2ticks(40),3);
     }
     finish();
   }
