@@ -118,6 +118,7 @@ public:
     }
     ChipIdMsg& chipIdMsg = (ChipIdMsg&)this->device().message();
     chipIdMsg.init(this->device().nextcount(), this->number(), buf);
+    _delay_ms(400); //need some small delay for ccu for appropriate message processing
     this->device().sendPeerEvent(chipIdMsg, *this);
   }
 
@@ -227,10 +228,14 @@ public:
       this->changed(true);
     }
 
-    if (msg.len() == 1 && msg.value(0) == 0xba) {
-    	this->device().getHal().buzzer.on(millis2ticks(100),millis2ticks(50),-1);
+    if (msg.value(0) == 0xba) {
+      if (msg.len() == 3)
+    	this->device().getHal().buzzer.on(decis2ticks(msg.value(1)),decis2ticks(msg.value(2)), -1);
+      
+      if (msg.len() == 4)
+        this->device().getHal().buzzer.on(decis2ticks(msg.value(1)),decis2ticks(msg.value(2)),msg.value(3));
     }
-
+      
     if (msg.len() == 1 && msg.value(0) == 0xb1) {
     	this->device().getHal().buzzer.on();
     }
@@ -359,10 +364,13 @@ public:
     uint8_t addr[ID_ADDR_SIZE];
 
     start();
-    readRfid(addr);
+    bool readID = readRfid(addr);
 
     if( check(addr) == true ) {
       led.ledOn(millis2ticks(500),0);
+    } else {
+    	if (readID == true )
+    		dev.buzzer().on(millis2ticks(40),millis2ticks(40),3);
     }
     finish();
   }
