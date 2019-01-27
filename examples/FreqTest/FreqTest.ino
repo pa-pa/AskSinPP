@@ -43,13 +43,24 @@ typedef Radio<RadioSPI,2> RadioType;
 typedef DualStatusLed<5,4> LedType;
 typedef AskSin<LedType,NoBattery,RadioType> HalType;
 
-HMID central; //(0xee,0xee,0xee);    // count only messages from that device
+
+
 #define STARTFREQ 0x656A             // frequency we start scanning
 #define MINFREQ (STARTFREQ - 0x300)  // frequency we abort scanning
 #define SEARCHSTEP 0x50              // step with during search
 #define BOUNDSTEP 0x10               // step width during upper/lower bound analysis
-#define SCANTIME seconds2ticks(60)   // maximal time to wait for a valid message
-//#define ACTIVE_PING
+
+
+// #define ACTIVE_PING
+HMID PING_FROM(0x12,0x34,0x56);      // from address for status message
+HMID PING_TO(0x99,0x66,0x99);        // to address for status message / central / CCU
+#ifdef ACTIVE_PING
+  #define SCANTIME seconds2ticks(5)   // maximal time to wait for a valid message
+#else
+  #define SCANTIME seconds2ticks(60)   // maximal time to wait for a valid message
+#endif
+
+
 
 class TestDevice : public Device<HalType,DefList0>, Alarm {
   DefList0 l0;
@@ -125,15 +136,11 @@ public:
   }
 
   virtual bool process(Message& msg) {
-    if( central == HMID::broadcast || (msg.from() == central && msg.to() == id) ) {
-      if( central == HMID::broadcast ) msg.from().dump();
-      DPRINT(".");
-      //msg.from().dump(); DPRINT("->"); DDECLN(radio().rssi());
-      rssi = max(rssi,radio().rssi());
-      received++;
-      if( received > 0 ) {
-        trigger(sysclock);
-      }
+    msg.from().dump(); DPRINT(".");
+    rssi = max(rssi,radio().rssi());
+    received++;
+    if( received > 0 ) {
+      trigger(sysclock);
     }
     return true;
   }
@@ -183,10 +190,10 @@ public:
   virtual void trigger (AlarmClock& clock) {
     InfoActuatorStatusMsg msg;
     msg.init(cnt++, ch, hal.radio.rssi());
-    msg.to(central);
+    msg.to(PING_TO);
+    msg.from(PING_FROM);
     msg.ackRequired();
     msg.setRpten();
-    sdev.getDeviceID(msg.from());
     sdev.radio().write(msg,msg.burstRequired());
     sdev.led().ledOn(millis2ticks(100), 0);
     if( sdev.mode != TestDevice::SearchMode::Done ) {
