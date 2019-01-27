@@ -6,7 +6,7 @@
 #ifndef __ASKSINPP_h__
 #define __ASKSINPP_h__
 
-#define ASKSIN_PLUS_PLUS_VERSION "3.1.6"
+#define ASKSIN_PLUS_PLUS_VERSION "3.1.7"
 
 #define ASKSIN_PLUS_PLUS_IDENTIFIER F("AskSin++ V" ASKSIN_PLUS_PLUS_VERSION " (" __DATE__ " " __TIME__ ")")
 
@@ -14,6 +14,7 @@
 #define CONFIG_FREQ1 0
 #define CONFIG_FREQ2 1
 
+#include <Debug.h>
 #include <stdint.h>
 
 #ifdef ARDUINO_ARCH_STM32F1
