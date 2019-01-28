@@ -12,6 +12,7 @@
 #include "PhaseCut.h"
 namespace as {
 
+#if ARDUINO_ARCH_AVR
 	PhaseCut phaseCut;
 
 	PhaseCut::PhaseCut()
@@ -127,4 +128,5 @@ namespace as {
 			SetTimer();
 			_valid_zero_crossing = true;
 	}
+#endif
 }
