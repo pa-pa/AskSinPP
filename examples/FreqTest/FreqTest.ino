@@ -40,7 +40,7 @@ const struct DeviceInfo PROGMEM devinfo = {
  */
 typedef AvrSPI<10,11,12,13> RadioSPI;
 typedef Radio<RadioSPI,2> RadioType;
-typedef DualStatusLed<5,4> LedType;
+typedef StatusLed<4> LedType;
 typedef AskSin<LedType,NoBattery,RadioType> HalType;
 
 
@@ -52,12 +52,12 @@ typedef AskSin<LedType,NoBattery,RadioType> HalType;
 
 
 // #define ACTIVE_PING
-HMID PING_FROM(0x12,0x34,0x56);      // from address for status message
+HMID PING_FROM(0x12,0x34,0x56);      // from address for status message e.g. switch
 HMID PING_TO(0x99,0x66,0x99);        // to address for status message / central / CCU
 #ifdef ACTIVE_PING
-  #define SCANTIME seconds2ticks(5)   // maximal time to wait for a valid message
+  #define SCANTIME seconds2ticks(5)  // maximal time to wait for a valid message
 #else
-  #define SCANTIME seconds2ticks(60)   // maximal time to wait for a valid message
+  #define SCANTIME seconds2ticks(60) // maximal time to wait for a valid message
 #endif
 
 
@@ -130,7 +130,7 @@ public:
         sc.setByte(CONFIG_FREQ2, freq&0xff);
         sc.validate();
 
-        this->getHal().activity.savePower<Sleep<> >(this->getHal());
+        activity().savePower<Sleep<> >(this->getHal());
       }
     }
   }
@@ -194,7 +194,9 @@ public:
     msg.from(PING_FROM);
     msg.ackRequired();
     msg.setRpten();
+#ifdef ACTIVE_PING
     sdev.radio().write(msg,msg.burstRequired());
+#endif
     sdev.led().ledOn(millis2ticks(100), 0);
     if( sdev.mode != TestDevice::SearchMode::Done ) {
       set(seconds2ticks(1));
@@ -206,10 +208,8 @@ public:
 void setup () {
   DINIT(57600,ASKSIN_PLUS_PLUS_IDENTIFIER);
   sdev.init(hal);
-#ifdef ACTIVE_PING
   // start sender
   info.trigger(sysclock);
-#endif
 }
 
 void loop() {
