@@ -35,6 +35,25 @@ $HMConfig::culHmRegChan {"HM-LC-Sw2-FM-CustomFW02"} = $HMConfig::culHmRegType{re
 $HMConfig::culHmRegChan {"HM-LC-Sw2-FM-CustomFW03"} = $HMConfig::culHmRegType{switch};
 $HMConfig::culHmRegChan {"HM-LC-Sw2-FM-CustomFW04"} = $HMConfig::culHmRegType{switch};
 
+$HMConfig::culHmModel{"F332"} = {name=>"HB-UNI-SenAct-4-4-RC",st=>'custom',cyc=>'',rxt=>'',lst=>'1,3:1p.2p.3p.4p,4:5p.6p.7p.8p',chn=>"Sw:1:4,Btn:5:8"};
+$HMConfig::culHmChanSets{"HB-UNI-SenAct-4-4-RC00"}{fwUpdate} = "<filename>";
+$HMConfig::culHmChanSets{"HB-UNI-SenAct-4-4-RC01"} = $HMConfig::culHmSubTypeSets{"switch"};
+$HMConfig::culHmChanSets{"HB-UNI-SenAct-4-4-RC02"} = $HMConfig::culHmSubTypeSets{"switch"};
+$HMConfig::culHmChanSets{"HB-UNI-SenAct-4-4-RC03"} = $HMConfig::culHmSubTypeSets{"switch"};
+$HMConfig::culHmChanSets{"HB-UNI-SenAct-4-4-RC04"} = $HMConfig::culHmSubTypeSets{"switch"};
+$HMConfig::culHmChanSets{"HB-UNI-SenAct-4-4-RC05"} = $HMConfig::culHmSubTypeSets{"THSensor"};
+$HMConfig::culHmChanSets{"HB-UNI-SenAct-4-4-RC06"} = $HMConfig::culHmSubTypeSets{"THSensor"};
+$HMConfig::culHmChanSets{"HB-UNI-SenAct-4-4-RC07"} = $HMConfig::culHmSubTypeSets{"THSensor"};
+$HMConfig::culHmChanSets{"HB-UNI-SenAct-4-4-RC08"} = $HMConfig::culHmSubTypeSets{"THSensor"};
+$HMConfig::culHmRegChan {"HB-UNI-SenAct-4-4-RC01"} = $HMConfig::culHmRegType{switch};
+$HMConfig::culHmRegChan {"HB-UNI-SenAct-4-4-RC02"} = $HMConfig::culHmRegType{switch};
+$HMConfig::culHmRegChan {"HB-UNI-SenAct-4-4-RC03"} = $HMConfig::culHmRegType{switch};
+$HMConfig::culHmRegChan {"HB-UNI-SenAct-4-4-RC04"} = $HMConfig::culHmRegType{switch};
+$HMConfig::culHmRegChan {"HB-UNI-SenAct-4-4-RC05"} = $HMConfig::culHmRegType{remote};
+$HMConfig::culHmRegChan {"HB-UNI-SenAct-4-4-RC06"} = $HMConfig::culHmRegType{remote};
+$HMConfig::culHmRegChan {"HB-UNI-SenAct-4-4-RC07"} = $HMConfig::culHmRegType{remote};
+$HMConfig::culHmRegChan {"HB-UNI-SenAct-4-4-RC08"} = $HMConfig::culHmRegType{remote};
+
 $HMConfig::culHmModel{"F335"} = {name=>"HM-LC-Sw1-FM-Cus",st=>'custom',cyc=>'',rxt=>'',lst=>'1,3:3p,3:1p.2p',chn=>"Btn:1:2,Sw:3:3"};
 $HMConfig::culHmChanSets{"HM-LC-Sw1-FM-Cus00"}{fwUpdate} = "<filename>";
 $HMConfig::culHmChanSets{"HM-LC-Sw1-FM-Cus01"} = $HMConfig::culHmSubTypeSets{"THSensor"};
