@@ -30,7 +30,7 @@ public:
 DEFREGISTER(SwitchReg3,PREG_CTDELAYONOFF,PREG_CTONOFF,
     PREG_CONDVALUELOW,PREG_CONDVALUEHIGH,PREG_ONDELAYTIME,PREG_ONTIME,
     PREG_OFFDELAYTIME,PREG_OFFTIME,PREG_ACTIONTYPE,PREG_JTONOFF,
-    PREG_JTDELAYONOFF)
+    PREG_JTDELAYONOFF, PREG_ACTTYPE, PREG_ACTNUM, PREG_ACTINTENS)
 
 typedef RegList3<SwitchReg3> SwitchPeerList;
 
@@ -40,6 +40,9 @@ public:
   void defaults() {
     SwitchPeerList ssl = sh();
     ssl.clear();
+    ssl.actIntens(0);
+    ssl.actNum(0);
+    ssl.actType(0);
 //    ssl.ctDlyOn(0);
 //    ssl.ctDlyOff(0);
 //    ssl.ctOn(0);

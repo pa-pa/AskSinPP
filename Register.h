@@ -136,6 +136,9 @@ namespace as {
 #define PREG_ELSEJTONOFF 0x27
 #define PREG_ELSEJTDELAYONOFF 0x28
 #define PREG_ELSEJTRAMPONOFF 0x29
+#define PREG_ACTTYPE 0x24
+#define PREG_ACTNUM 0x25
+#define PREG_ACTINTENS 0x2B
 
 // Peer Registers used in List4
 #define PREG_BURST_AES 0x01
@@ -768,6 +771,14 @@ public:
   bool elseJtRampOn (uint8_t v) const { return this->writeRegister(PREG_ELSEJTRAMPONOFF,0x0f,0,v); }
   uint8_t elseJtRampOff () const { return this->readRegister(PREG_ELSEJTRAMPONOFF,0x0f,4); }
   bool elseJtRampOff (uint8_t v) const { return this->writeRegister(PREG_ELSEJTRAMPONOFF,0x0f,4,v); }
+
+  uint8_t actType() const { return this->readRegister(PREG_ACTTYPE,0x00); }
+  bool actType(uint8_t v) const { return this->writeRegister(PREG_ACTTYPE,v); }
+  uint8_t actNum() const { return this->readRegister(PREG_ACTNUM,0x00); }
+  bool actNum(uint8_t v) const { return this->writeRegister(PREG_ACTNUM,v); }
+  uint8_t actIntens() const { return this->readRegister(PREG_ACTINTENS,0x00); }
+  bool actIntens(uint8_t v) const { return this->writeRegister(PREG_ACTINTENS,v); }
+
 };
 
 
