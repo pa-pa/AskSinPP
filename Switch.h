@@ -27,22 +27,20 @@ public:
   }
 };
 
-DEFREGISTER(SwitchReg3,PREG_CTDELAYONOFF,PREG_CTONOFF,
-    PREG_CONDVALUELOW,PREG_CONDVALUEHIGH,PREG_ONDELAYTIME,PREG_ONTIME,
-    PREG_OFFDELAYTIME,PREG_OFFTIME,PREG_ACTIONTYPE,PREG_JTONOFF,
-    PREG_JTDELAYONOFF, PREG_ACTTYPE, PREG_ACTNUM, PREG_ACTINTENS)
+#define SWITCH_LIST3_STANDARD_REGISTER PREG_CTDELAYONOFF,PREG_CTONOFF,PREG_CONDVALUELOW,PREG_CONDVALUEHIGH,\
+  PREG_ONDELAYTIME,PREG_ONTIME,PREG_OFFDELAYTIME,PREG_OFFTIME,PREG_ACTIONTYPE,PREG_JTONOFF,PREG_JTDELAYONOFF
+
+DEFREGISTER(SwitchReg3,SWITCH_LIST3_STANDARD_REGISTER)
 
 typedef RegList3<SwitchReg3> SwitchPeerList;
 
-class SwitchList3 : public ShortLongList<SwitchPeerList> {
+template <class PeerRegisterListType>
+class SwitchList3Tmpl : public ShortLongList<PeerRegisterListType> {
 public:
-  SwitchList3 (uint16_t addr) : ShortLongList<SwitchPeerList>(addr) {}
+  SwitchList3Tmpl (uint16_t addr) : ShortLongList<PeerRegisterListType>(addr) {}
   void defaults() {
-    SwitchPeerList ssl = sh();
+    PeerRegisterListType ssl = this->sh();
     ssl.clear();
-    ssl.actIntens(0);
-    ssl.actNum(0);
-    ssl.actType(0);
 //    ssl.ctDlyOn(0);
 //    ssl.ctDlyOff(0);
 //    ssl.ctOn(0);
@@ -57,7 +55,7 @@ public:
 //    ssl.offTimeMode(false);
 //    ssl.onTimeMode(false);
 
-    ssl = lg();
+    ssl = this->lg();
     ssl.clear();
 //    ssl.ctDlyOn(0);
 //    ssl.ctDlyOff(0);
@@ -77,12 +75,12 @@ public:
 
   void odd() {
     defaults();
-    SwitchPeerList ssl = sh();
+    PeerRegisterListType ssl = this->sh();
     ssl.jtOn(AS_CM_JT_OFFDELAY);
     ssl.jtOff(AS_CM_JT_OFF);
     ssl.jtDlyOn(AS_CM_JT_OFF);
     ssl.jtDlyOff(AS_CM_JT_OFF);
-    ssl = lg();
+    ssl = this->lg();
     ssl.jtOn(AS_CM_JT_OFFDELAY);
     ssl.jtOff(AS_CM_JT_OFF);
     ssl.jtDlyOn(AS_CM_JT_OFF);
@@ -91,12 +89,12 @@ public:
 
   void even() {
     defaults();
-    SwitchPeerList ssl = sh();
+    PeerRegisterListType ssl = this->sh();
     ssl.jtOn(AS_CM_JT_ON);
     ssl.jtOff(AS_CM_JT_ONDELAY);
     ssl.jtDlyOn(AS_CM_JT_ON);
     ssl.jtDlyOff(AS_CM_JT_ON);
-    ssl = lg();
+    ssl = this->lg();
     ssl.jtOn(AS_CM_JT_ON);
     ssl.jtOff(AS_CM_JT_ONDELAY);
     ssl.jtDlyOn(AS_CM_JT_ON);
@@ -105,12 +103,12 @@ public:
 
   void single() {
     defaults();
-    SwitchPeerList ssl = sh();
+    PeerRegisterListType ssl = this->sh();
     ssl.jtOn(AS_CM_JT_OFFDELAY);
     ssl.jtOff(AS_CM_JT_ONDELAY);
     ssl.jtDlyOn(AS_CM_JT_ON);
     ssl.jtDlyOff(AS_CM_JT_OFF);
-    ssl = lg();
+    ssl = this->lg();
     ssl.jtOn(AS_CM_JT_OFFDELAY);
     ssl.jtOff(AS_CM_JT_ONDELAY);
     ssl.jtDlyOn(AS_CM_JT_ON);
@@ -118,6 +116,8 @@ public:
     ssl.multiExec(false);
   }
 };
+// define the standard list3 for switch devices
+typedef SwitchList3Tmpl<SwitchPeerList> SwitchList3;
 
 class SwitchStateMachine {
 
