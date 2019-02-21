@@ -360,7 +360,7 @@ public:
   bool ledMode (uint8_t value) const { return this->writeRegister(DREG_LEDMODE,0x03,6,value); }
   bool cycleInfoMsg () const { return this->readRegister(DREG_CYCLICINFOMSG,false); }
   bool cycleInfoMsg (bool value) const { return this->writeRegister(DREG_CYCLICINFOMSG,value); }
-  uint8_t transmitDevTryMax () const { return this->readRegister(DREG_TRANSMITTRYMAX,6); }
+  uint8_t transmitDevTryMax () const { uint8_t v = this->readRegister(DREG_TRANSMITTRYMAX,6); return v == 0 ? 1 : v; }
   bool transmitDevTryMax (uint8_t value) const { return this->writeRegister(DREG_TRANSMITTRYMAX,value); }
   bool sabotageMsg () const { return this->readRegister(DREG_SABOTAGEMSG,true); }
   bool sabotageMsg (bool value) const { return this->writeRegister(DREG_SABOTAGEMSG,value); }
@@ -409,7 +409,7 @@ public:
   bool eventFilterTime(uint8_t v) const { return this->writeRegister(CREG_EVENTFILTERTIME,v); }
   uint8_t eventFilterTime() const { return this->readRegister(CREG_EVENTFILTERTIME,5); }
   bool transmitTryMax(uint8_t v) const { return this->writeRegister(CREG_TRANSMITTRYMAX,v); }
-  uint8_t transmitTryMax() const { return this->readRegister(CREG_TRANSMITTRYMAX,6); }
+  uint8_t transmitTryMax() const { uint8_t v = this->readRegister(CREG_TRANSMITTRYMAX,6); return v == 0 ? 1 : v;}
 
   uint8_t longPressTime () const { return this->readRegister(CREG_LONGPRESSTIME,0x0f,4,1); }
   bool longPressTime (uint8_t v) const { return this->writeRegister(CREG_LONGPRESSTIME,0x0f,4,v); }
