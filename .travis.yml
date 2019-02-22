@@ -25,6 +25,8 @@ install:
   - git clone https://github.com/finitespace/BME280.git  $HOME/arduino-ide/libraries//BME280
   - arduino --pref "update.check=false" --save-prefs
   - arduino --pref "compiler.c.extra_flags=-DUSE_AES" --save-prefs
+  - arduino --pref "compiler.cpp.extra_flags=-DUSE_AES" --save-prefs
+  - echo "compiler.cpp.extra_flags=-DUSE_AES" >$HOME/arduino-ide/hardware/arduino/avr/platform.local.txt
 script:
 #  - "echo $PWD"
 #  - "echo $HOME"
