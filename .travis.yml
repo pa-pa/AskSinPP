@@ -1,7 +1,9 @@
 language: generic
 env:
-  - IDE_VERSION=1.8.5
-  - BOARD="arduino:avr:pro:cpu=8MHzatmega328"
+  global:
+    - IDE_VERSION=1.8.5
+  matrix:
+    - BOARD="arduino:avr:pro:cpu=8MHzatmega328"
 before_install:
   - wget http://downloads.arduino.cc/arduino-$IDE_VERSION-linux64.tar.xz
   - tar xf arduino-$IDE_VERSION-linux64.tar.xz
