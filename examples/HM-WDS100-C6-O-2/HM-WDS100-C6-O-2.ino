@@ -101,6 +101,7 @@ public:
   bool localResetDisable () const { return isBitSet(sizeof(List0Data) + 2,0x01); }
   bool localResetDisable (bool value) const { return setBit(sizeof(List0Data) + 2,0x01,value); }
 
+  uint8_t transmitDevTryMax () const { return 6; }
   uint8_t ledMode () const { return 1; }
 
   void defaults () {
