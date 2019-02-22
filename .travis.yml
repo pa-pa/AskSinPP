@@ -19,6 +19,9 @@ install:
   - ln -s $PWD $HOME/Arduino/libraries/.
   - arduino --install-library "EnableInterrupt"
   - arduino --install-library "Low-Power"
+  - arduino --install-library "OneWire"
+  - arduino --install-library "Sensirion"
+  - arduino --install-library "TSL2561"
   - arduino --pref "update.check=false" --save-prefs
 script:
 #  - "echo $PWD"
@@ -27,7 +30,6 @@ script:
   - buildExampleSketch HM-ES-TX-WM
   - buildExampleSketch HM-LC-Bl1-FM
   - buildExampleSketch HM-LC-Dim1PWM-CV
-  - buildExampleSketch HM-LC-Dim1TPBU-FM
   - buildExampleSketch HM-LC-SW1-BA-PCB
   - buildExampleSketch HM-LC-SWX-SM
   - buildExampleSketch HM-RC-4
