@@ -13,6 +13,7 @@ before_install:
 #      arduino --install-boards arduino:samd;
 #    fi
   - buildExampleSketch() { arduino --verify --board $BOARD $PWD/examples/$1/$1.ino; }
+  - buildCustomSketch() { arduino --verify --board $BOARD $PWD/examples/custom/$1/$1.ino; }
 install:
   - mkdir -p $HOME/Arduino/libraries
   - ln -s $PWD $HOME/Arduino/libraries/.
@@ -39,6 +40,10 @@ script:
   - buildExampleSketch HM-SEN-MDIR-WM55
   - buildExampleSketch HM-WDS10-TH-O
   - buildExampleSketch HM-WDS100-C6-O2
+  - buildCustomSketch HB-GEN-SENS
+  - buildCustomSketch HB-IBUT-8
+  - buildCustomSketch HB-RC-3-ENC
+  - buildCustomSketch HB-SW2-SENS
 notifications:
   email:
     on_success: change
