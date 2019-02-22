@@ -2,7 +2,6 @@ language: generic
 env:
   global:
     - IDE_VERSION=1.8.1
-    - CFLAGS=-DUSE_AES
   matrix:
     - BOARD="arduino:avr:pro:cpu=8MHzatmega328"
 before_install:
@@ -25,6 +24,7 @@ install:
   - git clone https://github.com/spease/Sensirion.git $HOME/arduino-ide/libraries/Sensirion
   - git clone https://github.com/finitespace/BME280.git  $HOME/arduino-ide/libraries//BME280
   - arduino --pref "update.check=false" --save-prefs
+  - arduino --pref "compiler.c.extra_flags=-DUSE_AES" --save-prefs
 script:
 #  - "echo $PWD"
 #  - "echo $HOME"
