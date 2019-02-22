@@ -28,6 +28,7 @@ script:
 #  - "echo $PWD"
 #  - "echo $HOME"
 #  - "ls $PWD"
+  - buildExampleSketch FreqTest
   - buildExampleSketch HM-ES-TX-WM
   - buildExampleSketch HM-LC-Bl1-FM
   - buildExampleSketch HM-LC-Dim1PWM-CV
