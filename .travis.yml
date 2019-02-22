@@ -2,6 +2,7 @@ language: generic
 env:
   global:
     - IDE_VERSION=1.8.1
+    - CFLAGS=-DUSE_AES
   matrix:
     - BOARD="arduino:avr:pro:cpu=8MHzatmega328"
 before_install:
