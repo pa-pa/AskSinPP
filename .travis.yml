@@ -18,6 +18,7 @@ install:
 #  - arduino --install-boards esp8266:esp8266
 #  - arduino --board esp8266:esp8266:generic --save-prefs
 #  - arduino --pref "compiler.warning_level=all" --save-prefs
+  - arduino --pref "update.check=false" --save-prefs
 script:
   - "echo $PWD"
   - "echo $HOME"
