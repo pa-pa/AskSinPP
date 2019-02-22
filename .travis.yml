@@ -20,7 +20,6 @@ install:
   - arduino --install-library "EnableInterrupt"
   - arduino --install-library "Low-Power"
   - arduino --install-library "OneWire"
-  - arduino --install-library "Sensirion"
   - arduino --install-library "TSL2561"
   - arduino --pref "update.check=false" --save-prefs
 script:
