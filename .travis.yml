@@ -20,10 +20,14 @@ install:
   - arduino --install-library "Low-Power"
   - arduino --pref "update.check=false" --save-prefs
 script:
-  - "echo $PWD"
-  - "echo $HOME"
-  - "ls $PWD"
+#  - "echo $PWD"
+#  - "echo $HOME"
+#  - "ls $PWD"
   - buildExampleSketch HM-RC-4
+  - buildExampleSketch HM-RC-8
+  - buildExampleSketch HM-RC-P1
+  - buildExampleSketch HM-SEC-RHS
+  - buildExampleSketch HM-LC-SWX-SM
 notifications:
   email:
     on_success: change
