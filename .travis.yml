@@ -12,7 +12,7 @@ before_install:
 #  - if [[ "$BOARD" =~ "arduino:samd:" ]]; then
 #      arduino --install-boards arduino:samd;
 #    fi
-- buildExampleSketch() { arduino --verify --board $BOARD $PWD/examples/$1/$1.ino; }
+  - buildExampleSketch() { arduino --verify --board $BOARD $PWD/examples/$1/$1.ino; }
 install:
   - ln -s $PWD /usr/local/share/arduino/libraries/AskSinPP
   - arduino --install-library "EnableInterrupt"
