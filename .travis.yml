@@ -14,7 +14,8 @@ before_install:
 #    fi
   - buildExampleSketch() { arduino --verify --board $BOARD $PWD/examples/$1/$1.ino; }
 install:
-  - ln -s $PWD /usr/local/share/arduino/libraries/AskSinPP
+  - mkdir -p $HOME/Arduino/libraries
+  - ln -s $PWD $HOME/Arduino/libraries/.
   - arduino --install-library "EnableInterrupt"
   - arduino --install-library "Low-Power"
   - arduino --pref "update.check=false" --save-prefs
