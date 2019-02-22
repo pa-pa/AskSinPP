@@ -17,11 +17,11 @@ before_install:
 install:
   - mkdir -p $HOME/Arduino/libraries
   - ln -s $PWD $HOME/Arduino/libraries/.
-  - arduino --install-library "EnableInterrupt"
-  - arduino --install-library "Low-Power"
   - arduino --install-library "OneWire"
+  - git clone https://github.com/GreyGnome/EnableInterrupt $HOME/arduino-ide/libraries/EnableInterrupt
+  - git clone https://github.com/rocketscream/Low-Power.git $HOME/arduino-ide/libraries/Low-Power
   - git clone https://github.com/adafruit/TSL2561-Arduino-Library $HOME/arduino-ide/libraries/TSL2561-Arduino-Library
-  - git clone https://github.com/spease/Sensirion.git $HOME/arduino-ide/libraries//Sensirion
+  - git clone https://github.com/spease/Sensirion.git $HOME/arduino-ide/libraries/Sensirion
   - git clone https://github.com/finitespace/BME280.git  $HOME/arduino-ide/libraries//BME280
   - arduino --pref "update.check=false" --save-prefs
 script:
