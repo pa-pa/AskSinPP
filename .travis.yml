@@ -23,7 +23,7 @@ script:
   - "echo $PWD"
   - "echo $HOME"
   - "ls $PWD"
-  - arduino --verify --board arduino:avr:pro:cpu=8MHzatmega328 $PWD/examples/HM-RC-4/HM-RC-4.ino
+  - arduino --verbose-build --verify --board arduino:avr:pro:cpu=8MHzatmega328 $PWD/examples/HM-RC-4/HM-RC-4.ino
 notifications:
   email:
     on_success: change
