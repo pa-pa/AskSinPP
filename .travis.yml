@@ -23,11 +23,22 @@ script:
 #  - "echo $PWD"
 #  - "echo $HOME"
 #  - "ls $PWD"
+  - buildExampleSketch HM-ES-TX-WM
+  - buildExampleSketch HM-LC-Bl1-FM
+  - buildExampleSketch HM-LC-Dim1PWM-CV
+  - buildExampleSketch HM-LC-Dim1TPBU-FM
+  - buildExampleSketch HM-LC-SW1-BA-PCB
+  - buildExampleSketch HM-LC-SWX-SM
   - buildExampleSketch HM-RC-4
   - buildExampleSketch HM-RC-8
   - buildExampleSketch HM-RC-P1
+  - buildExampleSketch HM-SEC-MDIR
   - buildExampleSketch HM-SEC-RHS
-  - buildExampleSketch HM-LC-SWX-SM
+  - buildExampleSketch HM-SEC-SD
+  - buildExampleSketch HM-SEC-WDS
+  - buildExampleSketch HM-SEN-MDIR-WM55
+  - buildExampleSketch HM-WDS10-TH-O
+  - buildExampleSketch HM-WDS100-C6-O2
 notifications:
   email:
     on_success: change
