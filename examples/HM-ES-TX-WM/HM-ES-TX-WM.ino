@@ -112,6 +112,7 @@ public:
   bool samplesPerCycle (uint8_t value) const { return setByte(sizeof(List0Data) + 5,value); }
 
   uint8_t transmitDevTryMax () const { return 6; }
+  uint8_t ledMode () const { return 1; }
 
   void defaults () {
     ((List0*)this)->defaults();

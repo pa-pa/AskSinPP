@@ -20,6 +20,9 @@ install:
   - arduino --install-library "EnableInterrupt"
   - arduino --install-library "Low-Power"
   - arduino --install-library "OneWire"
+  - git clone https://github.com/adafruit/TSL2561-Arduino-Library $HOME/Arduino/TSL2561-Arduino-Library
+  - git clone https://github.com/spease/Sensirion.git $HOME/Arduino/Sensirion
+  - git clone https://github.com/finitespace/BME280.git  $HOME/Arduino/BME280
   - arduino --pref "update.check=false" --save-prefs
 script:
 #  - "echo $PWD"
