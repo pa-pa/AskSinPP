@@ -28,7 +28,7 @@
 #include <EnableInterrupt.h>
 #include <AskSinPP.h>
 #include <Dimmer.h>
-#include <Sensors/Ntc.h>
+#include <sensors/Ntc.h>
 
 // PIN definitions
 #define DIMMERPIN          22  //PC6
