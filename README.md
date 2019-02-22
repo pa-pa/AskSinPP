@@ -1,7 +1,7 @@
 
 # Please use V3 Branch for your devices. The master branch is used for active development and may be instable
 
-# AskSin++
+# AskSin++  [![Build Status](https://travis-ci.org/pa-pa/AskSinPP.svg?branch=master)](https://travis-ci.org/pa-pa/AskSinPP)
 
 C++ implementation of the AskSin protocol
 
