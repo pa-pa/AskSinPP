@@ -29,7 +29,7 @@
 #include <AskSinPP.h>
 #include <Dimmer.h>
 #include <Remote.h>
-#include <Sensors/Ntc.h>
+#include <sensors/Ntc.h>
 
 // PIN definitions
 #define DIMMERPIN          22  //PC6
