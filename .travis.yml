@@ -12,8 +12,8 @@ before_install:
 #  - if [[ "$BOARD" =~ "arduino:samd:" ]]; then
 #      arduino --install-boards arduino:samd;
 #    fi
-  - buildExampleSketch() { arduino --verify --board $BOARD $PWD/examples/$1/$1.ino | grep -e "^Sketch uses" -e "^Global varaibles"; }
-  - buildCustomSketch() { arduino --verify --board $BOARD $PWD/examples/custom/$1/$1.ino | grep -e "^Sketch uses" -e "^Global varaibles"; }
+  - buildExampleSketch() { arduino --verify --board $BOARD $PWD/examples/$1/$1.ino 2>&1 | grep -e "^Sketch uses" -e "^Global varaibles"; }
+  - buildCustomSketch() { arduino --verify --board $BOARD $PWD/examples/custom/$1/$1.ino 2>&1 | grep -e "^Sketch uses" -e "^Global varaibles"; }
 install:
   - mkdir -p $HOME/Arduino/libraries
   - ln -s $PWD $HOME/Arduino/libraries/.
