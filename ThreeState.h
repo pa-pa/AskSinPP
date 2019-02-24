@@ -9,8 +9,8 @@
 #include "MultiChannelDevice.h"
 #include "Sensors.h"
 
-#ifndef SABOTAGE_ACTIVE
-#define SABOTAGE_ACTIVE LOW
+#ifndef SABOTAGE_ACTIVE_STATE
+#define SABOTAGE_ACTIVE_STATE LOW
 #endif
 
 namespace as {
@@ -120,7 +120,7 @@ public:
       }
     }
     if( sabpin != 0 ) {
-      bool sabstate = (readPin(sabpin) == SABOTAGE_ACTIVE);
+      bool sabstate = (readPin(sabpin) == SABOTAGE_ACTIVE_STATE);
       if( sabotage != sabstate && this->device().getList0().sabotageMsg() == true ) {
         sabotage = sabstate;
         this->changed(true); // trigger StatusInfoMessage to central
