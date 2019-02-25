@@ -2,7 +2,7 @@ language: c++
 env:
   global:
     - IDE_VERSION=1.8.1
-    - BOARDSTM="stm32duino:STM32F1:genericSTM32F103C"
+    - BOARDSTM="stm32duino:STM32F1:mapleMini"
   matrix:
     - BOARD="arduino:avr:pro:cpu=8MHzatmega328"
 before_install:
@@ -13,9 +13,9 @@ before_install:
 #  - if [[ "$BOARD" =~ "arduino:samd:" ]]; then
 #      arduino --install-boards arduino:samd;
 #    fi
-  - buildExampleSketch() { arduino --verify --board $BOARD $PWD/examples/$1/$1.ino 2>&1 | grep -e "^Sketch uses" -e "^Global variables"; }
-  - buildCustomSketch() { arduino --verify --board $BOARD $PWD/examples/custom/$1/$1.ino 2>&1 | grep -e "^Sketch uses" -e "^Global variables"; }
-  - buildStm32Sketch() { arduino --verify --board $BOARDSTM $PWD/examples/stm32/$1/$1.ino 2>&1; }
+  - buildExampleSketch() { arduino --verify --board $BOARD $PWD/examples/$1/$1.ino; }
+  - buildCustomSketch() { arduino --verify --board $BOARD $PWD/examples/custom/$1/$1.ino; }
+  - buildStm32Sketch() { arduino -v --verify --board $BOARDSTM $PWD/examples/stm32/$1/$1.ino; }
 install:
   - mkdir -p $HOME/Arduino/libraries
   - ln -s $PWD $HOME/Arduino/libraries/.
