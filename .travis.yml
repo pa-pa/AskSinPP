@@ -2,9 +2,9 @@ language: c++
 env:
   global:
     - IDE_VERSION=1.8.1
+    - BOARDSTM="stm32duino:STM32F1"
   matrix:
     - BOARD="arduino:avr:pro:cpu=8MHzatmega328"
-    - BOARDSTM="stm32duino:STM32F1"
 before_install:
   - wget http://downloads.arduino.cc/arduino-$IDE_VERSION-linux64.tar.xz
   - tar xf arduino-$IDE_VERSION-linux64.tar.xz
@@ -15,7 +15,7 @@ before_install:
 #    fi
   - buildExampleSketch() { arduino --verify --board $BOARD $PWD/examples/$1/$1.ino 2>&1 | grep -e "^Sketch uses" -e "^Global variables"; }
   - buildCustomSketch() { arduino --verify --board $BOARD $PWD/examples/custom/$1/$1.ino 2>&1 | grep -e "^Sketch uses" -e "^Global variables"; }
-  - buildStm32Sketch() { arduino --verify --board $BOARDSTM $PWD/examples/stm32/$1/$1.ino 2>&1 }
+  - buildStm32Sketch() { arduino --verify --board $BOARDSTM $PWD/examples/stm32/$1/$1.ino 2>&1; }
 install:
   - mkdir -p $HOME/Arduino/libraries
   - ln -s $PWD $HOME/Arduino/libraries/.
