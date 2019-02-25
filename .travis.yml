@@ -33,7 +33,8 @@ script:
 #  - "echo $PWD"
 #  - "echo $HOME"
 #  - "ls $PWD"
-  - buildStm32Sketch HM-DW-WM
+#  - buildStm32Sketch HM-DW-WM
+  - buildStm32Sketch HM-LC-SWX-SM
   - buildExampleSketch FreqTest
   - buildExampleSketch HM-ES-TX-WM
   - buildExampleSketch HM-LC-Bl1-FM
