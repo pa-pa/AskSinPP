@@ -24,6 +24,8 @@ install:
   - git clone https://github.com/spease/Sensirion.git $HOME/arduino-ide/libraries/Sensirion
   - git clone https://github.com/finitespace/BME280.git  $HOME/arduino-ide/libraries//BME280
   - arduino --pref "update.check=false" --save-prefs
+  - arduino --pref "boardsmanager.additional.urls=http://dan.drown.org/stm32duino/package_STM32duino_index.json" --save-prefs
+  - arduino --install-boards Arduino_STM32:STM32F1
   - echo "compiler.cpp.extra_flags=-DUSE_AES -DHM_DEF_KEY=0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x0a,0x0b,0x0c,0x0d,0x0e,0x0f,0x10 -DHM_DEF_KEY_INDEX=0" >$HOME/arduino-ide/hardware/arduino/avr/platform.local.txt
 script:
 #  - "echo $PWD"
