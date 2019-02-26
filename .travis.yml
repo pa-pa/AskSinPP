@@ -1,7 +1,7 @@
 language: c++
 env:
   global:
-    - IDE_VERSION=1.8.8
+    - IDE_VERSION=1.8.1
     - BOARDSTM="stm32duino:STM32F1:mapleMini"
   matrix:
     - BOARD="arduino:avr:pro:cpu=8MHzatmega328"
@@ -33,7 +33,7 @@ script:
 #  - "echo $PWD"
 #  - "echo $HOME"
 #  - "ls $PWD"
-  - buildStm32Sketch HM-DW-WM
+#  - buildStm32Sketch HM-DW-WM
 #  - buildStm32Sketch HM-LC-SWX-SM
   - buildExampleSketch FreqTest
   - buildExampleSketch HM-ES-TX-WM
