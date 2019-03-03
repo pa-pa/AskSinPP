@@ -11,8 +11,8 @@
 #include <AskSinPP.h>
 #include <LowPower.h>
 // uncomment the following 2 lines if you have a TSL2561 connected at address 0x29
-// #include <Wire.h>
-// #include <TSL2561.h>
+//#include <Wire.h>
+//#include <sensors/Tsl2561.h>
 
 #include <MultiChannelDevice.h>
 #include <Motion.h>
@@ -64,7 +64,7 @@ public:
 } hal;
 
 #ifdef _TSL2561_H_
-typedef MotionChannel<Hal,PEERS_PER_CHANNEL,List0,BrightnessTSL2561<TSL2561_ADDR_LOW> > MChannel;
+typedef MotionChannel<Hal,PEERS_PER_CHANNEL,List0,Tsl2561<TSL2561_ADDR_LOW> > MChannel;
 #else
 typedef MotionChannel<Hal,PEERS_PER_CHANNEL,List0> MChannel;
 #endif

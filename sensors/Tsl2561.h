@@ -23,6 +23,10 @@ public:
     if( (_present = _tsl.begin()) == true ) {
       _tsl.setGain(TSL2561_GAIN_16X);
       _tsl.setTiming(TSL2561_INTEGRATIONTIME_402MS);
+      DPRINT("TSL2561 found at 0x");DHEXLN((uint8_t)ADDRESS);
+    }
+    else {
+      DPRINTLN("No TSL2561 present");
     }
   }
   void measure (__attribute__((unused)) bool async=false) {
@@ -38,6 +42,7 @@ public:
         _tsl.setGain(TSL2561_GAIN_16X);
         b = _tsl.getLuminosity(TSL2561_VISIBLE);
       }
+      DPRINT("Brightness: ");DDECLN(b);
       _brightness = b;
     }
   }
