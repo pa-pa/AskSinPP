@@ -913,8 +913,16 @@ public:
       this->physical[0]  = bright;
       this->physical[1]  = adjust;
       // adjust the color temp
-      uint8_t pwm0 = (bright * (200-adjust)) / 200;
-      uint8_t pwm1 = (bright * adjust) / 200;
+//      uint8_t pwm0 = (bright * (200-adjust)) / 200;
+//      uint8_t pwm1 = (bright * adjust) / 200;
+      uint8_t pwm0 = bright;
+      uint8_t pwm1 = bright;
+      if( adjust < 100 ) {
+        pwm1 = (bright * adjust) / 100;
+      }
+      else {
+        pwm0 = (bright * (200-adjust)) / 100;
+      }
       this->pwms[0].set(pwm0);
       this->pwms[1].set(pwm1);
     }
