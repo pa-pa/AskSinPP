@@ -682,11 +682,12 @@ public:
 
 template<class HalType,class DimmerType,class PWM>
 class DimmerControl {
-private:
+protected:
   DimmerType& dimmer;
   PWM pwms[DimmerType::channelCount/DimmerType::virtualCount];
   uint8_t physical[DimmerType::channelCount/DimmerType::virtualCount];
   uint8_t factor[DimmerType::channelCount/DimmerType::virtualCount];
+private:
   uint8_t counter;
   uint8_t overloadcounter;
 
@@ -703,8 +704,8 @@ private:
   } cb;
 
 public:
-  DimmerControl (DimmerType& dim) : dimmer(dim), cb(*this) {}
-  ~DimmerControl () {}
+  DimmerControl (DimmerType& dim) : dimmer(dim), counter(0), overloadcounter(0), cb(*this) {}
+  virtual ~DimmerControl () {}
 
   uint8_t channelCount  () { return DimmerType::channelCount; }
   uint8_t virtualCount  () { return DimmerType::virtualCount; }
@@ -750,7 +751,7 @@ public:
     }
   }
 
-  void updatePhysical () {
+  virtual void updatePhysical () {
     // DPRINT("Pin ");DHEX(pin);DPRINT("  Val ");DHEXLN(calcPwm());
     for( uint8_t i=0; i<physicalCount(); ++i ) {
       uint8_t value = (uint8_t)combineChannels(i+1);
@@ -886,6 +887,36 @@ public:
         c.overheat(false);
         c.reduced(false);
       }
+    }
+  }
+};
+
+
+template<class HalType,class DimmerType,class PWM>
+class DualWhiteControl : public DimmerControl<HalType,DimmerType,PWM> {
+public:
+  typedef DimmerControl<HalType,DimmerType,PWM> BaseControl;
+  DualWhiteControl (DimmerType& dim) : BaseControl(dim) {
+#ifndef NDEBUG
+    if( this->physicalCount() != 2 ) {
+      DPRINTLN("DualWhiteControl needs physical count == 2");
+    }
+#endif
+  }
+  virtual ~DualWhiteControl () {}
+
+  virtual void updatePhysical () {
+    uint16_t bright = this->combineChannels(1);
+    uint16_t adjust = this->combineChannels(2);
+    // set the values
+    if( this->physical[0] != bright || this->physical[1] != adjust) {
+      this->physical[0]  = bright;
+      this->physical[1]  = adjust;
+      // adjust the color temp
+      uint8_t pwm0 = (bright * (200-adjust)) / 200;
+      uint8_t pwm1 = (bright * adjust) / 200;
+      this->pwms[0].set(pwm0);
+      this->pwms[1].set(pwm1);
     }
   }
 };
