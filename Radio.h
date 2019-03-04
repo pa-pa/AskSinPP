@@ -601,7 +601,7 @@ protected:
 
 };
 
-template <class SPIType ,uint8_t GDO0,class HWRADIO=CC1101<SPIType>>
+template <class SPIType ,uint8_t GDO0,class HWRADIO=CC1101<SPIType> >
 class Radio : public HWRADIO {
 
   static void isr () {
