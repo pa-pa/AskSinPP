@@ -51,6 +51,8 @@ script:
   - buildExampleSketch HM-SEN-MDIR-WM55
   - buildExampleSketch HM-WDS10-TH-O
   - buildExampleSketch HM-WDS100-C6-O-2
+  - buildExampleSketch HM-LC-DW-WM
+  - buildExampleSketch HM-DW-WM
   - buildCustomSketch HB-GEN-SENS
   - buildCustomSketch HB-IBUT-8
   - buildCustomSketch HB-RC-3-ENC
