@@ -13,7 +13,7 @@ before_install:
 #  - if [[ "$BOARD" =~ "arduino:samd:" ]]; then
 #      arduino --install-boards arduino:samd;
 #    fi
-  - buildExampleSketch() { arduino --verify --board $BOARD $PWD/examples/$1/$1.ino; }
+  - buildExampleSketch() { arduino --verify --board $BOARD $PWD/examples/$1/$1.ino 2>&1 | tee /tmp/$1.log; cat /tmp/$1.log; }
   - buildCustomSketch() { arduino --verify --board $BOARD $PWD/examples/custom/$1/$1.ino; }
   - buildStm32Sketch() { arduino -v --verify --board $BOARDSTM $PWD/examples/stm32/$1/$1.ino; }
 install:
@@ -36,27 +36,27 @@ script:
 #  - buildStm32Sketch HM-DW-WM
 #  - buildStm32Sketch HM-LC-SWX-SM
   - buildExampleSketch FreqTest
-  - buildExampleSketch HM-ES-TX-WM
-  - buildExampleSketch HM-LC-Bl1-FM
-  - buildExampleSketch HM-LC-Dim1PWM-CV
-  - buildExampleSketch HM-LC-SW1-BA-PCB
-  - buildExampleSketch HM-LC-SWX-SM
-  - buildExampleSketch HM-RC-4
-  - buildExampleSketch HM-RC-8
-  - buildExampleSketch HM-RC-P1
-  - buildExampleSketch HM-SEC-MDIR
-  - buildExampleSketch HM-SEC-RHS
-  - buildExampleSketch HM-SEC-SD
-  - buildExampleSketch HM-SEC-WDS
-  - buildExampleSketch HM-SEN-MDIR-WM55
-  - buildExampleSketch HM-WDS10-TH-O
-  - buildExampleSketch HM-WDS100-C6-O-2
-  - buildExampleSketch HM-LC-DW-WM
-  - buildExampleSketch HM-DW-WM
-  - buildCustomSketch HB-GEN-SENS
-  - buildCustomSketch HB-IBUT-8
-  - buildCustomSketch HB-RC-3-ENC
-  - buildCustomSketch HB-SW2-SENS
+#  - buildExampleSketch HM-ES-TX-WM
+#  - buildExampleSketch HM-LC-Bl1-FM
+#  - buildExampleSketch HM-LC-Dim1PWM-CV
+#  - buildExampleSketch HM-LC-SW1-BA-PCB
+#  - buildExampleSketch HM-LC-SWX-SM
+#  - buildExampleSketch HM-RC-4
+#  - buildExampleSketch HM-RC-8
+#  - buildExampleSketch HM-RC-P1
+#  - buildExampleSketch HM-SEC-MDIR
+#  - buildExampleSketch HM-SEC-RHS
+#  - buildExampleSketch HM-SEC-SD
+#  - buildExampleSketch HM-SEC-WDS
+#  - buildExampleSketch HM-SEN-MDIR-WM55
+#  - buildExampleSketch HM-WDS10-TH-O
+#  - buildExampleSketch HM-WDS100-C6-O-2
+#  - buildExampleSketch HM-LC-DW-WM
+#  - buildExampleSketch HM-DW-WM
+#  - buildCustomSketch HB-GEN-SENS
+#  - buildCustomSketch HB-IBUT-8
+#  - buildCustomSketch HB-RC-3-ENC
+#  - buildCustomSketch HB-SW2-SENS
 notifications:
   email:
     on_success: change
