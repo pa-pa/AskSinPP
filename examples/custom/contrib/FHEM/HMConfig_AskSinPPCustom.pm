@@ -21,6 +21,10 @@ $HMConfig::culHmRegDefine{"caseHeight"}     = {a=>94, s=>2,l=>1,min=>30,max=>100
 $HMConfig::culHmRegDefine{"caseWidth"}      = {a=>102,s=>2,l=>1,min=>30,max=>10000,c=>'',   p=>'n',f=>'',u=>'cm',d=>1,t=>"case width"};
 $HMConfig::culHmRegDefine{"caseLength"}     = {a=>106,s=>2,l=>1,min=>30,max=>10000,c=>'',   p=>'n',f=>'',u=>'cm',d=>1,t=>"case length"};
 
+# HB-UNI-Sen-PRESS
+$HMConfig::culHmRegDefine{"sendIntervalPress"}   = {a=>33, s=>2,l=>0,min=>20,max=>600, c=>'',   p=>'n',f=>'',u=>'s', d=>1,t=>"send interval"};
+$HMConfig::culHmRegDefine{"sensorTypePress"}     = {a=>39 ,s=>1,l=>1,min=>0,max=>1,    c=>'lit',p=>'n',f=>'',u=>'',  d=>1,t=>"sensor type",lit=>{type12MPa=>0,type05MPa=>1}};
+
 $HMConfig::culHmRegType{ibutton}   = { peerNeedsBurst=>1, expectAES=>1, addressHi=>1, addressLo=>1 };
 $HMConfig::culHmRegType{values}    = { eventDlyTime=>1 };
 
@@ -128,6 +132,12 @@ $HMConfig::culHmChanSets{"HB-UNI-Sen-LEV-US00"}{fwUpdate} = "<filename>";
 $HMConfig::culHmChanSets{"HB-UNI-Sen-LEV-US01"} = {};
 $HMConfig::culHmRegChan {"HB-UNI-Sen-LEV-US"}   = { pairCentral=>1, lowBatLimit=>1, sendInterval=>1 };
 $HMConfig::culHmRegChan {"HB-UNI-Sen-LEV-US01"} = { distanceOffset=>1, sensorType=>1, caseDesign=>1, caseHeight=>1, caseWidth=>1, caseLength=>1 };
+
+$HMConfig::culHmModel{"E901"} = {name=>"HB-UNI-Sen-PRESS",st=>'custom',cyc=>'',rxt=>'c:l',lst=>'1',chn=>"Pressure:1:1"};
+$HMConfig::culHmChanSets{"HB-UNI-Sen-PRESS00"}{fwUpdate} = "<filename>";
+$HMConfig::culHmChanSets{"HB-UNI-Sen-PRESS01"} = {};
+$HMConfig::culHmRegChan {"HB-UNI-Sen-PRESS"}   = { pairCentral=>1, sendIntervalPress=>1 };
+$HMConfig::culHmRegChan {"HB-UNI-Sen-PRESS01"} = { sensorTypePress=>1 };
 
 #Custom registers for HB-LC-Dim1PBU-FM
 for my $reading0 (keys %{$HMConfig::culHmRegType{dimmer}}) {
@@ -432,6 +442,14 @@ sub CUL_HM_Parsecustom($$$$$$) {
       push @evtEt,[$chnHash,1,"level:".$chn." %"];
       push @evtEt,[$chnHash,1,"state:".$chn." %"];
 	  }
+    elsif( $model eq "HB-UNI-Sen-PRESS" ) {
+      my $chnHash = $modules{CUL_HM}{defptr}{$src."01"};
+      Log3 $chnHash->{NAME}, 4, $model.": ".$values;
+      # extract 2 byte value
+      my @unpacked = map{hex($_)} unpack("A2A4",$values);
+      push @evtEt,[$chnHash,1,"pressure:".$unpacked[1]/100];
+      push @evtEt,[$chnHash,1,"state:".$unpacked[1]/100];
+    }
     #	2018.04.15 21:56:46 1: HB-GEN-SENS01 has 4 values (090400E82803EB0000)
     elsif( $HMConfig::culHmRegChan{$model.$chnnum} == $HMConfig::culHmRegType{values} ) {
 	    my $chnHash = $modules{CUL_HM}{defptr}{$src.$chnnum};
