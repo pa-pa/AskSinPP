@@ -704,7 +704,7 @@ public:   //--------------------------------------------------------------------
 
   bool detectBurst () {
     if( isIdle() == true ) {
-      HWRADIO::wakeup();
+      wakeup();
       // let radio some time to get carrier signal
       _delay_ms(3);
     }
