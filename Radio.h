@@ -358,6 +358,7 @@ public:
   void setSendTimeout (__attribute__ ((unused)) uint16_t timeout) {}
   void waitTimeout (__attribute__ ((unused)) uint16_t timeout) {}
   void wakeup () {}
+  void initReg(__attribute__ ((unused)) uint8_t val0, __attribute__ ((unused)) uint8_t val1) {}
   bool write (__attribute__ ((unused)) const Message& msg, __attribute__ ((unused)) uint8_t burst) { return false; }
 };
 
