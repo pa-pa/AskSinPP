@@ -6,6 +6,7 @@
 // define this to read the device id, serial and device type from bootloader section
 // #define USE_OTA_BOOTLOADER
 
+#define USE_WOR
 #define EI_NOTEXTERNAL
 #include <EnableInterrupt.h>
 #include <AskSinPP.h>
@@ -76,7 +77,9 @@ public:
 Hal hal;
 SwitchType sdev(devinfo,0x20);
 ConfigToggleButton<SwitchType> cfgBtn(sdev);
+#ifndef USE_WOR
 BurstDetector<Hal> bd(hal);
+#endif
 
 void initPeerings (bool first) {
   // create internal peerings - CCU2 needs this
@@ -97,8 +100,10 @@ void setup () {
   sdev.channel(1).init(RELAY1_PIN);
   buttonISR(cfgBtn,CONFIG_BUTTON_PIN);
   initPeerings(first);
+#ifndef USE_WOR
   // start burst detection
   bd.enable(sysclock);
+#endif
   // stay on for 15 seconds after start
   hal.activity.stayAwake(seconds2ticks(15));
   // measure battery every hour
@@ -106,10 +111,25 @@ void setup () {
   sdev.initDone();
 }
 
+RadioWCB<Hal> wb(hal);
 void loop() {
   bool worked = hal.runready();
   bool poll = sdev.pollRadio();
   if( worked == false && poll == false ) {
     hal.activity.savePower<Sleep<> >(hal);
   }
+
+// polling direct on GDO0 - no function - only debugging
+// replace standard loop
+//  DPRINTLN("Start WOR");
+//  hal.radio.startWOR(&wb);
+//  while( ! hal.radio.getGDO0()) ;
+//  while( hal.radio.getGDO0()) ;
+//  DPRINTLN("Done GDO");
+//  Message buf;
+//  uint8_t len = hal.radio.read(buf);
+//  if( len > 0 ) {
+//    DDECLN(len);
+//    buf.dump();
+//  }
 }
