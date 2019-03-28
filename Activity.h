@@ -53,6 +53,7 @@ public:
   }
   
   virtual void WakeUp() {
+    //digitalWrite(DEBUG_PIN, HIGH);
     DPRINTLN("wakeup");
     h.activity.stayAwake(millis2ticks(500));
   }

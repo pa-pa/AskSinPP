@@ -389,24 +389,26 @@ public:
 
   void startWOR () {
     // init
-    //  spi.writeReg(CC1101_WOREVT1, 0x28);
-    //  spi.writeReg(CC1101_WOREVT0, 0xA0);
-
-    //  spi.writeReg(CC1101_WORCTRL, 0xfb); //0x38);
-    //  spi.writeReg(CC1101_MCSM0, 0x18);
-    //  spi.writeReg(CC1101_MCSM2, 0x01);
-
-    //  spi.writeReg(CC1101_IOCFG0, 0x06);
+    spi.writeReg(CC1101_PKTCTRL1, 0x4C);    // preamble quality estimator threshold=2
+    spi.writeReg(CC1101_MCSM2, 0x1c);       // RX_TIME_RSSI=1, RX_TIME_QUAL=1, RX_TIME=4
+    spi.writeReg(CC1101_WOREVT1, 0x2f);
+    spi.writeReg(CC1101_WOREVT0, 0x65);     // t_Event0=350ms
+    spi.writeReg(CC1101_WORCTRL, 0x78);     // RC_PD=0, EVENT1=7, RC_CAL=1, WOR_RES=0
 
     //start
-    //spi.writeReg(CC1101_MCSM2, 0x03);
     spi.strobe(CC1101_SWORRST);
     spi.strobe(CC1101_SWOR);
+
+    //digitalWrite(DEBUG_PIN, LOW);
   }
 
   void wakeup () {
     spi.ping();
     flushrx();
+    // ToDo: is this the right position?
+    spi.writeReg(CC1101_PKTCTRL1, 0x0C);    // preamble quality estimator threshold=0
+    spi.writeReg(CC1101_MCSM2, 0x07);       // RX_TIME_RSSI=0, RX_TIME_QUAL=0, RX_TIME=7
+
     spi.strobe(CC1101_SRX);
   }
 
@@ -447,51 +449,7 @@ public:
 
     // define init settings for TRX868
     static const uint8_t initVal[] PROGMEM = {
-/*
-      CC1101_IOCFG2,    0x2e, //                      // non inverted GDO2, high impedance tri state
-      // /CC1101_IOCFG1,    0x2E, // (default)            // low output drive strength, non inverted GD=1, high impedance tri state
-      CC1101_IOCFG0,    0x06, // packet CRC ok        // disable temperature sensor, non inverted GDO0,
-      CC1101_FIFOTHR,   0x0D,                         // 0 ADC retention, 0 close in RX, TX FIFO = 9 / RX FIFO = 56 byte
-      CC1101_SYNC1,     0xE9, // --                        // Sync word
-      CC1101_SYNC0,     0xCA, // --
-      // /CC1101_PKTLEN,    0x3D,                         //Default 0xFF, packet length has to be set to 61
-      //CC1101_PKTCTRL1,  0x04,                         // PQT = 0, CRC auto flush = 0, append status = 1, no address check
-      CC1101_PKTCTRL1,  0x04, // 05                        // PQT = 0, CRC auto flush = 0, append status = 1, no address check
-      // /CC1101_PKTCTRL0,  0x45,					  // Default 0x45
-      CC1101_FSCTRL1,   0x06,                         // frequency synthesizer control
-
-      // 868.299866 MHz
-      CC1101_FREQ2,     0x21,
-      CC1101_FREQ1,     0x65,
-      CC1101_FREQ0,     0x6A,
-
-      // 868.2895508
-      //CC1101_FREQ2,     0x21,
-      //CC1101_FREQ1,     0x65,
-      //CC1101_FREQ0,     0x50,
-
-      CC1101_MDMCFG4,  0xC8,
-      CC1101_MDMCFG3,  0x93,
-      CC1101_MDMCFG2,  0x03,
-      CC1101_DEVIATN,  0x34,
-      CC1101_MCSM2,    0x1f,
-      CC1101_MCSM1,    0x00,
-      CC1101_MCSM0,    0x18,
-      CC1101_FOCCFG,   0x16,
-      CC1101_AGCCTRL2, 0x43,
-      CC1101_WOREVT1, 0x28,
-      CC1101_WOREVT0, 0xa0,
-      CC1101_WORCTRL, 0x08,
-      CC1101_FSCAL3,  0xE9,
-      CC1101_FSCAL2,  0x2A,
-      CC1101_FSCAL1,  0x1F,
-      CC1101_FSCAL0,  0x11,
-      CC1101_TEST2,   0x81,
-      CC1101_TEST1,   0x35,
-      CC1101_TEST0,   0x09,
-      CC1101_PATABLE, 0x03,
-      */
-            CC1101_IOCFG2,    0x2E, //                      // non inverted GDO2, high impedance tri state
+      CC1101_IOCFG2,    0x2E, //                      // non inverted GDO2, high impedance tri state
       // /CC1101_IOCFG1,    0x2E, // (default)            // low output drive strength, non inverted GD=1, high impedance tri state
       CC1101_IOCFG0,    0x06, // packet CRC ok        // disable temperature sensor, non inverted GDO0,
       CC1101_FIFOTHR,   0x0D,                         // 0 ADC retention, 0 close in RX, TX FIFO = 9 / RX FIFO = 56 byte
@@ -523,9 +481,9 @@ public:
       CC1101_MCSM0,    0x18,
       CC1101_FOCCFG,   0x16,
       CC1101_AGCCTRL2, 0x43,
-      CC1101_WOREVT1, 0x28,                         // tEVENT0 = 50 ms, RX timeout = 390 us
-      CC1101_WOREVT0, 0xA0,
-      CC1101_WORCTRL, 0x78,                         //EVENT1 = 3, WOR_RES = 0
+      CC1101_WOREVT1, 0x87,
+      CC1101_WOREVT0, 0x6B,
+      CC1101_WORCTRL, 0xF8,
       CC1101_FSCAL3,  0xE9,
       CC1101_FSCAL2,  0x2A,
       CC1101_FSCAL1,  0x1F,
@@ -621,16 +579,16 @@ protected:
   }
 
   uint8_t rcvData(uint8_t *buf, uint8_t size) {
-  DPRINTLN("rcvData");
+  DPRINTLN(" rcvData");
 
     uint8_t packetBytes = 0;
     uint8_t rxBytes = 0;
     uint8_t fifoBytes = spi.readReg(CC1101_RXBYTES, CC1101_STATUS);             // how many bytes are in the buffer
-    DPRINT("RX FIFO: ");DHEXLN(fifoBytes);
+    DPRINT("  RX FIFO: ");DHEXLN(fifoBytes);
     // overflow detected - flush the FIFO
     if( fifoBytes > 0 && (fifoBytes & 0x80) != 0x80 ) {
       packetBytes = spi.readReg(CC1101_RXFIFO, CC1101_CONFIG); // read packet length
-      DPRINT("Start Packet: ");DHEXLN(packetBytes);
+      DPRINT("  Start Packet: ");DHEXLN(packetBytes);
       // check that packet fits into the buffer
       if (packetBytes <= size) {
         spi.readBurst(buf, CC1101_RXFIFO, packetBytes);          // read data packet
@@ -752,6 +710,7 @@ public:   //--------------------------------------------------------------------
   void startWOR (WorCallback* cb) {
     wcb = cb;
     HWRADIO::startWOR();
+    idle = true;
   }
 
   void wakeup () {
@@ -766,8 +725,8 @@ public:   //--------------------------------------------------------------------
   }
 
   void handleInt () {
-	  if( sending == 0 ) {
-      DPRINT("* "); DPRINTLN(millis());
+    if( sending == 0 ) {
+//      DPRINT(" * "); DPRINTLN(millis());
       if (wcb != 0) {
         wcb->WakeUp();
         wcb = 0;
