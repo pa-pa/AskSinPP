@@ -710,6 +710,7 @@ public:   //--------------------------------------------------------------------
   void startWOR (WorCallback* cb) {
     wcb = cb;
     HWRADIO::startWOR();
+    idle = true;
   }
 
   void wakeup () {
