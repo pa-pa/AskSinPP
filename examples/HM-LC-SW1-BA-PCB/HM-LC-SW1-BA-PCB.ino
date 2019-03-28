@@ -117,25 +117,10 @@ void setup () {
   //digitalWrite(DEBUG_PIN, HIGH);
 }
 
-RadioWCB<Hal> wb(hal);
 void loop() {
   bool worked = hal.runready();
   bool poll = sdev.pollRadio();
   if( worked == false && poll == false ) {
     hal.activity.savePower<Sleep<> >(hal);
   }
-
-// polling direct on GDO0 - no function - only debugging
-// replace standard loop
-//  DPRINTLN("Start WOR");
-//  hal.radio.startWOR(&wb);
-//  while( ! hal.radio.getGDO0()) ;
-//  while( hal.radio.getGDO0()) ;
-//  DPRINTLN("Done GDO");
-//  Message buf;
-//  uint8_t len = hal.radio.read(buf);
-//  if( len > 0 ) {
-//    DDECLN(len);
-//    buf.dump();
-//  }
 }

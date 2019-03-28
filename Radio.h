@@ -683,7 +683,7 @@ private:
   Message buffer;
 
 public:   //---------------------------------------------------------------------------------------------------------
-  Radio () :  intread(0), sending(0), idle(false), wcb(0) {}
+  Radio () :  intread(0), sending(0), idle(false) {}
 
   void init () {
     // ensure ISR if off before we start to init CC1101
@@ -700,17 +700,13 @@ public:   //--------------------------------------------------------------------
 
   void setIdle () {
     if( idle == false ) {
+#ifndef USE_WOR
       HWRADIO::setIdle();
+#else
+      HWRADIO::startWOR();
+#endif
       idle = true;
     }
-  }
-
-  WorCallback* wcb;
-
-  void startWOR (WorCallback* cb) {
-    wcb = cb;
-    HWRADIO::startWOR();
-    idle = true;
   }
 
   void wakeup () {
@@ -727,10 +723,6 @@ public:   //--------------------------------------------------------------------
   void handleInt () {
     if( sending == 0 ) {
 //      DPRINT(" * "); DPRINTLN(millis());
-      if (wcb != 0) {
-        wcb->WakeUp();
-        wcb = 0;
-      }
       intread = 1;
 	  }
   }

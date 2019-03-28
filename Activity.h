@@ -45,20 +45,6 @@ public:
 
 };
 
-template <class Hal>
-class RadioWCB : public WorCallback {
-  Hal& h;
-public:
-  RadioWCB(Hal& hal) : h(hal) {
-  }
-  
-  virtual void WakeUp() {
-    //digitalWrite(DEBUG_PIN, HIGH);
-    DPRINTLN("wakeup");
-    h.activity.stayAwake(millis2ticks(500));
-  }
-};
-
 template <bool ENABLETIMER2=false>
 class Sleep : public Idle<ENABLETIMER2> {
 public:
@@ -88,14 +74,11 @@ public:
 
   template <class Hal>
   static void powerSave (Hal& hal) {
-    static RadioWCB<Hal> wcb(hal);
-  
     sysclock.disable();
     uint32_t ticks = sysclock.next();
     if( sysclock.isready() == false ) {
       if( ticks == 0 || ticks > millis2ticks(15) ) {
-        //hal.radio.setIdle();
-        hal.radio.startWOR(&wcb);
+        hal.radio.setIdle();
         uint32_t offset = doSleep(ticks);
         sysclock.correct(offset);
         sysclock.enable();
