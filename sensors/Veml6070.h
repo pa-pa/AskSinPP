@@ -71,7 +71,8 @@ public:
   void measure (__attribute__((unused)) bool async=false) {
     if( present() == true ) {
       _uvvalue = readUV();
-      _uvindex = (_uvvalue < (12 * 187)) ? (_uvvalue + 1) / 187 : 11;
+      uint8_t _integration_time_factor = (INTEGRATION_TIME == VEML6070_4_T) ? 4 : INTEGRATION_TIME;
+      _uvindex = (_uvvalue < (12 * (187 * _integration_time_factor))) ? (_uvvalue + 1) / (187 * _integration_time_factor) : 11;
     }
   }
   uint16_t UVValue ()  { return _uvvalue; }
