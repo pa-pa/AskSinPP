@@ -337,11 +337,6 @@ public:
 };
 #endif
 
-class WorCallback {
-public:
-  virtual void WakeUp() {}
-};
-
 
 extern void* __gb_radio;
 
@@ -384,31 +379,28 @@ public:
       _delay_us(10);
     }
     spi.strobe(CC1101_SFRX);
-    spi.strobe(CC1101_SPWD);                            // enter power down state
-  }
 
-  void startWOR () {
+#ifdef USE_WOR
     // init
     spi.writeReg(CC1101_PKTCTRL1, 0x4C);    // preamble quality estimator threshold=2
     spi.writeReg(CC1101_MCSM2, 0x1c);       // RX_TIME_RSSI=1, RX_TIME_QUAL=1, RX_TIME=4
-    spi.writeReg(CC1101_WOREVT1, 0x2f);
-    spi.writeReg(CC1101_WOREVT0, 0x65);     // t_Event0=350ms
-    spi.writeReg(CC1101_WORCTRL, 0x78);     // RC_PD=0, EVENT1=7, RC_CAL=1, WOR_RES=0
-
     //start
     spi.strobe(CC1101_SWORRST);
     spi.strobe(CC1101_SWOR);
-
+#else
+    spi.strobe(CC1101_SPWD);                            // enter power down state
+#endif
     //digitalWrite(DEBUG_PIN, LOW);
   }
 
   void wakeup () {
     spi.ping();
     flushrx();
+#ifdef USE_WOR
     // ToDo: is this the right position?
     spi.writeReg(CC1101_PKTCTRL1, 0x0C);    // preamble quality estimator threshold=0
     spi.writeReg(CC1101_MCSM2, 0x07);       // RX_TIME_RSSI=0, RX_TIME_QUAL=0, RX_TIME=7
-
+#endif
     spi.strobe(CC1101_SRX);
   }
 
@@ -481,9 +473,9 @@ public:
       CC1101_MCSM0,    0x18,
       CC1101_FOCCFG,   0x16,
       CC1101_AGCCTRL2, 0x43,
-      CC1101_WOREVT1, 0x87,
-      CC1101_WOREVT0, 0x6B,
-      CC1101_WORCTRL, 0xF8,
+      CC1101_WOREVT1, 0x2f,
+      CC1101_WOREVT0, 0x65,     // t_Event0=350ms
+      CC1101_WORCTRL, 0x78,     // RC_PD=0, EVENT1=7, RC_CAL=1, WOR_RES=0
       CC1101_FSCAL3,  0xE9,
       CC1101_FSCAL2,  0x2A,
       CC1101_FSCAL1,  0x1F,
@@ -700,11 +692,7 @@ public:   //--------------------------------------------------------------------
 
   void setIdle () {
     if( idle == false ) {
-#ifndef USE_WOR
       HWRADIO::setIdle();
-#else
-      HWRADIO::startWOR();
-#endif
       idle = true;
     }
   }
