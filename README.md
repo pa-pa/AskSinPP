@@ -46,7 +46,7 @@ In FHEM you can get the key from the *hmKey*,
 number multiplied by 2.
 
 ## Extra Defines for Configuration
-- *USE_WOR* - enables WOR listening during idle (burst devices)
-- *SENSOR_ONLY* - save some byte by exclude code for actor devices
+- **USE_WOR** - enables WOR listening during idle (burst devices)
+- **SENSOR_ONLY** - save some byte by exclude code for actor devices
 
 
