@@ -6,9 +6,6 @@
 // define this to read the device id, serial and device type from bootloader section
 // #define USE_OTA_BOOTLOADER
 
-// toggle a GPIO to correlate ATMega execution (e.g. wakeup) with SPI on logic analyzer
-//#define DEBUG_PIN    6
-
 #define USE_WOR
 #define EI_NOTEXTERNAL
 #include <EnableInterrupt.h>
@@ -112,9 +109,6 @@ void setup () {
   // measure battery every hour
   hal.battery.init(seconds2ticks(60UL*60),sysclock);
   sdev.initDone();
-
-  //pinMode(DEBUG_PIN, OUTPUT);
-  //digitalWrite(DEBUG_PIN, HIGH);
 }
 
 void loop() {
