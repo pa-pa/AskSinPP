@@ -820,7 +820,7 @@ public:   //--------------------------------------------------------------------
 
   uint8_t sndData(uint8_t *buf, uint8_t size, uint8_t burst) {
     timeout.waitTimeout();
-    idle = false;
+    this->wakeup();
     sending = 1;
     uint8_t result = HWRADIO::sndData(buf,size,burst);
     sending = 0;
