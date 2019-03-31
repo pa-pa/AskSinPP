@@ -452,7 +452,7 @@ public:
       CC1101_IOCFG0,    0x06,   //  0x3F    Asserts when sync word has been sent / received, and de-asserts at the end of the packet. In RX, the pin will also deassert when a packet is discarded due to address or maximum length filtering or when the radio enters RXFIFO_OVERFLOW state. In TX the pin will de-assert if the TX FIFO underflows.
       CC1101_FIFOTHR,   0x0D,   //  0x07    TX FIFO = 9, RX FIFO = 56 byte
       CC1101_SYNC1,     0xE9,   //  0xD3    Sync word MSB
-      CC1101_SYNC0,     0xCA,   //  0x91    Sync word MSB
+      CC1101_SYNC0,     0xCA,   //  0x91    Sync word LSB
     //CC1101_PKTLEN,    0xFF,   //  0xFF
       CC1101_PKTCTRL1,  0x0C,   //  0x04    CRC auto flush = 1, append status = 1,
     //CC1101_PKTCTRL0,  0x45,   //  0x45
