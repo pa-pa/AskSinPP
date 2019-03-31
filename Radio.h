@@ -356,7 +356,6 @@ public:
   uint8_t reset () { return 0; }
   uint8_t rssi () { return 0; }
   void setIdle () {}
-  void startWOR () {}
   void setSendTimeout (__attribute__ ((unused)) uint16_t timeout) {}
   void waitTimeout (__attribute__ ((unused)) uint16_t timeout) {}
   void wakeup () {}
@@ -588,16 +587,16 @@ protected:
   }
 
   uint8_t rcvData(uint8_t *buf, uint8_t size) {
-  DPRINTLN(" rcvData");
+  //DPRINTLN(" rcvData");
 
     uint8_t packetBytes = 0;
     uint8_t rxBytes = 0;
     uint8_t fifoBytes = spi.readReg(CC1101_RXBYTES, CC1101_STATUS);             // how many bytes are in the buffer
-    DPRINT("  RX FIFO: ");DHEXLN(fifoBytes);
+    //DPRINT("  RX FIFO: ");DHEXLN(fifoBytes);
     // overflow detected - flush the FIFO
     if( fifoBytes > 0 && (fifoBytes & 0x80) != 0x80 ) {
       packetBytes = spi.readReg(CC1101_RXFIFO, CC1101_CONFIG); // read packet length
-      DPRINT("  Start Packet: ");DHEXLN(packetBytes);
+      //DPRINT("  Start Packet: ");DHEXLN(packetBytes);
       // check that packet fits into the buffer
       if (packetBytes <= size) {
         spi.readBurst(buf, CC1101_RXFIFO, packetBytes);          // read data packet
@@ -802,6 +801,7 @@ public:   //--------------------------------------------------------------------
       return false;
 	
     intread = 0;
+    idle = false;
     bool ack=false;
     uint8_t len = this->rcvData(buffer.buffer(),buffer.buffersize());
     if( len > 0 ) {
@@ -820,7 +820,7 @@ public:   //--------------------------------------------------------------------
 
   uint8_t sndData(uint8_t *buf, uint8_t size, uint8_t burst) {
     timeout.waitTimeout();
-    this->wakeup();
+    idle = false;
     sending = 1;
     uint8_t result = HWRADIO::sndData(buf,size,burst);
     sending = 0;
