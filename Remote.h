@@ -26,8 +26,8 @@ public:
   }
 };
 
-template<class HALTYPE,int PEERCOUNT,class List0Type=List0>
-class RemoteChannel : public Channel<HALTYPE,RemoteList1,EmptyList,DefList4,PEERCOUNT,List0Type>, public Button {
+template<class HALTYPE,int PEERCOUNT,class List0Type=List0,class List1Type=RemoteList1>
+class RemoteChannel : public Channel<HALTYPE,List1Type,EmptyList,DefList4,PEERCOUNT,List0Type>, public Button {
 
 private:
   uint8_t       repeatcnt;
@@ -35,7 +35,7 @@ private:
 
 public:
 
-  typedef Channel<HALTYPE,RemoteList1,EmptyList,DefList4,PEERCOUNT,List0Type> BaseChannel;
+  typedef Channel<HALTYPE,List1Type,EmptyList,DefList4,PEERCOUNT,List0Type> BaseChannel;
 
   RemoteChannel () : BaseChannel(), repeatcnt(0), isr(false) {}
   virtual ~RemoteChannel () {}
