@@ -60,8 +60,7 @@ script:
   - buildCustomSketch HB-IBUT-8
   - buildCustomSketch HB-RC-3-ENC
   - buildCustomSketch HB-SW2-SENS
-  - buildJeromeSketch HM-MOD-Re-8
-  - buildJeromeSketch HB-LC-Bl1PBU-FM
+#  - buildJeromeSketch HB-LC-Bl1PBU-FM
   - buildJeromeSketch HB-LC-SW12-FM
   - buildJeromeSketch HB-LC-Sw1PBU-FM
   - buildJeromeSketch HB-LC-Sw2PBU-FM
