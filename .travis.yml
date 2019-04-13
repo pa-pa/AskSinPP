@@ -27,6 +27,7 @@ install:
   - git clone https://github.com/adafruit/TSL2561-Arduino-Library $HOME/arduino-ide/libraries/TSL2561-Arduino-Library
   - git clone https://github.com/spease/Sensirion.git $HOME/arduino-ide/libraries/Sensirion
   - git clone https://github.com/finitespace/BME280.git  $HOME/arduino-ide/libraries/BME280
+  - git clone https://github.com/xoseperez/hlw8012.git  $HOME/arduino-ide/libraries/hlw8012
   - git clone https://github.com/jp112sdl/Beispiel_AskSinPP.git $HOME/Beispiel_AskSinPP
   - arduino --pref "update.check=false" --save-prefs
   - arduino --pref "boardsmanager.additional.urls=http://dan.drown.org/stm32duino/package_STM32duino_index.json" --save-prefs
@@ -60,10 +61,21 @@ script:
   - buildCustomSketch HB-IBUT-8
   - buildCustomSketch HB-RC-3-ENC
   - buildCustomSketch HB-SW2-SENS
-#  - buildJeromeSketch HB-LC-Bl1PBU-FM
+  - buildJeromeSketch HB-LC-Bl1PBU-FM
   - buildJeromeSketch HB-LC-SW12-FM
   - buildJeromeSketch HB-LC-Sw1PBU-FM
   - buildJeromeSketch HB-LC-Sw2PBU-FM
+  - buildJeromeSketch HM-CC-SCD
+  - buildJeromeSketch HM-Dis-TD-T
+  - buildJeromeSketch HM-Dis-WM55
+  - buildJeromeSketch HM-ES-PMSw1-Pl
+  - buildJeromeSketch HM-ES-PMSw1-Pl_GosundSP1
+  - buildJeromeSketch HM-ES-TX-WM_CCU
+  - buildJeromeSketch HM-LC-SW1-FM_Shelly1
+  - buildJeromeSketch HM-LC-SW1-SM_SONOFF_BASIC
+  - buildJeromeSketch HM-LC-Sw1-Pl-CT-R1
+  - buildJeromeSketch HM-LC-Sw1-Pl-DN-R1
+  - buildJeromeSketch HM-LC-Sw1-Pl-DN-R1_OBI
   - buildJeromeSketch HM-MOD-Re-8
 notifications:
   email:
