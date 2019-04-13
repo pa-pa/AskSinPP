@@ -67,9 +67,9 @@ script:
   - buildJeromeSketch HB-LC-Sw2PBU-FM
   - buildJeromeSketch HM-CC-SCD
   - buildJeromeSketch HM-Dis-TD-T
-  - buildJeromeSketch HM-Dis-WM55
-  - buildJeromeSketch HM-ES-PMSw1-Pl
-  - buildJeromeSketch HM-ES-PMSw1-Pl_GosundSP1
+#  - buildJeromeSketch HM-Dis-WM55
+#  - buildJeromeSketch HM-ES-PMSw1-Pl
+#  - buildJeromeSketch HM-ES-PMSw1-Pl_GosundSP1
   - buildJeromeSketch HM-ES-TX-WM_CCU
   - buildJeromeSketch HM-LC-SW1-FM_Shelly1
   - buildJeromeSketch HM-LC-SW1-SM_SONOFF_BASIC
