@@ -17,6 +17,7 @@ before_install:
   - buildExampleSketch() { arduino --verify --board $BOARD $PWD/examples/$1/$1.ino; }
   - buildCustomSketch() { arduino --verify --board $BOARD $PWD/examples/custom/$1/$1.ino; }
   - buildStm32Sketch() { arduino -v --verify --board $BOARDSTM $PWD/examples/stm32/$1/$1.ino; }
+  - buildJeromeSketch() { arduino -v --verify --board $BOARDSTM $HOME/Beispiel_AskSinPP/examples/$1/$1.ino; }
 install:
   - mkdir -p $HOME/Arduino/libraries
   - ln -s $PWD $HOME/Arduino/libraries/.
@@ -25,7 +26,8 @@ install:
   - git clone https://github.com/rocketscream/Low-Power.git $HOME/arduino-ide/libraries/Low-Power
   - git clone https://github.com/adafruit/TSL2561-Arduino-Library $HOME/arduino-ide/libraries/TSL2561-Arduino-Library
   - git clone https://github.com/spease/Sensirion.git $HOME/arduino-ide/libraries/Sensirion
-  - git clone https://github.com/finitespace/BME280.git  $HOME/arduino-ide/libraries//BME280
+  - git clone https://github.com/finitespace/BME280.git  $HOME/arduino-ide/libraries/BME280
+  - git clone https://github.com/jp112sdl/Beispiel_AskSinPP.git $HOME/Beispiel_AskSinPP
   - arduino --pref "update.check=false" --save-prefs
   - arduino --pref "boardsmanager.additional.urls=http://dan.drown.org/stm32duino/package_STM32duino_index.json" --save-prefs
   - arduino --install-boards stm32duino:STM32F1:2017.9.5
@@ -36,6 +38,7 @@ script:
 #  - "ls $PWD"
 #  - buildStm32Sketch HM-DW-WM
 #  - buildStm32Sketch HM-LC-SWX-SM
+  - buildJeromeSketch HM-MOD-Re-8
   - buildExampleSketch FreqTest
   - buildExampleSketch HM-ES-TX-WM
   - buildExampleSketch HM-LC-Bl1-FM
