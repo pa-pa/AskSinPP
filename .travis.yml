@@ -38,7 +38,6 @@ script:
 #  - "ls $PWD"
 #  - buildStm32Sketch HM-DW-WM
 #  - buildStm32Sketch HM-LC-SWX-SM
-  - buildJeromeSketch HM-MOD-Re-8
   - buildExampleSketch FreqTest
   - buildExampleSketch HM-ES-TX-WM
   - buildExampleSketch HM-LC-Bl1-FM
@@ -61,6 +60,12 @@ script:
   - buildCustomSketch HB-IBUT-8
   - buildCustomSketch HB-RC-3-ENC
   - buildCustomSketch HB-SW2-SENS
+  - buildJeromeSketch HM-MOD-Re-8
+  - buildJeromeSketch HB-LC-Bl1PBU-FM
+  - buildJeromeSketch HB-LC-SW12-FM
+  - buildJeromeSketch HB-LC-Sw1PBU-FM
+  - buildJeromeSketch HB-LC-Sw2PBU-FM
+  - buildJeromeSketch HM-MOD-Re-8
 notifications:
   email:
     on_success: change
