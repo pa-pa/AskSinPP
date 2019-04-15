@@ -42,7 +42,6 @@ script:
 #  - "ls $PWD"
 #  - buildStm32Sketch HM-DW-WM
 #  - buildStm32Sketch HM-LC-SWX-SM
-  - buildJerome644Sketch HM-ES-PMSw1-Pl
   - buildExampleSketch FreqTest
   - buildExampleSketch HM-ES-TX-WM
   - buildExampleSketch HM-LC-Bl1-FM
@@ -73,7 +72,7 @@ script:
   - buildJeromeSketch HM-Dis-TD-T
 #  - buildJeromeSketch HM-Dis-WM55
   - buildJerome644Sketch HM-ES-PMSw1-Pl
-#  - buildJeromeSketch HM-ES-PMSw1-Pl_GosundSP1
+  - buildJerome644Sketch HM-ES-PMSw1-Pl_GosundSP1
   - buildJeromeSketch HM-ES-TX-WM_CCU
   - buildJeromeSketch HM-LC-SW1-FM_Shelly1
   - buildJeromeSketch HM-LC-SW1-SM_SONOFF_BASIC
