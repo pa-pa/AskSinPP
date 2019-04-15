@@ -3,7 +3,7 @@ env:
   global:
     - IDE_VERSION=1.8.1
     - BOARDSTM="stm32duino:STM32F1:mapleMini"
-    - BOARD644="MightyCore:avr:644:pinout=bobuino,variant=modelP,clock=8MHz_internal"
+    - BOARD644="MightyCore:avr:644:pinout=bobuino,variant=modelP,LTO=Os,clock=8MHz_internal"
   matrix:
     - BOARD="arduino:avr:pro:cpu=8MHzatmega328"
 before_install:
@@ -19,7 +19,7 @@ before_install:
   - buildCustomSketch() { arduino --verify --board $BOARD $PWD/examples/custom/$1/$1.ino; }
   - buildStm32Sketch() { arduino -v --verify --board $BOARDSTM $PWD/examples/stm32/$1/$1.ino; }
   - buildJeromeSketch() { arduino --verify --board $BOARD $HOME/Beispiel_AskSinPP/examples/$1/$1.ino; }
-  - buildJerome644Sketch() { arduino --verify --board $BOARD644 $HOME/Beispiel_AskSinPP/examples/$1/$1.ino; }
+  - buildJerome644Sketch() { arduino -v --verify --board $BOARD644 $HOME/Beispiel_AskSinPP/examples/$1/$1.ino; }
 install:
   - mkdir -p $HOME/Arduino/libraries
   - ln -s $PWD $HOME/Arduino/libraries/.
@@ -42,6 +42,7 @@ script:
 #  - "ls $PWD"
 #  - buildStm32Sketch HM-DW-WM
 #  - buildStm32Sketch HM-LC-SWX-SM
+  - buildJerome644Sketch HM-ES-PMSw1-Pl
   - buildExampleSketch FreqTest
   - buildExampleSketch HM-ES-TX-WM
   - buildExampleSketch HM-LC-Bl1-FM
