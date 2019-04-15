@@ -4,8 +4,8 @@ env:
     - IDE_VERSION=1.8.1
     - BOARDSTM="stm32duino:STM32F1:mapleMini"
     - BOARD644="MightyCore:avr:644:pinout=bobuino,variant=modelP,LTO=Os,clock=8MHz_internal"
-  matrix:
-    - BOARD="arduino:avr:pro:cpu=8MHzatmega328"
+    - BOARD328P="arduino:avr:pro:cpu=8MHzatmega328"
+    - BOARD=$BOARD328P
 before_install:
   - wget http://downloads.arduino.cc/arduino-$IDE_VERSION-linux64.tar.xz
   - tar xf arduino-$IDE_VERSION-linux64.tar.xz
@@ -15,6 +15,7 @@ before_install:
 #      arduino --install-boards arduino:samd;
 #    fi
 #  - buildExampleSketch() { arduino --verify --board $BOARD $PWD/examples/$1/$1.ino 2>&1 | tee /tmp/$1.log; cat /tmp/$1.log; }
+  - buildSketch() { arduino --verify --board $BOARD $SKETCHPATH/$1/$1.ino; }
   - buildExampleSketch() { arduino --verify --board $BOARD $PWD/examples/$1/$1.ino; }
   - buildCustomSketch() { arduino --verify --board $BOARD $PWD/examples/custom/$1/$1.ino; }
   - buildStm32Sketch() { arduino -v --verify --board $BOARDSTM $PWD/examples/stm32/$1/$1.ino; }
@@ -42,7 +43,8 @@ script:
 #  - "ls $PWD"
 #  - buildStm32Sketch HM-DW-WM
 #  - buildStm32Sketch HM-LC-SWX-SM
-  - buildExampleSketch FreqTest
+  - export SKETCHPATH=$PWD/examples
+  - buildSketch FreqTest
   - buildExampleSketch HM-ES-TX-WM
   - buildExampleSketch HM-LC-Bl1-FM
   - buildExampleSketch HM-LC-Dim1PWM-CV
