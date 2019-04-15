@@ -14,13 +14,8 @@ before_install:
 #  - if [[ "$BOARD" =~ "arduino:samd:" ]]; then
 #      arduino --install-boards arduino:samd;
 #    fi
-#  - buildExampleSketch() { arduino --verify --board $BOARD $PWD/examples/$1/$1.ino 2>&1 | tee /tmp/$1.log; cat /tmp/$1.log; }
+#  - buildSketch() { arduino --verify --board $BOARD $SKETCHPATH/$1/$1.ino 2>&1 | tee /tmp/$1.log; cat /tmp/$1.log; }
   - buildSketch() { arduino --verify --board $BOARD $SKETCHPATH/$1/$1.ino; }
-  - buildExampleSketch() { arduino --verify --board $BOARD $PWD/examples/$1/$1.ino; }
-  - buildCustomSketch() { arduino --verify --board $BOARD $PWD/examples/custom/$1/$1.ino; }
-  - buildStm32Sketch() { arduino -v --verify --board $BOARDSTM $PWD/examples/stm32/$1/$1.ino; }
-  - buildJeromeSketch() { arduino --verify --board $BOARD $HOME/Beispiel_AskSinPP/examples/$1/$1.ino; }
-  - buildJerome644Sketch() { arduino --verify --board $BOARD644 $HOME/Beispiel_AskSinPP/examples/$1/$1.ino; }
 install:
   - mkdir -p $HOME/Arduino/libraries
   - ln -s $PWD $HOME/Arduino/libraries/.
@@ -41,47 +36,52 @@ script:
 #  - "echo $PWD"
 #  - "echo $HOME"
 #  - "ls $PWD"
-#  - buildStm32Sketch HM-DW-WM
-#  - buildStm32Sketch HM-LC-SWX-SM
+#  - buildSketch HM-DW-WM
+#  - buildSketch HM-LC-SWX-SM
+  - export BOARD=$BOARD328P
   - export SKETCHPATH=$PWD/examples
   - buildSketch FreqTest
-  - buildExampleSketch HM-ES-TX-WM
-  - buildExampleSketch HM-LC-Bl1-FM
-  - buildExampleSketch HM-LC-Dim1PWM-CV
-  - buildExampleSketch HM-LC-SW1-BA-PCB
-  - buildExampleSketch HM-LC-SWX-SM
-  - buildExampleSketch HM-RC-4
-  - buildExampleSketch HM-RC-8
-  - buildExampleSketch HM-RC-P1
-  - buildExampleSketch HM-SEC-MDIR
-  - buildExampleSketch HM-SEC-RHS
-  - buildExampleSketch HM-SEC-SD
-  - buildExampleSketch HM-SEC-WDS
-  - buildExampleSketch HM-SEN-MDIR-WM55
-  - buildExampleSketch HM-WDS10-TH-O
-  - buildExampleSketch HM-WDS100-C6-O-2
-  - buildExampleSketch HM-LC-DW-WM
-  - buildExampleSketch HM-DW-WM
-  - buildCustomSketch HB-GEN-SENS
-  - buildCustomSketch HB-IBUT-8
-  - buildCustomSketch HB-RC-3-ENC
-  - buildCustomSketch HB-SW2-SENS
-  - buildJeromeSketch HB-LC-Bl1PBU-FM
-  - buildJeromeSketch HB-LC-SW12-FM
-  - buildJeromeSketch HB-LC-Sw1PBU-FM
-  - buildJeromeSketch HB-LC-Sw2PBU-FM
-  - buildJeromeSketch HM-CC-SCD
-  - buildJeromeSketch HM-Dis-TD-T
-#  - buildJeromeSketch HM-Dis-WM55
-  - buildJerome644Sketch HM-ES-PMSw1-Pl
-  - buildJerome644Sketch HM-ES-PMSw1-Pl_GosundSP1
-  - buildJeromeSketch HM-ES-TX-WM_CCU
-  - buildJeromeSketch HM-LC-SW1-FM_Shelly1
-  - buildJeromeSketch HM-LC-SW1-SM_SONOFF_BASIC
-  - buildJeromeSketch HM-LC-Sw1-Pl-CT-R1
-  - buildJeromeSketch HM-LC-Sw1-Pl-DN-R1
-  - buildJeromeSketch HM-LC-Sw1-Pl-DN-R1_OBI
-  - buildJeromeSketch HM-MOD-Re-8
+  - buildSketch HM-ES-TX-WM
+  - buildSketch HM-LC-Bl1-FM
+  - buildSketch HM-LC-Dim1PWM-CV
+  - buildSketch HM-LC-SW1-BA-PCB
+  - buildSketch HM-LC-SWX-SM
+  - buildSketch HM-RC-4
+  - buildSketch HM-RC-8
+  - buildSketch HM-RC-P1
+  - buildSketch HM-SEC-MDIR
+  - buildSketch HM-SEC-RHS
+  - buildSketch HM-SEC-SD
+  - buildSketch HM-SEC-WDS
+  - buildSketch HM-SEN-MDIR-WM55
+  - buildSketch HM-WDS10-TH-O
+  - buildSketch HM-WDS100-C6-O-2
+  - buildSketch HM-LC-DW-WM
+  - buildSketch HM-DW-WM
+  - export SKETCHPATH=$PWD/examples/custom
+  - buildSketch HB-GEN-SENS
+  - buildSketch HB-IBUT-8
+  - buildSketch HB-RC-3-ENC
+  - buildSketch HB-SW2-SENS
+  - export SKETCHPATH=$HOME/Beispiel_AskSinPP/examples
+  - buildSketch HB-LC-Bl1PBU-FM
+  - buildSketch HB-LC-SW12-FM
+  - buildSketch HB-LC-Sw1PBU-FM
+  - buildSketch HB-LC-Sw2PBU-FM
+  - buildSketch HM-CC-SCD
+  - buildSketch HM-Dis-TD-T
+#  - buildSketch HM-Dis-WM55
+  - export BOARD=$BOARD644
+  - buildSketch HM-ES-PMSw1-Pl
+  - buildSketch HM-ES-PMSw1-Pl_GosundSP1
+  - export BOARD=$BOARD328P
+  - buildSketch HM-ES-TX-WM_CCU
+  - buildSketch HM-LC-SW1-FM_Shelly1
+  - buildSketch HM-LC-SW1-SM_SONOFF_BASIC
+  - buildSketch HM-LC-Sw1-Pl-CT-R1
+  - buildSketch HM-LC-Sw1-Pl-DN-R1
+  - buildSketch HM-LC-Sw1-Pl-DN-R1_OBI
+  - buildSketch HM-MOD-Re-8
 notifications:
   email:
     on_success: change
