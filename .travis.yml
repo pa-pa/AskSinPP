@@ -3,6 +3,7 @@ env:
   global:
     - IDE_VERSION=1.8.1
     - BOARDSTM="stm32duino:STM32F1:mapleMini"
+    - BOARD644="MightyCore:avr:644:pinout=bobuino,variant=modelP,clock=8MHz_internal"
   matrix:
     - BOARD="arduino:avr:pro:cpu=8MHzatmega328"
 before_install:
@@ -18,6 +19,7 @@ before_install:
   - buildCustomSketch() { arduino --verify --board $BOARD $PWD/examples/custom/$1/$1.ino; }
   - buildStm32Sketch() { arduino -v --verify --board $BOARDSTM $PWD/examples/stm32/$1/$1.ino; }
   - buildJeromeSketch() { arduino --verify --board $BOARD $HOME/Beispiel_AskSinPP/examples/$1/$1.ino; }
+  - buildJerome644Sketch() { arduino --verify --board $BOARD644 $HOME/Beispiel_AskSinPP/examples/$1/$1.ino; }
 install:
   - mkdir -p $HOME/Arduino/libraries
   - ln -s $PWD $HOME/Arduino/libraries/.
@@ -30,8 +32,9 @@ install:
   - git clone https://github.com/xoseperez/hlw8012.git  $HOME/arduino-ide/libraries/hlw8012
   - git clone https://github.com/jp112sdl/Beispiel_AskSinPP.git $HOME/Beispiel_AskSinPP
   - arduino --pref "update.check=false" --save-prefs
-  - arduino --pref "boardsmanager.additional.urls=http://dan.drown.org/stm32duino/package_STM32duino_index.json" --save-prefs
+  - arduino --pref "boardsmanager.additional.urls=http://dan.drown.org/stm32duino/package_STM32duino_index.json;https://mcudude.github.io/MightyCore/package_MCUdude_MightyCore_index.json" --save-prefs
   - arduino --install-boards stm32duino:STM32F1:2017.9.5
+  - arduino --install-boards MightyCore:MightyCore:2.0.1
   - echo "compiler.cpp.extra_flags=-DUSE_AES -DHM_DEF_KEY=0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x0a,0x0b,0x0c,0x0d,0x0e,0x0f,0x10 -DHM_DEF_KEY_INDEX=0" >$HOME/arduino-ide/hardware/arduino/avr/platform.local.txt
 script:
 #  - "echo $PWD"
@@ -68,7 +71,7 @@ script:
   - buildJeromeSketch HM-CC-SCD
   - buildJeromeSketch HM-Dis-TD-T
 #  - buildJeromeSketch HM-Dis-WM55
-#  - buildJeromeSketch HM-ES-PMSw1-Pl
+  - buildJerome644Sketch HM-ES-PMSw1-Pl
 #  - buildJeromeSketch HM-ES-PMSw1-Pl_GosundSP1
   - buildJeromeSketch HM-ES-TX-WM_CCU
   - buildJeromeSketch HM-LC-SW1-FM_Shelly1
