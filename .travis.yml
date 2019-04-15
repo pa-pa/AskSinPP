@@ -19,7 +19,7 @@ before_install:
   - buildCustomSketch() { arduino --verify --board $BOARD $PWD/examples/custom/$1/$1.ino; }
   - buildStm32Sketch() { arduino -v --verify --board $BOARDSTM $PWD/examples/stm32/$1/$1.ino; }
   - buildJeromeSketch() { arduino --verify --board $BOARD $HOME/Beispiel_AskSinPP/examples/$1/$1.ino; }
-  - buildJerome644Sketch() { arduino -v --verify --board $BOARD644 $HOME/Beispiel_AskSinPP/examples/$1/$1.ino; }
+  - buildJerome644Sketch() { arduino --verify --board $BOARD644 $HOME/Beispiel_AskSinPP/examples/$1/$1.ino; }
 install:
   - mkdir -p $HOME/Arduino/libraries
   - ln -s $PWD $HOME/Arduino/libraries/.
