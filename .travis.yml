@@ -100,8 +100,8 @@ script:
   - buildSketch HM-WDS30-OT2-NTC
   - buildSketch HM-WDS30-T-O-NTC
   - buildSketch HM-WDS40-TH-I-BME280
-  - buildSketch HM-WDS40-TH-I-DHT22
-  - buildSketch HM-WDS40-TH-I-DS18B20
+#  - buildSketch HM-WDS40-TH-I-DHT22
+#  - buildSketch HM-WDS40-TH-I-DS18B20
   - buildSketch HM-WDS40-TH-I-SHT10
 notifications:
   email:
