@@ -92,10 +92,17 @@ script:
   - buildSketch HM-SCI-3-FM
   - buildSketch HM-SEC-SC
   - buildSketch HM-SEC-SCO
-  - buildSketch HM-Sec-TiS
+#  - buildSketch HM-Sec-TiS
   - buildSketch HM-Sen-DB-PCB
   - buildSketch HM-Sen-LI-O
   - buildSketch HM-Sen-WA-OD
+  - buildSketch HM-WDS30-OT2-DS18B20
+  - buildSketch HM-WDS30-OT2-NTC
+  - buildSketch HM-WDS30-T-O-NTC
+  - buildSketch HM-WDS40-TH-I-BME280
+  - buildSketch HM-WDS40-TH-I-DHT22
+  - buildSketch HM-WDS40-TH-I-DS18B20
+  - buildSketch HM-WDS40-TH-I-SHT10
 notifications:
   email:
     on_success: change
