@@ -92,7 +92,7 @@ script:
   - buildSketch HM-SCI-3-FM
   - buildSketch HM-SEC-SC
   - buildSketch HM-SEC-SCO
-#  - buildSketch HM-Sec-TiS
+  - buildSketch HM-Sec-TiS
   - buildSketch HM-Sen-DB-PCB
   - buildSketch HM-Sen-LI-O
   - buildSketch HM-Sen-WA-OD
