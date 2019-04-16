@@ -81,7 +81,21 @@ script:
   - buildSketch HM-LC-Sw1-Pl-CT-R1
   - buildSketch HM-LC-Sw1-Pl-DN-R1
   - buildSketch HM-LC-Sw1-Pl-DN-R1_OBI
+  - buildSketch HM-LC-Sw2-FM
   - buildSketch HM-MOD-Re-8
+  - buildSketch HM-PB-2-FM
+  - buildSketch HM-PB-2-WM55
+  - buildSketch HM-PB-6-WM55
+  - buildSketch HM-PB-MP-WM
+  - buildSketch HM-PBI-4-FM
+  - buildSketch HM-RC-2-PBU-FM
+  - buildSketch HM-SCI-3-FM
+  - buildSketch HM-SEC-SC
+  - buildSketch HM-SEC-SCO
+  - buildSketch HM-Sec-TiS
+  - buildSketch HM-Sen-DB-PCB
+  - buildSketch HM-Sen-LI-O
+  - buildSketch HM-Sen-WA-OD
 notifications:
   email:
     on_success: change
