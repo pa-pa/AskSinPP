@@ -22,9 +22,13 @@ install:
   - arduino --install-library "OneWire"
   - git clone https://github.com/GreyGnome/EnableInterrupt $HOME/arduino-ide/libraries/EnableInterrupt
   - git clone https://github.com/rocketscream/Low-Power.git $HOME/arduino-ide/libraries/Low-Power
-  - git clone https://github.com/adafruit/TSL2561-Arduino-Library $HOME/arduino-ide/libraries/TSL2561-Arduino-Library
+  - git clone https://github.com/adafruit/Adafruit_Sensor $HOME/arduino-ide/libraries/Adafruit_Sensor
+  - git clone https://github.com/adafruit/DHT-sensor-library $HOME/arduino-ide/libraries/DHT-sensor-library
   - git clone https://github.com/spease/Sensirion.git $HOME/arduino-ide/libraries/Sensirion
+  - git clone https://github.com/adafruit/TSL2561-Arduino-Library $HOME/arduino-ide/libraries/TSL2561-Arduino-Library
+  - git clone https://github.com/adafruit/Adafruit-BMP085-Library $HOME/arduino-ide/libraries/Adafruit-BMP085-Library
   - git clone https://github.com/finitespace/BME280.git $HOME/arduino-ide/libraries/BME280
+  - git clone https://github.com/claws/BH1750 $HOME/arduino-ide/libraries/BH1750
   - git clone https://github.com/xoseperez/hlw8012.git $HOME/arduino-ide/libraries/hlw8012
   - git clone https://github.com/bogde/HX711.git $HOME/arduino-ide/libraries/HX711
 # Sketches from Jerome to test
@@ -110,7 +114,7 @@ script:
   - buildSketch HM-WDS30-OT2-NTC
   - buildSketch HM-WDS30-T-O-NTC
   - buildSketch HM-WDS40-TH-I-BME280
-#  - buildSketch HM-WDS40-TH-I-DHT22
+  - buildSketch HM-WDS40-TH-I-DHT22
 #  - buildSketch HM-WDS40-TH-I-DS18B20
   - buildSketch HM-WDS40-TH-I-SHT10
 # more homebrew devices
@@ -128,5 +132,5 @@ script:
   - buildSketch HB-UNI-Sen-PRESS-SC
 notifications:
   email:
-#    recipients:
-#      - some@somewhere.com
+    recipients:
+      - jp112sdl@icloud.com
