@@ -142,6 +142,7 @@ script:
   - export SKETCHPATH=$HOME/Beispiel_AskSinPP/examples
   - export BOARD=$BOARD1284P
   - buildSketch HB-Dis-EP-42BW
+  - echo " -DNDEBUG" >>$HOME/arduino-ide/hardware/arduino/avr/platform.local.txt
   - export BOARD=$BOARD328P
   - buildSketch HB-OU-MP3-LED
 notifications:
