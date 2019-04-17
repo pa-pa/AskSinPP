@@ -26,7 +26,11 @@ install:
   - git clone https://github.com/spease/Sensirion.git $HOME/arduino-ide/libraries/Sensirion
   - git clone https://github.com/finitespace/BME280.git  $HOME/arduino-ide/libraries/BME280
   - git clone https://github.com/xoseperez/hlw8012.git  $HOME/arduino-ide/libraries/hlw8012
+# Sketches from Jerome to test
   - git clone https://github.com/jp112sdl/Beispiel_AskSinPP.git $HOME/Beispiel_AskSinPP
+  - git clone https://github.com/jp112sdl/HB-UNI-Sen-LEV-US.git $HOME/Beispiel_AsksinPP/HB-UNI-Sen-LEV-US
+  - git clone https://github.com/jp112sdl/HB-UNI-Sen-DIST-US.git $HOME/Beispiel_AsksinPP/HB-UNI-Sen-DIST-US
+# setup arduino IDE
   - arduino --pref "update.check=false" --save-prefs
   - arduino --pref "boardsmanager.additional.urls=http://dan.drown.org/stm32duino/package_STM32duino_index.json,https://mcudude.github.io/MightyCore/package_MCUdude_MightyCore_index.json" --save-prefs
   - arduino --install-boards stm32duino:STM32F1:2017.9.5
@@ -103,6 +107,9 @@ script:
 #  - buildSketch HM-WDS40-TH-I-DHT22
 #  - buildSketch HM-WDS40-TH-I-DS18B20
   - buildSketch HM-WDS40-TH-I-SHT10
+# more homebrew devices
+  - buildSketch HB-UNI-Sen-LEV-US
+  - buildSketch HB-UNI-Sen-DIST-US
 notifications:
   email:
     on_success: change
