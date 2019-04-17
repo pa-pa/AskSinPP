@@ -30,6 +30,8 @@ install:
   - git clone https://github.com/jp112sdl/Beispiel_AskSinPP.git $HOME/Beispiel_AskSinPP
   - git clone https://github.com/jp112sdl/HB-UNI-Sen-LEV-US.git $HOME/Beispiel_AsksinPP/examples/HB-UNI-Sen-LEV-US
   - git clone https://github.com/jp112sdl/HB-UNI-Sen-DIST-US.git $HOME/Beispiel_AsksinPP/examples/HB-UNI-Sen-DIST-US
+  - ls -al $HOME/Beispiel_AsksinPP/examples/
+  - ls -al $HOME/Beispiel_AsksinPP/examples/HB-UNI-Sen-DIST-US/
 # setup arduino IDE
   - arduino --pref "update.check=false" --save-prefs
   - arduino --pref "boardsmanager.additional.urls=http://dan.drown.org/stm32duino/package_STM32duino_index.json,https://mcudude.github.io/MightyCore/package_MCUdude_MightyCore_index.json" --save-prefs
