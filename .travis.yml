@@ -124,8 +124,8 @@ script:
   - buildSketch HB-UNI-SenAct-4-4-RC
   - buildSketch HB-UNI-SenAct-4-4-SC
   - export SKETCHPATH=$HOME/Beispiel_AskSinPP/examples/HB-UNI-Sen-PRESS
-  - buildSkecth HB-UNI-Sen-PRESS
-  - buildSkecth HB-UNI-Sen-PRESS-SC
+  - buildSketch HB-UNI-Sen-PRESS
+  - buildSketch HB-UNI-Sen-PRESS-SC
 notifications:
   email:
 #    recipients:
