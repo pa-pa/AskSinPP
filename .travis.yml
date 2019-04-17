@@ -3,7 +3,7 @@ env:
   global:
     - IDE_VERSION=1.8.1
     - BOARDSTM="stm32duino:STM32F1:mapleMini"
-    - BOARD644="MightyCore:avr:644:pinout=bobuino,variant=modelP,LTO=Os,clock=8MHz_internal"
+    - BOARD644P="MightyCore:avr:644:pinout=bobuino,variant=modelP,LTO=Os,clock=8MHz_internal"
     - BOARD1284P="MightyCore:avr:1284:pinout=standard,variant=modelP,LTO=Os,clock=8MHz_internal"
     - BOARD328P="arduino:avr:pro:cpu=8MHzatmega328"
     - BOARD=$BOARD328P
@@ -94,7 +94,7 @@ script:
   - buildSketch HM-CC-SCD
   - buildSketch HM-Dis-TD-T
 #  - buildSketch HM-Dis-WM55
-  - export BOARD=$BOARD644
+  - export BOARD=$BOARD644P
   - buildSketch HM-ES-PMSw1-Pl
   - buildSketch HM-ES-PMSw1-Pl_GosundSP1
   - export BOARD=$BOARD328P
@@ -142,8 +142,7 @@ script:
   - export SKETCHPATH=$HOME/Beispiel_AskSinPP/examples
   - export BOARD=$BOARD1284P
   - buildSketch HB-Dis-EP-42BW
-  - echo " -DNDEBUG" >>$HOME/arduino-ide/hardware/arduino/avr/platform.local.txt
-  - export BOARD=$BOARD328P
+  - export BOARD=$BOARD644P
   - buildSketch HB-OU-MP3-LED
 notifications:
   email:
