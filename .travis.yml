@@ -112,5 +112,5 @@ script:
   - buildSketch HB-UNI-Sen-DIST-US
 notifications:
   email:
-    on_success: change
-    on_failure: change
+#    recipients:
+#      - some@somewhere.com
