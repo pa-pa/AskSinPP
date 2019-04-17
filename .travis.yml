@@ -4,6 +4,7 @@ env:
     - IDE_VERSION=1.8.1
     - BOARDSTM="stm32duino:STM32F1:mapleMini"
     - BOARD644="MightyCore:avr:644:pinout=bobuino,variant=modelP,LTO=Os,clock=8MHz_internal"
+    - BOARD1284P="MightyCore:avr:1284:pinout=standard,variant=modelP,LTO=Os,clock=8MHz_internal"
     - BOARD328P="arduino:avr:pro:cpu=8MHzatmega328"
     - BOARD=$BOARD328P
 before_install:
@@ -31,6 +32,9 @@ install:
   - git clone https://github.com/claws/BH1750 $HOME/arduino-ide/libraries/BH1750
   - git clone https://github.com/xoseperez/hlw8012.git $HOME/arduino-ide/libraries/hlw8012
   - git clone https://github.com/bogde/HX711.git $HOME/arduino-ide/libraries/HX711
+  - git clone https://github.com/ZinggJM/GxEPD.git $HOME/arduino-ide/libraries/GxEPD
+  - git clone https://github.com/adafruit/Adafruit-GFX-Library.git $HOME/arduino-ide/libraries/Adafruit-GFX-Library
+  - git clone https://github.com/olikraus/U8g2_for_Adafruit_GFX.git $HOME/arduino-ide/libraries/U8g2_for_Adafruit_GFX
 # Sketches from Jerome to test
   - git clone https://github.com/jp112sdl/Beispiel_AskSinPP.git $HOME/Beispiel_AskSinPP
   - git clone https://github.com/jp112sdl/HB-UNI-Sen-LEV-US.git $HOME/Beispiel_AskSinPP/examples/HB-UNI-Sen-LEV-US
@@ -40,6 +44,7 @@ install:
   - git clone https://github.com/jp112sdl/HB-UNI-DMX-MASTER.git $HOME/Beispiel_AskSinPP/examples/HB-UNI-DMX-MASTER
   - git clone https://github.com/jp112sdl/HB-UNI-Sen-PRESS.git $HOME/Beispiel_AskSinPP/examples/HB-UNI-Sen-PRESS
   - git clone https://github.com/jp112sdl/HB-UNI-Sen-WEIGHT.git $HOME/Beispiel_AskSinPP/examples/HB-UNI-Sen-WEIGHT
+  - git clone https://github.com/jp112sdl/HB-Dis-EP-42BW.git $HOME/Beispiel_AskSinPP/examples/HB-Dis-EP-42BW
 # setup arduino IDE
   - arduino --pref "update.check=false" --save-prefs
   - arduino --pref "boardsmanager.additional.urls=http://dan.drown.org/stm32duino/package_STM32duino_index.json,https://mcudude.github.io/MightyCore/package_MCUdude_MightyCore_index.json" --save-prefs
@@ -130,6 +135,9 @@ script:
   - export SKETCHPATH=$HOME/Beispiel_AskSinPP/examples/HB-UNI-Sen-PRESS
   - buildSketch HB-UNI-Sen-PRESS
   - buildSketch HB-UNI-Sen-PRESS-SC
+  - export SKETCHPATH=$HOME/Beispiel_AskSinPP/examples
+  - export BOARD=$BOARD1284P
+  - buildSketch HB-Dis-EP-42BW
 notifications:
   email:
     recipients:
