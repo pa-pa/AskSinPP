@@ -35,6 +35,9 @@ install:
   - git clone https://github.com/ZinggJM/GxEPD.git $HOME/arduino-ide/libraries/GxEPD
   - git clone https://github.com/adafruit/Adafruit-GFX-Library.git $HOME/arduino-ide/libraries/Adafruit-GFX-Library
   - git clone https://github.com/olikraus/U8g2_for_Adafruit_GFX.git $HOME/arduino-ide/libraries/U8g2_for_Adafruit_GFX
+  - git clone https://github.com/FastLED/FastLED.git $HOME/arduino-ide/libraries/FastLED
+  - git clone https://github.com/PaulStoffregen/SoftwareSerial.git $HOME/arduino-ide/libraries/SoftwareSerial
+  - git clone https://github.com/DFRobot/DFRobotDFPlayerMini.git $HOME/arduino-ide/libraries/DFRobotDFPlayerMini
 # Sketches from Jerome to test
   - git clone https://github.com/jp112sdl/Beispiel_AskSinPP.git $HOME/Beispiel_AskSinPP
   - git clone https://github.com/jp112sdl/HB-UNI-Sen-LEV-US.git $HOME/Beispiel_AskSinPP/examples/HB-UNI-Sen-LEV-US
@@ -45,6 +48,7 @@ install:
   - git clone https://github.com/jp112sdl/HB-UNI-Sen-PRESS.git $HOME/Beispiel_AskSinPP/examples/HB-UNI-Sen-PRESS
   - git clone https://github.com/jp112sdl/HB-UNI-Sen-WEIGHT.git $HOME/Beispiel_AskSinPP/examples/HB-UNI-Sen-WEIGHT
   - git clone https://github.com/jp112sdl/HB-Dis-EP-42BW.git $HOME/Beispiel_AskSinPP/examples/HB-Dis-EP-42BW
+  - git clone https://github.com/jp112sdl/HB-OU-MP3-LED.git $HOME/Beispiel_AskSinPP/examples/HB-OU-MP3-LED
 # setup arduino IDE
   - arduino --pref "update.check=false" --save-prefs
   - arduino --pref "boardsmanager.additional.urls=http://dan.drown.org/stm32duino/package_STM32duino_index.json,https://mcudude.github.io/MightyCore/package_MCUdude_MightyCore_index.json" --save-prefs
@@ -138,6 +142,8 @@ script:
   - export SKETCHPATH=$HOME/Beispiel_AskSinPP/examples
   - export BOARD=$BOARD1284P
   - buildSketch HB-Dis-EP-42BW
+  - export BOARD=$BOARD328P
+  - buildSketch HB-OU-MP3-LED
 notifications:
   email:
     recipients:
