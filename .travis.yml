@@ -129,7 +129,7 @@ script:
 # more homebrew devices
   - buildSketch HB-UNI-Sen-LEV-US
   - buildSketch HB-UNI-Sen-DIST-US
-#  - buildSketch HB-UNI-DMX-MASTER
+  - buildSketch HB-UNI-DMX-MASTER
   - buildSketch HB-UNI-Sen-WEIGHT
   - export SKETCHPATH=$HOME/Beispiel_AskSinPP/examples/HB-UNI-Sen-CAP-MOIST
   - buildSketch HB-UNI-Sen-CAP-MOIST
