@@ -40,10 +40,12 @@ public:
    * Measure all sensors in one step
    */
   static void measure (Ds18b20* devs,uint8_t count) {
-    devs->convert(true); // this will trigger all DS18b20 on the bus
-    devs->wait(); // this will also wait for all to be finish
-    for( uint8_t num=0; num < count; ++num, ++devs ) {
-      devs->read(); // read value for every device
+    if (count > 0) {
+      devs->convert(true); // this will trigger all DS18b20 on the bus
+      devs->wait(); // this will also wait for all to be finish
+      for( uint8_t num=0; num < count; ++num, ++devs ) {
+        devs->read(); // read value for every device
+      }
     }
   }
   /**
