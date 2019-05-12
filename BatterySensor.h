@@ -182,35 +182,30 @@ public:
  */
 template <uint8_t SENSPIN, uint8_t ACTIVATIONPIN, bool ACTIVATIONLEVEL, uint8_t FACTOR>
 class BatterySensorCust : public BatterySensor {
-  uint8_t  m_SensePin;
-  uint8_t  m_ActivationPin;
-  bool     m_ActivationLevel;
-  uint8_t  m_Factor;
 public:
 
-  BatterySensorCust () : BatterySensor (),
-  m_SensePin(SENSPIN), m_ActivationPin(ACTIVATIONPIN), m_ActivationLevel(ACTIVATIONLEVEL), m_Factor(FACTOR) {}
+  BatterySensorCust () : BatterySensor () {}
   virtual ~BatterySensorCust () {}
 
   void init(uint32_t period, AlarmClock& clock) {
-    pinMode(m_SensePin, INPUT);
-    pinMode(m_ActivationPin, INPUT);
+    pinMode(SENSPIN, INPUT);
+    pinMode(ACTIVATIONPIN, INPUT);
     BatterySensor::init(period,clock);
   }
 
   virtual uint8_t voltage () {
     uint16_t refvcc = readRefVcc();
-    pinMode(m_ActivationPin, OUTPUT);
-    digitalWrite(m_ActivationPin, m_ActivationLevel?HIGH:LOW);
-    digitalWrite(m_SensePin,LOW);
-    analogRead(m_SensePin);
+    pinMode(ACTIVATIONPIN, OUTPUT);
+    digitalWrite(ACTIVATIONPIN, ACTIVATIONLEVEL?HIGH:LOW);
+    digitalWrite(SENSPIN,LOW);
+    analogRead(SENSPIN);
     _delay_ms(2); // allow the ADC to stabilize
-    uint32_t value = analogRead(m_SensePin);
-    uint16_t vin = (value * refvcc * m_Factor) / 1024 / 1000;
+    uint32_t value = analogRead(SENSPIN);
+    uint16_t vin = (value * refvcc * FACTOR) / 1024 / 1000;
 
-    digitalWrite(m_SensePin,HIGH);
-    digitalWrite(m_ActivationPin, m_ActivationLevel?LOW:HIGH);
-    pinMode(m_ActivationPin,INPUT);
+    digitalWrite(SENSPIN,HIGH);
+    digitalWrite(ACTIVATIONPIN, ACTIVATIONLEVEL?LOW:HIGH);
+    pinMode(ACTIVATIONPIN,INPUT);
 
     DPRINT(F("Bat: ")); DDECLN(vin);
     return (uint8_t)vin;
