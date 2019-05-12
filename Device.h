@@ -244,7 +244,11 @@ public:
 
   void getDeviceInfo (uint8_t* di) {
     // first byte is number of channels
+#ifdef DEVICE_CHANNEL_COUNT
+    *di = DEVICE_CHANNEL_COUNT
+#else
     *di = this->channels();
+#endif
     memcpy_P(di+1,info.DeviceInfo,sizeof(info.DeviceInfo));
   }
 
