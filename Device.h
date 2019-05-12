@@ -248,7 +248,8 @@ public:
     *di = DEVICE_CHANNEL_COUNT;
 #else
     *di = this->channels();
-#endif    memcpy_P(di+1,info.DeviceInfo,sizeof(info.DeviceInfo));
+#endif    
+    memcpy_P(di+1,info.DeviceInfo,sizeof(info.DeviceInfo));
   }
 
   HMID getMasterID () {
