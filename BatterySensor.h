@@ -118,7 +118,7 @@ public:
     ADCSRA |= (1 << ADSC);        // start conversion
     while (ADCSRA & (1 << ADSC)); // wait to finish
 
-    vcc = 1100UL * 1023 / ADC;
+    vcc = 1100UL * 1024 / ADC;
 #elif defined ARDUINO_ARCH_STM32F1
     int millivolts = 1200 * 4096 / adc_read(ADC1, 17);  // ADC sample to millivolts
     vcc = millivolts;
@@ -174,6 +174,45 @@ public:
   
   uint16_t readRefVcc () {
      return VCC != 0 ? VCC : BatterySensor::voltageHighRes();
+  }
+};
+
+/**
+ * Measure battery voltage with customizable ActivationPin and factor.
+ */
+template <uint8_t SENSPIN, uint8_t ACTIVATIONPIN, bool ACTIVATIONLEVEL, uint8_t FACTOR>
+class BatterySensorCust : public BatterySensor {
+public:
+
+  BatterySensorCust () : BatterySensor () {}
+  virtual ~BatterySensorCust () {}
+
+  void init(uint32_t period, AlarmClock& clock) {
+    pinMode(SENSPIN, INPUT);
+    pinMode(ACTIVATIONPIN, INPUT);
+    BatterySensor::init(period,clock);
+  }
+
+  virtual uint8_t voltage () {
+    uint16_t refvcc = readRefVcc();
+    pinMode(ACTIVATIONPIN, OUTPUT);
+    digitalWrite(ACTIVATIONPIN, ACTIVATIONLEVEL?HIGH:LOW);
+    digitalWrite(SENSPIN,LOW);
+    analogRead(SENSPIN);
+    _delay_ms(2); // allow the ADC to stabilize
+    uint32_t value = analogRead(SENSPIN);
+    uint16_t vin = (value * refvcc * FACTOR) / 1024 / 1000;
+
+    digitalWrite(SENSPIN,HIGH);
+    digitalWrite(ACTIVATIONPIN, ACTIVATIONLEVEL?LOW:HIGH);
+    pinMode(ACTIVATIONPIN,INPUT);
+
+    DPRINT(F("Bat: ")); DDECLN(vin);
+    return (uint8_t)vin;
+  }
+
+  uint16_t readRefVcc () {
+     return BatterySensor::voltageHighRes();
   }
 };
 
