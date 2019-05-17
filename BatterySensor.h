@@ -53,6 +53,153 @@ public:
 
 #endif
 
+
+class InternalVCC {
+public:
+  typedef uint16_t ValueType;
+
+  void init () {
+#ifdef ARDUINO_ARCH_STM32F1
+    adc_reg_map *regs = ADC1->regs;
+    regs->CR2 |= ADC_CR2_TSVREFE;    // enable VREFINT and temp sensor
+    regs->SMPR1 =  ADC_SMPR1_SMP17;  // sample rate for VREFINT ADC channel
+#endif
+  }
+
+  void start () {
+#ifdef ARDUINO_ARCH_AVR
+    // Read 1.1V reference against AVcc
+    // set the reference to Vcc and the measurement to the internal 1.1V reference
+    ADMUX &= ~(ADMUX_REFMASK | ADMUX_ADCMASK);
+    ADMUX |= ADMUX_REF_AVCC;      // select AVCC as reference
+    ADMUX |= ADMUX_ADC_VBG;       // measure bandgap reference voltage
+#endif
+  }
+
+  uint16_t finish () {
+    uint16_t vcc=0;
+#ifdef ARDUINO_ARCH_AVR
+    ADCSRA |= (1 << ADSC);         // start conversion
+    while (ADCSRA & (1 << ADSC)) ; // wait to finish
+    vcc = 1100UL * 1023 / ADC;
+#elif defined ARDUINO_ARCH_STM32F1
+    vcc = millivolts = 1200 * 4096 / adc_read(ADC1, 17);  // ADC sample to millivolts
+#endif
+    DPRINT(F("iVcc: ")); DDECLN(vcc);
+    return vcc;
+  }
+};
+
+template<uint8_t SENSPIN, uint8_t ACTIVATIONPIN, uint8_t ACTIVATIONSTATE=LOW, uint16_t VCC=3300, uint8_t FACTOR=57>
+class ExternalVCC : public InternalVCC {
+public:
+
+  void init () {
+    pinMode(SENSPIN, INPUT);
+    pinMode(ACTIVATIONPIN, INPUT);
+  }
+
+  void start () {
+    if( VCC == 0 ) {
+      InternalVCC::start(); // start bandgap measure
+    }
+    pinMode(ACTIVATIONPIN, OUTPUT);
+    digitalWrite(ACTIVATIONPIN, ACTIVATIONSTATE==LOW ? LOW : HIGH);
+    digitalWrite(SENSPIN,LOW);
+    analogRead(SENSPIN);
+  }
+
+  uint16_t finish () {
+    uint16_t refvcc = VCC == 0 ? InternalVCC::finish() : VCC;
+    uint32_t value = analogRead(SENSPIN);
+    uint16_t vin = (value * refvcc * FACTOR) / 1024 / 10;
+
+    digitalWrite(SENSPIN,HIGH);
+    digitalWrite(ACTIVATIONPIN, ACTIVATIONSTATE==LOW ? HIGH : LOW);
+    pinMode(ACTIVATIONPIN,INPUT);
+
+    DPRINT(F("eVcc: ")); DDECLN(vin);
+    return (uint8_t)vin;
+  }
+};
+
+
+template <class SENSOR,int DELAY=350>
+class SyncMeter {
+  SENSOR m_Sensor;
+  volatile typename SENSOR::ValueType m_Value;
+public:
+  SyncMeter () : m_Value(0) {}
+  void start () {
+    sensor().start();
+    if( DELAY > 0 ) {
+      _delay_ms(DELAY);
+    }
+    m_Value = sensor().finish();
+  }
+  typename SENSOR::ValueType value () const { return m_Value; }
+  SENSOR& sensor () { return m_Sensor; }
+  typename SENSOR::ValueType measure () {
+    start();
+    return value();
+  }
+};
+
+template <class SENSOR,int DELAY=350>
+class AsyncMeter : public Alarm {
+  SENSOR m_Sensor;
+  volatile typename SENSOR::ValueType m_Value;
+public:
+  AsyncMeter () : Alarm(0,true), m_Value(0) {}
+  virtual ~AsyncMeter () {}
+  virtual void trigger (__attribute__((unused)) AlarmClock& clock) {
+    m_Value = sensor().finish();
+  }
+  void start () {
+    sensor().start();
+    set(millis2ticks(DELAY));
+    sysclock.add(*this);
+  }
+  void wait () { while( active() ) _delay_ms(DELAY/10); }
+  typename SENSOR::ValueType value () const { return m_Value; }
+  SENSOR& sensor () { return m_Sensor; }
+  typename SENSOR::ValueType measure () {
+    start();
+    wait();
+    return value();
+  }
+};
+
+template <class METER>
+class BatSensor : public Alarm {
+  uint32_t  m_Period;
+  uint8_t   m_Low, m_Critical;
+  METER     m_Meter;
+public:
+  BatSensor () : Alarm(0), m_Period(0), m_Low(0), m_Critical(0) {}
+  virtual ~BatSensor() {}
+
+  virtual void trigger (AlarmClock& clock) {
+    tick = m_Period;
+    clock.add(*this);
+    m_Meter.start();
+  }
+
+  uint8_t current () const { return m_Meter.value() / 100; }
+  bool critical () const { return current() < m_Critical; }
+  void critical (uint8_t value ) { m_Critical = value; }
+  bool low () const { return current() < m_Low; }
+  void low (uint8_t value ) { m_Low = value; }
+
+  void init(uint32_t period,AlarmClock& clock) {
+    m_Meter.sensor().init();
+    m_Meter.start();
+    m_Period = period;
+    set(m_Period);
+    clock.add(*this);
+  }
+};
+
 /**
  * Use internal bandgap reference to measure battery voltage
  */
