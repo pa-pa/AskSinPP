@@ -54,6 +54,7 @@ public:
   bool runsingle() {
     Alarm* a = (Alarm*) ready.unlink();
     if (a != 0) {
+      a->active(false);
       a->trigger(*this);
       return true;
     }

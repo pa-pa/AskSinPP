@@ -34,6 +34,7 @@ ISR(TIMER2_OVF_vect) {
 void AlarmClock::cancel(Alarm& item) {
   ATOMIC_BLOCK( ATOMIC_RESTORESTATE )
   {
+    item.active(false);
     Alarm *tmp = (Alarm*) select();
     Link *vor = this;
     // search for the alarm to cancel
@@ -65,6 +66,7 @@ AlarmClock& AlarmClock::operator --() {
         unlink(); // remove expired alarm
         // run in interrupt
         if (alarm->async() == true) {
+          alarm->active(false);
           alarm->trigger(*this);
         }
         // run in application
@@ -82,6 +84,7 @@ void AlarmClock::add(Alarm& item) {
   if (item.tick > 0) {
     ATOMIC_BLOCK( ATOMIC_RESTORESTATE )
     {
+      item.active(true);
       Link* prev = this;
       Alarm* temp = (Alarm*) select();
       while ((temp != 0) && (temp->tick < item.tick)) {
