@@ -171,13 +171,13 @@ public:
 };
 
 template <class METER>
-class BatSensor : public Alarm {
+class BattSensor : public Alarm {
   uint32_t  m_Period;
   uint8_t   m_Low, m_Critical;
   METER     m_Meter;
 public:
-  BatSensor () : Alarm(0), m_Period(0), m_Low(0), m_Critical(0) {}
-  virtual ~BatSensor() {}
+  BattSensor () : Alarm(0), m_Period(0), m_Low(0), m_Critical(0) {}
+  virtual ~BattSensor() {}
 
   virtual void trigger (AlarmClock& clock) {
     tick = m_Period;
