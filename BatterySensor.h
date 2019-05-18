@@ -55,6 +55,7 @@ public:
 
 
 class InternalVCC {
+  uint16_t vcc;
 public:
   typedef uint16_t ValueType;
 
@@ -74,10 +75,7 @@ public:
     ADMUX |= ADMUX_REF_AVCC;      // select AVCC as reference
     ADMUX |= ADMUX_ADC_VBG;       // measure bandgap reference voltage
 #endif
-  }
-
-  uint16_t finish () {
-    uint16_t vcc=0;
+    vcc=0;
 #ifdef ARDUINO_ARCH_AVR
     ADCSRA |= (1 << ADSC);         // start conversion
     while (ADCSRA & (1 << ADSC)) ; // wait to finish
@@ -86,6 +84,9 @@ public:
     vcc = millivolts = 1200 * 4096 / adc_read(ADC1, 17);  // ADC sample to millivolts
 #endif
     DPRINT(F("iVcc: ")); DDECLN(vcc);
+  }
+
+  uint16_t finish () {
     return vcc;
   }
 };
