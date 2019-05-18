@@ -185,7 +185,7 @@ public:
     m_Meter.start();
   }
 
-  uint8_t current () const { return m_Meter.value() / 100; }
+  uint8_t current () const { return (m_Meter.value() + 50) / 100; }
   bool critical () const { return current() < m_Critical; }
   void critical (uint8_t value ) { m_Critical = value; }
   bool low () const { return current() < m_Low; }
