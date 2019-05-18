@@ -16,7 +16,7 @@ before_install:
 #      arduino --install-boards arduino:samd;
 #    fi
 #  - buildSketch() { arduino --verify --board $BOARD $SKETCHPATH/$1/$1.ino 2>&1 | tee /tmp/$1.log; cat /tmp/$1.log; }
-  - buildSketch() { arduino --verify --board $BOARD $SKETCHPATH/$1/$1.ino; }
+  - buildSketch() { arduino -v --verify --board $BOARD $SKETCHPATH/$1/$1.ino; }
 install:
   - mkdir -p $HOME/Arduino/libraries
   - ln -s $PWD $HOME/Arduino/libraries/.
