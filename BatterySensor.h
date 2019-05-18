@@ -119,7 +119,7 @@ public:
     pinMode(ACTIVATIONPIN,INPUT);
 
     DPRINT(F("eVcc: ")); DDECLN(vin);
-    return (uint8_t)vin;
+    return vin;
   }
 };
 
