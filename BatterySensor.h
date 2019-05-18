@@ -69,14 +69,25 @@ public:
 
   void start () {
 #ifdef ARDUINO_ARCH_AVR
+    // TODO: dummy read - is this really necessary?
     // Read 1.1V reference against AVcc
     // set the reference to Vcc and the measurement to the internal 1.1V reference
     ADMUX &= ~(ADMUX_REFMASK | ADMUX_ADCMASK);
     ADMUX |= ADMUX_REF_AVCC;      // select AVCC as reference
     ADMUX |= ADMUX_ADC_VBG;       // measure bandgap reference voltage
+    ADCSRA |= (1 << ADSC);         // start conversion
+    while (ADCSRA & (1 << ADSC)) ; // wait to finish
+    (void) ADC;                    // dummy read
 #endif
-    vcc=0;
+}
+  uint16_t finish () {
+    uint16_t vcc=0;
 #ifdef ARDUINO_ARCH_AVR
+    // Read 1.1V reference against AVcc
+    // set the reference to Vcc and the measurement to the internal 1.1V reference
+    ADMUX &= ~(ADMUX_REFMASK | ADMUX_ADCMASK);
+    ADMUX |= ADMUX_REF_AVCC;      // select AVCC as reference
+    ADMUX |= ADMUX_ADC_VBG;       // measure bandgap reference voltage
     ADCSRA |= (1 << ADSC);         // start conversion
     while (ADCSRA & (1 << ADSC)) ; // wait to finish
     vcc = 1100UL * 1024 / ADC;
@@ -84,9 +95,6 @@ public:
     vcc = millivolts = 1200 * 4096 / adc_read(ADC1, 17);  // ADC sample to millivolts
 #endif
     DPRINT(F("iVcc: ")); DDECLN(vcc);
-  }
-
-  uint16_t finish () {
     return vcc;
   }
 };
