@@ -77,7 +77,7 @@ public:
     ADMUX &= ~(ADMUX_REFMASK | ADMUX_ADCMASK);
     ADMUX |= ADMUX_REF_AVCC;      // select AVCC as reference
     ADMUX |= ADMUX_ADC_VBG;       // measure bandgap reference voltage
-    _delay_us(250);
+    _delay_us(350);
     ADCSRA |= (1 << ADSC);         // start conversion
     while (ADCSRA & (1 << ADSC)) ; // wait to finish
     vcc = 1100UL * 1024 / ADC;
@@ -91,8 +91,8 @@ public:
 
 template<uint8_t SENSPIN, uint8_t ACTIVATIONPIN, uint8_t ACTIVATIONSTATE=LOW, uint16_t VCC=3300, uint8_t FACTOR=57>
 class ExternalVCC : public InternalVCC {
-  static const int DefaultDelay = 250;
 public:
+  static const int DefaultDelay = 250;
 
   void init () {
     pinMode(SENSPIN, INPUT);
@@ -103,21 +103,21 @@ public:
     pinMode(ACTIVATIONPIN, OUTPUT);
     digitalWrite(ACTIVATIONPIN, ACTIVATIONSTATE==LOW ? LOW : HIGH);
     digitalWrite(SENSPIN,LOW);
-    analogRead(SENSPIN);
+//    analogRead(SENSPIN);
   }
 
   uint16_t finish () {
     uint32_t value = analogRead(SENSPIN);
+    digitalWrite(SENSPIN,HIGH);
+    digitalWrite(ACTIVATIONPIN, ACTIVATIONSTATE==LOW ? HIGH : LOW);
+    pinMode(ACTIVATIONPIN,INPUT);
+
     uint16_t refvcc = VCC;
     if( refvcc == 0 ) {
       InternalVCC::start(); // in case we add something here later
       refvcc = InternalVCC::finish();
     }
     uint16_t vin = (value * refvcc * FACTOR) / 1024 / 10;
-
-    digitalWrite(SENSPIN,HIGH);
-    digitalWrite(ACTIVATIONPIN, ACTIVATIONSTATE==LOW ? HIGH : LOW);
-    pinMode(ACTIVATIONPIN,INPUT);
 
     DPRINT(F("eVcc: ")); DDECLN(vin);
     return vin;
