@@ -136,7 +136,10 @@ public:
     if( DELAY > 0 ) {
       _delay_ms(DELAY);
     }
-    m_Value = sensor().finish();
+    typename SENSOR::ValueType tmp = sensor().finish();
+    if( m_Value == 0 || tmp < m_Value ) {
+      m_Value = tmp;
+    }
   }
   typename SENSOR::ValueType value () const { return m_Value; }
   SENSOR& sensor () { return m_Sensor; }
@@ -154,7 +157,10 @@ public:
   AsyncMeter () : Alarm(0,true), m_Value(0) {}
   virtual ~AsyncMeter () {}
   virtual void trigger (__attribute__((unused)) AlarmClock& clock) {
-    m_Value = sensor().finish();
+    typename SENSOR::ValueType tmp = sensor().finish();
+    if( m_Value == 0 || tmp < m_Value ) {
+      m_Value = tmp;
+    }
   }
   void start () {
     sensor().start();
@@ -194,12 +200,18 @@ public:
 
   void init(uint32_t period,AlarmClock& clock) {
     m_Meter.sensor().init();
-    m_Meter.start();
+    m_Meter.measure();
     m_Period = period;
     set(m_Period);
     clock.add(*this);
   }
+  // for backward compatibility
+  uint16_t voltageHighRes() {
+    return m_Meter.value();
+  }
 };
+
+//typedef BattSensor<SyncMeter<InternalVCC> > BatterySensor;
 
 /**
  * Use internal bandgap reference to measure battery voltage
