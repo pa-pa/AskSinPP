@@ -55,9 +55,9 @@ public:
 
 
 class InternalVCC {
-  uint16_t vcc;
 public:
   typedef uint16_t ValueType;
+  static const int DefaultDelay = 0;
 
   void init () {
 #ifdef ARDUINO_ARCH_STM32F1
@@ -67,19 +67,8 @@ public:
 #endif
   }
 
-  void start () {
-#ifdef ARDUINO_ARCH_AVR
-    // TODO: dummy read - is this really necessary?
-    // Read 1.1V reference against AVcc
-    // set the reference to Vcc and the measurement to the internal 1.1V reference
-    ADMUX &= ~(ADMUX_REFMASK | ADMUX_ADCMASK);
-    ADMUX |= ADMUX_REF_AVCC;      // select AVCC as reference
-    ADMUX |= ADMUX_ADC_VBG;       // measure bandgap reference voltage
-    ADCSRA |= (1 << ADSC);         // start conversion
-    while (ADCSRA & (1 << ADSC)) ; // wait to finish
-    (void) ADC;                    // dummy read
-#endif
-}
+  void start () {}
+
   uint16_t finish () {
     uint16_t vcc=0;
 #ifdef ARDUINO_ARCH_AVR
@@ -88,6 +77,7 @@ public:
     ADMUX &= ~(ADMUX_REFMASK | ADMUX_ADCMASK);
     ADMUX |= ADMUX_REF_AVCC;      // select AVCC as reference
     ADMUX |= ADMUX_ADC_VBG;       // measure bandgap reference voltage
+    _delay_us(250);
     ADCSRA |= (1 << ADSC);         // start conversion
     while (ADCSRA & (1 << ADSC)) ; // wait to finish
     vcc = 1100UL * 1024 / ADC;
@@ -101,6 +91,7 @@ public:
 
 template<uint8_t SENSPIN, uint8_t ACTIVATIONPIN, uint8_t ACTIVATIONSTATE=LOW, uint16_t VCC=3300, uint8_t FACTOR=57>
 class ExternalVCC : public InternalVCC {
+  static const int DefaultDelay = 250;
 public:
 
   void init () {
@@ -109,9 +100,6 @@ public:
   }
 
   void start () {
-    if( VCC == 0 ) {
-      InternalVCC::start(); // start bandgap measure
-    }
     pinMode(ACTIVATIONPIN, OUTPUT);
     digitalWrite(ACTIVATIONPIN, ACTIVATIONSTATE==LOW ? LOW : HIGH);
     digitalWrite(SENSPIN,LOW);
@@ -119,8 +107,12 @@ public:
   }
 
   uint16_t finish () {
-    uint16_t refvcc = VCC == 0 ? InternalVCC::finish() : VCC;
     uint32_t value = analogRead(SENSPIN);
+    uint16_t refvcc = VCC;
+    if( refvcc == 0 ) {
+      InternalVCC::start(); // in case we add something here later
+      refvcc = InternalVCC::finish();
+    }
     uint16_t vin = (value * refvcc * FACTOR) / 1024 / 10;
 
     digitalWrite(SENSPIN,HIGH);
@@ -133,7 +125,7 @@ public:
 };
 
 
-template <class SENSOR,int DELAY=350>
+template <class SENSOR,int DELAY=SENSOR::DefaultDelay>
 class SyncMeter {
   SENSOR m_Sensor;
   volatile typename SENSOR::ValueType m_Value;
@@ -154,7 +146,7 @@ public:
   }
 };
 
-template <class SENSOR,int DELAY=350>
+template <class SENSOR,int DELAY=SENSOR::DefaultDelay>
 class AsyncMeter : public Alarm {
   SENSOR m_Sensor;
   volatile typename SENSOR::ValueType m_Value;
