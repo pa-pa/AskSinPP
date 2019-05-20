@@ -154,7 +154,7 @@ class AsyncMeter : public Alarm {
   SENSOR m_Sensor;
   volatile typename SENSOR::ValueType m_Value;
 public:
-  AsyncMeter () : Alarm(0,true), m_Value(0) {}
+  AsyncMeter () : Alarm(0), m_Value(0) {}
   virtual ~AsyncMeter () {}
   virtual void trigger (__attribute__((unused)) AlarmClock& clock) {
     typename SENSOR::ValueType tmp = sensor().finish();
@@ -167,12 +167,12 @@ public:
     set(millis2ticks(DELAY));
     sysclock.add(*this);
   }
-  void wait () { while( active() ) _delay_ms(DELAY/10); }
   typename SENSOR::ValueType value () const { return m_Value; }
   SENSOR& sensor () { return m_Sensor; }
   typename SENSOR::ValueType measure () {
-    start();
-    wait();
+    sensor().start();
+    _delay_ms(DELAY);
+    m_Value = sensor().finish();
     return value();
   }
 };
@@ -206,13 +206,12 @@ public:
     clock.add(*this);
   }
   // for backward compatibility
-  uint16_t voltageHighRes() {
-    return m_Meter.value();
-  }
+  uint16_t voltageHighRes() { return m_Meter.value(); }
+  uint8_t voltage() { return current(); }
 };
 
-//typedef BattSensor<SyncMeter<InternalVCC> > BatterySensor;
-
+typedef BattSensor<SyncMeter<InternalVCC> > BatterySensor;
+#if 0
 /**
  * Use internal bandgap reference to measure battery voltage
  */
@@ -293,6 +292,14 @@ public:
   }
 
 };
+#endif
+
+//template <uint8_t SENSPIN,uint8_t ACTIVATIONPIN,uint16_t VCC=3300>
+//class BatterySensorUni : public BattSensor<SyncMeter<ExternalVCC<SENSPIN,ACTIVATIONPIN,LOW,VCC,57>>> {
+//public:
+//  BatterySensorUni () {}
+//  virtual ~BatterySensorUni () {}
+//};
 
 /**
  * Measure battery voltage as used on the universal sensor board.
