@@ -353,6 +353,7 @@ public:
   }
 
   void remote (const BlindPeerList& lst,uint8_t counter) {
+    uint8_t oldstate = state;
     // perform action as defined in the list
     switch (lst.actionType()) {
     case AS_CM_ACTIONTYPE_JUMP_TO_TARGET:
@@ -365,6 +366,7 @@ public:
       setDestLevel((counter & 0x01) == 0x00 ? lst.onLevel() : lst.offLevel());
       break;
     }
+    changed(oldstate != state);
   }
 
   void sensor (const BlindPeerList& lst,uint8_t counter,uint8_t value) {
