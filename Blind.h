@@ -353,7 +353,14 @@ public:
   }
 
   bool set (uint8_t value,__attribute__ ((unused)) uint16_t ramp,__attribute__ ((unused)) uint16_t delay) {
-    return setDestLevel(value);
+    setDestLevel(value);
+    if( destlevel > level || destlevel == 200 ) {
+      setState(AS_CM_JT_ONDELAY, 0);
+    }
+    else if ( destlevel < level || destlevel == 0 ) {
+      setState(AS_CM_JT_OFFDELAY, 0);
+    }
+    return true;
   }
 
   void remote (const BlindPeerList& lst,uint8_t counter) {
