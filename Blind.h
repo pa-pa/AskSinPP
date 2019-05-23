@@ -180,6 +180,7 @@ class BlindStateMachine : public StateMachine<BlindPeerList> {
       done = 0;
       set(millis2ticks(100));
       clock.add(*this);
+      sm.triggerChanged();
     }
     void stop (AlarmClock& clock) {
       clock.cancel(*this);
@@ -207,7 +208,7 @@ public:
     if( l != level ) {
       level = l;
       DPRINT("New Level: ");DDECLN(level);
-      triggerChanged(decis2ticks(list1.statusInfoMinDly()*5));
+      triggerChanged();
     }
   }
 
@@ -226,6 +227,10 @@ protected:
         updateLevel(trigdest);
       }
     }
+  }
+
+  void triggerChanged () {
+    StateMachine<BlindPeerList>::triggerChanged(decis2ticks(list1.statusInfoMinDly()*5));
   }
 
 public:
@@ -353,7 +358,6 @@ public:
   }
 
   void remote (const BlindPeerList& lst,uint8_t counter) {
-    uint8_t oldstate = state;
     // perform action as defined in the list
     switch (lst.actionType()) {
     case AS_CM_ACTIONTYPE_JUMP_TO_TARGET:
@@ -366,7 +370,6 @@ public:
       setDestLevel((counter & 0x01) == 0x00 ? lst.onLevel() : lst.offLevel());
       break;
     }
-    changed(oldstate != state);
   }
 
   void sensor (const BlindPeerList& lst,uint8_t counter,uint8_t value) {
