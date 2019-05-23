@@ -194,6 +194,7 @@ class BlindStateMachine : public StateMachine<BlindPeerList> {
         if( dx > startlevel ) dx = startlevel;
         sm.updateLevel(startlevel - dx);
       }
+      sm.triggerChanged();
     }
     virtual void trigger (AlarmClock& clock) {
       // add 0.1s
@@ -238,7 +239,7 @@ public:
   virtual ~BlindStateMachine () {}
 
   virtual void switchState(uint8_t oldstate,uint8_t newstate,__attribute__ ((unused)) uint32_t statedelay) {
-    DPRINT("Switch from ");DHEX(oldstate);DPRINT(" to ");DHEXLN(newstate);
+    DPRINT("Switch from ");DHEX(oldstate);DPRINT(" to ");DHEX(newstate);DPRINT("   delay: ");DHEXLN(statedelay);
     switch( newstate ) {
     case AS_CM_JT_RAMPON:
       update.start(sysclock, list1.refRunningTimeBottomTop());
@@ -273,14 +274,12 @@ public:
         case AS_CM_JT_ONDELAY:
         case AS_CM_JT_REFON:
         case AS_CM_JT_RAMPON:   
-          if(setDestLevel(lst.onLevel()))
-            return;
+          setDestLevel(lst.onLevel());
           break;
         case AS_CM_JT_OFFDELAY:
         case AS_CM_JT_REFOFF:   
         case AS_CM_JT_RAMPOFF:  
-          if(setDestLevel(lst.offLevel()))
-            return;
+          setDestLevel(lst.offLevel());
           break;
       }
       
@@ -378,27 +377,26 @@ public:
     }
   }
 
-  void toggleState () {
-    if( state == AS_CM_JT_OFF ) {
-      setDestLevel(200);
-    }
-    else {
-      setDestLevel(0);
-    }
-  }
+//  void toggleState () {
+//    if( state == AS_CM_JT_OFF ) {
+//      setDestLevel(200);
+//    }
+//    else {
+//      setDestLevel(0);
+//    }
+//  }
 
   bool setDestLevel (uint8_t value) {
     DPRINT("setDestLevel: ");DDECLN(value);
     destlevel = value;
-    if( destlevel > level || destlevel == 200 ) {
-      setState(AS_CM_JT_ONDELAY, 0);
-      return true;
-    }
-    else if ( destlevel < level || destlevel == 0 ) {
-      setState(AS_CM_JT_OFFDELAY, 0);
-      return true;
-    }
-    
+//    if( destlevel > level || destlevel == 200 ) {
+//      setState(AS_CM_JT_ONDELAY, 0);
+//      return true;
+//    }
+//    else if ( destlevel < level || destlevel == 0 ) {
+//      setState(AS_CM_JT_OFFDELAY, 0);
+//      return true;
+//    }
     return false;
   }
 
