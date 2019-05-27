@@ -2,7 +2,8 @@ language: c++
 env:
   global:
     - IDE_VERSION=1.8.1
-    - BOARDSTM="stm32duino:STM32F1:mapleMini:bootloader_version=original,opt=oslto"
+    - BOARDMAPLE="stm32duino:STM32F1:mapleMini:bootloader_version=original,opt=oslto"
+    - BOARDSTM="stm32duino:STM32F1:genericSTM32F103C:device_variant=STM32F103C8,opt=oslto"
     - BOARD644P="MightyCore:avr:644:pinout=bobuino,variant=modelP,LTO=Os,clock=8MHz_internal"
     - BOARD1284P="MightyCore:avr:1284:pinout=standard,variant=modelP,LTO=Os,clock=8MHz_internal"
     - BOARD328P="arduino:avr:pro:cpu=8MHzatmega328"
@@ -61,6 +62,12 @@ script:
 #  - "ls $PWD"
 #  - buildSketch HM-DW-WM
 #  - buildSketch HM-LC-SWX-SM
+  - export BOARD=$BOARDMAPLE
+  - export SKETCHPATH=$PWD/examples/stm32
+  - buildSketch HB-DoorBell
+  - buildSketch HM-LC-SWX-SM
+  - export BOARD=$BOARDSTM
+  - buildSketch HM-DW-WM
   - export BOARD=$BOARD328P
   - export SKETCHPATH=$PWD/examples
   - buildSketch FreqTest
