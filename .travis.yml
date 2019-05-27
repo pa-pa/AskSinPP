@@ -21,18 +21,8 @@ before_install:
 install:
   - mkdir -p $HOME/Arduino/libraries
   - ln -s $PWD $HOME/Arduino/libraries/.
-# setup arduino IDE
-  - arduino --pref "update.check=false" --save-prefs
-  - arduino --pref "boardsmanager.additional.urls=http://dan.drown.org/stm32duino/package_STM32duino_index.json,https://mcudude.github.io/MightyCore/package_MCUdude_MightyCore_index.json" --save-prefs
-  - arduino --install-boards stm32duino:STM32F1:2017.9.5
-  - arduino --install-boards MightyCore:avr:2.0.1
-  - echo "compiler.cpp.extra_flags=-DUSE_AES -DHM_DEF_KEY=0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x0a,0x0b,0x0c,0x0d,0x0e,0x0f,0x10 -DHM_DEF_KEY_INDEX=0" >$HOME/arduino-ide/hardware/arduino/avr/platform.local.txt
 # install/fetch libraries
   - arduino --install-library "OneWire"
-  - arduino --install-library "OneWireSTM"
-  - arduino --install-library "Wire"
-  - arduino --install-library "SPI"
-  - arduino --install-library "EEPROM"
   - git clone https://github.com/GreyGnome/EnableInterrupt $HOME/arduino-ide/libraries/EnableInterrupt
   - git clone https://github.com/rocketscream/Low-Power.git $HOME/arduino-ide/libraries/Low-Power
   - git clone https://github.com/adafruit/Adafruit_Sensor $HOME/arduino-ide/libraries/Adafruit_Sensor
@@ -61,18 +51,19 @@ install:
   - git clone https://github.com/jp112sdl/HB-UNI-Sen-WEIGHT.git $HOME/Beispiel_AskSinPP/examples/HB-UNI-Sen-WEIGHT
   - git clone https://github.com/jp112sdl/HB-Dis-EP-42BW.git $HOME/Beispiel_AskSinPP/examples/HB-Dis-EP-42BW
   - git clone https://github.com/jp112sdl/HB-OU-MP3-LED.git $HOME/Beispiel_AskSinPP/examples/HB-OU-MP3-LED
+# setup arduino IDE
+  - arduino --pref "update.check=false" --save-prefs
+  - arduino --pref "boardsmanager.additional.urls=http://dan.drown.org/stm32duino/package_STM32duino_index.json,https://mcudude.github.io/MightyCore/package_MCUdude_MightyCore_index.json" --save-prefs
+  - arduino --install-boards stm32duino:STM32F1:2017.9.5
+  - arduino --install-boards MightyCore:avr:2.0.1
+  - echo "compiler.cpp.extra_flags=-DUSE_AES -DHM_DEF_KEY=0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x0a,0x0b,0x0c,0x0d,0x0e,0x0f,0x10 -DHM_DEF_KEY_INDEX=0" >$HOME/arduino-ide/hardware/arduino/avr/platform.local.txt
 script:
-#  - "echo $PWD"
-#  - "echo $HOME"
-#  - "ls $PWD"
-#  - buildSketch HM-DW-WM
+#  - export BOARD=$BOARDMAPLE
+#  - export SKETCHPATH=$PWD/examples/stm32
+#  - buildSketch HB-DoorBell
 #  - buildSketch HM-LC-SWX-SM
-  - export BOARD=$BOARDMAPLE
-  - export SKETCHPATH=$PWD/examples/stm32
-  - buildSketch HB-DoorBell
-  - buildSketch HM-LC-SWX-SM
-  - export BOARD=$BOARDSTM
-  - buildSketch HM-DW-WM
+#  - export BOARD=$BOARDSTM
+#  - buildSketch HM-DW-WM
   - export BOARD=$BOARD328P
   - export SKETCHPATH=$PWD/examples
   - buildSketch FreqTest
