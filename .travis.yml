@@ -1,7 +1,7 @@
 language: c++
 env:
   global:
-    - IDE_VERSION=1.8.8
+    - IDE_VERSION=1.8.1
     - BOARDMAPLE="stm32duino:STM32F1:mapleMini:bootloader_version=original,opt=oslto"
     - BOARDSTM="stm32duino:STM32F1:genericSTM32F103C:device_variant=STM32F103C8,opt=oslto"
     - BOARD644P="MightyCore:avr:644:pinout=bobuino,variant=modelP,LTO=Os,clock=8MHz_internal"
