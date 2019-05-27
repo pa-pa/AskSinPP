@@ -22,6 +22,10 @@ install:
   - mkdir -p $HOME/Arduino/libraries
   - ln -s $PWD $HOME/Arduino/libraries/.
   - arduino --install-library "OneWire"
+  - arduino --install-library "OneWireSTM"
+  - arduino --install-library "Wire"
+  - arduino --install-library "SPI"
+  - arduino --install-library "EEPROM"
   - git clone https://github.com/GreyGnome/EnableInterrupt $HOME/arduino-ide/libraries/EnableInterrupt
   - git clone https://github.com/rocketscream/Low-Power.git $HOME/arduino-ide/libraries/Low-Power
   - git clone https://github.com/adafruit/Adafruit_Sensor $HOME/arduino-ide/libraries/Adafruit_Sensor
