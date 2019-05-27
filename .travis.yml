@@ -18,6 +18,7 @@ before_install:
 #    fi
 #  - buildSketch() { arduino --verify --board $BOARD $SKETCHPATH/$1/$1.ino 2>&1 | tee /tmp/$1.log; cat /tmp/$1.log; }
   - buildSketch() { arduino --verify --board $BOARD $SKETCHPATH/$1/$1.ino; }
+  - buildSketchV() { arduino -v --verify --board $BOARD $SKETCHPATH/$1/$1.ino; }
 install:
   - mkdir -p $HOME/Arduino/libraries
   - ln -s $PWD $HOME/Arduino/libraries/.
@@ -64,7 +65,7 @@ script:
 #  - buildSketch HB-DoorBell
 #  - buildSketch HM-LC-SWX-SM
   - export BOARD=$BOARDSTM
-  - buildSketch HM-DW-WM
+  - buildSketchV HM-DW-WM
   - export BOARD=$BOARD328P
   - export SKETCHPATH=$PWD/examples
   - buildSketch FreqTest
