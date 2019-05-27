@@ -2,7 +2,8 @@ language: c++
 env:
   global:
     - IDE_VERSION=1.8.1
-    - BOARDSTM="stm32duino:STM32F1:mapleMini"
+    - BOARDMAPLE="stm32duino:STM32F1:mapleMini:bootloader_version=original,opt=osstd"
+    - BOARDSTM="stm32duino:STM32F1:genericSTM32F103C:device_variant=STM32F103C8,opt=osstd"
     - BOARD644P="MightyCore:avr:644:pinout=bobuino,variant=modelP,LTO=Os,clock=8MHz_internal"
     - BOARD1284P="MightyCore:avr:1284:pinout=standard,variant=modelP,LTO=Os,clock=8MHz_internal"
     - BOARD328P="arduino:avr:pro:cpu=8MHzatmega328"
@@ -17,9 +18,11 @@ before_install:
 #    fi
 #  - buildSketch() { arduino --verify --board $BOARD $SKETCHPATH/$1/$1.ino 2>&1 | tee /tmp/$1.log; cat /tmp/$1.log; }
   - buildSketch() { arduino --verify --board $BOARD $SKETCHPATH/$1/$1.ino; }
+  - buildSketchV() { arduino -v --verify --board $BOARD $SKETCHPATH/$1/$1.ino; }
 install:
   - mkdir -p $HOME/Arduino/libraries
   - ln -s $PWD $HOME/Arduino/libraries/.
+# install/fetch libraries
   - arduino --install-library "OneWire"
   - git clone https://github.com/GreyGnome/EnableInterrupt $HOME/arduino-ide/libraries/EnableInterrupt
   - git clone https://github.com/rocketscream/Low-Power.git $HOME/arduino-ide/libraries/Low-Power
@@ -53,14 +56,16 @@ install:
   - arduino --pref "update.check=false" --save-prefs
   - arduino --pref "boardsmanager.additional.urls=http://dan.drown.org/stm32duino/package_STM32duino_index.json,https://mcudude.github.io/MightyCore/package_MCUdude_MightyCore_index.json" --save-prefs
   - arduino --install-boards stm32duino:STM32F1:2017.9.5
+#  - arduino --install-boards stm32duino:STM32F1:2019.3.31
   - arduino --install-boards MightyCore:avr:2.0.1
   - echo "compiler.cpp.extra_flags=-DUSE_AES -DHM_DEF_KEY=0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x0a,0x0b,0x0c,0x0d,0x0e,0x0f,0x10 -DHM_DEF_KEY_INDEX=0" >$HOME/arduino-ide/hardware/arduino/avr/platform.local.txt
 script:
-#  - "echo $PWD"
-#  - "echo $HOME"
-#  - "ls $PWD"
-#  - buildSketch HM-DW-WM
-#  - buildSketch HM-LC-SWX-SM
+  - export BOARD=$BOARDMAPLE
+  - export SKETCHPATH=$PWD/examples/stm32
+  - buildSketch HB-DoorBell
+  - buildSketch HM-LC-SWX-SM
+  - export BOARD=$BOARDSTM
+  - buildSketch HM-DW-WM
   - export BOARD=$BOARD328P
   - export SKETCHPATH=$PWD/examples
   - buildSketch FreqTest
