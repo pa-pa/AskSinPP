@@ -2,7 +2,7 @@ language: c++
 env:
   global:
     - IDE_VERSION=1.8.1
-    - BOARDSTM="stm32duino:STM32F1:mapleMini"
+    - BOARDSTM="stm32duino:STM32F1:mapleMini:bootloader_version=original,opt=oslto"
     - BOARD644P="MightyCore:avr:644:pinout=bobuino,variant=modelP,LTO=Os,clock=8MHz_internal"
     - BOARD1284P="MightyCore:avr:1284:pinout=standard,variant=modelP,LTO=Os,clock=8MHz_internal"
     - BOARD328P="arduino:avr:pro:cpu=8MHzatmega328"
