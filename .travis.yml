@@ -62,10 +62,10 @@ install:
 script:
   - export BOARD=$BOARDMAPLE
   - export SKETCHPATH=$PWD/examples/stm32
-#  - buildSketch HB-DoorBell
-#  - buildSketch HM-LC-SWX-SM
+  - buildSketch HB-DoorBell
+  - buildSketch HM-LC-SWX-SM
   - export BOARD=$BOARDSTM
-  - buildSketchV HM-DW-WM
+  - buildSketch HM-DW-WM
   - export BOARD=$BOARD328P
   - export SKETCHPATH=$PWD/examples
   - buildSketch FreqTest
