@@ -2,8 +2,8 @@ language: c++
 env:
   global:
     - IDE_VERSION=1.8.1
-    - BOARDMAPLE="stm32duino:STM32F1:GenF1:pnum.MAPLEMINI_F103CB"
-    - BOARDSTM="stm32duino:STM32F1:GenF1:pnum=BLUEPILL_F103C8"
+    - BOARDMAPLE="stm32duino:STM32F1:mapleMini:bootloader_version=original,opt=oslto"
+    - BOARDSTM="stm32duino:STM32F1:genericSTM32F103C:device_variant=STM32F103C8,opt=oslto"
     - BOARD644P="MightyCore:avr:644:pinout=bobuino,variant=modelP,LTO=Os,clock=8MHz_internal"
     - BOARD1284P="MightyCore:avr:1284:pinout=standard,variant=modelP,LTO=Os,clock=8MHz_internal"
     - BOARD328P="arduino:avr:pro:cpu=8MHzatmega328"
@@ -54,8 +54,8 @@ install:
 # setup arduino IDE
   - arduino --pref "update.check=false" --save-prefs
   - arduino --pref "boardsmanager.additional.urls=http://dan.drown.org/stm32duino/package_STM32duino_index.json,https://mcudude.github.io/MightyCore/package_MCUdude_MightyCore_index.json" --save-prefs
-#  - arduino --install-boards stm32duino:STM32F1:2017.9.5
-  - arduino --install-boards stm32duino:STM32F1:2019.3.31
+  - arduino --install-boards stm32duino:STM32F1:2017.9.5
+#  - arduino --install-boards stm32duino:STM32F1:2019.3.31
   - arduino --install-boards MightyCore:avr:2.0.1
   - echo "compiler.cpp.extra_flags=-DUSE_AES -DHM_DEF_KEY=0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x0a,0x0b,0x0c,0x0d,0x0e,0x0f,0x10 -DHM_DEF_KEY_INDEX=0" >$HOME/arduino-ide/hardware/arduino/avr/platform.local.txt
 script:
