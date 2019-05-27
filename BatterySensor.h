@@ -82,7 +82,7 @@ public:
     while (ADCSRA & (1 << ADSC)) ; // wait to finish
     vcc = 1100UL * 1024 / ADC;
 #elif defined ARDUINO_ARCH_STM32F1
-    vcc = millivolts = 1200 * 4096 / adc_read(ADC1, 17);  // ADC sample to millivolts
+    vcc = 1200 * 4096 / adc_read(ADC1, 17);  // ADC sample to millivolts
 #endif
     DPRINT(F("iVcc: ")); DDECLN(vcc);
     return vcc;
