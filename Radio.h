@@ -504,7 +504,7 @@ public:
     }
 
     // Settings that ELV sets
-    DPRINT("CC Version: "); DHEXLN(spi.readReg(CC1101_VERSION, CC1101_STATUS));
+    DPRINT(F("CC Version: ")); DHEXLN(spi.readReg(CC1101_VERSION, CC1101_STATUS));
 
     spi.strobe(CC1101_SCAL);                                // calibrate frequency synthesizer and turn it off
 
@@ -524,8 +524,8 @@ public:
         _delay_ms(1);
       }
       else {
-        DPRINT("Error at "); DHEX(regAddr);
-        DPRINT(" expected: "); DHEX(val); DPRINT(" read: "); DHEXLN(val_read);
+        DPRINT(F("Error at ")); DHEX(regAddr);
+        DPRINT(F(" expected: ")); DHEX(val); DPRINT(F(" read: ")); DHEXLN(val_read);
       }
     }
   }
@@ -600,9 +600,8 @@ protected:
       // check that packet fits into the buffer
       if (packetBytes <= size) {
         spi.readBurst(buf, CC1101_RXFIFO, packetBytes);          // read data packet
-        rss = spi.readReg(CC1101_RXFIFO, CC1101_CONFIG);         // read RSSI
-        if (rss >= 128) rss = 255 - rss;
-        rss /= 2; rss += 72;
+        uint8_t rsshex = spi.readReg(CC1101_RXFIFO, CC1101_CONFIG);         // read RSSI
+        rss = -1 * ((((int16_t)rsshex-((int16_t)rsshex >= 128 ? 256 : 0))/2)-74);
         uint8_t val = spi.readReg(CC1101_RXFIFO, CC1101_CONFIG); // read LQI and CRC_OK
         // lqi = val & 0x7F;
         if( (val & 0x80) == 0x80 ) { // check crc_ok
@@ -610,14 +609,14 @@ protected:
           rxBytes = packetBytes;
         }
         else {
-          DPRINTLN("CRC Failed");
+          DPRINTLN(F("CRC Failed"));
         }
       }
       else {
-        DPRINT("Packet too big: ");DDECLN(packetBytes);
+        DPRINT(F("Packet too big: "));DDECLN(packetBytes);
       }
     }
-    //DPRINT("-> ");
+    //DPRINT(F("-> "));
     //DHEXLN(buf,rxBytes);
     spi.strobe(CC1101_SFRX);
     _delay_us(190);
