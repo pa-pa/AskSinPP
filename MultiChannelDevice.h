@@ -65,7 +65,7 @@ public:
 
   void dumpSize () {
     ChannelType& ch = channel(this->channels());
-    DPRINT("Address Space: ");DDEC(this->keystore().address());DPRINT(" - ");DDECLN((uint16_t)(ch.address() + ch.size()));
+    DPRINT(F("Address Space: "));DDEC(this->keystore().address());DPRINT(F(" - "));DDECLN((uint16_t)(ch.address() + ch.size()));
   }
 
   uint16_t checksum () {

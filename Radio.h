@@ -504,7 +504,7 @@ public:
     }
 
     // Settings that ELV sets
-    DPRINT("CC Version: "); DHEXLN(spi.readReg(CC1101_VERSION, CC1101_STATUS));
+    DPRINT(F("CC Version: ")); DHEXLN(spi.readReg(CC1101_VERSION, CC1101_STATUS));
 
     spi.strobe(CC1101_SCAL);                                // calibrate frequency synthesizer and turn it off
 
@@ -524,8 +524,8 @@ public:
         _delay_ms(1);
       }
       else {
-        DPRINT("Error at "); DHEX(regAddr);
-        DPRINT(" expected: "); DHEX(val); DPRINT(" read: "); DHEXLN(val_read);
+        DPRINT(F("Error at ")); DHEX(regAddr);
+        DPRINT(F(" expected: ")); DHEX(val); DPRINT(F(" read: ")); DHEXLN(val_read);
       }
     }
   }
@@ -609,14 +609,14 @@ protected:
           rxBytes = packetBytes;
         }
         else {
-          DPRINTLN("CRC Failed");
+          DPRINTLN(F("CRC Failed"));
         }
       }
       else {
-        DPRINT("Packet too big: ");DDECLN(packetBytes);
+        DPRINT(F("Packet too big: "));DDECLN(packetBytes);
       }
     }
-    //DPRINT("-> ");
+    //DPRINT(F("-> "));
     //DHEXLN(buf,rxBytes);
     spi.strobe(CC1101_SFRX);
     _delay_us(190);

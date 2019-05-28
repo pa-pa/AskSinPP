@@ -65,19 +65,19 @@ public:
       // 3 or 6 matches are longpress and longlongpress
       if( (matches & 0b00111111) == 0b00000111 || (matches & 0b00111111) == 0b00111111 ) {
         s = longpressed;
-        DPRINTLN("longpressed");
+        DPRINTLN(F("longpressed"));
         // clear longlong
         matches &= 0b11000111;
       }
       // check for long release
       else if( (matches & 0b00001111) == 0b00001110 ) {
         s = longreleased;
-        DPRINTLN("longreleased");
+        DPRINTLN(F("longreleased"));
       }
       // check for release
       else if( (matches & 0b00000011) == 0b00000010 ) {
         s = released;
-        DPRINTLN("released");
+        DPRINTLN(F("released"));
       }
       if( s != none ) {
         RemoteEventMsg& msg = (RemoteEventMsg&)this->device().message();

@@ -120,12 +120,12 @@ public:
       isr = func;
       mode = m;
       laststate = digitalRead(pin);
-      DPRINT("Enable PinPolling: "); DDEC(pin); DPRINT(" - "); DDECLN(mode);
+      DPRINT(F("Enable PinPolling: ")); DDEC(pin); DPRINT(F(" - ")); DDECLN(mode);
       set(1);
       sysclock.add(*this);
     }
     void disable () {
-      DPRINT("Disable PinPolling: "); DDECLN(pin);
+      DPRINT(F("Disable PinPolling: ")); DDECLN(pin);
       sysclock.cancel(*this);
     }
   };

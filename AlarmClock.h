@@ -226,7 +226,7 @@ public:
   void debug () {
     if( select() != 0 ) {
       DDEC((uint16_t)((Alarm*)select())->tick);
-      DPRINT(" ");
+      DPRINT(F(" "));
     }
   }
 };

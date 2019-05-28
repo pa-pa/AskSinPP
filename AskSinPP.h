@@ -157,7 +157,7 @@ public:
       uint8_t f1 = sc.getByte(CONFIG_FREQ1);
       uint8_t f2 = sc.getByte(CONFIG_FREQ2);
       if( f1 != 0 ) {
-        DPRINT("Config Freq: 0x21");DHEX(f1);DHEXLN(f2);
+        DPRINT(F("Config Freq: 0x21"));DHEX(f1);DHEXLN(f2);
         radio.initReg(CC1101_FREQ2, 0x21);
         radio.initReg(CC1101_FREQ1, f1);
         radio.initReg(CC1101_FREQ0, f2);

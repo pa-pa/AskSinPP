@@ -127,7 +127,7 @@ public:
       // 3 or 6 matches are longpress and longlongpress
       if( (matches & 0b00111111) == 0b00000111 || (matches & 0b00111111) == 0b00111111 ) {
         s = longpressed;
-        DPRINTLN("longpressed");
+        DPRINTLN(F("longpressed"));
         this->device().buzzer().on();
         // clear longlong
         matches &= 0b11000111;
@@ -135,13 +135,13 @@ public:
       // check for long release
       else if( (matches & 0b00001111) == 0b00001110 ) {
         s = longreleased;
-        DPRINTLN("longreleased");
+        DPRINTLN(F("longreleased"));
         this->device().buzzer().off();
       }
       // check for release
       else if( (matches & 0b00000011) == 0b00000010 ) {
         s = released;
-        DPRINTLN("released");
+        DPRINTLN(F("released"));
         this->device().buzzer().on(millis2ticks(100));
       }
       if( s != none ) {
@@ -303,7 +303,7 @@ public:
   void DADDR(uint8_t * addr) {
     for (uint8_t i = 0; i < ID_ADDR_SIZE; i++)
       DHEX(addr[i]);
-    DPRINTLN("");
+    DPRINTLN(F(""));
   }
  
   void start () {

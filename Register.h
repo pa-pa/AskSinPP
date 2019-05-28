@@ -249,9 +249,9 @@ public:
     for( uint8_t idx=0; idx < size(); ++idx ) {
       uint8_t reg = getRegister(idx);
       DHEX(reg);
-      DPRINT(":");
+      DPRINT(F(":"));
       DHEX(readRegister(reg));
-      DPRINT(" ");
+      DPRINT(F(" "));
     }
     DPRINT(end);
 #endif

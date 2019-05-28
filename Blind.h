@@ -208,7 +208,7 @@ public:
   void updateLevel (uint8_t l) {
     if( l != level ) {
       level = l;
-      DPRINT("New Level: ");DDECLN(level);
+      DPRINT(F("New Level: "));DDECLN(level);
       triggerChanged();
     }
   }
@@ -239,7 +239,7 @@ public:
   virtual ~BlindStateMachine () {}
 
   virtual void switchState(uint8_t oldstate,uint8_t newstate,__attribute__ ((unused)) uint32_t statedelay) {
-    DPRINT("Switch from ");DHEX(oldstate);DPRINT(" to ");DHEX(newstate);DPRINT("   delay: ");DHEXLN(statedelay);
+    DPRINT(F("Switch from "));DHEX(oldstate);DPRINT(F(" to "));DHEX(newstate);DPRINT(F("   delay: "));DHEXLN(statedelay);
     switch( newstate ) {
     case AS_CM_JT_RAMPON:
       update.start(sysclock, list1.refRunningTimeBottomTop());
@@ -268,7 +268,7 @@ public:
   
   void jumpToTarget(const BlindPeerList& lst) {
     uint8_t next = getJumpTarget(state,lst);
-    DPRINT("jumpToTarget: ");DDEC(state);DPRINT(" ");DDECLN(next);
+    DPRINT(F("jumpToTarget: "));DDEC(state);DPRINT(F(" "));DDECLN(next);
     if( next != AS_CM_JT_NONE ) {
       switch( next ) {
         case AS_CM_JT_ONDELAY:
@@ -348,7 +348,7 @@ public:
   uint32_t calcDriveTime(uint8_t dx,uint32_t fulltime,bool extratime) const {
     uint32_t dt = (fulltime * dx) / 200;
     if( extratime == true ) dt += 20; // we add 2 additional seconds
-    DPRINT("calcDriveTime: ");DDEC(fulltime);DPRINT(" - ");DDEC(dx);DPRINT(" - ");DDECLN(dt);
+    DPRINT(F("calcDriveTime: "));DDEC(fulltime);DPRINT(F(" - "));DDEC(dx);DPRINT(F(" - "));DDECLN(dt);
     return decis2ticks(dt);
   }
 
@@ -394,7 +394,7 @@ public:
 //  }
 
   bool setDestLevel (uint8_t value) {
-    DPRINT("setDestLevel: ");DDECLN(value);
+    DPRINT(F("setDestLevel: "));DDECLN(value);
     destlevel = value;
 //    if( destlevel > level || destlevel == 200 ) {
 //      setState(AS_CM_JT_ONDELAY, 0);

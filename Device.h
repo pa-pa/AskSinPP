@@ -625,7 +625,7 @@ public:
 
   bool processChallenge(const Message& msg,const uint8_t* challenge,uint8_t keyidx) {
     if( kstore.challengeKey(challenge,keyidx) == true ) {
-      DPRINT("Process Challenge - Key: ");DHEXLN(keyidx);
+      DPRINT(F("Process Challenge - Key: "));DHEXLN(keyidx);
       AesResponseMsg answer;
       answer.init(msg);
       // fill initial vector with message to sign
