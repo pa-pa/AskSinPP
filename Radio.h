@@ -794,7 +794,7 @@ public:   //--------------------------------------------------------------------
     buffer.encode();
     return sndData(buffer.buffer(),buffer.length(),burst);
   }
-
+/*
   bool readAck (const Message& msg) {
     if( intread == 0 )
       return false;
@@ -816,7 +816,7 @@ public:   //--------------------------------------------------------------------
     }
     return ack;
   }
-
+*/
   uint8_t sndData(uint8_t *buf, uint8_t size, uint8_t burst) {
     timeout.waitTimeout();
     this->wakeup();
