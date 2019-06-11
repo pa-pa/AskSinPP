@@ -540,7 +540,7 @@ public:
       list.writeRegister(*data,*(data+1));
     }
   }
-
+/*
   bool waitForAck(Message& msg,uint8_t timeout) {
     do {
       if( radio().readAck(msg) == true ) {
@@ -552,7 +552,7 @@ public:
     while( timeout > 0 );
     return false;
   }
-
+*/
   bool waitResponse(const Message& msg,Message& response,uint8_t timeout) {
     do {
       uint8_t num = radio().read(response);
