@@ -208,59 +208,19 @@ public:
   // for backward compatibility
   uint16_t voltageHighRes() { return m_Meter.value(); }
   uint8_t voltage() { return current(); }
+
+  METER& meter () { return m_Meter; }
 };
 
 typedef BattSensor<SyncMeter<InternalVCC> > BatterySensor;
 
-//template <uint8_t SENSPIN,uint8_t ACTIVATIONPIN,uint16_t VCC=3300>
-//class BatterySensorUni : public BattSensor<SyncMeter<ExternalVCC<SENSPIN,ACTIVATIONPIN,LOW,VCC,57>>> {
-//public:
-//  BatterySensorUni () {}
-//  virtual ~BatterySensorUni () {}
-//};
-
-/**
- * Measure battery voltage as used on the universal sensor board.
- */
 template <uint8_t SENSPIN,uint8_t ACTIVATIONPIN,uint16_t VCC=3300>
-class BatterySensorUni : public BatterySensor {
-  uint8_t  m_SensePin; // A1
-  uint8_t  m_ActivationPin; // D7
-  uint8_t  m_Factor; // 57 = 470k + 100k / 10
+class BatterySensorUni : public BattSensor<SyncMeter<ExternalVCC<SENSPIN,ACTIVATIONPIN,LOW,VCC,57> > > {
 public:
-
-  BatterySensorUni () : BatterySensor (),
-  m_SensePin(SENSPIN), m_ActivationPin(ACTIVATIONPIN), m_Factor(57) {}
+  BatterySensorUni () {}
   virtual ~BatterySensorUni () {}
-
-  void init(uint32_t period,AlarmClock& clock,uint8_t factor=57) {
-    m_Factor=factor;
-    pinMode(m_SensePin, INPUT);
-    pinMode(m_ActivationPin, INPUT);
-    BatterySensor::init(period,clock);
-  }
-
-  virtual uint8_t voltage () {
-    uint16_t refvcc = readRefVcc();
-    pinMode(m_ActivationPin,OUTPUT);
-    digitalWrite(m_ActivationPin,LOW);
-    digitalWrite(m_SensePin,LOW);
-    analogRead(m_SensePin);
-    _delay_ms(2); // allow the ADC to stabilize
-    uint32_t value = analogRead(m_SensePin);
-    uint16_t vin = (value * refvcc * m_Factor) / 1024 / 1000;
-
-    digitalWrite(m_SensePin,HIGH);
-    pinMode(m_ActivationPin,INPUT);
-
-    DPRINT(F("Bat: ")); DDECLN(vin);
-    return (uint8_t)vin;
-  }
-  
-  uint16_t readRefVcc () {
-     return VCC != 0 ? VCC : BatterySensor::voltageHighRes();
-  }
 };
+
 
 /**
  * Measure on analog pin
