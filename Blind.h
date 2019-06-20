@@ -194,6 +194,7 @@ class BlindStateMachine : public StateMachine<BlindPeerList> {
         if( dx > startlevel ) dx = startlevel;
         sm.updateLevel(startlevel - dx);
       }
+      sm.triggerChanged();
     }
     virtual void trigger (AlarmClock& clock) {
       // add 0.1s
@@ -207,7 +208,7 @@ public:
   void updateLevel (uint8_t l) {
     if( l != level ) {
       level = l;
-      DPRINT("New Level: ");DDECLN(level);
+      DPRINT(F("New Level: "));DDECLN(level);
       triggerChanged();
     }
   }
@@ -238,7 +239,7 @@ public:
   virtual ~BlindStateMachine () {}
 
   virtual void switchState(uint8_t oldstate,uint8_t newstate,__attribute__ ((unused)) uint32_t statedelay) {
-    DPRINT("Switch from ");DHEX(oldstate);DPRINT(" to ");DHEXLN(newstate);
+    DPRINT(F("Switch from "));DHEX(oldstate);DPRINT(F(" to "));DHEX(newstate);DPRINT(F("   delay: "));DHEXLN(statedelay);
     switch( newstate ) {
     case AS_CM_JT_RAMPON:
       update.start(sysclock, list1.refRunningTimeBottomTop());
@@ -267,20 +268,18 @@ public:
   
   void jumpToTarget(const BlindPeerList& lst) {
     uint8_t next = getJumpTarget(state,lst);
-    DPRINT("jumpToTarget: ");DDEC(state);DPRINT(" ");DDECLN(next);
+    DPRINT(F("jumpToTarget: "));DDEC(state);DPRINT(F(" "));DDECLN(next);
     if( next != AS_CM_JT_NONE ) {
       switch( next ) {
         case AS_CM_JT_ONDELAY:
         case AS_CM_JT_REFON:
         case AS_CM_JT_RAMPON:   
-          if(setDestLevel(lst.onLevel()))
-            return;
+          setDestLevel(lst.onLevel());
           break;
         case AS_CM_JT_OFFDELAY:
         case AS_CM_JT_REFOFF:   
         case AS_CM_JT_RAMPOFF:  
-          if(setDestLevel(lst.offLevel()))
-            return;
+          setDestLevel(lst.offLevel());
           break;
       }
       
@@ -320,7 +319,6 @@ public:
           destlevel = 0xff;
           return decis2ticks(first);
         }
-        //destlevel = stat == AS_CM_JT_RAMPON ? lst.onLevel() : lst.offLevel();
       }
     }
     return StateMachine<BlindPeerList>::getDelayForState(stat,lst);
@@ -349,12 +347,19 @@ public:
   uint32_t calcDriveTime(uint8_t dx,uint32_t fulltime,bool extratime) const {
     uint32_t dt = (fulltime * dx) / 200;
     if( extratime == true ) dt += 20; // we add 2 additional seconds
-    DPRINT("calcDriveTime: ");DDEC(fulltime);DPRINT(" - ");DDEC(dx);DPRINT(" - ");DDECLN(dt);
+    DPRINT(F("calcDriveTime: "));DDEC(fulltime);DPRINT(F(" - "));DDEC(dx);DPRINT(F(" - "));DDECLN(dt);
     return decis2ticks(dt);
   }
 
   bool set (uint8_t value,__attribute__ ((unused)) uint16_t ramp,__attribute__ ((unused)) uint16_t delay) {
-    return setDestLevel(value);
+    setDestLevel(value);
+    if( destlevel > level || destlevel == 200 ) {
+      setState(AS_CM_JT_ONDELAY, 0);
+    }
+    else if ( destlevel < level || destlevel == 0 ) {
+      setState(AS_CM_JT_OFFDELAY, 0);
+    }
+    return true;
   }
 
   void remote (const BlindPeerList& lst,uint8_t counter) {
@@ -378,27 +383,9 @@ public:
     }
   }
 
-  void toggleState () {
-    if( state == AS_CM_JT_OFF ) {
-      setDestLevel(200);
-    }
-    else {
-      setDestLevel(0);
-    }
-  }
-
   bool setDestLevel (uint8_t value) {
-    DPRINT("setDestLevel: ");DDECLN(value);
+    DPRINT(F("setDestLevel: "));DDECLN(value);
     destlevel = value;
-    if( destlevel > level || destlevel == 200 ) {
-      setState(AS_CM_JT_ONDELAY, 0);
-      return true;
-    }
-    else if ( destlevel < level || destlevel == 0 ) {
-      setState(AS_CM_JT_OFFDELAY, 0);
-      return true;
-    }
-    
     return false;
   }
 
