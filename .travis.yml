@@ -39,16 +39,16 @@ install:
   - git clone https://github.com/PaulStoffregen/SoftwareSerial.git $HOME/arduino-ide/libraries/SoftwareSerial
   - git clone https://github.com/DFRobot/DFRobotDFPlayerMini.git $HOME/arduino-ide/libraries/DFRobotDFPlayerMini
 # Sketches from Jerome to test
-  - git clone https://github.com/jp112sdl/Beispiel_AskSinPP.git $HOME/Beispiel_AskSinPP
-  - git clone https://github.com/jp112sdl/HB-UNI-Sen-LEV-US.git $HOME/Beispiel_AskSinPP/examples/HB-UNI-Sen-LEV-US
-  - git clone https://github.com/jp112sdl/HB-UNI-Sen-DIST-US.git $HOME/Beispiel_AskSinPP/examples/HB-UNI-Sen-DIST-US
-  - git clone https://github.com/jp112sdl/HB-UNI-Sen-CAP-MOIST.git $HOME/Beispiel_AskSinPP/examples/HB-UNI-Sen-CAP-MOIST
-  - git clone https://github.com/jp112sdl/HB-UNI-SenAct-4-4.git $HOME/Beispiel_AskSinPP/examples/HB-UNI-SenAct-4-4
-  - git clone https://github.com/jp112sdl/HB-UNI-DMX-MASTER.git $HOME/Beispiel_AskSinPP/examples/HB-UNI-DMX-MASTER
-  - git clone https://github.com/jp112sdl/HB-UNI-Sen-PRESS.git $HOME/Beispiel_AskSinPP/examples/HB-UNI-Sen-PRESS
-  - git clone https://github.com/jp112sdl/HB-UNI-Sen-WEIGHT.git $HOME/Beispiel_AskSinPP/examples/HB-UNI-Sen-WEIGHT
-  - git clone https://github.com/jp112sdl/HB-Dis-EP-42BW.git $HOME/Beispiel_AskSinPP/examples/HB-Dis-EP-42BW
-  - git clone https://github.com/jp112sdl/HB-OU-MP3-LED.git $HOME/Beispiel_AskSinPP/examples/HB-OU-MP3-LED
+#  - git clone https://github.com/jp112sdl/Beispiel_AskSinPP.git $HOME/Beispiel_AskSinPP
+#  - git clone https://github.com/jp112sdl/HB-UNI-Sen-LEV-US.git $HOME/Beispiel_AskSinPP/examples/HB-UNI-Sen-LEV-US
+#  - git clone https://github.com/jp112sdl/HB-UNI-Sen-DIST-US.git $HOME/Beispiel_AskSinPP/examples/HB-UNI-Sen-DIST-US
+#  - git clone https://github.com/jp112sdl/HB-UNI-Sen-CAP-MOIST.git $HOME/Beispiel_AskSinPP/examples/HB-UNI-Sen-CAP-MOIST
+#  - git clone https://github.com/jp112sdl/HB-UNI-SenAct-4-4.git $HOME/Beispiel_AskSinPP/examples/HB-UNI-SenAct-4-4
+#  - git clone https://github.com/jp112sdl/HB-UNI-DMX-MASTER.git $HOME/Beispiel_AskSinPP/examples/HB-UNI-DMX-MASTER
+#  - git clone https://github.com/jp112sdl/HB-UNI-Sen-PRESS.git $HOME/Beispiel_AskSinPP/examples/HB-UNI-Sen-PRESS
+#  - git clone https://github.com/jp112sdl/HB-UNI-Sen-WEIGHT.git $HOME/Beispiel_AskSinPP/examples/HB-UNI-Sen-WEIGHT
+#  - git clone https://github.com/jp112sdl/HB-Dis-EP-42BW.git $HOME/Beispiel_AskSinPP/examples/HB-Dis-EP-42BW
+#  - git clone https://github.com/jp112sdl/HB-OU-MP3-LED.git $HOME/Beispiel_AskSinPP/examples/HB-OU-MP3-LED
 # setup arduino IDE
   - arduino --pref "update.check=false" --save-prefs
   - arduino --pref "boardsmanager.additional.urls=http://dan.drown.org/stm32duino/package_STM32duino_index.json,https://mcudude.github.io/MightyCore/package_MCUdude_MightyCore_index.json" --save-prefs
@@ -86,64 +86,64 @@ script:
   - buildSketch HB-IBUT-8
   - buildSketch HB-RC-3-ENC
   - buildSketch HB-SW2-SENS
-  - export SKETCHPATH=$HOME/Beispiel_AskSinPP/examples
-  - buildSketch HB-LC-Bl1PBU-FM
-  - buildSketch HB-LC-SW12-FM
-  - buildSketch HB-LC-Sw1PBU-FM
-  - buildSketch HB-LC-Sw2PBU-FM
-  - buildSketch HM-CC-SCD
-  - buildSketch HM-Dis-TD-T
-#  - buildSketch HM-Dis-WM55
-  - export BOARD=$BOARD644P
-  - buildSketch HM-ES-PMSw1-Pl
-  - buildSketch HM-ES-PMSw1-Pl_GosundSP1
-  - export BOARD=$BOARD328P
-  - buildSketch HM-ES-TX-WM_CCU
-  - buildSketch HM-LC-SW1-FM_Shelly1
-  - buildSketch HM-LC-SW1-SM_SONOFF_BASIC
-  - buildSketch HM-LC-Sw1-Pl-CT-R1
-  - buildSketch HM-LC-Sw1-Pl-DN-R1
-  - buildSketch HM-LC-Sw1-Pl-DN-R1_OBI
-  - buildSketch HM-LC-Sw2-FM
-  - buildSketch HM-MOD-Re-8
-  - buildSketch HM-PB-2-FM
-  - buildSketch HM-PB-2-WM55
-  - buildSketch HM-PB-6-WM55
-  - buildSketch HM-PB-MP-WM
-  - buildSketch HM-PBI-4-FM
-  - buildSketch HM-RC-2-PBU-FM
-  - buildSketch HM-SCI-3-FM
-  - buildSketch HM-SEC-SC
-  - buildSketch HM-SEC-SCO
-  - buildSketch HM-Sec-TiS
-  - buildSketch HM-Sen-DB-PCB
-  - buildSketch HM-Sen-LI-O
-  - buildSketch HM-Sen-WA-OD
-  - buildSketch HM-WDS30-OT2-DS18B20
-  - buildSketch HM-WDS30-OT2-NTC
-  - buildSketch HM-WDS30-T-O-NTC
-  - buildSketch HM-WDS40-TH-I-BME280
-  - buildSketch HM-WDS40-TH-I-DHT22
-#  - buildSketch HM-WDS40-TH-I-DS18B20
-  - buildSketch HM-WDS40-TH-I-SHT10
-# more homebrew devices
-  - buildSketch HB-UNI-Sen-LEV-US
-  - buildSketch HB-UNI-Sen-DIST-US
-  - buildSketch HB-UNI-DMX-MASTER
-  - buildSketch HB-UNI-Sen-WEIGHT
-  - buildSketch HB-UNI-Sen-CAP-MOIST
-  - export SKETCHPATH=$HOME/Beispiel_AskSinPP/examples/HB-UNI-SenAct-4-4
-  - buildSketch HB-UNI-SenAct-4-4-RC
-  - buildSketch HB-UNI-SenAct-4-4-SC
-  - export SKETCHPATH=$HOME/Beispiel_AskSinPP/examples/HB-UNI-Sen-PRESS
-  - buildSketch HB-UNI-Sen-PRESS
-  - buildSketch HB-UNI-Sen-PRESS-SC
-  - export SKETCHPATH=$HOME/Beispiel_AskSinPP/examples
-  - export BOARD=$BOARD1284P
-  - buildSketch HB-Dis-EP-42BW
-  - export BOARD=$BOARD328P
-  - echo "" >$HOME/arduino-ide/hardware/arduino/avr/platform.local.txt
-  - buildSketch HB-OU-MP3-LED
+#  - export SKETCHPATH=$HOME/Beispiel_AskSinPP/examples
+#  - buildSketch HB-LC-Bl1PBU-FM
+#  - buildSketch HB-LC-SW12-FM
+#  - buildSketch HB-LC-Sw1PBU-FM
+#  - buildSketch HB-LC-Sw2PBU-FM
+#  - buildSketch HM-CC-SCD
+#  - buildSketch HM-Dis-TD-T
+##  - buildSketch HM-Dis-WM55
+#  - export BOARD=$BOARD644P
+#  - buildSketch HM-ES-PMSw1-Pl
+#  - buildSketch HM-ES-PMSw1-Pl_GosundSP1
+#  - export BOARD=$BOARD328P
+#  - buildSketch HM-ES-TX-WM_CCU
+#  - buildSketch HM-LC-SW1-FM_Shelly1
+#  - buildSketch HM-LC-SW1-SM_SONOFF_BASIC
+#  - buildSketch HM-LC-Sw1-Pl-CT-R1
+#  - buildSketch HM-LC-Sw1-Pl-DN-R1
+#  - buildSketch HM-LC-Sw1-Pl-DN-R1_OBI
+#  - buildSketch HM-LC-Sw2-FM
+#  - buildSketch HM-MOD-Re-8
+#  - buildSketch HM-PB-2-FM
+#  - buildSketch HM-PB-2-WM55
+#  - buildSketch HM-PB-6-WM55
+#  - buildSketch HM-PB-MP-WM
+#  - buildSketch HM-PBI-4-FM
+#  - buildSketch HM-RC-2-PBU-FM
+#  - buildSketch HM-SCI-3-FM
+#  - buildSketch HM-SEC-SC
+#  - buildSketch HM-SEC-SCO
+#  - buildSketch HM-Sec-TiS
+#  - buildSketch HM-Sen-DB-PCB
+#  - buildSketch HM-Sen-LI-O
+#  - buildSketch HM-Sen-WA-OD
+#  - buildSketch HM-WDS30-OT2-DS18B20
+#  - buildSketch HM-WDS30-OT2-NTC
+#  - buildSketch HM-WDS30-T-O-NTC
+#  - buildSketch HM-WDS40-TH-I-BME280
+#  - buildSketch HM-WDS40-TH-I-DHT22
+##  - buildSketch HM-WDS40-TH-I-DS18B20
+#  - buildSketch HM-WDS40-TH-I-SHT10
+## more homebrew devices
+#  - buildSketch HB-UNI-Sen-LEV-US
+#  - buildSketch HB-UNI-Sen-DIST-US
+#  - buildSketch HB-UNI-DMX-MASTER
+#  - buildSketch HB-UNI-Sen-WEIGHT
+#  - buildSketch HB-UNI-Sen-CAP-MOIST
+#  - export SKETCHPATH=$HOME/Beispiel_AskSinPP/examples/HB-UNI-SenAct-4-4
+#  - buildSketch HB-UNI-SenAct-4-4-RC
+#  - buildSketch HB-UNI-SenAct-4-4-SC
+#  - export SKETCHPATH=$HOME/Beispiel_AskSinPP/examples/HB-UNI-Sen-PRESS
+#  - buildSketch HB-UNI-Sen-PRESS
+#  - buildSketch HB-UNI-Sen-PRESS-SC
+#  - export SKETCHPATH=$HOME/Beispiel_AskSinPP/examples
+#  - export BOARD=$BOARD1284P
+#  - buildSketch HB-Dis-EP-42BW
+#  - export BOARD=$BOARD328P
+#  - echo "" >$HOME/arduino-ide/hardware/arduino/avr/platform.local.txt
+#  - buildSketch HB-OU-MP3-LED
 notifications:
   email:
     recipients:
