@@ -392,9 +392,11 @@ public:
 #endif
   }
 
-  void wakeup () {
+  void wakeup (bool flush) {
     spi.ping();
-    flushrx();
+    if( flush==true ) {
+      flushrx();
+    }
 #ifdef USE_WOR
     // ToDo: is this the right position?
     spi.writeReg(CC1101_PKTCTRL1, 0x0C);    // preamble quality estimator threshold=0
@@ -402,7 +404,7 @@ public:
 #endif
     spi.strobe(CC1101_SRX);
   }
-
+  
   uint8_t reset() {
 
     // Strobe CSn low / high
@@ -712,9 +714,9 @@ public:   //--------------------------------------------------------------------
     }
   }
 
-  void wakeup () {
+  void wakeup (bool flush=false) {
     if( idle == true ) {
-      HWRADIO::wakeup();
+      HWRADIO::wakeup(flush);
       idle = false;
     }
   }
@@ -756,7 +758,6 @@ public:   //--------------------------------------------------------------------
       return 0;
 
     intread = 0;
-    idle = false;
     uint8_t len = this->rcvData(buffer.buffer(),buffer.buffersize());
     if( len > 0 ) {
       buffer.length(len);
@@ -769,6 +770,7 @@ public:   //--------------------------------------------------------------------
     msg.length(len);
     // reset buffer
     buffer.clear();
+    wakeup(true);
     return msg.length();
   }
 
