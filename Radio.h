@@ -714,7 +714,7 @@ public:   //--------------------------------------------------------------------
     }
   }
 
-  void wakeup (bool flush=false) {
+  void wakeup (bool flush=true) {
     if( idle == true ) {
       HWRADIO::wakeup(flush);
       idle = false;
@@ -770,7 +770,7 @@ public:   //--------------------------------------------------------------------
     msg.length(len);
     // reset buffer
     buffer.clear();
-    wakeup(true);
+    wakeup(false);
     return msg.length();
   }
 
