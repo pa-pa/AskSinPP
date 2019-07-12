@@ -12,6 +12,16 @@
 
 namespace as {
 
+BME280I2C::Settings settings(
+   BME280::OSR_X1, // Temperature Oversampling Rate (tempOSR): OSR Enum, default = OSR_X1
+   BME280::OSR_X1, // Humidity Oversampling Rate (humOSR): OSR Enum, default = OSR_X1
+   BME280::OSR_X1, // Pressure Oversampling Rate (presOSR): OSR Enum, default = OSR_X1
+   BME280::Mode_Forced, // Mode (mode): Mode Enum, default = Mode_Forced
+   BME280::StandbyTime_1000ms, // Standby Time (standbyTime): StandbyTime Enum, default = StandbyTime_1000ms
+   BME280::Filter_Off, // Filter (filter): Filter Enum, default = Filter_16
+   BME280::SpiEnable_False // SPI Enable: SpiEnable Enum, default = false
+);
+
 // https://github.com/finitespace/BME280
 class Bme280 : public Temperature, public Pressure, public Humidity {
   BME280I2C _bme;
@@ -19,6 +29,7 @@ public:
   Bme280 () {}
   void init () {
     _present = _bme.begin();
+    _bme.setSettings(settings);
   }
   bool measure (__attribute__((unused)) bool async=false) {
     if( present() == true ) {
