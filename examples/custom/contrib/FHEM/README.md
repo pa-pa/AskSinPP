@@ -4,7 +4,7 @@ This folder contains an addon for FHEM to use Homebrew devices.
 
 # Installation
 
-Copy HMConfig_AskSinPPCustom.pm and HMMsg.pm into the FHEM folder.
+Copy HMConfig_AskSinPPCustom.pm and HMMsg.pm into the FHEM folder and restart FHEM.
 
 # Provided Devices
 

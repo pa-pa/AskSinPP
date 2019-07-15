@@ -368,7 +368,7 @@ sub HMConfig_AskSinPPCustom_Initialize () {
 # parse the incomming messages
 sub CUL_HM_Parsecustom($$$$$$) {
   my($mFlg,$mTp,$src,$dst,$p,$target) = @_;
-  Log 1,"General  entering with $mFlg,$mTp,$src,$dst,$p,$target";
+#  Log 1,"General  entering with $mFlg,$mTp,$src,$dst,$p,$target";
 #  Log 1, $src;
 #  Log 1, CUL_HM_id2Hash($src)->{NAME};
   my $model = AttrVal(CUL_HM_id2Hash($src)->{NAME},"model","");
@@ -376,7 +376,7 @@ sub CUL_HM_Parsecustom($$$$$$) {
   
   if( defined $customMsg{$model} ) {
     my $msg = new HMMsg($mTp,$mFlg,$src,$dst,$p);
-    Log 1, "Call custom Message Handler for ".$model;
+#    Log 1, "Call custom Message Handler for ".$model;
     return $customMsg{$model}($msg,$target);
   }
   
