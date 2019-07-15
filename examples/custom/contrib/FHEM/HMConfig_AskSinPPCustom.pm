@@ -2,6 +2,10 @@ package main;
 
 use strict;
 use warnings;
+use HMMsg;
+
+############globals############
+use vars qw(%customMsg);
 
 $HMConfig::culHmSubTypeSets{"iButton"} = { peerChan => "-btnNumber- -actChn- ... single [set|unset] [actor|remote|both]",
                                            on => "" };
@@ -25,6 +29,35 @@ $HMConfig::culHmRegDefine{"caseLength"}     = {a=>106,s=>2,l=>1,min=>30,max=>100
 $HMConfig::culHmRegDefine{"sendIntervalPress"}   = {a=>33, s=>2,l=>0,min=>20,max=>600, c=>'',   p=>'n',f=>'',u=>'s', d=>1,t=>"send interval"};
 $HMConfig::culHmRegDefine{"sensorTypePress"}     = {a=>39 ,s=>1,l=>1,min=>0,max=>1,    c=>'lit',p=>'n',f=>'',u=>'',  d=>1,t=>"sensor type",lit=>{type12MPa=>0,type05MPa=>1}};
 
+# HB-UNI-Sen-CAP-MOIST-T
+$HMConfig::culHmRegDefine{"tempOffset"}         = {a=>1,  s=>4,l=>1,min=>-5,max=>5,   c=>'',   p=>'n',f=>10,u=>'°C', d=>1,t=>"temperature offset"};
+$HMConfig::culHmRegDefine{"transmitInterval"}   = {a=>33, s=>2,l=>0,min=>1,max=>1440, c=>'',   p=>'n',f=>'',u=>'min',  d=>1,t=>"transmit interval"};
+$HMConfig::culHmRegDefine{"highValue"}          = {a=>35, s=>2,l=>1,min=>0,max=>1023, c=>'',   p=>'n',f=>'',u=>'',     d=>1,t=>"high value"};
+$HMConfig::culHmRegDefine{"lowValue"}           = {a=>37, s=>2,l=>1,min=>0,max=>1023, c=>'',   p=>'n',f=>'',u=>'',     d=>1,t=>"low value"};
+$HMConfig::culHmRegDefine{"lowBatteryLimit"}    = {a=>18 ,s=>1,l=>0,min=>0,max=>15   ,c=>'',   p=>'n',f=>10,u=>'V',    d=>1,t=>"low batterie limit, step .1V"};
+
+# HB-UNI-Sen-WEA
+$HMConfig::culHmRegDefine{"altitude"}         = {a=>34,  s=>2,l=>0,min=>0,max=>10000, c=>'',   p=>'n',f=>'',u=>'m', d=>1,t=>"altitude"};
+
+$HMConfig::culHmRegDefine{"anemometerRadius"}            = {a=>1.0, s=>1,l=>1,min=>0,max=>25.5,c=>'',   p=>'n',f=>10,  u=>'cm',  d=>1,t=>"Anemometer Radius"};
+$HMConfig::culHmRegDefine{"anemometerCalibrationFactor"} = {a=>2.0, s=>2,l=>1,min=>0,max=>1000,c=>'',   p=>'n',f=>10,  u=>'',    d=>1,t=>"Anemometer Calibration Factor"};
+$HMConfig::culHmRegDefine{"ldCapacitor"}                 = {a=>4.0, s=>1,l=>1,min=>0,max=>120, c=>'',   p=>'n',f=>'',  u=>'pF',  d=>1,t=>"Light Detector Capacitor"};
+$HMConfig::culHmRegDefine{"ldDisturberDetection"}        = {a=>5.0, s=>1,l=>1,min=>0,max=>1,   c=>'',   p=>'n',f=>'',  u=>'',    d=>1,t=>"Light Detector Disturber Detection"};
+$HMConfig::culHmRegDefine{"ldMinstrikes"}                = {a=>18.0,s=>1,l=>1,min=>0,max=>3,   c=>'',   p=>'n',f=>'',  u=>'',    d=>1,t=>"Light Detector Minstrikes"};
+$HMConfig::culHmRegDefine{"ldWdthreshold"}               = {a=>19.0,s=>1,l=>1,min=>0,max=>3,   c=>'',   p=>'n',f=>'',  u=>'',    d=>1,t=>"Light Detector Wdthreshold"};
+$HMConfig::culHmRegDefine{"ldNoisefloorlevel"}           = {a=>20.0,s=>1,l=>1,min=>0,max=>7,   c=>'',   p=>'n',f=>'',  u=>'',    d=>1,t=>"Light Detector Noisefloorlevel"};
+$HMConfig::culHmRegDefine{"ldSpikerejection"}            = {a=>21.0,s=>1,l=>1,min=>0,max=>7,   c=>'',   p=>'n',f=>'',  u=>'',    d=>1,t=>"Light Detector Spikerejection"};
+$HMConfig::culHmRegDefine{"gustThresholdExtraMessage"}   = {a=>6.0, s=>1,l=>1,min=>0,max=>255, c=>'',   p=>'n',f=>'',  u=>'km/h',d=>1,t=>"Gust Threshold Extra Message"};
+$HMConfig::culHmRegDefine{"rdSensorType"}                = {a=>17.0,s=>1,l=>1,min=>0,max=>0,   c=>'lit',p=>'n',f=>'',  u=>'',    d=>1,t=>"Rain Detector Sensor Type",lit=>{generic=>0,stallbiz=>1}};
+$HMConfig::culHmRegDefine{"rdStallbizHiThresholdRain"}   = {a=>9.0, s=>2,l=>1,min=>0,max=>1023,c=>'',   p=>'n',f=>'',  u=>'',    d=>1,t=>"Rain Detector Stallbiz Hi Threshold Rain"};
+$HMConfig::culHmRegDefine{"rdStallbizLoThresholdRain"}   = {a=>11.0,s=>2,l=>1,min=>0,max=>1023,c=>'',   p=>'n',f=>'',  u=>'',    d=>1,t=>"Rain Detector Stallbiz Threshold Rain"};
+$HMConfig::culHmRegDefine{"rdStallbizHiThresholdHeater"} = {a=>13.0,s=>2,l=>1,min=>0,max=>1023,c=>'',   p=>'n',f=>'',  u=>'',    d=>1,t=>"Rain Detector Stallbiz Hi Threshold Heater"};
+$HMConfig::culHmRegDefine{"rdStallbizLoThresholdHeater"} = {a=>15.0,s=>2,l=>1,min=>0,max=>1023,c=>'',   p=>'n',f=>'',  u=>'',    d=>1,t=>"Rain Detector Stallbiz Lo Threshold Heater"};
+$HMConfig::culHmRegDefine{"rdStallbizHeatOnDewfall"}     = {a=>22.0,s=>1,l=>1,min=>0,max=>1,   c=>'',   p=>'n',f=>'',  u=>'',    d=>1,t=>"Rain Detector Stallbiz Heat On Dewfall"};
+$HMConfig::culHmRegDefine{"stormUpperThreshold"}         = {a=>7.0, s=>1,l=>1,min=>0,max=>0xc8,c=>'',   p=>'n',f=>'',  u=>'',    d=>1,t=>"Storm Upper Threshold"};
+$HMConfig::culHmRegDefine{"stormLowerThreshold"}         = {a=>8.0, s=>1,l=>1,min=>0,max=>0xc8,c=>'',   p=>'n',f=>'',  u=>'',    d=>1,t=>"Storm Lower Threshold"};
+
+
 $HMConfig::culHmRegType{ibutton}   = { peerNeedsBurst=>1, expectAES=>1, addressHi=>1, addressLo=>1 };
 $HMConfig::culHmRegType{values}    = { eventDlyTime=>1 };
 
@@ -38,6 +71,12 @@ $HMConfig::culHmRegChan {"HM-LC-Sw2-FM-CustomFW01"} = $HMConfig::culHmRegType{re
 $HMConfig::culHmRegChan {"HM-LC-Sw2-FM-CustomFW02"} = $HMConfig::culHmRegType{remote};
 $HMConfig::culHmRegChan {"HM-LC-Sw2-FM-CustomFW03"} = $HMConfig::culHmRegType{switch};
 $HMConfig::culHmRegChan {"HM-LC-Sw2-FM-CustomFW04"} = $HMConfig::culHmRegType{switch};
+$customMsg{"HM-LC-Sw2-FM-CustomFW"} = sub {
+  my ($msg,$target) = @_;
+  return $msg->processRemote if $msg->isRemote;
+  return $msg->processSwitchStatus($target) if $msg->isStatus;
+  return ();
+};
 
 $HMConfig::culHmModel{"F332"} = {name=>"HB-UNI-SenAct-4-4-RC",st=>'custom',cyc=>'',rxt=>'',lst=>'1,3:1p.2p.3p.4p,4:5p.6p.7p.8p',chn=>"Sw:1:4,Btn:5:8"};
 $HMConfig::culHmChanSets{"HB-UNI-SenAct-4-4-RC00"}{fwUpdate} = "<filename>";
@@ -57,6 +96,12 @@ $HMConfig::culHmRegChan {"HB-UNI-SenAct-4-4-RC05"} = $HMConfig::culHmRegType{rem
 $HMConfig::culHmRegChan {"HB-UNI-SenAct-4-4-RC06"} = $HMConfig::culHmRegType{remote};
 $HMConfig::culHmRegChan {"HB-UNI-SenAct-4-4-RC07"} = $HMConfig::culHmRegType{remote};
 $HMConfig::culHmRegChan {"HB-UNI-SenAct-4-4-RC08"} = $HMConfig::culHmRegType{remote};
+$customMsg{"HB-UNI-SenAct-4-4-RC"} = sub {
+  my ($msg,$target) = @_;
+  return $msg->processRemote if $msg->isRemote;
+  return $msg->processSwitchStatus($target) if $msg->isStatus;
+  return ();
+};
 
 $HMConfig::culHmModel{"F335"} = {name=>"HM-LC-Sw1-FM-Cus",st=>'custom',cyc=>'',rxt=>'',lst=>'1,3:3p,3:1p.2p',chn=>"Btn:1:2,Sw:3:3"};
 $HMConfig::culHmChanSets{"HM-LC-Sw1-FM-Cus00"}{fwUpdate} = "<filename>";
@@ -66,6 +111,12 @@ $HMConfig::culHmChanSets{"HM-LC-Sw1-FM-Cus03"} = $HMConfig::culHmSubTypeSets{"sw
 $HMConfig::culHmRegChan {"HM-LC-Sw1-FM-Cus01"} = $HMConfig::culHmRegType{remote};
 $HMConfig::culHmRegChan {"HM-LC-Sw1-FM-Cus02"} = $HMConfig::culHmRegType{remote};
 $HMConfig::culHmRegChan {"HM-LC-Sw1-FM-Cus03"} = $HMConfig::culHmRegType{switch};
+$customMsg{"HM-LC-Sw1-FM-Cus"} = sub {
+  my ($msg,$target) = @_;
+  return $msg->processRemote if $msg->isRemote;
+  return $msg->processSwitchStatus($target) if $msg->isStatus;
+  return ();
+};
 
 $HMConfig::culHmModel{"F202"} = {name=>"HB-SW2-SENS",st=>'custom',cyc=>'',rxt=>'',lst=>'1,3:1p.2p,4:3p',chn=>"Sw:1:2,Sen:3:3"};
 $HMConfig::culHmChanSets{"HB-SW2-SENS00"}{fwUpdate} = "<filename>";
@@ -75,6 +126,13 @@ $HMConfig::culHmChanSets{"HB-SW2-SENS03"} = $HMConfig::culHmSubTypeSets{"THSenso
 $HMConfig::culHmRegChan {"HB-SW2-SENS01"} = $HMConfig::culHmRegType{switch};
 $HMConfig::culHmRegChan {"HB-SW2-SENS02"} = $HMConfig::culHmRegType{switch};
 $HMConfig::culHmRegChan {"HB-SW2-SENS03"} = $HMConfig::culHmRegType{threeStateSensor};
+$customMsg{"HB-SW2-SENS"} = sub {
+  my ($msg,$target) = @_;
+  my $channel = $msg->channel;
+  return $msg->processThreeState($target) if $channel == 3;
+  return $msg->processSwitchStatus($target) if $msg->isStatus;
+  return ();
+};
 
 $HMConfig::culHmModel{"F203"} = {name=>"HB-DoorBell",st=>'custom',cyc=>'',rxt=>'',lst=>'1,3:2p.3p.5p,4:1p.6p.7p.8p.9p.10p.11p',chn=>"Bell:1:1,Sw:2:2,Ir:3:3,Values:4:4,Motion:5:5,Id:6:11"};
 $HMConfig::culHmChanSets{"HB-DoorBell00"}{fwUpdate} = "<filename>";
@@ -89,7 +147,7 @@ $HMConfig::culHmChanSets{"HB-DoorBell08"} = $HMConfig::culHmSubTypeSets{"iButton
 $HMConfig::culHmChanSets{"HB-DoorBell09"} = $HMConfig::culHmSubTypeSets{"iButton"};
 $HMConfig::culHmChanSets{"HB-DoorBell0A"} = $HMConfig::culHmSubTypeSets{"iButton"};
 $HMConfig::culHmChanSets{"HB-DoorBell0B"} = $HMConfig::culHmSubTypeSets{"iButton"};
-$HMConfig::culHmRegChan {"HB-DoorBell"}   = { pairCentral=>1, backOnTime=>1 };
+$HMConfig::culHmRegModel{"HB-DoorBell"}   = { backOnTime=>1 };
 $HMConfig::culHmRegChan {"HB-DoorBell01"} = $HMConfig::culHmRegType{remote};
 $HMConfig::culHmRegChan {"HB-DoorBell02"} = $HMConfig::culHmRegType{switch};
 $HMConfig::culHmRegChan {"HB-DoorBell03"} = $HMConfig::culHmRegType{switch};
@@ -101,11 +159,26 @@ $HMConfig::culHmRegChan {"HB-DoorBell08"} = $HMConfig::culHmRegType{ibutton};
 $HMConfig::culHmRegChan {"HB-DoorBell09"} = $HMConfig::culHmRegType{ibutton};
 $HMConfig::culHmRegChan {"HB-DoorBell0A"} = $HMConfig::culHmRegType{ibutton};
 $HMConfig::culHmRegChan {"HB-DoorBell0B"} = $HMConfig::culHmRegType{ibutton};
+$customMsg{"HB-DoorBell"} = sub {
+  my ($msg,$target) = @_;
+  my $channel = $msg->channel;
+  return $msg->processSwitchStatus($target) if $msg->isStatus && ($channel == 2 || $channel == 3);
+  return $msg->processRemote if $msg->isRemote;
+  return $msg->processValues if $msg->isValues;
+  return $msg->processMotion($target) if $channel == 5;
+  return $msg->processThreeState($target,"absent","present","educate") if $channel >= 6;
+  return ();
+};
 
 $HMConfig::culHmModel{"F205"} = {name=>"HB-GEN-SENS",st=>'custom',cyc=>'',rxt=>'c',lst=>'1',chn=>"Values:1:1"};
 $HMConfig::culHmChanSets{"HB-GEN-SENS00"}{fwUpdate} = "<filename>";
 $HMConfig::culHmChanSets{"HB-GEN-SENS01"} = $HMConfig::culHmSubTypeSets{"Values"};
 $HMConfig::culHmRegChan {"HB-GEN-SENS01"} = $HMConfig::culHmRegType{values};
+$customMsg{"HB-GEN-SENS"} = sub {
+  my ($msg,$target) = @_;
+  return $msg->processValues if $msg->isValues;
+  return ();
+};
 
 $HMConfig::culHmModel{"F206"} = {name=>"HB-IBUT-8",st=>'custom',cyc=>'',rxt=>'',lst=>'1,4',chn=>"Id:1:8"};
 $HMConfig::culHmChanSets{"HB-IBUT-800"}{fwUpdate} = "<filename>";
@@ -117,7 +190,7 @@ $HMConfig::culHmChanSets{"HB-IBUT-805"} = $HMConfig::culHmSubTypeSets{"iButton"}
 $HMConfig::culHmChanSets{"HB-IBUT-806"} = $HMConfig::culHmSubTypeSets{"iButton"};
 $HMConfig::culHmChanSets{"HB-IBUT-807"} = $HMConfig::culHmSubTypeSets{"iButton"};
 $HMConfig::culHmChanSets{"HB-IBUT-808"} = $HMConfig::culHmSubTypeSets{"iButton"};
-$HMConfig::culHmRegChan {"HB-IBUT-8"}   = { pairCentral=>1, buttonMode=>1 };
+$HMConfig::culHmRegModel{"HB-IBUT-8"}   = { buttonMode=>1 };
 $HMConfig::culHmRegChan {"HB-IBUT-801"} = $HMConfig::culHmRegType{ibutton};
 $HMConfig::culHmRegChan {"HB-IBUT-802"} = $HMConfig::culHmRegType{ibutton};
 $HMConfig::culHmRegChan {"HB-IBUT-803"} = $HMConfig::culHmRegType{ibutton};
@@ -126,18 +199,139 @@ $HMConfig::culHmRegChan {"HB-IBUT-805"} = $HMConfig::culHmRegType{ibutton};
 $HMConfig::culHmRegChan {"HB-IBUT-806"} = $HMConfig::culHmRegType{ibutton};
 $HMConfig::culHmRegChan {"HB-IBUT-807"} = $HMConfig::culHmRegType{ibutton};
 $HMConfig::culHmRegChan {"HB-IBUT-808"} = $HMConfig::culHmRegType{ibutton};
+$customMsg{"HB-IBUT-8"} = sub {
+  my ($msg,$target) = @_;
+  return $msg->processRemote if $msg->isRemote;
+  return $msg->processThreeState($target,"absent","present","educate");
+  return ();
+};
 
 $HMConfig::culHmModel{"F9D2"} = {name=>"HB-UNI-Sen-LEV-US",st=>'custom',cyc=>'',rxt=>'c:l',lst=>'1',chn=>"Level:1:1"};
 $HMConfig::culHmChanSets{"HB-UNI-Sen-LEV-US00"}{fwUpdate} = "<filename>";
 $HMConfig::culHmChanSets{"HB-UNI-Sen-LEV-US01"} = {};
-$HMConfig::culHmRegChan {"HB-UNI-Sen-LEV-US"}   = { pairCentral=>1, lowBatLimit=>1, sendInterval=>1 };
+$HMConfig::culHmRegModel{"HB-UNI-Sen-LEV-US"}   = { lowBatteryLimit=>1, sendInterval=>1 };
 $HMConfig::culHmRegChan {"HB-UNI-Sen-LEV-US01"} = { distanceOffset=>1, sensorType=>1, caseDesign=>1, caseHeight=>1, caseWidth=>1, caseLength=>1 };
+$customMsg{"HB-UNI-Sen-LEV-US"} = sub {
+  my ($msg,$target) = @_;
+  my @evtEt=();
+  my $channel = $main::modules{CUL_HM}{defptr}{$msg->channelId(1)};
+  if( defined($channel) ) {
+    my $percent = $msg->payloadByte(0);
+    my $bat = $msg->payloadByte(1)/10;
+    my $liter = $msg->payloadLong(2);
+    push @evtEt,[$channel,1,"batVoltage:".$bat/10];
+    push @evtEt,[$channel,1,"liter:".$liter];
+    push @evtEt,[$channel,1,"level:".$percent." %"];
+    push @evtEt,[$channel,1,"state:".$percent." %"];
+  }
+  return @evtEt;
+};
 
 $HMConfig::culHmModel{"E901"} = {name=>"HB-UNI-Sen-PRESS",st=>'custom',cyc=>'',rxt=>'c:l',lst=>'1',chn=>"Pressure:1:1"};
 $HMConfig::culHmChanSets{"HB-UNI-Sen-PRESS00"}{fwUpdate} = "<filename>";
 $HMConfig::culHmChanSets{"HB-UNI-Sen-PRESS01"} = {};
-$HMConfig::culHmRegChan {"HB-UNI-Sen-PRESS"}   = { pairCentral=>1, sendIntervalPress=>1 };
+$HMConfig::culHmRegModel{"HB-UNI-Sen-PRESS"}   = { sendIntervalPress=>1 };
 $HMConfig::culHmRegChan {"HB-UNI-Sen-PRESS01"} = { sensorTypePress=>1 };
+$customMsg{"HB-UNI-Sen-PRESS"} = sub {
+  my ($msg,$target) = @_;
+  my @evtEt=();
+  my $cnum = $msg->payloadByte(2); # get channel from byte 2 of payload
+  my $channel = $main::modules{CUL_HM}{defptr}{$msg->channelId($cnum)};
+  if( defined($channel) ) {
+    my $value = $msg->payloadWord(3);
+    push @evtEt,[$channel,1,"pressure:".$value/100];
+    push @evtEt,[$channel,1,"state:".$value/100];
+  }
+  return @evtEt;
+};
+
+$HMConfig::culHmModel{"F312"} = {name=>"HB-UNI-Sen-CAP-MOIST-T",st=>'custom',cyc=>'',rxt=>'c:l',lst=>'1',chn=>"Weather:1:1,Moisture:2:2"};
+$HMConfig::culHmChanSets{"HB-UNI-Sen-CAP-MOIST-T00"}{fwUpdate} = "<filename>";
+$HMConfig::culHmChanSets{"HB-UNI-Sen-CAP-MOIST-T01"} = {};
+$HMConfig::culHmChanSets{"HB-UNI-Sen-CAP-MOIST-T02"} = {};
+$HMConfig::culHmRegModel{"HB-UNI-Sen-CAP-MOIST-T"}   = { lowBatteryLimit=>1, transmitInterval=>1 };
+$HMConfig::culHmRegChan {"HB-UNI-Sen-CAP-MOIST-T01"} = { tempOffset=>1 };
+$HMConfig::culHmRegChan {"HB-UNI-Sen-CAP-MOIST-T02"} = { highValue=>1, lowValue=>1 };
+$customMsg{"HB-UNI-Sen-CAP-MOIST-T"} = sub {
+  my ($msg,$target) = @_;
+  my @evtEt=();
+  my $cnum = $msg->payloadByte(1) & 0x3f; # get channel from byte 1 of payload
+  my $device = main::CUL_HM_id2Hash($msg->from);
+  push @evtEt,[$device,1,"battery:".(($msg->payloadByte(0) & 0x80)==0x80 ? "low" : "ok")];
+  my $channel = $main::modules{CUL_HM}{defptr}{$msg->channelId($cnum)};
+  if( defined($channel) ) {
+    my $temp = $msg->payloadWord(2);
+    my $bat = $msg->payloadByte(4);
+    push @evtEt,[$channel,1,"batVoltage:".$bat/10];
+    push @evtEt,[$channel,1,"temperature:".$temp/10];
+    push @evtEt,[$channel,1,"state:".$temp/10];
+  }
+  for( my $offset=5; $offset < length($msg->payload)/2; $offset += 2 ) {
+    $cnum = $msg->payloadByte($offset) & 0x3f; # get channel for next value
+    $channel = $main::modules{CUL_HM}{defptr}{$msg->channelId($cnum)};
+    if( defined($channel) ) {
+      my $moist = $msg->payloadByte($offset+1);
+      push @evtEt,[$channel,1,"humidity:".$moist];
+      push @evtEt,[$channel,1,"state:".$moist." %"];
+    }
+    else {
+      Log 1,"No channel for ".$msg->channelId($cnum);
+    }
+  }
+  return @evtEt;
+};
+
+$HMConfig::culHmModel{"F1D0"} = {name=>"HB-UNI-Sen-WEA",st=>'custom',cyc=>'',rxt=>'c:l',lst=>'1,4:1p',chn=>"Weather:1:1"};
+$HMConfig::culHmChanSets{"HB-UNI-Sen-WEA00"}{fwUpdate} = "<filename>";
+$HMConfig::culHmChanSets{"HB-UNI-Sen-WEA01"} = $HMConfig::culHmSubTypeSets{"THSensor"};
+$HMConfig::culHmRegModel{"HB-UNI-Sen-WEA"}   = { sendInterval=>1, altitude=>1, transmDevTryMax=>1 };
+$HMConfig::culHmRegChan {"HB-UNI-Sen-WEA01"} = { anemometerRadius=>1, anemometerCalibrationFactor=>1, ldCapacitor=>1, ldDisturberDetection=>1,
+                                                 ldMinstrikes=>1, ldWdthreshold=>1, ldNoisefloorlevel=>1, ldSpikerejection=>1,
+                                                 gustThresholdExtraMessage=>1, rdSensorType=>1, rdStallbizHiThresholdRain=>1,
+                                                 rdStallbizLoThresholdRain=>1, rdStallbizHiThresholdHeater=>1, rdStallbizLoThresholdHeater=>1,
+                                                 rdStallbizHeatOnDewfall=>1, stormUpperThreshold=>1, stormLowerThreshold=>1,
+                                                 peerNeedsBurst=>1, expectAES=>1 };
+$customMsg{"HB-UNI-Sen-WEA"} = sub {
+  my ($msg,$target) = @_;
+  my @evtEt=();
+  my $channel = $main::modules{CUL_HM}{defptr}{$msg->channelId(1)}; # fixed channel 1
+  if( defined($channel) ) {
+    my $temp = $msg->payloadWord(0) & 0x7fff;
+    my $pressure = $msg->payloadWord(2);
+    my $humidity = $msg->payloadByte(4);
+    my $lux = $msg->payload3Byte(5);
+    my $raincount = $msg->payloadWord(8);
+    my $raining = (($raincount & 0x8000) == 0) ? "off" : "on";
+    my $windspeed = ($msg->payloadWord(10) & 0x3fff) / 10;
+    my $winddirrange = $msg->payloadWord(10) >> 14;
+    my $winddir = $msg->payloadByte(12);
+    my $gustspeed = ($msg->payloadWord(13) & 0x3fff) / 10;
+    my $rdheating = (($msg->payloadByte(13) & 0x80) == 0) ? "off" : "on";
+    my $uvindex = $msg->payloadByte(15) & 0x0f;
+    my $lightningdistance = $msg->payloadByte(15) >> 4;
+    my $lightningcounter = $msg->payloadByte(16);
+    push @evtEt,[$channel,1,"temperature:".$temp/10];
+    push @evtEt,[$channel,1,"pressure:".$pressure/10];
+    push @evtEt,[$channel,1,"humidity:".$humidity];
+    push @evtEt,[$channel,1,"lux:".$lux/10];
+    push @evtEt,[$channel,1,"raining:".$raining];
+    push @evtEt,[$channel,1,"raincount:".($raincount & 0x7fff)];
+    push @evtEt,[$channel,1,"windspeed:".$windspeed/10];
+    push @evtEt,[$channel,1,"winddirrange:".($winddirrange*45)/2];
+    push @evtEt,[$channel,1,"winddir:".$winddir*3];
+    push @evtEt,[$channel,1,"gustspeed:".$gustspeed/10];
+    push @evtEt,[$channel,1,"rdheating:".$rdheating];
+    push @evtEt,[$channel,1,"uvindex:".$uvindex];
+    push @evtEt,[$channel,1,"lightningdistance:".$lightningdistance*3];
+    push @evtEt,[$channel,1,"lightningcounter:".$lightningcounter];
+    push @evtEt,[$channel,1,"state:T: ".($temp/10)." P: ".$pressure." H: ".$humidity];
+  }
+  else {
+    Log 1,"No channel for ".$msg->channelId(1);
+  }
+  return @evtEt;
+};
+
 
 #Custom registers for HB-LC-Dim1PBU-FM
 for my $reading0 (keys %{$HMConfig::culHmRegType{dimmer}}) {
@@ -171,33 +365,22 @@ sub HMConfig_AskSinPPCustom_Initialize () {
   }
 }
 
-sub parseValueFormat {
-  my @v;
-  foreach my $value ( split / /,$_[0] ) {
-    #print $value."\n";
-    my @parts = split /:/,$value;
-    my $valuedata = {};
-    my $numb = $parts[0];
-    $numb =~ s/([1,2,4,8])s?/$1/g;
-    $valuedata->{'numbytes'} = $numb;
-    $valuedata->{'signed'} = $parts[0] =~ m/([1,2,4,8])s/;
-    $valuedata->{'reading'} = "value".scalar @v + 1;
-    $valuedata->{'factor'} = 1;
-    if( defined $parts[1] ) { $valuedata->{'reading'} = $parts[1]; }
-    if( defined $parts[2] ) { $valuedata->{'factor'} = $parts[2]; }
-    push @v, $valuedata;
-  }
-  return @v;
-}
-
+# parse the incomming messages
 sub CUL_HM_Parsecustom($$$$$$) {
   my($mFlg,$mTp,$src,$dst,$p,$target) = @_;
-  my @evtEt = ();
-#  Log 1,"General  entering with $mFlg,$mTp,$src,$dst,$p,$target";
+  Log 1,"General  entering with $mFlg,$mTp,$src,$dst,$p,$target";
 #  Log 1, $src;
 #  Log 1, CUL_HM_id2Hash($src)->{NAME};
   my $model = AttrVal(CUL_HM_id2Hash($src)->{NAME},"model","");
 #  Log 1, $model;
+  
+  if( defined $customMsg{$model} ) {
+    my $msg = new HMMsg($mTp,$mFlg,$src,$dst,$p);
+    Log 1, "Call custom Message Handler for ".$model;
+    return $customMsg{$model}($msg,$target);
+  }
+  
+  my @evtEt = ();
   # handle Ack_Status or Info_Status message here
   if (($mTp eq "02" && $p =~ m/^01/) || ($mTp eq "10" && $p =~ m/^06/) ) {
     # split payload
@@ -213,24 +396,6 @@ sub CUL_HM_Parsecustom($$$$$$) {
     my $shash = $modules{CUL_HM}{defptr}{$chId}
                     if($modules{CUL_HM}{defptr}{$chId});
 	
-    # update state of a switch  
-    if( $HMConfig::culHmRegChan{$model.$chn} == $HMConfig::culHmRegType{switch} ) {
-      Log3 $shash->{NAME}, 4, $model.$chn." is switch";
-      # user string
-      my $vs = ($val==100 ? "on":($val==0 ? "off":"$val %"));
-      push @evtEt,[$shash,1,"level:$val %"];
-      push @evtEt,[$shash,1,"pct:$val"];      # duplicate to level - necessary for "slider"
-      push @evtEt,[$shash,1,"deviceMsg:$vs$target"] if($chn ne "00");
-      push @evtEt,[$shash,1,"state:".$vs];
-      push @evtEt,[$shash,1,"timedOn:".(($err&0x40)?"running":"off")];
-    }
-    elsif( $HMConfig::culHmRegChan{$model.$chn} == $HMConfig::culHmRegType{threeStateSensor} ) {
-      my $chnHash = $modules{CUL_HM}{defptr}{$src.$chn};
-      Log3 $chnHash->{NAME}, 4, $model.$chn." is threeStateSensor";
-      my $vs = ($val==100 ? "open" : ($val==0 ? "closed" : "tilted"));
-      push @evtEt,[$chnHash,1,"state:".$vs];
-	    push @evtEt,[$chnHash,1,"contact:$vs$target"];
-	  }
   # update state of a dimmer
      if( $HMConfig::culHmRegChan{$model.$chn} == $HMConfig::culHmRegType{dimmer} ||  $HMConfig::culHmRegChan{$model.$chn} == $HMConfig::culHmRegType{custom_dimmer}) {
 	 	 
@@ -340,156 +505,6 @@ sub CUL_HM_Parsecustom($$$$$$) {
 	  push @evtEt,[$shash,1,"timedOn:".(($err&0x40)?"running":"off")];
 	  
     }
-}
-  # handle sensor event
-  elsif($mTp =~ m/^41/ && $p =~ m/^(..)(..)(..)/) {
-    my ($chn,$cnt,$val) = (hex($1),hex($2),hex($3)/2);
-    my $shash = CUL_HM_id2Hash($src);
-	  $chn = sprintf("%02X",$chn & 0x3f);
-    # Log 1, "41 ".$model.$chn." ".$val;
-    if( $HMConfig::culHmRegChan{$model.$chn} == $HMConfig::culHmRegType{threeStateSensor} ) {
-      my $chnHash = $modules{CUL_HM}{defptr}{$src.$chn};
-      Log3 $chnHash->{NAME}, 4, $model.$chn." is threeStateSensor";
-      my $vs = ($val==100 ? "open" : ($val==0 ? "closed" : "tilted"));
-      push @evtEt,[$chnHash,1,"state:".$vs];
-	    push @evtEt,[$chnHash,1,"contact:$vs$target"];
-	  }
-    elsif( $HMConfig::culHmRegChan{$model.$chn} == $HMConfig::culHmRegType{ibutton} ) {
-      my $chnHash = $modules{CUL_HM}{defptr}{$src.$chn};
-      Log3 $chnHash->{NAME}, 4, $model.$chn." is threeStateSensor";
-      my $vs = ($val==100 ? "educate" : ($val==0 ? "absent" : "present"));
-      push @evtEt,[$chnHash,1,"state:".$vs];
-      push @evtEt,[$chnHash,1,"contact:$vs$target"];
-    }
-    elsif( $HMConfig::culHmRegChan{$model.$chn} == $HMConfig::culHmRegType{motionDetector} && $p =~ m/^(..)(..)(..)(..)/) {
-	    my ($bright,$next) = (hex($3),hex($4));
-      my $chnHash = $modules{CUL_HM}{defptr}{$src.$chn};
-      Log3 $chnHash->{NAME}, 4, $model.$chn." is motionDetector";
-	    if( $next ) {
-	      my $stamp =  gettimeofday(); # take reception time;
-	      $next = (15 << ($next >> 4) - 4); # strange mapping of literals
-        RemoveInternalTimer($chnHash->{NAME}.":motionCheck");
-        InternalTimer($stamp+$next+2,"CUL_HM_motionCheck", $chnHash->{NAME}.":motionCheck", 0);
-        ${chnHash}->{helper}{moStart} = $stamp if (!defined ${chnHash}->{helper}{moStart});
-	    }
-	    else {
-	      $next = "none";
-	    }
-	    push @evtEt,[$chnHash,1,"state:motion"];
-      push @evtEt,[$chnHash,1,"motion:on$target"];
-      push @evtEt,[$chnHash,1,"motionCount:$cnt"."_next:$next"."s"];
-      push @evtEt,[$chnHash,1,"brightness:$bright"];
-	  }
-  }
-  # handle remote event
-  elsif($mTp =~ m/^40/ && $p =~ m/^(..)(..)/) {
-    my $shash = CUL_HM_id2Hash($src);
-    my ($chn, $bno) = (hex($1), hex($2));# button number/event count
-    my $buttonID = sprintf("%02X",$chn&0x3f);# only 6 bit are valid
-    # update state of a remote  
-    if( $HMConfig::culHmRegChan{$model.$buttonID} == $HMConfig::culHmRegType{remote} ||
-        $HMConfig::culHmRegChan{$model.$buttonID} == $HMConfig::culHmRegType{ibutton} ) {
-      my $btnName;
-      my $state = "";
-      my $chnHash = $modules{CUL_HM}{defptr}{$src.$buttonID};
-      Log3 $chnHash->{NAME}, 4, $model.$buttonID." is remote";
-      if ($chnHash){# use userdefined name - ignore this irritating on-off naming
-        $btnName = $chnHash->{NAME};
-      }
-      else{# Button not defined, use default naming
-        $chnHash = $shash;
-        my $btn = int((($chn&0x3f)+1)/2);
-        $btnName = "Btn$btn";
-        $state = ($chn&1 ? "off" : "on")
-      }
-      my $trigType;
-      if($chn & 0x40){
-        if(!$shash->{BNO} || $shash->{BNO} ne $bno){#bno = event counter
-          $shash->{BNO}=$bno;
-          $shash->{BNOCNT}=0; # message counter reest
-        }
-        $shash->{BNOCNT}+=1;
-        $state .= "Long" .((hex($mFlg) & 0x24)==0x20 ? "Release" : "").
-                  " ".$shash->{BNOCNT};
-        $trigType = "Long";
-      }
-      else{
-        $state .= "Short";
-        $trigType = "Short";
-      }
-      $shash->{helper}{addVal} = $chn;   #store to handle changesFread
-      push @evtEt,[$chnHash,1,"state:".$state.$target];
-      push @evtEt,[$chnHash,1,"trigger:".$trigType."_".$bno];
-      push @evtEt,[$shash,1,"state:$btnName $state$target"];
-    }
-  }
-  # handle generic value event
-  elsif($mTp =~ m/^53/ && $p =~ m/^(..)(..)(.*)/) {
-    my $shash = CUL_HM_id2Hash($src);
-    my ($chn,$numval) = (hex($1), hex($2)); # read channel and number of values
-	  my $values = $3;
-    my $chnnum = sprintf("%02X",$chn&0x3f);# only 6 bit are valid
-	
-# Log(1, "Values Message for Model: ".$model);
-# Log(1, "Values Message for Channel: ".$chnnum);
-	  if( $model eq "HB-UNI-Sen-LEV-US" ) {
-      my $chnHash = $modules{CUL_HM}{defptr}{$src."01"};
-      Log3 $chnHash->{NAME}, 4, $model.": ".$values;
-      # extract 4 byte value
-      my @unpacked = map{hex($_)} unpack("A8",$values);
-      push @evtEt,[$chnHash,1,"batVoltage:".$numval/10];
-      push @evtEt,[$chnHash,1,"liter:".$unpacked[0]];
-      push @evtEt,[$chnHash,1,"level:".$chn." %"];
-      push @evtEt,[$chnHash,1,"state:".$chn." %"];
-	  }
-    elsif( $model eq "HB-UNI-Sen-PRESS" ) {
-      my $chnHash = $modules{CUL_HM}{defptr}{$src."01"};
-      Log3 $chnHash->{NAME}, 4, $model.": ".$values;
-      # extract 2 byte value
-      my @unpacked = map{hex($_)} unpack("A2A4",$values);
-      push @evtEt,[$chnHash,1,"pressure:".$unpacked[1]/100];
-      push @evtEt,[$chnHash,1,"state:".$unpacked[1]/100];
-    }
-    #	2018.04.15 21:56:46 1: HB-GEN-SENS01 has 4 values (090400E82803EB0000)
-    elsif( $HMConfig::culHmRegChan{$model.$chnnum} == $HMConfig::culHmRegType{values} ) {
-	    my $chnHash = $modules{CUL_HM}{defptr}{$src.$chnnum};
-      Log3 $chnHash->{NAME}, 4, $model.$chnnum." has $numval values ($p)";
-      my $vfmt = AttrVal($chnHash->{NAME},"valuesformat","");
-	    # Log 1,$vfmt;
-	    if( $vfmt eq "" ) {
-	      Log3 $chnHash->{NAME}, 1, "Missing attribute valuesformat at ".$chnHash->{NAME};
-		    for( my $i=0; $i<$numval; ++$i ) {
-  		    $vfmt = $vfmt."1 ";
-		    }
-	    }
-	    my @valuesfmt = parseValueFormat($vfmt);
-	    if( $numval != scalar(@valuesfmt) ) {
-	      Log3 $chnHash->{NAME}, 1, "Attribute valuesformat mismatch at $chnHash->{NAME} - expected $numval items but got ".scalar(@valuesfmt)." items";
-	    }
-	    my $packstr = "";
-	    my $state = "";
-	    foreach my $data (@valuesfmt) {
-        #Log 1, $data->{'numbytes'}."  ".$data->{'signed'}."  ".$data->{'reading'}."  ".$data->{'factor'}."\n";
-	      $packstr = $packstr."A".($data->{'numbytes'}*2);
-      }
-      #print $packstr."\n";
-      my @unpacked = map{hex($_)} unpack($packstr,$values);
-      #print "$unpacked[0] $unpacked[1] $unpacked[2] $unpacked[3]\n";
-      my $num = 0;
-      foreach my $data (@valuesfmt) {
-        my $val = $unpacked[$num++];
-	      if( $data->{'signed'} ) {
-	        my $max =  0x01 << (8*$data->{'numbytes'});
-	        my $mask = $max >> 1;
-	        $val = ($val & $mask) ? ($val - $max) : $val;
-	      }
-	      $val /= $data->{'factor'};
-	      # print $data->{'reading'}." : ".$val."\n";
-        push @evtEt,[$chnHash,1,$data->{'reading'}.":".$val];
-	      $state = $state.$val." ";
-      }
-      push @evtEt,[$chnHash,1,"state:".$state];
-	  }
   } else {
     Log(1, "HMConfig_AskSinPPCustom received unknown message: $mFlg,$mTp,$src,$dst,$p");
   }
