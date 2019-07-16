@@ -17,10 +17,6 @@
 // Arduino pin for the LED
 // D4 == PIN 4 on Pro Mini
 #define LED_PIN 4
-#define LED_PIN2 5
-// Arduino pin for the config button
-// B0 == PIN 8 on Pro Mini
-#define CONFIG_BUTTON_PIN 8
 
 // all library classes are placed in the namespace 'as'
 using namespace as;
@@ -40,7 +36,7 @@ const struct DeviceInfo PROGMEM devinfo = {
  */
 typedef AvrSPI<10,11,12,13> RadioSPI;
 typedef Radio<RadioSPI,2> RadioType;
-typedef StatusLed<4> LedType;
+typedef StatusLed<LED_PIN> LedType;
 typedef AskSin<LedType,NoBattery,RadioType> HalType;
 
 
@@ -120,7 +116,8 @@ public:
       }
       else {
         freq = start+((end - start)/2);
-        DPRINT("Calculated Freq: 0x21");DHEX((uint8_t)(freq>>8));DHEXLN((uint8_t)(freq&0xff));
+        DPRINT("Calculated Freq: 0x21");DHEX((uint8_t)(freq>>8));DHEX((uint8_t)(freq&0xff));
+        printFreq(0x210000 + freq);DPRINTLN("");
 
         // store frequency
         DPRINT("Store into config area: ");DHEX((uint8_t)(freq>>8));DHEXLN((uint8_t)(freq&0xff));
@@ -160,12 +157,21 @@ public:
     freq = current;
     rssi=0;
     received=0;
-    DPRINT("Freq 0x21");DHEX(freq);DPRINT(": ");
+    DPRINT("Freq 0x21");DHEX(freq);
+    printFreq(0x210000 + freq);
+    DPRINT(": ");
     this->radio().initReg(CC1101_FREQ2, 0x21);
     this->radio().initReg(CC1101_FREQ1, freq >> 8);
     this->radio().initReg(CC1101_FREQ0, freq & 0xff);
     set(SCANTIME);
     sysclock.add(*this);
+  }
+
+  void printFreq(uint32_t freq) {
+    char buffer[16];
+    float val = (float)freq * 26.0 / 65536.0;
+    dtostrf(val, 8, 3, buffer);
+    DPRINT(buffer);DPRINT(" MHz");
   }
 };
 
