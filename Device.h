@@ -535,6 +535,15 @@ public:
     hal->sendPeer();
   }
 
+  template <class ChannelType>
+    void broadcastEvent (Message& msg,const ChannelType& ch) {
+      msg.clearAck();
+      msg.burstRequired(false);
+      msg.setBroadcast();
+      send(msg,HMID::broadcast);
+      hal->sendPeer();
+    }
+
   void writeList (const GenericList& list,const uint8_t* data,uint8_t length) {
     for( uint8_t i=0; i<length; i+=2, data+=2 ) {
       list.writeRegister(*data,*(data+1));
