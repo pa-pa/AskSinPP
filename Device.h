@@ -537,7 +537,6 @@ public:
 
   template <class ChannelType>
     void broadcastEvent (Message& msg,const ChannelType& ch) {
-      getDeviceID(msg.from());
       msg.clearAck();
       msg.burstRequired(false);
       msg.setBroadcast();
