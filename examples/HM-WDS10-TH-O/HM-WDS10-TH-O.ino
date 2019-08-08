@@ -110,6 +110,7 @@ public:
     }
     else {
       // reactivate for next measure
+      uint8_t msgcnt = device().nextcount();
       HMID id;
       device().getDeviceID(id);
       uint32_t nextsend = delay(id,msgcnt);
@@ -118,7 +119,6 @@ public:
       rtc.add(*this);
       
       // measure and send
-      uint8_t msgcnt = device().nextcount();
       measure();
       WeatherEventMsg& msg = (WeatherEventMsg&)device().message();
 //      msg.init(msgcnt,dht11.temperature(),dht11.humidity(),device().battery().low());
