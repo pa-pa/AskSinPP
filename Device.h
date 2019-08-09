@@ -76,6 +76,114 @@ struct DeviceInfo {
   uint8_t DeviceInfo[2];
 };
 
+#ifdef ASYNC_SEND
+template <class HalType>
+class AsyncSender : public Alarm {
+  enum States { idle=0, waitsend=1, sendburst=2, waitack=3 };
+  uint8_t asyncState;
+  uint8_t asyncRetry;
+  bool    asyncLed;
+  Message asyncBuffer;
+  HalType* hal;
+public:
+  AsyncSender () : Alarm(0), asyncState(States::idle), asyncRetry(0), asyncLed(false), hal(0) {}
+  virtual ~AsyncSender () {}
+
+  void setHal (HalType& h) { hal = &h; }
+
+  // return true - if message is queued for sending
+  bool sendAsync (Message& msg,uint8_t retry,bool led) {
+//    DPRINTLN("sendAsync");
+    if( asyncState == States::idle ) {
+//      DPRINTLN("Msg queued");
+      memcpy(asyncBuffer.buffer(),msg.buffer(),msg.length());
+      asyncBuffer.length(msg.length());
+      asyncState = States::waitsend;
+      asyncRetry = retry;
+      asyncLed = led;
+      set(2);
+      sysclock.add(*this);
+      return true;
+    }
+    return false;
+  }
+  bool responseAsync (const Message& response) {
+    if ((asyncBuffer.count() == response.count()) &&
+        (asyncBuffer.from() == response.to()) &&
+        (asyncBuffer.to() == response.from()) ) {
+      if( response.isAck() == true || response.isNack() == true) {
+  //      DPRINTLN("Async Response");
+        DPRINT(F("~> ")); response.dump();
+        sysclock.cancel(*this);
+        if( asyncLed ) {
+          hal->led.set(response.isAck() ? LedStates::ack : LedStates::nack);
+        }
+        asyncState = States::idle;
+        return true;
+      }
+    }
+    return false;
+  }
+  void trigger (AlarmClock& clock) {
+    uint16_t clockticks = 0;
+    if( asyncState == States::waitsend) {
+      if( hal->radio.waitTimeoutAsync() == false ) {
+        // we are allowed to send
+        DPRINT(F("<~ "));
+        asyncBuffer.dump();
+        asyncRetry--;
+        if( asyncLed ) {
+          hal->led.set(LedStates::send);
+        }
+        bool result = hal->radio.write(asyncBuffer,asyncBuffer.burstRequired());
+        if( result == true && asyncBuffer.ackRequired() == true && asyncBuffer.to().valid() == true ) {
+          asyncState = States::waitack;
+          clockticks = millis2ticks(600);
+        }
+        else {
+          if( asyncLed ) {
+            hal->led.set(LedStates::ack);
+          }
+          asyncState = States::idle;
+        }
+      }
+      else {
+        // continue wait for send slot
+        clockticks = 2;
+      }
+    }
+    else if( asyncState == States::waitack) {
+      // we got no ack - try resend if possible
+      if( asyncRetry > 0 ) {
+        asyncState = States::waitsend;
+        clockticks = 2;
+      }
+      else {
+        // signal fail
+        asyncState = States::idle;
+        if( asyncLed ) {
+          hal->led.set(LedStates::nack);
+        }
+      }
+    }
+    // reactivate alarm with given ticks
+    if( clockticks != 0 ) {
+      set(clockticks);
+      clock.add(*this);
+    }
+  }
+
+};
+#else
+template <class HalType>
+class AsyncSender {
+public:
+  void setHal(HalType& h) {}
+  bool responseAsync (const Message& response) { return false; }
+  bool sendAsync (Message& msg,uint8_t retry,bool led) { return false; }
+};
+#endif
+
 template <class HalType,class List0Type=List0>
 class Device {
 
@@ -93,6 +201,8 @@ private:
 
   HMID    lastdev;
   uint8_t lastmsg;
+
+  AsyncSender<HalType> asyncSend;
 
 #ifdef USE_HW_SERIAL
    uint8_t device_id[3];
@@ -148,6 +258,7 @@ public:
 
   void setHal (HalType& h) {
     hal = &h;
+    asyncSend.setHal(h);
   }
 
   HalType& getHal () {
@@ -265,6 +376,9 @@ public:
     // minimal msg is 10 byte
     // ignore own messages from radio
     if( num >= 10 && isDeviceID(msg.from()) == false ) {
+      if( asyncSend.responseAsync(msg) == true ) {
+        return true;
+      }
       return process(msg);
     }
     return false;
@@ -287,6 +401,17 @@ public:
     getDeviceID(msg.from());
     msg.setRpten(); // has to be set always
     return send(msg);
+  }
+
+  bool sendAsync(Message& msg,const HMID& to) {
+#ifdef ASYNC_SEND
+    msg.to(to);
+    getDeviceID(msg.from());
+    msg.setRpten(); // has to be set always
+    return asyncSend.sendAsync(msg, list0.transmitDevTryMax(), list0.ledMode());
+#else
+    return send(msg,to);
+#endif
   }
 
   bool send(Message& msg) {
@@ -337,18 +462,27 @@ public:
   void sendAck (Message& msg,uint8_t flag=0x00) {
     msg.ack().init(flag);
     kstore.addAuth(msg);
-    send(msg,msg.from());
+    if( sendAsync(msg, msg.from()) == false ) {
+      // if we can not send async - send sync
+      send(msg,msg.from());
+    }
   }
 
   void sendAck2 (Message& msg,uint8_t flag=0x00) {
     msg.ack2().init(flag);
     kstore.addAuth(msg);
-    send(msg,msg.from());
+    if( sendAsync(msg, msg.from()) == false ) {
+      // if we can not send async - send sync
+      send(msg,msg.from());
+    }
   }
 
   void sendNack (Message& msg) {
     msg.nack().init();
-    send(msg,msg.from());
+    if( sendAsync(msg, msg.from()) == false ) {
+      // if we can not send async - send sync
+      send(msg,msg.from());
+    }
   }
 
   template <class ChannelType>
@@ -356,7 +490,10 @@ public:
     msg.ackStatus().init(ch,radio().rssi());
     ch.patchStatus(msg);
     kstore.addAuth(msg);
-    send(msg,msg.from());
+    if( sendAsync(msg, msg.from()) == false ) {
+      // if we can not send async - send sync
+      send(msg,msg.from());
+    }
     ch.changed(false);
   }
 
@@ -389,8 +526,9 @@ public:
       pm.clearAck();
     }
     ch.patchStatus(msg);
-    send(msg,to);
-    ch.changed(false);
+    if( sendAsync(msg, to) == true ) {
+      ch.changed(false);
+    }
   }
 
   void sendInfoParamResponsePairs(HMID to,uint8_t count,const GenericList& list) {

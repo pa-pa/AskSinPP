@@ -549,7 +549,7 @@ public:
   }
 
 protected:
-  uint8_t sndData(uint8_t *buf, uint8_t size, uint8_t burst) {
+  bool sndInit () {
     // Going from RX to TX does not work if there was a reception less than 0.5
     // sec ago. Due to CCA? Using IDLE helps to shorten this period(?)
     spi.strobe(CC1101_SIDLE);  // go to idle mode
@@ -571,12 +571,11 @@ protected:
       }
     }
     while(spi.readReg(CC1101_MARCSTATE, CC1101_STATUS) != MARCSTATE_TX);
-
     _delay_ms(10);
-    if (burst) {         // BURST-bit set?
-      _delay_ms(350);    // according to ELV, devices get activated every 300ms, so send burst for 360ms
-    }
+    return true;
+  }
 
+  bool sndData(uint8_t *buf, uint8_t size) {
     spi.writeReg(CC1101_TXFIFO, size);
     spi.writeBurst(CC1101_TXFIFO, buf, size);           // write in TX FIFO
 
@@ -645,22 +644,29 @@ class Radio : public HWRADIO {
     virtual ~MinSendTimeout () {}
     void waitTimeout () {
       // wait until time out over
-      while( wait==true ) {
-        // if( sysclock.runwait() == false ) {
-          _delay_ms(1);
-        // }
+      while( waitTimeoutAsync() == true ) {
+        _delay_ms(1);
       }
-      set(millis2ticks(100));
-      // signal new wait cycle
-      wait = true;
-      // add to system clock
-      sysclock.add(*this);
+    }
+
+    // return true if wait is active
+    bool waitTimeoutAsync () {
+      bool result = wait;
+      if( result == false ) {
+        // start new wait cycle
+        set(millis2ticks(100));
+        // signal new wait cycle
+        wait = true;
+        // add to system clock
+        sysclock.add(*this);
+      }
+      return result;
     }
 
     void setTimeout (uint16_t millis=100) {
       // cancel possible old timeout
       sysclock.cancel(*this);
-      // set to 100ms
+      // set to new timeout
       set(millis2ticks(millis));
       // signal new wait cycle
       wait = true;
@@ -683,6 +689,10 @@ public:
   void waitTimeout (uint16_t millis) {
     timeout.setTimeout(millis);
     timeout.waitTimeout();
+  }
+  // check if we have to wait before send a message - true when we need to wait
+  bool waitTimeoutAsync () {
+    return timeout.waitTimeoutAsync();
   }
 
 private:
@@ -796,34 +806,18 @@ public:   //--------------------------------------------------------------------
     buffer.encode();
     return sndData(buffer.buffer(),buffer.length(),burst);
   }
-/*
-  bool readAck (const Message& msg) {
-    if( intread == 0 )
-      return false;
-	
-    intread = 0;
-    idle = false;
-    bool ack=false;
-    uint8_t len = this->rcvData(buffer.buffer(),buffer.buffersize());
-    if( len > 0 ) {
-      buffer.length(len);
-      // decode the message
-      buffer.decode();
-      ack = buffer.isAck() &&
-           (buffer.from() == msg.to()) &&
-           (buffer.to() == msg.from()) &&
-           (buffer.count() == msg.count());
-      // reset buffer
-      buffer.clear();
-    }
-    return ack;
-  }
-*/
-  uint8_t sndData(uint8_t *buf, uint8_t size, uint8_t burst) {
+
+  bool sndData(uint8_t *buf, uint8_t size, uint8_t burst) {
     timeout.waitTimeout();
     this->wakeup();
     sending = 1;
-    uint8_t result = HWRADIO::sndData(buf,size,burst);
+    bool result = HWRADIO::sndInit();
+    if( result == true ) {
+      if( burst == true ) {
+        _delay_ms(350);
+      }
+      result = HWRADIO::sndData(buf,size);
+    }
     sending = 0;
     return result;
   }
