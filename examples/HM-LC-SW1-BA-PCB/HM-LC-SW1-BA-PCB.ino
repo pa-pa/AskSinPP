@@ -45,8 +45,6 @@ const struct DeviceInfo PROGMEM devinfo = {
  * Configure the used hardware
  */
 typedef AvrSPI<10,11,12,13> RadioSPI;
-//typedef AskSin<StatusLed<LED_PIN>,BatterySensor,Radio<RadioSPI,2> > Hal;
-//typedef AskSin<StatusLed<LED_PIN>,BattSensor<SyncMeter<InternalVCC>>,Radio<RadioSPI,2> > Hal;
 typedef AskSin<StatusLed<LED_PIN>,BattSensor<AsyncMeter<InternalVCC>>,Radio<RadioSPI,2> > Hal;
 
 DEFREGISTER(Reg0,DREG_INTKEY,DREG_LEDMODE,MASTERID_REGS,DREG_LOWBATLIMIT)
