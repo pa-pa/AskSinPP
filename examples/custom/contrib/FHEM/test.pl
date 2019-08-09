@@ -1,4 +1,18 @@
 
+#
+# test some perl stuff 
+#
+
+use HMMsg;
+
+use vars qw(%customMsg);
+
+sub say {print @_, "\n"}
+
+$customMsg{"HB-UNI-Sen-PRESS"} = sub ($) {
+  print "Msg Function: ".$_[0]."\n";
+};
+
 
 sub parseValueFormat {
   my @v;
@@ -49,3 +63,28 @@ createReadings("00E82803EB0000",\@values);
 print "\n";
 createReadings("FFFF0F03EB0100",\@values);
 
+if( defined $customMsg{"HB-UNI-Sen-PRESS"} ) {
+    print $customMsg{"HB-UNI-Sen-PRESS"}."\n";
+  $customMsg{"HB-UNI-Sen-PRESS"}("Hello");
+}
+
+my @evtEt = ();
+
+$msg = new HMMsg("53","A2","AA1133","996699","040400E83503ED0000");
+$msg->print;
+
+say $msg->payload;
+say $msg->payload(2);
+say $msg->payload(4,2);
+say $msg->payloadByte(2);
+say $msg->payloadByte(3);
+say $msg->isStatus;
+say $msg->channelId;
+
+$msg = new HMMsg("10","A2","AA1133","996699","0605BE005C");
+$msg->print;
+say $msg->isStatus;
+say $msg->channelId;
+
+push @evtEt,$msg->processSwitchStatus;
+say @evtEt;
