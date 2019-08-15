@@ -296,14 +296,14 @@ public:
       case AS_CM_JT_ONDELAY:  return AS_CM_JT_REFON;
       case AS_CM_JT_REFON:    return AS_CM_JT_RAMPON;
       case AS_CM_JT_RAMPON:
-        if(actlst.valid() && level == actlst.offLevel())
+        if(actlst.valid() && destlevel == actlst.offLevel())
           return AS_CM_JT_OFF;
         return AS_CM_JT_ON;
       case AS_CM_JT_ON:       return AS_CM_JT_OFFDELAY;
       case AS_CM_JT_OFFDELAY: return AS_CM_JT_REFOFF;
       case AS_CM_JT_REFOFF:   return AS_CM_JT_RAMPOFF;
       case AS_CM_JT_RAMPOFF:  
-        if(actlst.valid() && level == actlst.onLevel())
+        if(actlst.valid() && destlevel == actlst.onLevel())
           return AS_CM_JT_ON;
         return AS_CM_JT_OFF;
       case AS_CM_JT_OFF:      return AS_CM_JT_ONDELAY;
