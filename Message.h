@@ -54,11 +54,11 @@ public:
   enum Flags {
     WKUP = 0x01,   // send initially to keep the device awake
     WKMEUP = 0x02, // awake - hurry up to send messages
-    BCAST = 0x04,  // Device in Config mode
-    BURST = 0x10,  // set if burst is required by device
+    BCAST = 0x04,  // broadcast message
+    BURST = 0x10,  // this message was sent with burst
     BIDI = 0x20,   // response is expected
     RPTED = 0x40,  // repeated (repeater operation)
-    RPTEN = 0x80,  // set in every message. Meaning?
+    RPTEN = 0x80,  // this message is allowed to be repeated
   };
 
 protected:
