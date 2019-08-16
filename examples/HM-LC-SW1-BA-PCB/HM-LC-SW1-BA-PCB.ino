@@ -45,7 +45,7 @@ const struct DeviceInfo PROGMEM devinfo = {
  * Configure the used hardware
  */
 typedef AvrSPI<10,11,12,13> RadioSPI;
-typedef AskSin<StatusLed<LED_PIN>,BatterySensor,Radio<RadioSPI,2> > Hal;
+typedef AskSin<StatusLed<LED_PIN>,BattSensor<AsyncMeter<InternalVCC>>,Radio<RadioSPI,2> > Hal;
 
 DEFREGISTER(Reg0,DREG_INTKEY,DREG_LEDMODE,MASTERID_REGS,DREG_LOWBATLIMIT)
 class SwList0 : public RegList0<Reg0> {
@@ -92,7 +92,6 @@ void initPeerings (bool first) {
     }
   }
 }
-
 
 void setup () {
   DINIT(57600,ASKSIN_PLUS_PLUS_IDENTIFIER);

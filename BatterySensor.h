@@ -53,129 +53,174 @@ public:
 
 #endif
 
-/**
- * Use internal bandgap reference to measure battery voltage
- */
-class BatterySensor : public Alarm {
 
-  uint8_t  m_LastValue;
-  uint32_t m_Period;
-  uint8_t  m_Low, m_Critical;
-
+class InternalVCC {
 public:
-  BatterySensor () : Alarm(0), m_LastValue(0), m_Period(0), m_Low(0), m_Critical(0) {
+  typedef uint16_t ValueType;
+  static const int DefaultDelay = 0;
+
+  void init () {
 #ifdef ARDUINO_ARCH_STM32F1
     adc_reg_map *regs = ADC1->regs;
     regs->CR2 |= ADC_CR2_TSVREFE;    // enable VREFINT and temp sensor
     regs->SMPR1 =  ADC_SMPR1_SMP17;  // sample rate for VREFINT ADC channel
 #endif
   }
-  virtual ~BatterySensor() {}
 
-  virtual void trigger (AlarmClock& clock) {
-    tick = m_Period;
-    clock.add(*this);
-    m_LastValue = voltage();
-  }
+  void start () {}
 
-  uint8_t current () const{
-    return m_LastValue;
-  }
-
-  bool critical () const {
-    return m_LastValue < m_Critical;
-  }
-
-  void critical (uint8_t value ) {
-    m_Critical = value;
-  }
-
-  bool low () const {
-    return m_LastValue < m_Low;
-  }
-
-  void low (uint8_t value ) {
-    m_Low = value;
-  }
-
-  void init(uint32_t period,AlarmClock& clock) {
-    m_LastValue = voltage();
-    m_Period = period;
-    tick = m_Period;
-    clock.add(*this);
-  }
-
-  uint16_t voltageHighRes() {
-    uint16_t vcc = 0;
+  uint16_t finish () {
+    uint16_t vcc=0;
 #ifdef ARDUINO_ARCH_AVR
     // Read 1.1V reference against AVcc
     // set the reference to Vcc and the measurement to the internal 1.1V reference
     ADMUX &= ~(ADMUX_REFMASK | ADMUX_ADCMASK);
     ADMUX |= ADMUX_REF_AVCC;      // select AVCC as reference
     ADMUX |= ADMUX_ADC_VBG;       // measure bandgap reference voltage
-
-    _delay_ms(350);               // a delay rather than a dummy measurement is needed to give a stable reading!
-    ADCSRA |= (1 << ADSC);        // start conversion
-    while (ADCSRA & (1 << ADSC)); // wait to finish
-
-    vcc = 1100UL * 1023 / ADC;
+    _delay_us(350);
+    ADCSRA |= (1 << ADSC);         // start conversion
+    while (ADCSRA & (1 << ADSC)) ; // wait to finish
+    vcc = 1100UL * 1024 / ADC;
 #elif defined ARDUINO_ARCH_STM32F1
-    int millivolts = 1200 * 4096 / adc_read(ADC1, 17);  // ADC sample to millivolts
-    vcc = millivolts;
+    vcc = 1200 * 4096 / adc_read(ADC1, 17);  // ADC sample to millivolts
 #endif
+    DPRINT(F("iVcc: ")); DDECLN(vcc);
     return vcc;
   }
-
-  virtual uint8_t voltage() {
-    uint8_t vcc = voltageHighRes() / 100;
-    DPRINT(F("Bat: ")); DDECLN(vcc);
-    return vcc;
-  }
-
 };
 
-/**
- * Measure battery voltage as used on the universal sensor board.
- */
-template <uint8_t SENSPIN,uint8_t ACTIVATIONPIN,uint16_t VCC=3300>
-class BatterySensorUni : public BatterySensor {
-  uint8_t  m_SensePin; // A1
-  uint8_t  m_ActivationPin; // D7
-  uint8_t  m_Factor; // 57 = 470k + 100k / 10
+template<uint8_t SENSPIN, uint8_t ACTIVATIONPIN, uint8_t ACTIVATIONSTATE=LOW, uint16_t VCC=3300, uint8_t FACTOR=57>
+class ExternalVCC : public InternalVCC {
 public:
+  static const int DefaultDelay = 250;
 
-  BatterySensorUni () : BatterySensor (),
-  m_SensePin(SENSPIN), m_ActivationPin(ACTIVATIONPIN), m_Factor(57) {}
-  virtual ~BatterySensorUni () {}
-
-  void init(uint32_t period,AlarmClock& clock,uint8_t factor=57) {
-    m_Factor=factor;
-    pinMode(m_SensePin, INPUT);
-    pinMode(m_ActivationPin, INPUT);
-    BatterySensor::init(period,clock);
+  void init () {
+    pinMode(SENSPIN, INPUT);
+    pinMode(ACTIVATIONPIN, INPUT);
   }
 
-  virtual uint8_t voltage () {
-    uint16_t refvcc = readRefVcc();
-    pinMode(m_ActivationPin,OUTPUT);
-    digitalWrite(m_ActivationPin,LOW);
-    digitalWrite(m_SensePin,LOW);
-    analogRead(m_SensePin);
-    _delay_ms(2); // allow the ADC to stabilize
-    uint32_t value = analogRead(m_SensePin);
-    uint16_t vin = (value * refvcc * m_Factor) / 1024 / 1000;
-
-    digitalWrite(m_SensePin,HIGH);
-    pinMode(m_ActivationPin,INPUT);
-
-    DPRINT(F("Bat: ")); DDECLN(vin);
-    return (uint8_t)vin;
+  void start () {
+    pinMode(ACTIVATIONPIN, OUTPUT);
+    digitalWrite(ACTIVATIONPIN, ACTIVATIONSTATE==LOW ? LOW : HIGH);
+    digitalWrite(SENSPIN,LOW);
+//    analogRead(SENSPIN);
   }
-  
-  uint16_t readRefVcc () {
-     return VCC != 0 ? VCC : BatterySensor::voltageHighRes();
+
+  uint16_t finish () {
+    uint32_t value = analogRead(SENSPIN);
+    digitalWrite(SENSPIN,HIGH);
+    digitalWrite(ACTIVATIONPIN, ACTIVATIONSTATE==LOW ? HIGH : LOW);
+    pinMode(ACTIVATIONPIN,INPUT);
+
+    uint16_t refvcc = VCC;
+    if( refvcc == 0 ) {
+      InternalVCC::start(); // in case we add something here later
+      refvcc = InternalVCC::finish();
+    }
+    uint16_t vin = (value * refvcc * FACTOR) / 1024 / 10;
+
+    DPRINT(F("eVcc: ")); DDECLN(vin);
+    return vin;
   }
 };
+
+
+template <class SENSOR,int DELAY=SENSOR::DefaultDelay>
+class SyncMeter {
+  SENSOR m_Sensor;
+  volatile typename SENSOR::ValueType m_Value;
+public:
+  SyncMeter () : m_Value(0) {}
+  void start () {
+    sensor().start();
+    if( DELAY > 0 ) {
+      _delay_ms(DELAY);
+    }
+    typename SENSOR::ValueType tmp = sensor().finish();
+    if( m_Value == 0 || tmp < m_Value ) {
+      m_Value = tmp;
+    }
+  }
+  typename SENSOR::ValueType value () const { return m_Value; }
+  SENSOR& sensor () { return m_Sensor; }
+  typename SENSOR::ValueType measure () {
+    start();
+    return value();
+  }
+};
+
+template <class SENSOR,int DELAY=SENSOR::DefaultDelay>
+class AsyncMeter : public Alarm {
+  SENSOR m_Sensor;
+  volatile typename SENSOR::ValueType m_Value;
+public:
+  AsyncMeter () : Alarm(0), m_Value(0) {}
+  virtual ~AsyncMeter () {}
+  virtual void trigger (__attribute__((unused)) AlarmClock& clock) {
+    typename SENSOR::ValueType tmp = sensor().finish();
+    if( m_Value == 0 || tmp < m_Value ) {
+      m_Value = tmp;
+    }
+  }
+  void start () {
+    sensor().start();
+    set(millis2ticks(DELAY));
+    sysclock.add(*this);
+  }
+  typename SENSOR::ValueType value () const { return m_Value; }
+  SENSOR& sensor () { return m_Sensor; }
+  typename SENSOR::ValueType measure () {
+    sensor().start();
+    _delay_ms(DELAY);
+    m_Value = sensor().finish();
+    return value();
+  }
+};
+
+template <class METER>
+class BattSensor : public Alarm {
+  uint32_t  m_Period;
+  uint8_t   m_Low, m_Critical;
+  METER     m_Meter;
+public:
+  BattSensor () : Alarm(0), m_Period(0), m_Low(0), m_Critical(0) {}
+  virtual ~BattSensor() {}
+
+  virtual void trigger (AlarmClock& clock) {
+    tick = m_Period;
+    clock.add(*this);
+    m_Meter.start();
+  }
+
+  uint8_t current () const { return (m_Meter.value() + 50) / 100; }
+  bool critical () const { return current() < m_Critical; }
+  void critical (uint8_t value ) { m_Critical = value; }
+  bool low () const { return current() < m_Low; }
+  void low (uint8_t value ) { m_Low = value; }
+
+  void init(uint32_t period,AlarmClock& clock) {
+    m_Meter.sensor().init();
+    m_Meter.measure();
+    m_Period = period;
+    set(m_Period);
+    clock.add(*this);
+  }
+  // for backward compatibility
+  uint16_t voltageHighRes() { return m_Meter.value(); }
+  uint8_t voltage() { return current(); }
+
+  METER& meter () { return m_Meter; }
+};
+
+typedef BattSensor<SyncMeter<InternalVCC> > BatterySensor;
+
+template <uint8_t SENSPIN,uint8_t ACTIVATIONPIN,uint16_t VCC=3300>
+class BatterySensorUni : public BattSensor<SyncMeter<ExternalVCC<SENSPIN,ACTIVATIONPIN,LOW,VCC,57> > > {
+public:
+  BatterySensorUni () {}
+  virtual ~BatterySensorUni () {}
+};
+
 
 /**
  * Measure on analog pin

@@ -54,6 +54,7 @@ public:
   bool runsingle() {
     Alarm* a = (Alarm*) ready.unlink();
     if (a != 0) {
+      a->active(false);
       a->trigger(*this);
       return true;
     }
@@ -225,7 +226,7 @@ public:
   void debug () {
     if( select() != 0 ) {
       DDEC((uint16_t)((Alarm*)select())->tick);
-      DPRINT(" ");
+      DPRINT(F(" "));
     }
   }
 };

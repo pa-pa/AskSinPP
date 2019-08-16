@@ -240,7 +240,7 @@ class DimmerStateMachine {
       init(sm.getDelayForState(state,l),destlevel,l.valid() ? 0 : DELAY_INFINITE,l);
     }
     void init (uint32_t ramptime,uint8_t level,uint32_t dly,DimmerPeerList l=DimmerPeerList(0)) {
-      DPRINT("Ramp/Level: ");DDEC(ramptime);DPRINT("/");DDECLN(level);
+      DPRINT(F("Ramp/Level: "));DDEC(ramptime);DPRINT(F("/"));DDECLN(level);
       // check that we start with the defined minimum
       if( lst.valid() && sm.status() < lst.onMinLevel() ) {
         sm.updateLevel(lst.onMinLevel());
@@ -899,7 +899,7 @@ public:
   DualWhiteControl (DimmerType& dim) : BaseControl(dim) {
 #ifndef NDEBUG
     if( this->physicalCount() != 2 ) {
-      DPRINTLN("DualWhiteControl needs physical count == 2");
+      DPRINTLN(F("DualWhiteControl needs physical count == 2"));
     }
 #endif
   }

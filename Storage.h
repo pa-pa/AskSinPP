@@ -210,7 +210,7 @@ public:
         success = waitComplete();
       }
       else {
-        DPRINTLN("ERROR EEPROM WRITE");
+        DPRINTLN(F("ERROR EEPROM WRITE"));
       }
       size -= towrite;
       addr += towrite;
@@ -261,7 +261,7 @@ public:
         success = waitComplete();
       }
       else {
-        DPRINTLN("ERROR EEPROM CLEAR");
+        DPRINTLN(F("ERROR EEPROM CLEAR"));
       }
       size -= towrite;
       addr += towrite;
@@ -278,7 +278,7 @@ public:
         return true;
       }
     }
-    DPRINTLN("ERROR EEPROM WAIT");
+    DPRINTLN(F("ERROR EEPROM WAIT"));
     return false;
   }
 

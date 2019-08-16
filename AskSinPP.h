@@ -6,7 +6,7 @@
 #ifndef __ASKSINPP_h__
 #define __ASKSINPP_h__
 
-#define ASKSIN_PLUS_PLUS_VERSION "3.1.8"
+#define ASKSIN_PLUS_PLUS_VERSION "4.1.0"
 
 #define ASKSIN_PLUS_PLUS_IDENTIFIER F("AskSin++ V" ASKSIN_PLUS_PLUS_VERSION " (" __DATE__ " " __TIME__ ")")
 
@@ -157,7 +157,7 @@ public:
       uint8_t f1 = sc.getByte(CONFIG_FREQ1);
       uint8_t f2 = sc.getByte(CONFIG_FREQ2);
       if( f1 != 0 ) {
-        DPRINT("Config Freq: 0x21");DHEX(f1);DHEXLN(f2);
+        DPRINT(F("Config Freq: 0x21"));DHEX(f1);DHEXLN(f2);
         radio.initReg(CC1101_FREQ2, 0x21);
         radio.initReg(CC1101_FREQ1, f1);
         radio.initReg(CC1101_FREQ0, f2);

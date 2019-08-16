@@ -108,16 +108,17 @@ public:
       millis = 0; // reset millis
       sysclock.add(*this); // millis with sysclock
     }
-    else {
-      uint8_t msgcnt = device().nextcount();
+    else {      
+      // measure and send
       measure();
+      uint8_t msgcnt = device().nextcount();
       WeatherEventMsg& msg = (WeatherEventMsg&)device().message();
 //      msg.init(msgcnt,dht11.temperature(),dht11.humidity(),device().battery().low());
       msg.init(msgcnt,sht10.temperature(),sht10.humidity(),device().battery().low());
 //      msg.init(msgcnt,0,0,device().battery().low());
-      device().sendPeerEvent(msg,*this);
+      device().broadcastPeerEvent(msg,*this);
 //      device().send(msg,device().getMasterID());
-
+        
       // reactivate for next measure
       HMID id;
       device().getDeviceID(id);
@@ -125,6 +126,7 @@ public:
       tick = nextsend / 1000; // seconds to wait
       millis = nextsend % 1000; // millis to wait
       rtc.add(*this);
+
     }
   }
 

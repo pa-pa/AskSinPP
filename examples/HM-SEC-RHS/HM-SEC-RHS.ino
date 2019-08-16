@@ -59,25 +59,44 @@ const struct DeviceInfo PROGMEM devinfo = {
     {0x01,0x00}             // Info Bytes
 };
 
-class BatSensor : public BatterySensorUni<17,7,3000> {
-  bool m_Extern;
-public:
-  // sense pin = A3 = 17, activation pin = D7 = 7
-  BatSensor () : BatterySensorUni(), m_Extern(false) {}
-  virtual ~BatSensor () {}
 
-  void hasStepUp (bool value) {
-    m_Extern = value;
-    voltage();
+class SwitchSensor {
+  InternalVCC internal;
+  ExternalVCC<17,7,LOW,3000> external;
+  uint8_t mod;
+public:
+  typedef uint16_t ValueType;
+  static const int DefaultDelay = 250;
+
+  SwitchSensor() : mod(0) {}
+
+  void mode (uint8_t m) {
+    mod = m;
+    init();
   }
 
-  virtual uint8_t voltage () {
-    if( m_Extern == true ) {
-      return BatterySensorUni<17,7,3000>::voltage();
+  void init () {
+    if( mod == 0 ) {
+      internal.init();
+      DPRINTLN("InternalVCC");
     }
-    return BatterySensor::voltage();
+    else {
+      external.init();
+      DPRINTLN("Stepup - ExternalVCC");
+    }
+  }
+
+  void start () {
+    if( mod == 0 ) internal.start();
+    else external.start();
+  }
+
+  uint16_t finish () {
+    return mod == 0 ? internal.finish() : external.finish();
   }
 };
+
+typedef BattSensor<AsyncMeter<SwitchSensor> > BatSensor;
 
 /**
  * Configure the used hardware
@@ -172,10 +191,7 @@ public:
     battery().low(getConfigByte(CFG_BAT_LOW_BYTE));
     battery().critical(getConfigByte(CFG_BAT_CRITICAL_BYTE));
     // set the battery mode
-    if( getConfigByte(CFG_STEPUP_BYTE) == CFG_STEPUP_ON ) {
-      DPRINTLN("Use StepUp");
-      battery().hasStepUp(true);
-    }
+    battery().meter().sensor().mode(getConfigByte(CFG_STEPUP_BYTE));
   }
 };
 
