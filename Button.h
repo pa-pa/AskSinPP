@@ -8,7 +8,7 @@
 #include "AlarmClock.h"
 #include "Debug.h"
 
-#if ARDUINO_ARCH_AVR
+#ifdef ARDUINO_ARCH_AVR
   typedef uint8_t WiringPinMode;
 #endif
 
