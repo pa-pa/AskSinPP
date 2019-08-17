@@ -6,6 +6,7 @@
 // define this to read the device id, serial and device type from bootloader section
 // #define USE_OTA_BOOTLOADER
 
+#define ASYNC_SEND
 #define EI_NOTEXTERNAL
 #include <EnableInterrupt.h>
 #include <AskSinPP.h>
@@ -37,8 +38,8 @@ using namespace as;
 
 // define all device properties
 const struct DeviceInfo PROGMEM devinfo = {
-    {0x34,0x56,0x78},       // Device ID
-    "papa111111",           // Device Serial
+    {0x34,0x56,0x79},       // Device ID
+    "papa111112",           // Device Serial
     {0x00,0x3d},            // Device Model
     0x10,                   // Firmware Version
     as::DeviceType::THSensor, // Device Type
@@ -89,43 +90,53 @@ typedef RegList0<WeatherRegsList0> WeatherList0;
 class WeatherChannel : public Channel<Hal,List1,EmptyList,List4,PEERS_PER_CHANNEL,WeatherList0>, public Alarm {
 
   uint16_t        millis;
+  uint8_t         secs;
 //  Dht<6,DHT11>      dht11;
   Sht10<A4,A5>    sht10;
 //  Bmp180          bmp180;
-  Tsl2561<>       tsl2561;
+//  Tsl2561<>       tsl2561;
 //  Bh1750<>          bh1750;
-  Ds18b20         ds18b20;
+//  Ds18b20         ds18b20;
   OneWire         ow;
 
 public:
-  WeatherChannel () : Channel(), Alarm(5), millis(0), ow(6) {}
+  WeatherChannel () : Channel(), Alarm(5), millis(0), secs(5), ow(6) {}
   virtual ~WeatherChannel () {}
 
   virtual void trigger (__attribute__ ((unused)) AlarmClock& clock) {
+    // it is time to measure
+    if( secs != 0 ) {
+      tick = secs;
+      rtc.add(*this);
+      secs = 0;
+      // measure now
+      measure();
+    }
     // wait also for the millis
-    if( millis != 0 ) {
+    else if( millis != 0 ) {
       tick = millis2ticks(millis);
       millis = 0; // reset millis
       sysclock.add(*this); // millis with sysclock
     }
     else {
-      // reactivate for next measure
       uint8_t msgcnt = device().nextcount();
-      HMID id;
-      device().getDeviceID(id);
-      uint32_t nextsend = delay(id,msgcnt);
-      tick = nextsend / 1000; // seconds to wait
-      millis = nextsend % 1000; // millis to wait
-      rtc.add(*this);
-      
-      // measure and send
-      measure();
+      // send
       WeatherEventMsg& msg = (WeatherEventMsg&)device().message();
 //      msg.init(msgcnt,dht11.temperature(),dht11.humidity(),device().battery().low());
       msg.init(msgcnt,sht10.temperature(),sht10.humidity(),device().battery().low());
 //      msg.init(msgcnt,0,0,device().battery().low());
-      device().sendPeerEvent(msg,*this);
+      device().broadcastEvent(msg);
 //      device().send(msg,device().getMasterID());
+
+      // reactivate for next measure / send
+      HMID id;
+      device().getDeviceID(id);
+      uint32_t nextsend = delay(id,msgcnt);
+      secs = 5; // we measure 5 seconds before sending
+      tick = (nextsend / 1000) - secs; // seconds to wait
+      millis = nextsend % 1000; // millis to wait
+      millis += rtc.getCurrentMillis(); // correct the wait time by current millis
+      rtc.add(*this);
     }
   }
 
@@ -138,12 +149,12 @@ public:
     DPRINT("T: ");DDEC(sht10.temperature());DPRINT("  H: ");DDECLN(sht10.humidity());
 //    bmp180.measure();
 //    DPRINT("T: ");DDEC(bmp180.temperature());DPRINT("  P: ");DDECLN(bmp180.pressure());
-    tsl2561.measure();
-    DPRINT("H: ");DDECLN(tsl2561.brightness());
+//    tsl2561.measure();
+//    DPRINT("H: ");DDECLN(tsl2561.brightness());
 //    bh1750.measure();
 //    DPRINT("H: ");DDECLN(bh1750.brightness());
-    ds18b20.measure();
-    DPRINT("T: ");DDECLN(ds18b20.temperature());
+//    ds18b20.measure();
+//    DPRINT("T: ");DDECLN(ds18b20.temperature());
   }
 
   // here we calc when to send next value
@@ -165,9 +176,9 @@ public:
 //    dht11.init();
     sht10.init();
 //    bmp180.init();
-    tsl2561.init();
+//    tsl2561.init();
 //    bh1750.init();
-    Ds18b20::init(ow, &ds18b20, 1);
+//    Ds18b20::init(ow, &ds18b20, 1);
   }
 
   uint8_t status () const {

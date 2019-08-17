@@ -206,6 +206,11 @@ public:
 #endif
   }
 
+  // return millis done of the current second
+  uint32_t getCurrentMillis () {
+    return (TCNT2 * 1000) / 255;
+  }
+
   uint32_t getCounter (bool resetovrflow) {
     if( resetovrflow == true ) {
       ovrfl = 0;
