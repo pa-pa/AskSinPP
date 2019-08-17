@@ -149,7 +149,7 @@ sub processMotion {
       $next = (15 << ($next >> 4) - 4); # strange mapping of literals
       main::RemoveInternalTimer($channel->{NAME}.":motionCheck");
       main::InternalTimer($stamp+$next+2,"CUL_HM_motionCheck", $channel->{NAME}.":motionCheck", 0);
-      ${channel}->{helper}{moStart} = $stamp if (!defined ${channel}->{helper}{moStart});
+      $channel->{helper}{moStart} = $stamp if (!defined $channel->{helper}{moStart});
     }
     else {
       $next = "none";
