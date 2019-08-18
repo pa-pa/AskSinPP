@@ -6,6 +6,7 @@
 // define this to read the device id, serial and device type from bootloader section
 // #define USE_OTA_BOOTLOADER
 
+#define EXTRAMILLIS 1000 // 1 second extra time to better hit the slot
 #define ASYNC_SEND
 #define EI_NOTEXTERNAL
 #include <EnableInterrupt.h>
@@ -131,7 +132,7 @@ public:
       // reactivate for next measure / send
       HMID id;
       device().getDeviceID(id);
-      uint32_t nextsend = delay(id,msgcnt);
+      uint32_t nextsend = delay(id,msgcnt) + EXTRAMILLIS;
       secs = 5; // we measure 5 seconds before sending
       tick = (nextsend / 1000) - secs; // seconds to wait
       millis = nextsend % 1000; // millis to wait
