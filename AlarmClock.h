@@ -206,16 +206,18 @@ public:
 #endif
   }
 
+#ifdef ARDUINO_ARCH_AVR
   // return millis done of the current second
   uint32_t getCurrentMillis () {
     return (TCNT2 * 1000) / 255;
   }
+#endif
 
   uint32_t getCounter (bool resetovrflow) {
     if( resetovrflow == true ) {
       ovrfl = 0;
     }
-#if ARDUINO_ARCH_AVR
+#ifdef ARDUINO_ARCH_AVR
     return (256 * ovrfl) + TCNT2;
 #elif defined(ARDUINO_ARCH_STM32F1) && defined(_RTCLOCK_H_)
     return rtc_get_count();
