@@ -6,8 +6,8 @@
 // define this to read the device id, serial and device type from bootloader section
 // #define USE_OTA_BOOTLOADER
 
-#define EXTRAMILLIS 1500 // 1 second extra time to better hit the slot
-#define ASYNC_SEND
+#define EXTRAMILLIS 730 // 730 millisecond extra time to better hit the slot
+// #define ASYNC_SEND
 #define EI_NOTEXTERNAL
 #include <EnableInterrupt.h>
 #include <AskSinPP.h>
@@ -121,6 +121,9 @@ public:
     }
     else {
       uint8_t msgcnt = device().nextcount();
+      while( msgcnt == 0 || msgcnt == 0xff ) {
+        msgcnt = device().nextcount();
+      }
       // send
       WeatherEventMsg& msg = (WeatherEventMsg&)device().message();
 //      msg.init(msgcnt,dht11.temperature(),dht11.humidity(),device().battery().low());
