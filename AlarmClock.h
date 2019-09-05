@@ -218,12 +218,14 @@ public:
 #endif
   }
 
-#ifdef ARDUINO_ARCH_AVR
   // return millis done of the current second
   uint32_t getCurrentMillis () {
+#ifdef ARDUINO_ARCH_AVR
     return (TCNT2 * 1000) / 255;
-  }
+#else
+    return 0; // not supported ???
 #endif
+  }
 
   uint32_t getCounter (bool resetovrflow) {
     if( resetovrflow == true ) {

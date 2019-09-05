@@ -194,11 +194,13 @@ public:
     radio.waitTimeout(millis);
   }
 
+#ifdef ARDUINO_ARCH_AVR
   template <bool ENABLETIMER2=false, bool ENABLEADC=false>
   void idle () { activity.savePower< Idle<ENABLETIMER2,ENABLEADC> >(*this); }
 
   template <bool ENABLETIMER2=false>
   void sleep () { activity.savePower< Sleep<ENABLETIMER2> >(*this); }
+#endif
 };
 
 
@@ -222,9 +224,10 @@ public:
       return rtc.runready() || AskSin<StatusLed,Battery,Radio,Buzzer>::runready();
   }
 
+#ifdef ARDUINO_ARCH_AVR
   template <bool ENABLETIMER2=false>
   void sleep () { this->activity.template savePower< SleepRTC >(*this); }
-
+#endif
 };
 
 }
