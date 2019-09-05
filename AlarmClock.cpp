@@ -116,4 +116,17 @@ uint32_t AlarmClock::get(const Alarm& item) const {
   return 0;
 }
 
+bool RTCAlarm::delayMillis () {
+  if( millis != 0 ) {
+    set(millis2ticks(millis));
+    sysclock.add(*this);
+    millis = 0;
+    return true;
+  }
+  return false;
+}
+
+SysClock& SysClock::instance() { return sysclock; }
+RTC& RTC::instance() { return rtc; }
+
 }

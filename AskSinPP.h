@@ -121,6 +121,18 @@ public:
     return decis2ticks( (uint32_t)tByte*(iTime>>5) );
   }
 
+  // calculate time until next send slot
+  static uint32_t nextSendSlot (const HMID& id,uint8_t msgcnt) {
+    uint32_t value = ((uint32_t)id) << 8 | msgcnt;
+    value = (value * 1103515245 + 12345) >> 16;
+    value = (value & 0xFF) + 480;
+    value *= 250;
+
+    DDEC(value / 1000);DPRINT(".");DDECLN(value % 1000);
+
+    return value;
+  }
+
 };
 
 template <class StatusLed,class Battery,class Radio,class Buzzer=NoBuzzer>
@@ -152,6 +164,12 @@ public:
     radio.setSendTimeout((rand() % 3500)+1000);
   }
 
+  void initBattery(uint16_t interval,uint8_t low,uint8_t critical) {
+    battery.init(seconds2ticks(interval),sysclock);
+    battery.low(low);
+    battery.critical(critical);
+  }
+
   void config (const StorageConfig& sc) {
     if( sc.valid() == true ) {
       uint8_t f1 = sc.getByte(CONFIG_FREQ1);
@@ -175,6 +193,38 @@ public:
   void waitTimeout(uint16_t millis) {
     radio.waitTimeout(millis);
   }
+
+  template <bool ENABLETIMER2=false, bool ENABLEADC=false>
+  void idle () { activity.savePower< Idle<ENABLETIMER2,ENABLEADC> >(*this); }
+
+  template <bool ENABLETIMER2=false>
+  void sleep () { activity.savePower< Sleep<ENABLETIMER2> >(*this); }
+};
+
+
+template <class StatusLed,class Battery,class Radio,class Buzzer=NoBuzzer>
+class AskSinRTC : public AskSin<StatusLed,Battery,Radio,Buzzer> {
+public:
+  void init (const HMID& id) {
+    AskSin<StatusLed,Battery,Radio,Buzzer>::init(id);
+    // init real time clock - 1 tick per second
+    rtc.init();
+  }
+
+  void initBattery(uint16_t interval,uint8_t low,uint8_t critical) {
+    this->battery.init(interval,rtc);
+    this->battery.low(low);
+    this->battery.critical(critical);
+  }
+
+
+  bool runready () {
+      return rtc.runready() || AskSin<StatusLed,Battery,Radio,Buzzer>::runready();
+  }
+
+  template <bool ENABLETIMER2=false>
+  void sleep () { this->activity.template savePower< SleepRTC >(*this); }
+
 };
 
 }
