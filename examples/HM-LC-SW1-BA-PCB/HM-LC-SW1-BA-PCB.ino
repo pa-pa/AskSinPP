@@ -74,13 +74,13 @@ public:
    void setBootState(uint8_t state) {
     StorageConfig sc = getConfigArea();
     sc.setByte(BOOT_CONFIG, state);
-    DPRINT(F("SETTING BOOT STATE "));DPRINTLN(state == BOOT_STATE_RESET ? "RESET":"NORMAL");
+    DPRINT(F("SETTING NEXT BOOT STATE    : "));DPRINTLN(state == BOOT_STATE_RESET ? "RESET":"NORMAL");
     sc.validate();
   }
 
   uint8_t getBootState() {
     StorageConfig sc = getConfigArea();
-    DPRINT(F("GETTING BOOT STATE "));DPRINTLN(sc.getByte(BOOT_CONFIG) == BOOT_STATE_RESET ? "RESET":"NORMAL");
+    DPRINT(F("GETTING CURRENT BOOT STATE : "));DPRINTLN(sc.getByte(BOOT_CONFIG) == BOOT_STATE_RESET ? "RESET":"NORMAL");
     return sc.getByte(BOOT_CONFIG);
   }
 
