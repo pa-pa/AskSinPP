@@ -100,10 +100,11 @@ public:
   }
 
   virtual bool init(Hal& hal) {
-    initBoot();
+    bool ret = DevType::init(hal);
     set(millis2ticks(4000));
     sysclock.add(*this);
-    return DevType::init(hal);
+    initBoot();
+    return ret;
   }
 
   virtual void configChanged () {
