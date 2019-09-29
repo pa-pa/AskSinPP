@@ -14,11 +14,15 @@
 
 #include <Switch.h>
 
+#define BOOT_CONFIG       0x02
+#define BOOT_STATE_RESET  0x01
+#define BOOT_STATE_NORMAL 0x00
 
 // we use a Pro Mini
 // Arduino pin for the LED
 // D4 == PIN 4 on Pro Mini
 #define LED_PIN 4
+#define LED2_PIN 15
 // Arduino pin for the config button
 // B0 == PIN 8 on Pro Mini
 #define CONFIG_BUTTON_PIN 8
@@ -58,11 +62,49 @@ public:
 };
 
 // setup the device with channel type and number of channels
-class SwitchType : public MultiChannelDevice<Hal,SwitchChannel<Hal,PEERS_PER_CHANNEL,SwList0>,1,SwList0> {
+class SwitchType : public MultiChannelDevice<Hal,SwitchChannel<Hal,PEERS_PER_CHANNEL,SwList0>,1,SwList0>, public Alarm {
+  typedef StatusLed<LED2_PIN> LED2;
+private:
+  LED2 bootLed;
 public:
   typedef MultiChannelDevice<Hal,SwitchChannel<Hal,PEERS_PER_CHANNEL,SwList0>,1,SwList0> DevType;
-  SwitchType (const DeviceInfo& i,uint16_t addr) : DevType(i,addr) {}
+  SwitchType (const DeviceInfo& i,uint16_t addr) : DevType(i,addr), Alarm(0) {}
   virtual ~SwitchType () {}
+
+   void setBootState(uint8_t state) {
+    StorageConfig sc = getConfigArea();
+    sc.setByte(BOOT_CONFIG, state);
+    DPRINT(F("SETTING BOOT STATE "));DPRINTLN(state == BOOT_STATE_RESET ? "RESET":"NORMAL");
+    sc.validate();
+  }
+
+  uint8_t getBootState() {
+    StorageConfig sc = getConfigArea();
+    DPRINT(F("GETTING BOOT STATE "));DPRINTLN(sc.getByte(BOOT_CONFIG) == BOOT_STATE_RESET ? "RESET":"NORMAL");
+    return sc.getByte(BOOT_CONFIG);
+  }
+
+  virtual void trigger (__attribute__ ((unused)) AlarmClock& clock) {
+    setBootState(BOOT_STATE_NORMAL);
+  }
+
+  void initBoot() {
+    bootLed.init();
+    bootLed.set(LedStates::bootinit);
+    if (getBootState() == BOOT_STATE_RESET) {
+      setBootState(BOOT_STATE_NORMAL);
+      reset();
+    } else {
+      setBootState(BOOT_STATE_RESET);
+    }
+  }
+
+  virtual bool init(Hal& hal) {
+    initBoot();
+    set(millis2ticks(4000));
+    sysclock.add(*this);
+    return DevType::init(hal);
+  }
 
   virtual void configChanged () {
     DevType::configChanged();
@@ -108,6 +150,7 @@ void setup () {
   // measure battery every hour
   hal.battery.init(seconds2ticks(60UL*60),sysclock);
   sdev.initDone();
+  //if (sdev.getMasterID() == HMID::broadcast) { DPRINTLN(F("START PAIRING")); sdev.startPairing(); } // start pairing of no master id is present
 }
 
 void loop() {
