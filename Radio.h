@@ -631,11 +631,11 @@ protected:
 
 };
 
-template <class SPIType ,uint8_t GDO0,class HWRADIO=CC1101<SPIType> >
+template <class SPIType ,uint8_t GDO0,int SENDDELAY=100,class HWRADIO=CC1101<SPIType> >
 class Radio : public HWRADIO {
 
   static void isr () {
-    ((Radio<SPIType,GDO0,HWRADIO>*)__gb_radio)->handleInt();
+    ((Radio<SPIType,GDO0,SENDDELAY,HWRADIO>*)__gb_radio)->handleInt();
   }
 
   class MinSendTimeout : public Alarm {
@@ -650,11 +650,13 @@ class Radio : public HWRADIO {
           _delay_ms(1);
         // }
       }
-      set(millis2ticks(100));
-      // signal new wait cycle
-      wait = true;
-      // add to system clock
-      sysclock.add(*this);
+      if( SENDDELAY > 0) {
+        set(millis2ticks(100));
+        // signal new wait cycle
+        wait = true;
+        // add to system clock
+        sysclock.add(*this);
+      }
     }
 
     void setTimeout (uint16_t millis=100) {
