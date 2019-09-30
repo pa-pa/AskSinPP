@@ -14,15 +14,16 @@
 
 #include <Switch.h>
 
-#define BOOT_CONFIG       0x02
-#define BOOT_STATE_RESET  0x01
-#define BOOT_STATE_NORMAL 0x00
+#define BOOT_CONFIG           0x02
+#define BOOT_STATE_RESET      0x02
+#define BOOT_STATE_PRE_RESET  0x01
+#define BOOT_STATE_NORMAL     0x00
 
 // we use a Pro Mini
 // Arduino pin for the LED
 // D4 == PIN 4 on Pro Mini
 #define LED_PIN 4
-#define LED2_PIN 15
+
 // Arduino pin for the config button
 // B0 == PIN 8 on Pro Mini
 #define CONFIG_BUTTON_PIN 8
@@ -61,51 +62,63 @@ public:
   }
 };
 
-// setup the device with channel type and number of channels
-class SwitchType : public MultiChannelDevice<Hal,SwitchChannel<Hal,PEERS_PER_CHANNEL,SwList0>,1,SwList0>, public Alarm {
-  typedef StatusLed<LED2_PIN> LED2;
+template <class DEVTYPE>
+class ResetOnBoot : public Alarm {
+  DEVTYPE& dev;
 private:
-  LED2 bootLed;
+  uint8_t cnt;
+  uint8_t ms;
 public:
-  typedef MultiChannelDevice<Hal,SwitchChannel<Hal,PEERS_PER_CHANNEL,SwList0>,1,SwList0> DevType;
-  SwitchType (const DeviceInfo& i,uint16_t addr) : DevType(i,addr), Alarm(0) {}
-  virtual ~SwitchType () {}
+  ResetOnBoot (DEVTYPE& d) : Alarm(0), dev(d), cnt(0), ms(200) { async(true); }
+  virtual ~ResetOnBoot() {}
 
-   void setBootState(uint8_t state) {
-    StorageConfig sc = getConfigArea();
+  void setBootState(uint8_t state) {
+    StorageConfig sc = dev.getConfigArea();
     sc.setByte(BOOT_CONFIG, state);
-    DPRINT(F("SETTING NEXT BOOT STATE    : "));DPRINTLN(state == BOOT_STATE_RESET ? "RESET":"NORMAL");
+    DPRINT(F("SETTING NEXT BOOT STATE    : "));DDECLN(state);
     sc.validate();
   }
 
   uint8_t getBootState() {
-    StorageConfig sc = getConfigArea();
-    DPRINT(F("GETTING CURRENT BOOT STATE : "));DPRINTLN(sc.getByte(BOOT_CONFIG) == BOOT_STATE_RESET ? "RESET":"NORMAL");
+    StorageConfig sc = dev.getConfigArea();
+    DPRINT(F("GETTING CURRENT BOOT STATE : "));DDECLN(sc.getByte(BOOT_CONFIG));
     return sc.getByte(BOOT_CONFIG);
   }
 
   virtual void trigger (__attribute__ ((unused)) AlarmClock& clock) {
-    setBootState(BOOT_STATE_NORMAL);
-  }
-
-  void initBoot() {
-    bootLed.init();
-    bootLed.set(LedStates::bootinit);
-    if (getBootState() == BOOT_STATE_RESET) {
-      setBootState(BOOT_STATE_NORMAL);
-      reset();
+    if (cnt < (4000 / ms)) {
+      cnt++;
+      cnt % 2 == 0 ? dev.led().ledOn() : dev.led().ledOff();
+      tick = millis2ticks(ms);
+      clock.add(*this);
     } else {
-      setBootState(BOOT_STATE_RESET);
+      dev.led().ledOff();
+      setBootState(BOOT_STATE_NORMAL);
     }
   }
 
-  virtual bool init(Hal& hal) {
-    bool ret = DevType::init(hal);
-    set(millis2ticks(4000));
+  void init() {
+    set(millis2ticks(200));
     sysclock.add(*this);
-    initBoot();
-    return ret;
+    if (getBootState() == BOOT_STATE_RESET) {
+      setBootState(BOOT_STATE_NORMAL);
+      dev.reset();
+    } else if (getBootState() == BOOT_STATE_PRE_RESET) {
+      setBootState(BOOT_STATE_RESET);
+      ms = 100;
+    } else if (getBootState() == BOOT_STATE_NORMAL) {
+      setBootState(BOOT_STATE_PRE_RESET);
+    }
   }
+};
+
+
+// setup the device with channel type and number of channels
+class SwitchType : public MultiChannelDevice<Hal,SwitchChannel<Hal,PEERS_PER_CHANNEL,SwList0>,1,SwList0> {
+public:
+  typedef MultiChannelDevice<Hal,SwitchChannel<Hal,PEERS_PER_CHANNEL,SwList0>,1,SwList0> DevType;
+  SwitchType (const DeviceInfo& i,uint16_t addr) : DevType(i,addr) {}
+  virtual ~SwitchType () {}
 
   virtual void configChanged () {
     DevType::configChanged();
@@ -119,6 +132,8 @@ public:
 
 Hal hal;
 SwitchType sdev(devinfo,0x20);
+ResetOnBoot<SwitchType> resetOnBoot(sdev);
+
 ConfigToggleButton<SwitchType> cfgBtn(sdev);
 #ifndef USE_WOR
 BurstDetector<Hal> bd(hal);
@@ -150,6 +165,7 @@ void setup () {
   hal.activity.stayAwake(seconds2ticks(15));
   // measure battery every hour
   hal.battery.init(seconds2ticks(60UL*60),sysclock);
+  resetOnBoot.init();
   sdev.initDone();
   //if (sdev.getMasterID() == HMID::broadcast) { DPRINTLN(F("START PAIRING")); sdev.startPairing(); } // start pairing of no master id is present
 }
