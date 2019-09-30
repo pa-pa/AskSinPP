@@ -14,7 +14,7 @@ namespace as {
 class LedStates {
 public:
   enum Mode { nothing=0, pairing=1,send=2, ack=3,
-    nack=4, bat_low=5, welcome=6, key_long=7, bootinit=8 };
+    nack=4, bat_low=5, welcome=6, key_long=7 };
 
   struct BlinkPattern {
     uint8_t  length;
@@ -22,9 +22,9 @@ public:
     uint8_t  pattern[6];
   };
 
-  static const BlinkPattern single[9] PROGMEM;
-  static const BlinkPattern dual1[9] PROGMEM;
-  static const BlinkPattern dual2[9] PROGMEM;
+  static const BlinkPattern single[8] PROGMEM;
+  static const BlinkPattern dual1[8] PROGMEM;
+  static const BlinkPattern dual2[8] PROGMEM;
 };
 
 template <class PINTYPE=ArduinoPins>
