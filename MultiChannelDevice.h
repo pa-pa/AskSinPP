@@ -140,16 +140,14 @@ public:
     }
   }
 
-  void reset (bool force=false) {
-    if( getList0().localResetDisable() == false || force == true ) {
-      DPRINTLN(F("RESET"));
-      storage().reset();
+  void reset () {
+    DPRINTLN(F("RESET"));
+    storage().reset();
 #if ARDUINO_ARCH_AVR
-      resetFunc();
+    resetFunc();
 #elif ARDUINO_ARCH_STM32F1
-      nvic_sys_reset();
+    nvic_sys_reset();
 #endif
-    }
   }
 
   void bootloader () {
@@ -361,7 +359,7 @@ public:
                bootloader();
              }
              else {
-               reset(true);
+               reset();
              }
            }
          }
