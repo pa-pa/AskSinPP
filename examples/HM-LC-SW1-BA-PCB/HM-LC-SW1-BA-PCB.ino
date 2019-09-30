@@ -19,7 +19,6 @@
 // Arduino pin for the LED
 // D4 == PIN 4 on Pro Mini
 #define LED_PIN 4
-
 // Arduino pin for the config button
 // B0 == PIN 8 on Pro Mini
 #define CONFIG_BUTTON_PIN 8
@@ -58,7 +57,6 @@ public:
   }
 };
 
-
 // setup the device with channel type and number of channels
 class SwitchType : public MultiChannelDevice<Hal,SwitchChannel<Hal,PEERS_PER_CHANNEL,SwList0>,1,SwList0> {
 public:
@@ -79,7 +77,6 @@ public:
 Hal hal;
 SwitchType sdev(devinfo,0x20);
 ResetOnBoot<SwitchType> resetOnBoot(sdev);
-
 ConfigToggleButton<SwitchType> cfgBtn(sdev);
 #ifndef USE_WOR
 BurstDetector<Hal> bd(hal);
