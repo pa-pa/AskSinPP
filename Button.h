@@ -183,7 +183,9 @@ public:
     }
     else if( s == ButtonType::longpressed ) {
       if( old == ButtonType::longpressed ) {
-        device.reset(); // long pressed again - reset
+        if( device.getList0().localResetDisable() == false ) {
+          device.reset(); // long pressed again - reset
+        }
       }
       else {
         device.led().set(LedStates::key_long);
@@ -221,7 +223,9 @@ public:
     }
     else if( s == ButtonType::longpressed ) {
       if( old == ButtonType::longpressed ) {
-        device.reset(); // long pressed again - reset
+        if( device.getList0().localResetDisable() == false ) {
+          device.reset(); // long pressed again - reset
+        }
       }
       else {
         device.led().set(LedStates::key_long);
