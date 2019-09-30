@@ -98,7 +98,7 @@ public:
   }
 
   void init() {
-    set(millis2ticks(200));
+    set(millis2ticks(ms));
     sysclock.add(*this);
     if (getBootState() == BOOT_STATE_RESET) {
       setBootState(BOOT_STATE_NORMAL);
