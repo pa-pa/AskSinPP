@@ -140,8 +140,8 @@ public:
     }
   }
 
-  void reset () {
-    if( getList0().localResetDisable() == false ) {
+  void reset (bool force=false) {
+    if( getList0().localResetDisable() == false || force == true ) {
       DPRINTLN(F("RESET"));
       storage().reset();
 #if ARDUINO_ARCH_AVR
@@ -361,7 +361,7 @@ public:
                bootloader();
              }
              else {
-               reset();
+               reset(true);
              }
            }
          }
