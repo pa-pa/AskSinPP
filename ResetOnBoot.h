@@ -58,7 +58,7 @@ public:
     if (getBootState() == BOOT_STATE_RESET) {
       DPRINT(F("Activated RESET ON BOOT"));
       finish();
-      dev.reset();
+      dev.reset(true);
     } else if (getBootState() == BOOT_STATE_PRE_RESET) {
       setBootState(BOOT_STATE_RESET);
       ms = 100;
