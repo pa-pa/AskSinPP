@@ -13,11 +13,7 @@
 #include <LowPower.h>
 
 #include <Switch.h>
-
-#define BOOT_CONFIG           0x02
-#define BOOT_STATE_RESET      0x02
-#define BOOT_STATE_PRE_RESET  0x01
-#define BOOT_STATE_NORMAL     0x00
+#include <ResetOnBoot.h>
 
 // we use a Pro Mini
 // Arduino pin for the LED
@@ -59,56 +55,6 @@ public:
   void defaults () {
     clear();
     lowBatLimit(22);
-  }
-};
-
-template <class DEVTYPE>
-class ResetOnBoot : public Alarm {
-  DEVTYPE& dev;
-private:
-  uint8_t cnt;
-  uint8_t ms;
-public:
-  ResetOnBoot (DEVTYPE& d) : Alarm(0), dev(d), cnt(0), ms(200) { async(true); }
-  virtual ~ResetOnBoot() {}
-
-  void setBootState(uint8_t state) {
-    StorageConfig sc = dev.getConfigArea();
-    sc.setByte(BOOT_CONFIG, state);
-    DPRINT(F("SETTING NEXT BOOT STATE    : "));DDECLN(state);
-    sc.validate();
-  }
-
-  uint8_t getBootState() {
-    StorageConfig sc = dev.getConfigArea();
-    DPRINT(F("GETTING CURRENT BOOT STATE : "));DDECLN(sc.getByte(BOOT_CONFIG));
-    return sc.getByte(BOOT_CONFIG);
-  }
-
-  virtual void trigger (__attribute__ ((unused)) AlarmClock& clock) {
-    if (cnt < (4000 / ms)) {
-      cnt++;
-      cnt % 2 == 0 ? dev.led().ledOn() : dev.led().ledOff();
-      tick = millis2ticks(ms);
-      clock.add(*this);
-    } else {
-      dev.led().ledOff();
-      setBootState(BOOT_STATE_NORMAL);
-    }
-  }
-
-  void init() {
-    set(millis2ticks(ms));
-    sysclock.add(*this);
-    if (getBootState() == BOOT_STATE_RESET) {
-      setBootState(BOOT_STATE_NORMAL);
-      dev.reset();
-    } else if (getBootState() == BOOT_STATE_PRE_RESET) {
-      setBootState(BOOT_STATE_RESET);
-      ms = 100;
-    } else if (getBootState() == BOOT_STATE_NORMAL) {
-      setBootState(BOOT_STATE_PRE_RESET);
-    }
   }
 };
 
