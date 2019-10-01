@@ -11,8 +11,9 @@
 #define ASKSIN_PLUS_PLUS_IDENTIFIER F("AskSin++ V" ASKSIN_PLUS_PLUS_VERSION " (" __DATE__ " " __TIME__ ")")
 
 
-#define CONFIG_FREQ1 0
-#define CONFIG_FREQ2 1
+#define CONFIG_FREQ1     0
+#define CONFIG_FREQ2     1
+#define CONFIG_BOOTSTATE 2  //location of current boot state for ResetOnBoot
 
 #include <Debug.h>
 #include <stdint.h>

@@ -13,7 +13,7 @@
 #include <LowPower.h>
 
 #include <Switch.h>
-
+#include <ResetOnBoot.h>
 
 // we use a Pro Mini
 // Arduino pin for the LED
@@ -76,6 +76,7 @@ public:
 
 Hal hal;
 SwitchType sdev(devinfo,0x20);
+ResetOnBoot<SwitchType> resetOnBoot(sdev);
 ConfigToggleButton<SwitchType> cfgBtn(sdev);
 #ifndef USE_WOR
 BurstDetector<Hal> bd(hal);
@@ -107,7 +108,9 @@ void setup () {
   hal.activity.stayAwake(seconds2ticks(15));
   // measure battery every hour
   hal.battery.init(seconds2ticks(60UL*60),sysclock);
+  resetOnBoot.init();
   sdev.initDone();
+  //if (sdev.getMasterID() == HMID::broadcast) { DPRINTLN(F("START PAIRING")); sdev.startPairing(); } // start pairing of no master id is present
 }
 
 void loop() {
