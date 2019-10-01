@@ -7,11 +7,11 @@
 #ifndef __RESETONBOOT_H__
 #define __RESETONBOOT_H__
 
-#define BOOT_CONFIG           0x02
-
 #define BOOT_STATE_NORMAL     0x00
 #define BOOT_STATE_PRE_RESET  0x01
 #define BOOT_STATE_RESET      0x02
+
+#include <AskSinPP.h>
 
 namespace as {
 
@@ -27,15 +27,15 @@ public:
 
   void setBootState(uint8_t state) {
     StorageConfig sc = dev.getConfigArea();
-    sc.setByte(BOOT_CONFIG, state);
+    sc.setByte(CONFIG_BOOTSTATE, state);
     //DPRINT(F("SET NEXT BOOT STATE    : "));DDECLN(state);
     sc.validate();
   }
 
   uint8_t getBootState() {
     StorageConfig sc = dev.getConfigArea();
-    //DPRINT(F("GET CURRENT BOOT STATE : "));DDECLN(sc.getByte(BOOT_CONFIG));
-    return sc.getByte(BOOT_CONFIG);
+    //DPRINT(F("GET CURRENT BOOT STATE : "));DDECLN(sc.getByte(CONFIG_BOOTSTATE));
+    return sc.getByte(CONFIG_BOOTSTATE);
   }
 
   void finish() {
