@@ -50,3 +50,14 @@ number multiplied by 2.
 - **SENSOR_ONLY** - save some byte by exclude code for actor devices
 - **DEVICE_CHANNEL_COUNT** - set number of device channels, skip calculation
 
+## Alternative Device RESET Method
+
+Normally, a device can be reset to its default settings by pressing and holding down the config button for at least 6 seconds.
+Alternatively, another reset method can be used with `ResetOnBoot.h` without pressing the config button (i.e. for devices in hard to reach places):
+- to reset, reboot the device twice within 4 seconds after startup
+  - explained in detail:
+    - startup: the device led blinks with 5 Hz the first 4 seconds
+    - if the device is restarted within this time, the device led blinks with 10 Hz for 4 seconds
+    - only if the device is restarted again within this time, the device will do a RESET , otherwise it will proceed normal operation
+- implemented in [`HM-LC-SW1-BA-PCB.ino`](https://github.com/pa-pa/AskSinPP/blob/master/examples/HM-LC-SW1-BA-PCB/HM-LC-SW1-BA-PCB.ino) to demonstrate the usage
+- at least, an automated pairing can be triggered by uncommenting [line #113](https://github.com/pa-pa/AskSinPP/blob/8e235f54c6a31c9485be6e60632d58274ff199ba/examples/HM-LC-SW1-BA-PCB/HM-LC-SW1-BA-PCB.ino#L113)
