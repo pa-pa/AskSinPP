@@ -52,8 +52,8 @@
 	#define AS_MESSAGE_SENSOR_DATA                        0x53					// signed answer needed on request
 	#define AS_MESSAGE_CLIMATE_EVENT                      0x58
 	#define AS_MESSAGE_CLIMATECTRL_EVENT                  0x5A
-	#define AS_MESSAGE_POWER_EVENT                        0x5E
-	#define AS_MESSAGE_POWER_EVENT_CYCLIC                 0x5F
+	#define AS_MESSAGE_POWER_EVENT_CYCLIC                 0x5E
+	#define AS_MESSAGE_POWER_EVENT                        0x5F
 	#define AS_MESSAGE_WEATHER_EVENT                      0x70
 
 	// Byte 11: config values
