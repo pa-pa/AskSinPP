@@ -39,19 +39,23 @@ public:
   }
 
   void finish() {
-    dev.led().ledOff();
+    led(false);
     setBootState(BOOT_STATE_NORMAL);
   }
 
   virtual void trigger (__attribute__ ((unused)) AlarmClock& clock) {
     if (cnt < (4000 / ms)) {
       cnt++;
-      cnt % 2 == 0 ? dev.led().ledOn() : dev.led().ledOff();
+      cnt % 2 == 0 ? led(true) : led(false);
       tick = millis2ticks(ms);
       clock.add(*this);
     } else {
       finish();
     }
+  }
+
+  virtual void led(bool on) {
+    on == true ? dev.led().ledOn() : dev.led().ledOff();
   }
 
   void init() {
