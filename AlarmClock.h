@@ -98,6 +98,8 @@ extern void rtccallback(void);
 
 class SysClock : public AlarmClock {
 public:
+  static SysClock& instance();
+
   void init() {
   #if ARDUINO_ARCH_AVR
   #define TIMER1_RESOLUTION 65536UL  // Timer1 is 16 bit
@@ -165,6 +167,14 @@ public:
   #endif
   }
 
+  void add(Alarm& item) {
+    AlarmClock::add(item);
+  }
+
+  void add(Alarm& item,uint32_t millis) {
+    item.tick = (millis2ticks(millis));
+    add(item);
+  }
 };
 
 extern SysClock sysclock;
@@ -179,6 +189,8 @@ class RTC : public AlarmClock {
 public:
 
   RTC () : ovrfl(0) {}
+
+  static RTC& instance();
 
   void init () {
 #ifdef ARDUINO_AVR_ATmega32
@@ -206,11 +218,20 @@ public:
 #endif
   }
 
+  // return millis done of the current second
+  uint32_t getCurrentMillis () {
+#ifdef ARDUINO_ARCH_AVR
+    return (TCNT2 * 1000) / 255;
+#else
+    return 0; // not supported ???
+#endif
+  }
+
   uint32_t getCounter (bool resetovrflow) {
     if( resetovrflow == true ) {
       ovrfl = 0;
     }
-#if ARDUINO_ARCH_AVR
+#ifdef ARDUINO_ARCH_AVR
     return (256 * ovrfl) + TCNT2;
 #elif defined(ARDUINO_ARCH_STM32F1) && defined(_RTCLOCK_H_)
     return rtc_get_count();
@@ -229,6 +250,25 @@ public:
       DPRINT(F(" "));
     }
   }
+
+  void add(Alarm& item) {
+    AlarmClock::add(item);
+  }
+
+  void add(Alarm& item,uint32_t millis) {
+    millis += getCurrentMillis();
+    item.tick = (millis / 1000); // seconds to wait
+    add(item);
+  }
+
+  void add(RTCAlarm& item,uint32_t millis) {
+    // correct the time with the millis of the current second
+    millis += getCurrentMillis();
+    item.tick = (millis / 1000); // seconds to wait
+    item.millis = millis % 1000; // millis to wait
+    add(item);
+  }
+
 };
 
 extern RTC rtc;

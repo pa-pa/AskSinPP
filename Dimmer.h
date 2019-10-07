@@ -741,6 +741,23 @@ public:
     return first;
   }
 
+  bool init (HalType& hal,const uint8_t pins[]) {
+    bool first = dimmer.init(hal);
+    if( first == true ) {
+      firstinit();
+    }
+    for( uint8_t i=0; i<physicalCount(); ++i ) {
+      pwms[i].init(pins[i]);
+      physical[i] = 0;
+      factor[i] = 200; // 100%
+    }
+    initChannels();
+    cb.trigger(sysclock);
+    return first;
+  }
+
+  PWM& pwm (uint8_t num) { return pwms[num]; }
+
   void initChannels () {
     for( uint8_t i=1; i<=physicalCount(); ++i ) {
       for( uint8_t j=i; j<=channelCount(); j+=physicalCount() ) {
@@ -765,80 +782,85 @@ public:
   }
 
   uint16_t combineChannels (uint8_t start) {
-    uint16_t value = 0;
-    for( uint8_t i=start; i<=channelCount(); i+=physicalCount() ) {
-      uint8_t level = dimmer.dimmerChannel(i).status();
-      switch( dimmer.dimmerChannel(i).getList1().logicCombination() ) {
-      default:
-      case LOGIC_INACTIVE:
-        break;
-      case LOGIC_OR:
-        value = value > level ? value : level;
-        break;
-      case LOGIC_AND:
-        value = value < level ? value : level;
-        break;
-      case LOGIC_XOR:
-        value = value==0 ? level : (level==0 ? value : 0);
-        break;
-      case LOGIC_NOR:
-        value = 200 - (value > level ? value : level);
-        break;
-      case LOGIC_NAND:
-        value = 200 - (value < level ? value : level);
-        break;
-      case LOGIC_ORINVERS:
-        level = 200 - level;
-        value = value > level ? value : level;
-        break;
-      case LOGIC_ANDINVERS:
-        level = 200 - level;
-        value = value < level ? value : level;
-        break;
-      case LOGIC_PLUS:
-        value += level;
-        if( value > 200 ) value = 200;
-        break;
-      case LOGIC_MINUS:
-        if( level > value ) value = 0;
-        else value -= level;
-        break;
-      case LOGIC_MUL:
-        value = value * level / 200;
-        break;
-      case LOGIC_PLUSINVERS:
-        level = 200 - level;
-        value += level;
-        if( value > 200 ) value = 200;
-        break;
-        break;
-      case LOGIC_MINUSINVERS:
-        level = 200 - level;
-        if( level > value ) value = 0;
-        else value -= level;
-        break;
-      case LOGIC_MULINVERS:
-        level = 200 - level;
-        value = value * level / 200;
-        break;
-      case LOGIC_INVERSPLUS:
-        value += level;
-        if( value > 200 ) value = 200;
-        value = 200 - value;
-        break;
-      case LOGIC_INVERSMINUS:
-        if( level > value ) value = 0;
-        else value -= level;
-        value = 200 - value;
-        break;
-      case LOGIC_INVERSMUL:
-        value = value * level / 200;
-        value = 200 - value;
-        break;
-      }
+    if( virtualCount() == 1 ) {
+      return dimmer.dimmerChannel(start).status();
     }
-    // DHEXLN(value);
-    return value;
+    else {
+      uint16_t value = 0;
+      for( uint8_t i=start; i<=channelCount(); i+=physicalCount() ) {
+        uint8_t level = dimmer.dimmerChannel(i).status();
+        switch( dimmer.dimmerChannel(i).getList1().logicCombination() ) {
+        default:
+        case LOGIC_INACTIVE:
+          break;
+        case LOGIC_OR:
+          value = value > level ? value : level;
+          break;
+        case LOGIC_AND:
+          value = value < level ? value : level;
+          break;
+        case LOGIC_XOR:
+          value = value==0 ? level : (level==0 ? value : 0);
+          break;
+        case LOGIC_NOR:
+          value = 200 - (value > level ? value : level);
+          break;
+        case LOGIC_NAND:
+          value = 200 - (value < level ? value : level);
+          break;
+        case LOGIC_ORINVERS:
+          level = 200 - level;
+          value = value > level ? value : level;
+          break;
+        case LOGIC_ANDINVERS:
+          level = 200 - level;
+          value = value < level ? value : level;
+          break;
+        case LOGIC_PLUS:
+          value += level;
+          if( value > 200 ) value = 200;
+          break;
+        case LOGIC_MINUS:
+          if( level > value ) value = 0;
+          else value -= level;
+          break;
+        case LOGIC_MUL:
+          value = value * level / 200;
+          break;
+        case LOGIC_PLUSINVERS:
+          level = 200 - level;
+          value += level;
+          if( value > 200 ) value = 200;
+          break;
+          break;
+        case LOGIC_MINUSINVERS:
+          level = 200 - level;
+          if( level > value ) value = 0;
+          else value -= level;
+          break;
+        case LOGIC_MULINVERS:
+          level = 200 - level;
+          value = value * level / 200;
+          break;
+        case LOGIC_INVERSPLUS:
+          value += level;
+          if( value > 200 ) value = 200;
+          value = 200 - value;
+          break;
+        case LOGIC_INVERSMINUS:
+          if( level > value ) value = 0;
+          else value -= level;
+          value = 200 - value;
+          break;
+        case LOGIC_INVERSMUL:
+          value = value * level / 200;
+          value = 200 - value;
+          break;
+        }
+      }
+      // DHEXLN(value);
+      return value;
+    }
   }
   
   

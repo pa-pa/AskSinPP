@@ -4,3 +4,6 @@
 /spec.d
 /.ino.cpp
 /.settings/
+**/.pio
+.idea
+.DS_Store
