@@ -74,7 +74,12 @@ public:
   virtual ~TestDevice () {}
 
   virtual void trigger (__attribute__ ((unused)) AlarmClock& clock) {
-    DPRINT("  ");DDEC(received);DPRINT("/");DDECLN(rssi);
+    DPRINT("  ");DDEC(received);
+    if (!received) {
+      DPRINTLN("");
+    } else {
+      DPRINT(" / -");DDEC(rssi);DPRINTLN("dBm");
+    }
 
     if( mode == Search ) {
       if( received > 0 ) {
@@ -194,13 +199,13 @@ public:
   virtual ~InfoSender () {}
 
   virtual void trigger (AlarmClock& clock) {
+#ifdef ACTIVE_PING
     InfoActuatorStatusMsg msg;
     msg.init(cnt++, ch, hal.radio.rssi());
     msg.to(PING_TO);
     msg.from(PING_FROM);
     msg.ackRequired();
     msg.setRpten();
-#ifdef ACTIVE_PING
     sdev.radio().write(msg,msg.burstRequired());
 #endif
     sdev.led().ledOn(millis2ticks(100), 0);
