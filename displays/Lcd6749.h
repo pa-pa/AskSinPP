@@ -96,6 +96,7 @@ namespace as {
       0x54, 0x61, 0x45, 0x51, 0x55, 0x52, 0x56, 0x57 }
   };
 
+template<uint8_t CS, uint8_t WR, uint8_t DT>
 class LCD6749 {
 
 public:
@@ -172,10 +173,10 @@ public:
   LCD6749 () : _cs(0), _wr(0), _data(0) {}
   virtual ~LCD6749() {}
 
-  void init(uint8_t cs, uint8_t wr, uint8_t data) {
-    _cs = cs;
-    _wr = wr;
-    _data= data;
+  void init() {
+    _cs = CS;
+    _wr = WR;
+    _data= DT;
     pinMode(_cs,   OUTPUT);
     pinMode(_wr,   OUTPUT);
     pinMode(_data, OUTPUT);
