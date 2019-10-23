@@ -203,6 +203,7 @@ public:
   }
 
   void printWithUnit(uint8_t value, uint8_t dot, char c) {
+    clearBuffer();
     char localBuffer[3];
     snprintf(localBuffer, 3, "%2i", value);
     updateBuffer(0, value < 10 ? '0' : localBuffer[0]);
