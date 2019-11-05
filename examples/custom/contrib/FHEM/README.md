@@ -18,6 +18,7 @@ Copy HMConfig_AskSinPPCustom.pm and HMMsg.pm into the FHEM folder and restart FH
 * [HB-UNI-Sen-PRESS](https://github.com/jp112sdl/HB-UNI-Sen-PRESS) Pressure Sensor
 * [HB-UNI-Sen-CAP-MOIST-T](https://github.com/jp112sdl/HB-UNI-Sen-CAP-MOIST) Moisture Sensor
 * [HB-UNI-Sen-WEA](https://github.com/jp112sdl/HB-UNI-Sen-WEA) Weather Station
+* [HB-LC-Bl1-FM-2](https://github.com/jp112sdl/HM-LC-Bl1-FM-2) 2 Channel Blind Actor - change model to F207
 
 # Add new Devices
 

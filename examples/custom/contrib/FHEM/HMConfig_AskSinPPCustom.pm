@@ -206,6 +206,20 @@ $customMsg{"HB-IBUT-8"} = sub {
   return ();
 };
 
+# 2 channel blind actor
+$HMConfig::culHmModel{"F207"} = {name=>"HB-LC-BL1-FM-2",st=>'custom',cyc=>'',rxt=>'',lst=>'1,3:1p.2p',chn=>"Blind:1:2"};
+$HMConfig::culHmChanSets{"HB-LC-BL1-FM-200"}{fwUpdate} = "<filename>";
+$HMConfig::culHmChanSets{"HB-LC-BL1-FM-201"} = $HMConfig::culHmSubTypeSets{"blindActuator"};
+$HMConfig::culHmChanSets{"HB-LC-BL1-FM-202"} = $HMConfig::culHmSubTypeSets{"blindActuator"};
+#$HMConfig::culHmRegModel{"HB-LC-BL1-FM-2"}   = {};
+$HMConfig::culHmRegChan {"HB-LC-BL1-FM-201"} = $HMConfig::culHmRegType{blindActuator};
+$HMConfig::culHmRegChan {"HB-LC-BL1-FM-202"} = $HMConfig::culHmRegType{blindActuator};
+$customMsg{"HB-LC-BL1-FM-2"} = sub {
+  my ($msg,$target) = @_;
+  return $msg->processBlindStatus($target) if $msg->isStatus;
+  return ();
+};
+
 $HMConfig::culHmModel{"F9D2"} = {name=>"HB-UNI-Sen-LEV-US",st=>'custom',cyc=>'',rxt=>'c:l',lst=>'1',chn=>"Level:1:1"};
 $HMConfig::culHmChanSets{"HB-UNI-Sen-LEV-US00"}{fwUpdate} = "<filename>";
 $HMConfig::culHmChanSets{"HB-UNI-Sen-LEV-US01"} = {};
@@ -257,7 +271,9 @@ $customMsg{"HB-UNI-Sen-CAP-MOIST-T"} = sub {
   my @evtEt=();
   my $cnum = $msg->payloadByte(1) & 0x3f; # get channel from byte 1 of payload
   my $device = main::CUL_HM_id2Hash($msg->from);
-  push @evtEt,[$device,1,"battery:".(($msg->payloadByte(0) & 0x80)==0x80 ? "low" : "ok")];
+  my $batstat = "ok";
+  $batstat = "low" if (($msg->payloadByte(0) & 0x80)==0x80);
+  push @evtEt,[$device,1,"battery:".$batstat];
   my $channel = $main::modules{CUL_HM}{defptr}{$msg->channelId($cnum)};
   if( defined($channel) ) {
     my $temp = $msg->payloadWord(2);

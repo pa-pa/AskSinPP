@@ -136,6 +136,31 @@ sub processSwitchStatus {
   return @evtEt;
 }
 
+sub processBlindStatus {
+  my ($self,$target) = @_;
+  my @evtEt=();
+  my $channel = $main::modules{CUL_HM}{defptr}{$self->channelId};
+  if( defined($channel) ) {
+    my $value = $self->payloadByte(2)/2;
+    my $flags = $self->payloadByte(3);
+    my $valuestr = "$value %";
+    $valuestr = "on"  if $value==100;
+    $valuestr = "off" if $value==0;
+    my $dir = ($flags >> 4) & 3;
+    my %dirName = ( 0=>"stop" ,1=>"up" ,2=>"down" ,3=>"err" );
+    push @evtEt,[$channel,1,"level:$value"];
+    push @evtEt,[$channel,1,"motor:$dirName{$dir}:$valuestr"];
+    push @evtEt,[$channel,1,"pct:$value"];     # duplicate to level - necessary for "slider"
+    push @evtEt,[$channel,1,"deviceMsg:.$valuestr.$target"];
+    push @evtEt,[$channel,1,"state:".$valuestr];
+    push @evtEt,[$channel,1,"timedOn:".(($flags & 0x40)?"running":"off")];
+  }
+  else {
+    main::Log 1,"No object for ".$self->channelId;
+  }
+  return @evtEt;
+}
+
 sub processMotion {
   my ($self,$target) = @_;
   my @evtEt=();
@@ -243,14 +268,15 @@ sub processValues {
   my $vfmt = main::AttrVal($channel->{NAME},"valuesformat","");
   # Log 1,$vfmt;
   if( $vfmt eq "" ) {
-    Log3 $channel->{NAME}, 1, "Missing attribute valuesformat at ".$channel->{NAME};
+    main::Log3 $channel->{NAME}, 1, "Missing attribute valuesformat at $channel->{NAME}";
     for( my $i=0; $i<$numval; ++$i ) {
       $vfmt = $vfmt."1 ";
     }
   }
   my @valuesfmt = parseValueFormat($vfmt);
-  if( $numval != scalar(@valuesfmt) ) {
-    Log3 $channel->{NAME}, 1, "Attribute valuesformat mismatch at $channel->{NAME} - expected $numval items but got ".scalar(@valuesfmt)." items";
+  my $fmtnumval = scalar(@valuesfmt);
+  if( $numval != $fmtnumval ) {
+    main::Log3 $channel->{NAME}, 1, "Attribute valuesformat mismatch at $channel->{NAME} - expected $numval items but got $fmtnumval items";
   }
   my $packstr = "";
   my $state = "";
