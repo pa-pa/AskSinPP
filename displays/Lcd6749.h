@@ -320,12 +320,15 @@ public:
     updateDisplay(dot);
   }
 
-  void printNumberAsFloat(uint16_t number) {
+  void printNumberAsFloat(int16_t number) {
     if (number > 999) {
       number = (number + 5) / 10;
-      printNumber(number, true, NO_DOT);
+      printNumber(number, false, NO_DOT);
+    } else if (number < -99) {
+      number = (number - 5) / 10;
+      printNumber(number ,false, NO_DOT);
     } else {
-      printNumber(number, true, SINGLE_DOT);
+      printNumber(number, false, SINGLE_DOT);
     }
   }
 
