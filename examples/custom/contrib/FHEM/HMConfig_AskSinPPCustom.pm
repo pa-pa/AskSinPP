@@ -297,6 +297,50 @@ $customMsg{"HB-UNI-Sen-CAP-MOIST-T"} = sub {
   return @evtEt;
 };
 
+$HMConfig::culHmModel{"F33A"} = {name=>"HB-UNI-SenAct-8-8-SC",st=>'custom',cyc=>'',rxt=>'c:l',lst=>'1,3:1p.2p.3p.4p.5p.6p.7p.8p,4:9p.10p.11p.12p.13p.14p.15p.16p',chn=>"Sw:1:8,Sen:9:16"};
+$HMConfig::culHmChanSets{"HB-UNI-SenAct-8-8-SC00"}{fwUpdate} = "<filename>";
+$HMConfig::culHmChanSets{"HB-UNI-SenAct-8-8-SC01"} = $HMConfig::culHmSubTypeSets{"switch"};
+$HMConfig::culHmChanSets{"HB-UNI-SenAct-8-8-SC02"} = $HMConfig::culHmSubTypeSets{"switch"};
+$HMConfig::culHmChanSets{"HB-UNI-SenAct-8-8-SC03"} = $HMConfig::culHmSubTypeSets{"switch"};
+$HMConfig::culHmChanSets{"HB-UNI-SenAct-8-8-SC04"} = $HMConfig::culHmSubTypeSets{"switch"};
+$HMConfig::culHmChanSets{"HB-UNI-SenAct-8-8-SC05"} = $HMConfig::culHmSubTypeSets{"switch"};
+$HMConfig::culHmChanSets{"HB-UNI-SenAct-8-8-SC06"} = $HMConfig::culHmSubTypeSets{"switch"};
+$HMConfig::culHmChanSets{"HB-UNI-SenAct-8-8-SC07"} = $HMConfig::culHmSubTypeSets{"switch"};
+$HMConfig::culHmChanSets{"HB-UNI-SenAct-8-8-SC08"} = $HMConfig::culHmSubTypeSets{"switch"};
+$HMConfig::culHmChanSets{"HB-UNI-SenAct-8-8-SC09"} = $HMConfig::culHmSubTypeSets{"THSensor"};
+$HMConfig::culHmChanSets{"HB-UNI-SenAct-8-8-SC10"} = $HMConfig::culHmSubTypeSets{"THSensor"};
+$HMConfig::culHmChanSets{"HB-UNI-SenAct-8-8-SC11"} = $HMConfig::culHmSubTypeSets{"THSensor"};
+$HMConfig::culHmChanSets{"HB-UNI-SenAct-8-8-SC12"} = $HMConfig::culHmSubTypeSets{"THSensor"};
+$HMConfig::culHmChanSets{"HB-UNI-SenAct-8-8-SC13"} = $HMConfig::culHmSubTypeSets{"THSensor"};
+$HMConfig::culHmChanSets{"HB-UNI-SenAct-8-8-SC14"} = $HMConfig::culHmSubTypeSets{"THSensor"};
+$HMConfig::culHmChanSets{"HB-UNI-SenAct-8-8-SC15"} = $HMConfig::culHmSubTypeSets{"THSensor"};
+$HMConfig::culHmChanSets{"HB-UNI-SenAct-8-8-SC16"} = $HMConfig::culHmSubTypeSets{"THSensor"};
+$HMConfig::culHmRegModel{"HB-UNI-SenAct-8-8-SC"}   = { intKeyVisib=>1, cyclicInfoMsg=>1, sabotageMsg=>1 };
+$HMConfig::culHmRegChan {"HB-UNI-SenAct-8-8-SC01"} = $HMConfig::culHmRegType{switch};
+$HMConfig::culHmRegChan {"HB-UNI-SenAct-8-8-SC02"} = $HMConfig::culHmRegType{switch};
+$HMConfig::culHmRegChan {"HB-UNI-SenAct-8-8-SC03"} = $HMConfig::culHmRegType{switch};
+$HMConfig::culHmRegChan {"HB-UNI-SenAct-8-8-SC04"} = $HMConfig::culHmRegType{switch};
+$HMConfig::culHmRegChan {"HB-UNI-SenAct-8-8-SC05"} = $HMConfig::culHmRegType{switch};
+$HMConfig::culHmRegChan {"HB-UNI-SenAct-8-8-SC06"} = $HMConfig::culHmRegType{switch};
+$HMConfig::culHmRegChan {"HB-UNI-SenAct-8-8-SC07"} = $HMConfig::culHmRegType{switch};
+$HMConfig::culHmRegChan {"HB-UNI-SenAct-8-8-SC08"} = $HMConfig::culHmRegType{switch};
+$HMConfig::culHmRegChan {"HB-UNI-SenAct-8-8-SC09"} = $HMConfig::culHmRegType{threeStateSensor};
+$HMConfig::culHmRegChan {"HB-UNI-SenAct-8-8-SC10"} = $HMConfig::culHmRegType{threeStateSensor};
+$HMConfig::culHmRegChan {"HB-UNI-SenAct-8-8-SC11"} = $HMConfig::culHmRegType{threeStateSensor};
+$HMConfig::culHmRegChan {"HB-UNI-SenAct-8-8-SC12"} = $HMConfig::culHmRegType{threeStateSensor};
+$HMConfig::culHmRegChan {"HB-UNI-SenAct-8-8-SC13"} = $HMConfig::culHmRegType{threeStateSensor};
+$HMConfig::culHmRegChan {"HB-UNI-SenAct-8-8-SC14"} = $HMConfig::culHmRegType{threeStateSensor};
+$HMConfig::culHmRegChan {"HB-UNI-SenAct-8-8-SC15"} = $HMConfig::culHmRegType{threeStateSensor};
+$HMConfig::culHmRegChan {"HB-UNI-SenAct-8-8-SC16"} = $HMConfig::culHmRegType{threeStateSensor};
+$customMsg{"HB-UNI-SenAct-8-8-SC"} = sub {
+  my ($msg,$target) = @_;
+  my $channel = $msg->channel;
+  return $msg->processThreeState($target) if $channel > 8;
+  return $msg->processSwitchStatus($target) if $msg->isStatus;
+  return ();
+};
+
+
 $HMConfig::culHmModel{"F1D0"} = {name=>"HB-UNI-Sen-WEA",st=>'custom',cyc=>'',rxt=>'c:l',lst=>'1,4:1p',chn=>"Weather:1:1"};
 $HMConfig::culHmChanSets{"HB-UNI-Sen-WEA00"}{fwUpdate} = "<filename>";
 $HMConfig::culHmChanSets{"HB-UNI-Sen-WEA01"} = $HMConfig::culHmSubTypeSets{"THSensor"};
