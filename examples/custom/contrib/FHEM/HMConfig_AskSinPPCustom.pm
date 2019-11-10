@@ -384,7 +384,7 @@ $customMsg{"HB-UNI-Sen-WEA"} = sub {
     push @evtEt,[$channel,1,"uvindex:".$uvindex];
     push @evtEt,[$channel,1,"lightningdistance:".$lightningdistance*3];
     push @evtEt,[$channel,1,"lightningcounter:".$lightningcounter];
-    push @evtEt,[$channel,1,"state:T: ".($temp/10)." P: ".$pressure." H: ".$humidity];
+    push @evtEt,[$channel,1,"state:T: ".($temp/10)." P: ".($pressure/10)." H: ".$humidity];
   }
   else {
     Log 1,"No channel for ".$msg->channelId(1);
