@@ -31,7 +31,6 @@
 #define CONFIG_BUTTON_PIN PB12
 
 #define DIMMER1_PIN PB1
-#define DIMMER2_PIN PA3
 
 #define ENCODER1_SWITCH PB15
 #define ENCODER1_CLOCK  PB13
@@ -61,7 +60,7 @@ const struct DeviceInfo PROGMEM devinfo = {
 typedef LibSPI<PA4> RadioSPI;
 typedef AskSin<StatusLed<LED_BUILTIN>,NoBattery,Radio<RadioSPI,PB0> > HalType;
 typedef DimmerChannel<HalType,PEERS_PER_CHANNEL> ChannelType;
-typedef DimmerDevice<HalType,ChannelType,3,3> DimmerType;
+typedef DimmerDevice<HalType,ChannelType,6,3> DimmerType;
 
 HalType hal;
 DimmerType sdev(devinfo,0x20);
@@ -107,7 +106,7 @@ void setup () {
   delay(5000);
   DINIT(57600,ASKSIN_PLUS_PLUS_IDENTIFIER);
   Wire.begin();
-  bool first = control.init(hal,DIMMER1_PIN,DIMMER2_PIN);
+  bool first = control.init(hal,DIMMER1_PIN);
   buttonISR(cfgBtn,CONFIG_BUTTON_PIN);
   buttonISR(enc1,ENCODER1_SWITCH);
   encoderISR(enc1,ENCODER1_CLOCK,ENCODER1_DATA);
