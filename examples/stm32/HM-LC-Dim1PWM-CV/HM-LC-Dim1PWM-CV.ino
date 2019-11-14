@@ -8,7 +8,7 @@
 
 #define STORAGEDRIVER at24cX<0x50,128,32>
 #define TICKS_PER_SECOND 500UL
-#define USE_HW_SERIAL
+// #define USE_HW_SERIAL
 
 #include <SPI.h>    // when we include SPI.h - we can use LibSPI class
 #include <Wire.h>
@@ -29,6 +29,7 @@
 #define CONFIG_BUTTON_PIN PB12
 
 #define DIMMER1_PIN PB1
+#define DIMMER2_PIN PA3
 
 #define ENCODER1_SWITCH PB15
 #define ENCODER1_CLOCK  PB13
@@ -43,8 +44,8 @@ using namespace as;
 
 // define all device properties
 const struct DeviceInfo PROGMEM devinfo = {
-    {0x66,0x23,0xab},       // Device ID
-    "papa6623ab",           // Device Serial
+    {0x68,0x76,0x52},       // Device ID
+    "PwDim20002",           // Device Serial
     {0x00,0x67},            // Device Model
     0x2C,                   // Firmware Version
     as::DeviceType::Dimmer, // Device Type
@@ -57,7 +58,7 @@ const struct DeviceInfo PROGMEM devinfo = {
 typedef LibSPI<PA4> RadioSPI;
 typedef AskSin<StatusLed<LED_BUILTIN>,NoBattery,Radio<RadioSPI,PB0> > HalType;
 typedef DimmerChannel<HalType,PEERS_PER_CHANNEL> ChannelType;
-typedef DimmerDevice<HalType,ChannelType,6,3> DimmerType;
+typedef DimmerDevice<HalType,ChannelType,3,3> DimmerType;
 
 HalType hal;
 DimmerType sdev(devinfo,0x20);
@@ -103,7 +104,7 @@ void setup () {
   delay(5000);
   DINIT(57600,ASKSIN_PLUS_PLUS_IDENTIFIER);
   Wire.begin();
-  bool first = control.init(hal,DIMMER1_PIN);
+  bool first = control.init(hal,DIMMER1_PIN,DIMMER2_PIN);
   buttonISR(cfgBtn,CONFIG_BUTTON_PIN);
   buttonISR(enc1,ENCODER1_SWITCH);
   encoderISR(enc1,ENCODER1_CLOCK,ENCODER1_DATA);
@@ -119,6 +120,9 @@ void setup () {
 
   sdev.initDone();
   sdev.led().invert(true);
+  hal.radio.initReg(CC1101_FREQ2, 0x21);
+  hal.radio.initReg(CC1101_FREQ1, 0x65);
+  hal.radio.initReg(CC1101_FREQ0, 0xE2);
 
   DDEVINFO(sdev);
 }

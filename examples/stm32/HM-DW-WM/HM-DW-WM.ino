@@ -8,7 +8,9 @@
 
 #define STORAGEDRIVER at24cX<0x50,128,32>
 #define TICKS_PER_SECOND 500UL
-// #define USE_HW_SERIAL
+
+// Derive ID and Serial from the device UUID
+#define USE_HW_SERIAL
 
 #include <SPI.h>    // when we include SPI.h - we can use LibSPI class
 #include <Wire.h>
@@ -48,8 +50,9 @@ using namespace as;
 
 // define all device properties
 const struct DeviceInfo PROGMEM devinfo = {
-    {0x66,0x23,0xab},       // Device ID
-    "papa6623ab",           // Device Serial
+    // ID and Serial is derived from STM32-UUID (see #define USE_HW_SERIAL)
+    {0x00,0x00,0x00},       // Device ID
+    "0000000000",           // Device Serial
     {0x01,0x09},            // Device Model: HM-DW-WM 2-channel LED dimmer
     0x2C,                   // Firmware Version
     as::DeviceType::Dimmer, // Device Type
