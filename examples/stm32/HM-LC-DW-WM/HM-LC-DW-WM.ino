@@ -50,7 +50,7 @@ using namespace as;
 const struct DeviceInfo PROGMEM devinfo = {
     {0x66,0x23,0xab},       // Device ID
     "papa6623ab",           // Device Serial
-    {0x01,0x09},            // Device Model: HM-DW-WM 2-channel LED dimmer
+    {0x01,0x08},            // Device Model: HM-LC-DW-WM dual white LED dimmer
     0x2C,                   // Firmware Version
     as::DeviceType::Dimmer, // Device Type
     {0x01,0x00}             // Info Bytes
@@ -66,7 +66,7 @@ typedef DimmerDevice<HalType,ChannelType,6,3> DimmerType;
 
 HalType hal;
 DimmerType sdev(devinfo,0x20);
-DimmerControl<HalType,DimmerType,PWM16<> > control(sdev);
+DualWhiteControl<HalType,DimmerType,PWM16<> > control(sdev);
 ConfigButton<DimmerType> cfgBtn(sdev);
 InternalEncoder<DimmerType> enc1(sdev,1);
 InternalEncoder<DimmerType> enc2(sdev,2);
