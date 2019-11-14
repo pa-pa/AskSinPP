@@ -8,7 +8,9 @@
 
 #define STORAGEDRIVER at24cX<0x50,128,32>
 #define TICKS_PER_SECOND 500UL
-// #define USE_HW_SERIAL
+
+// Derive ID and Serial from the device UUID
+#define USE_HW_SERIAL
 
 #include <SPI.h>    // when we include SPI.h - we can use LibSPI class
 #include <Wire.h>
@@ -48,8 +50,9 @@ using namespace as;
 
 // define all device properties
 const struct DeviceInfo PROGMEM devinfo = {
-    {0xD1,0x15,0x04},       // Device ID
-    "PwDim20004",           // Device Serial
+    // ID and Serial is derived from STM32-UUID (see #define USE_HW_SERIAL)
+    {0x00,0x00,0x00},       // Device ID
+    "0000000000",           // Device Serial
     {0x01,0x08},            // Device Model: HM-LC-DW-WM dual white LED dimmer
     0x2C,                   // Firmware Version
     as::DeviceType::Dimmer, // Device Type
@@ -130,9 +133,9 @@ void setup () {
   sdev.initDone();
 
   // Adjust CC1101 frequency
-  hal.radio.initReg(CC1101_FREQ2, 0x21);
-  hal.radio.initReg(CC1101_FREQ1, 0x65);
-  hal.radio.initReg(CC1101_FREQ0, 0xE2);
+  // hal.radio.initReg(CC1101_FREQ2, 0x21);
+  // hal.radio.initReg(CC1101_FREQ1, 0x65);
+  // hal.radio.initReg(CC1101_FREQ0, 0xE2);
 
   sdev.led().invert(true);
   DDEVINFO(sdev);
