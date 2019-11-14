@@ -63,6 +63,9 @@ script:
   - export BOARD=$BOARDMAPLE
   - export SKETCHPATH=$PWD/examples/stm32
   - buildSketch HB-DoorBell
+  - buildSketch HM-DW-WM
+  - buildSketch HM-LC-DW-WM
+  - buildSketch HM-LC-Dim1PWM-CV
   - buildSketch HM-LC-SWX-SM
   - export BOARD=$BOARDSTM
   - buildSketch HM-DW-WM
