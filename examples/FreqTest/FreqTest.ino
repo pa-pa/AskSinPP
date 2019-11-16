@@ -6,17 +6,37 @@
 // define this to read the device id, serial and device type from bootloader section
 // #define USE_OTA_BOOTLOADER
 
-#define EI_NOTEXTERNAL
-#include <EnableInterrupt.h>
+#if defined ARDUINO_ARCH_STM32F1
+  #define STORAGEDRIVER at24cX<0x50,128,32>
+  #define TICKS_PER_SECOND 500UL
+  #define USE_HW_SERIAL
+ 
+  #include <SPI.h>    // when we include SPI.h - we can use LibSPI class
+  #include <Wire.h>   // for I2C access to EEPROM
+  #include <EEPROM.h> // the EEPROM library contains Flash Access Methods
+#endif
+
 #include <AskSinPP.h>
 #include <Device.h>
 #include <Register.h>
 
 
-// we use a Pro Mini
-// Arduino pin for the LED
-// D4 == PIN 4 on Pro Mini
-#define LED_PIN 4
+#if defined ARDUINO_ARCH_STM32F1
+  // we use a BluePill
+  #define CC1101_GDO0_PIN     PB0
+  #define CC1101_CS_PIN       PA4
+  // CC1101 communication uses HW-SPI
+  #define LED_PIN             LED_BUILTIN
+#else
+  // we use a Pro Mini
+  #define CC1101_GDO0_PIN     2     // PD2
+  #define CC1101_CS_PIN       10    // PB2
+  #define CC1101_MOSI_PIN     11    // PB3
+  #define CC1101_MISO_PIN     12    // PB4
+  #define CC1101_SCK_PIN      13    // PB5
+  // Pro Mini LED
+  #define LED_PIN             4     // PD4
+#endif
 
 // all library classes are placed in the namespace 'as'
 using namespace as;
@@ -34,8 +54,12 @@ const struct DeviceInfo PROGMEM devinfo = {
 /**
  * Configure the used hardware
  */
-typedef AvrSPI<10,11,12,13> RadioSPI;
-typedef Radio<RadioSPI,2> RadioType;
+#if defined ARDUINO_ARCH_STM32F1
+typedef LibSPI<CC1101_CS_PIN> RadioSPI;
+#else
+typedef AvrSPI<CC1101_CS_PIN, CC1101_MOSI_PIN, CC1101_MISO_PIN, CC1101_SCK_PIN> RadioSPI;
+#endif
+typedef Radio<RadioSPI, CC1101_GDO0_PIN> RadioType;
 typedef StatusLed<LED_PIN> LedType;
 typedef AskSin<LedType,NoBattery,RadioType> HalType;
 
@@ -126,6 +150,16 @@ public:
 
         // store frequency
         DPRINT("Store into config area: ");DHEX((uint8_t)(freq>>8));DHEXLN((uint8_t)(freq&0xff));
+#if defined ARDUINO_ARCH_STM32F1
+        // STM32 can not read ConfigFreq from eeprom yet
+        // You can add the freq to your Sketch after sdev.init() like
+        /*
+          hal.radio.initReg(CC1101_FREQ2, 0x21);
+          hal.radio.initReg(CC1101_FREQ1, 0x65);
+          hal.radio.initReg(CC1101_FREQ0, 0xCA);
+        */
+       while(1);
+#else
         StorageConfig sc = getConfigArea();
         sc.clear();
         sc.setByte(CONFIG_FREQ1, freq>>8);
@@ -133,6 +167,7 @@ public:
         sc.validate();
 
         activity().savePower<Sleep<> >(this->getHal());
+#endif
       }
     }
   }
