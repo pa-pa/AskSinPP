@@ -158,6 +158,7 @@ public:
           hal.radio.initReg(CC1101_FREQ1, 0x65);
           hal.radio.initReg(CC1101_FREQ0, 0xCA);
         */
+       // measurement is done, loop here forever
        while(1);
 #else
         StorageConfig sc = getConfigArea();
