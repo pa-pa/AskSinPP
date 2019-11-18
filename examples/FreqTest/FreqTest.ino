@@ -151,23 +151,16 @@ public:
 
         // store frequency
         DPRINT("Store into config area: ");DHEX((uint8_t)(freq>>8));DHEXLN((uint8_t)(freq&0xff));
-#if defined ARDUINO_ARCH_STM32F1
-        // STM32 can not read ConfigFreq from eeprom yet
-        // You can add the freq to your Sketch after sdev.init() like
-        /*
-          hal.radio.initReg(CC1101_FREQ2, 0x21);
-          hal.radio.initReg(CC1101_FREQ1, 0x65);
-          hal.radio.initReg(CC1101_FREQ0, 0xCA);
-        */
-       // measurement is done, loop here forever
-       while(1);
-#else
         StorageConfig sc = getConfigArea();
         sc.clear();
         sc.setByte(CONFIG_FREQ1, freq>>8);
         sc.setByte(CONFIG_FREQ2, freq&0xff);
         sc.validate();
 
+#if defined ARDUINO_ARCH_STM32F1
+       // measurement is done, loop here forever
+       while(1);
+#else
         activity().savePower<Sleep<> >(this->getHal());
 #endif
       }
@@ -255,6 +248,7 @@ public:
 
 void setup () {
   DINIT(57600,ASKSIN_PLUS_PLUS_IDENTIFIER);
+  Wire.begin();
   sdev.init(hal);
   // start sender
   info.trigger(sysclock);
