@@ -152,14 +152,18 @@ public:
         // store frequency
         DPRINT("Store into config area: ");DHEX((uint8_t)(freq>>8));DHEXLN((uint8_t)(freq&0xff));
         StorageConfig sc = getConfigArea();
+#if defined ARDUINO_ARCH_STM32F1
+        Wire.begin();
+#endif
         sc.clear();
         sc.setByte(CONFIG_FREQ1, freq>>8);
         sc.setByte(CONFIG_FREQ2, freq&0xff);
         sc.validate();
 
+        DPRINTLN("stored!");
 #if defined ARDUINO_ARCH_STM32F1
-       // measurement is done, loop here forever
-       while(1);
+        // measurement is done, loop here forever
+        while(1);
 #else
         activity().savePower<Sleep<> >(this->getHal());
 #endif
@@ -248,7 +252,6 @@ public:
 
 void setup () {
   DINIT(57600,ASKSIN_PLUS_PLUS_IDENTIFIER);
-  Wire.begin();
   sdev.init(hal);
   // start sender
   info.trigger(sysclock);
