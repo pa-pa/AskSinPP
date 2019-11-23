@@ -196,12 +196,27 @@ public:
     radio.waitTimeout(millis);
   }
 
+  void setIdle () {
+    radio.setIdle();
+    battery.setIdle();
+  }
+
+  void unsetIdle () {
+    battery.unsetIdle();
+  }
+
+  void wakeup () {
+    radio.wakeup();
+  }
+
 #ifdef ARDUINO_ARCH_AVR
   template <bool ENABLETIMER2=false, bool ENABLEADC=false>
   void idle () { activity.savePower< Idle<ENABLETIMER2,ENABLEADC> >(*this); }
 
   template <bool ENABLETIMER2=false>
   void sleep () { activity.savePower< Sleep<ENABLETIMER2> >(*this); }
+
+  void sleepForever () { activity.sleepForever(*this); }
 #endif
 };
 

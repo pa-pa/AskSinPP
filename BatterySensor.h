@@ -210,6 +210,9 @@ public:
   uint8_t voltage() { return current(); }
 
   METER& meter () { return m_Meter; }
+
+  void setIdle () {}
+  void unsetIdle () {}
 };
 
 typedef BattSensor<SyncMeter<InternalVCC> > BatterySensor;
@@ -266,6 +269,64 @@ public:
   }
 
 };
+
+extern volatile uint16_t __gb_BatCurrent;
+extern void (*__gb_BatIrq)();
+
+class IrqInternalBatt {
+  uint8_t   m_Low, m_Critical;
+public:
+  IrqInternalBatt () : m_Low(0), m_Critical(0) {}
+  ~IrqInternalBatt() {}
+
+  uint8_t current () const { return (__gb_BatCurrent + 50) / 100; }
+  bool critical () const { return current() < m_Critical; }
+  void critical (uint8_t value ) { m_Critical = value; }
+  bool low () const { return current() < m_Low; }
+  void low (uint8_t value ) { m_Low = value; }
+
+  void init(__attribute__((unused)) uint32_t period,__attribute__((unused)) AlarmClock& clock) {
+    unsetIdle();
+  }
+
+  // for backward compatibility
+  uint16_t voltageHighRes() { return __gb_BatCurrent; }
+  uint8_t voltage() { return current(); }
+
+  void setIdle () {
+    __gb_BatIrq = 0;
+  }
+
+  void unsetIdle () {
+    __gb_BatIrq = irq;
+    ADMUX &= ~(ADMUX_REFMASK | ADMUX_ADCMASK);
+    ADMUX |= ADMUX_REF_AVCC;      // select AVCC as reference
+    ADMUX |= ADMUX_ADC_VBG;       // measure bandgap reference voltage
+    ADCSRA |= (1 << ADIE);        // enable interrupt
+    ADCSRA |= (1 << ADSC);        // start conversion
+  }
+
+  static void irq () {
+    uint16_t v = 1100UL * 1024 / ADC;
+    if( __gb_BatCurrent == 0 ) {
+      __gb_BatCurrent = v;
+    }
+    else {
+      v = (__gb_BatCurrent + v) / 2;
+      if( v < __gb_BatCurrent ) {
+        __gb_BatCurrent = v;
+      }
+    }
+    ADCSRA |= (1 << ADSC);        // start conversion
+  }
+};
+
+
+ISR(ADC_vect) {
+  if( __gb_BatIrq != 0 ) {
+    __gb_BatIrq();
+  }
+}
 
 }
 

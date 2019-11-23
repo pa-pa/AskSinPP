@@ -5,6 +5,7 @@
 
 // define this to read the device id, serial and device type from bootloader section
 // #define USE_OTA_BOOTLOADER
+// #define BATTERY_IRQ
 
 #define CFG_STEPUP_BYTE 0x00
 #define CFG_STEPUP_OFF  0x00
@@ -96,7 +97,11 @@ public:
   }
 };
 
-typedef BattSensor<AsyncMeter<SwitchSensor> > BatSensor;
+#ifdef BATTERY_IRQ
+  typedef IrqInternalBatt BatSensor;
+#else
+  typedef BattSensor<AsyncMeter<SwitchSensor> > BatSensor;
+#endif
 
 /**
  * Configure the used hardware
@@ -190,8 +195,10 @@ public:
     // set battery low/critical values
     battery().low(getConfigByte(CFG_BAT_LOW_BYTE));
     battery().critical(getConfigByte(CFG_BAT_CRITICAL_BYTE));
+    #ifndef BATTERY_IRQ
     // set the battery mode
     battery().meter().sensor().mode(getConfigByte(CFG_STEPUP_BYTE));
+    #endif
   }
 };
 
@@ -219,10 +226,10 @@ void loop() {
     // if we drop below critical battery level - switch off all and sleep forever
     if( hal.battery.critical() ) {
       // this call will never return
-      hal.activity.sleepForever(hal);
+      hal.sleepForever();
     }
     // if nothing to do - go sleep
-    hal.activity.savePower<Sleep<> >(hal);
+    hal.sleep<>();
   }
 }
 
