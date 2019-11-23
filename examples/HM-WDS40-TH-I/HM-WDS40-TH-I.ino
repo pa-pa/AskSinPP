@@ -18,40 +18,39 @@
 #define LED_PIN 4
 #define CONFIG_BUTTON_PIN 8
 
-// === Festlegung welcher Sensor benutzt wird ===
+// === Choose one Temperture/Humidity sensor ===
 #define SENSOR_BME280
 //#define SENSOR_DHT22
 //#define SENSOR_SHT10
 //#define SENSOR_SHT31
 //#define SENSOR_SI7021
 
-// === Festelgung der Clock ===
-// RTC Clock Benutzen (zB HMSensor mit verbautem 32kHz Quarz)
-#define USE_RTC
+// === Define the clock ===
+// Remove comment if you have an external oscillator like a 32kHz crystal
+//#define USE_RTC
 
-// === Batteriespannungsmessung ===
-// Interne Messung (Batteriespannung am AVR)
-//#define BAT_SENSOR BatterySensor
-//#define BAT_VOLT_LOW        21  // 2.1V
-//#define BAT_VOLT_CRITICAL   19  // 1.9V
-// Externe Messung (Batteriespannung über GPIO Pins) (TLV61224 StepUp can handle 0.7V)
-#define BAT_VOLT_LOW        20  // 2.0V
-#define BAT_VOLT_CRITICAL   13  // 1.3V
-#define BAT_SENSOR BatterySensorUni<17,7,3000>
+// === Battery measurement ===
+#define BAT_VOLT_LOW        21  // 2.1V low voltage threshold
+#define BAT_VOLT_CRITICAL   19  // 1.9V critical voltage threshold, puts AVR into sleep-forever mode
+// Internal measuring: AVR voltage
+#define BAT_SENSOR BatterySensor
+// External measuring: Potential devider on GPIO; required if a StepUp converter is used
+// one can consider lower thresholds (low=20; cri=13) 
+//#define BAT_SENSOR BatterySensorUni<17,7,3000> // <SensPIN, ActivationPIN, RefVcc>
 
-// === Sensor Offset Einstellungen ===
-// OFFSET für Temperatur -> gemessene Temp +/- Offset = Angezeigte Temp.
-#define OFFSETtemp 0 //z.B -50 ≙ -5°C / 50 ≙ +5°C
-// OFFSET für Luftfeuchte -> gemessene Luftf. +/- Offset = Angezeigte Luftf.
-#define OFFSEThumi 0 //z.B -10 ≙ -10%RF / 10 ≙ +10%RF
+// === Sensor offset settings ===
+// OFFSET for Temperature -> measured Temp +/- Offset = Announced Temperature
+#define OFFSETtemp 0 //e.g. -50 ≙ -5°C / 50 ≙ +5°C
+// OFFSET for Humidity -> measured Humidity +/- Offset = Announced Humidity
+#define OFFSEThumi 0 //e.g. -10 ≙ -10%RF / 10 ≙ +10%RF
 
-// number of available peers per channel
+// Number of available peers per channel
 #define PEERS_PER_CHANNEL 6
 
-// all library classes are placed in the namespace 'as'
+// All library classes are placed in the namespace 'as'
 using namespace as;
 
-// define all device properties
+// Define all device properties
 const struct DeviceInfo PROGMEM devinfo = {
     {0x34,0x56,0x79},       // Device ID
     "papa111111",           // Device Serial
@@ -64,28 +63,27 @@ const struct DeviceInfo PROGMEM devinfo = {
 
 #ifdef SENSOR_BME280
 #include <sensors/Bme280.h>
-typedef Bme280 SensorType;
+typedef Bme280 SensorType; // I2C
 #endif
 #ifdef SENSOR_DHT22
 #include <sensors/Dht.h>
-typedef Dht<4,DHT22> SensorType;
+typedef Dht<4,DHT22> SensorType; // <DataPin, Type>
 #endif
 #ifdef SENSOR_SHT10
 #include <sensors/Sht10.h>
-typedef Sht10<A4, A5> SensorType;
+typedef Sht10<A4, A5> SensorType; // <DataPin, ClockPin>
 #endif
 #ifdef SENSOR_SHT31
 #include <sensors/Sht31.h>
-typedef Sht31<> SensorType;
+typedef Sht31<> SensorType; // I2C
 #endif
 #ifdef SENSOR_SI7021
 #include <sensors/Si7021.h>
-typedef Si7021 SensorType;
+typedef Si7021 SensorType; // I2C
 #endif
 
-/**
- * Configure the used hardware
- */
+
+// Configure the used hardware
 typedef AvrSPI<10,11,12,13> SPIType;
 typedef Radio<SPIType,2> RadioType;
 typedef StatusLed<LED_PIN> LedType;
@@ -95,16 +93,12 @@ typedef AskSinRTC<LedType,BAT_SENSOR,RadioType> Hal;
 typedef AskSin<LedType,BAT_SENSOR,RadioType> Hal;
 #endif
 
-/*
- * Define List0 registers
- */
+// Define List0 registers
 DEFREGISTER(WeatherRegsList0,MASTERID_REGS,DREG_BURSTRX)
 typedef RegList0<WeatherRegsList0> WeatherList0;
 
-/*
- * Sensors class is used by the WeatherChannel to measure the data. It has to implement
- * temperature() and humidity().
- */
+// Sensors class is used by the WeatherChannel to measure the data.
+// It has to implement temperature() and humidity().
 class Sensors : public Alarm {
   SensorType    sensor;
 public:
@@ -128,6 +122,7 @@ typedef WeatherChannel<Hal,RTC,Sensors,PEERS_PER_CHANNEL,EXTRAMILLIS,WeatherList
 #else
 typedef WeatherChannel<Hal,SysClock,Sensors,PEERS_PER_CHANNEL,EXTRAMILLIS,WeatherList0> ChannelType;
 #endif
+
 typedef MultiChannelDevice<Hal,ChannelType,1,WeatherList0> WeatherType;
 
 Hal hal;
@@ -135,13 +130,12 @@ WeatherType sdev(devinfo,0x20);
 ConfigButton<WeatherType> cfgBtn(sdev);
 
 void setup () {
-  DINIT(57600,ASKSIN_PLUS_PLUS_IDENTIFIER);
+  DINIT(57600,ASKSIN_PLUS_PLUS_IDENTIFIER); // Init serial console
   sdev.init(hal);
-  buttonISR(cfgBtn,CONFIG_BUTTON_PIN);
-  // Measure Battery every 1h 
-  hal.initBattery(60UL*60,BAT_VOLT_LOW,BAT_VOLT_CRITICAL);
+  buttonISR(cfgBtn,CONFIG_BUTTON_PIN); // Register btn interrupt
+  hal.initBattery(60UL*60,BAT_VOLT_LOW,BAT_VOLT_CRITICAL); // Measure Battery every 1h 
   sdev.initDone();
-  DDEVINFO(sdev);
+  DDEVINFO(sdev); // Print DeviceInfo to serial console
 }
 
 void loop() {
