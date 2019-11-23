@@ -33,6 +33,8 @@ public:
   uint8_t current () const { return 0; }
   bool critical () const { return false; }
   bool low () const { return false; }
+  void setIdle () {}
+  void unsetIdle () {}
 };
 
 #ifdef ARDUINO_ARCH_AVR
