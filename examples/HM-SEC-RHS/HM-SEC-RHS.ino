@@ -5,7 +5,7 @@
 
 // define this to read the device id, serial and device type from bootloader section
 // #define USE_OTA_BOOTLOADER
-#define BATTERY_IRQ
+// #define BATTERY_IRQ
 
 #define CFG_STEPUP_BYTE 0x00
 #define CFG_STEPUP_OFF  0x00
