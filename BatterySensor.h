@@ -270,6 +270,8 @@ public:
 
 };
 
+#ifdef ARDUINO_ARCH_AVR
+
 extern volatile uint16_t __gb_BatCurrent;
 extern void (*__gb_BatIrq)();
 
@@ -327,6 +329,8 @@ ISR(ADC_vect) {
     __gb_BatIrq();
   }
 }
+
+#endif
 
 }
 
