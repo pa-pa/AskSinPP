@@ -51,6 +51,7 @@ namespace as {
 #define CREG_LEDONTIME 0x22
 #define CREG_EVENTFILTERTIME 0x23
 #define CREG_TRANSMITTRYMAX 0x30
+#define CREG_LOADAPPEARBEHAVIOUR 0x31
 #define CREG_OVERTEMPLEVEL 0x32
 #define CREG_REDUCETEMPLEVEL 0x34
 #define CREG_REDUCELEVEL 0x35
@@ -410,6 +411,8 @@ public:
   uint8_t eventFilterTime() const { return this->readRegister(CREG_EVENTFILTERTIME,5); }
   bool transmitTryMax(uint8_t v) const { return this->writeRegister(CREG_TRANSMITTRYMAX,v); }
   uint8_t transmitTryMax() const { uint8_t v = this->readRegister(CREG_TRANSMITTRYMAX,6); return v == 0 ? 1 : v;}
+  bool loadAppearBehaviour(uint8_t v) const { return this->writeRegister(CREG_LOADAPPEARBEHAVIOUR,v); }
+  uint8_t loadAppearBehaviour() const { uint8_t v = this->readRegister(CREG_LOADAPPEARBEHAVIOUR,0); return v > 3 ? 3 : v;}
 
   uint8_t longPressTime () const { return this->readRegister(CREG_LONGPRESSTIME,0x0f,4,1); }
   bool longPressTime (uint8_t v) const { return this->writeRegister(CREG_LONGPRESSTIME,0x0f,4,v); }
