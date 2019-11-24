@@ -27,6 +27,7 @@
 
 // === Define the clock ===
 // Remove comment if you have an external oscillator like a 32kHz crystal
+// Necessary for exact timings if you want to pair with a HM-CC-RT-DN
 //#define USE_RTC
 
 // === Battery measurement ===
