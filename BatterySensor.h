@@ -290,6 +290,7 @@ public:
   void low (uint8_t value ) { m_Low = value; }
 
   void init(__attribute__((unused)) uint32_t period,__attribute__((unused)) AlarmClock& clock) {
+    pinMode(17,OUTPUT);  // debug interrupt
     unsetIdle();
   }
 
@@ -299,9 +300,13 @@ public:
 
   void setIdle () {
     __gb_BatIrq = 0;
+    ADCSRA &= ~((1 << ADIE) | (1 << ADIF));  // disable interrupt
+    while (ADCSRA & (1 << ADSC)) ;  // wait finish
+    irq();    // ensure value is read
   }
 
   void unsetIdle () {
+    //DDECLN(__gb_BatCurrent);
     __gb_BatIrq = irq;
     ADMUX &= ~(ADMUX_REFMASK | ADMUX_ADCMASK);
     ADMUX |= ADMUX_REF_AVCC;      // select AVCC as reference
@@ -321,7 +326,9 @@ public:
         __gb_BatCurrent = v;
       }
     }
-    ADCSRA |= (1 << ADSC);        // start conversion
+    digitalWrite(17, digitalRead(17)==LOW?HIGH:LOW);  // debug
+    if( __gb_BatIrq != 0 )
+      ADCSRA |= (1 << ADSC);        // start conversion again
   }
 };
 
