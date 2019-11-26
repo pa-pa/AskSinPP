@@ -147,10 +147,6 @@ void loop() {
       // this call will never return
       hal.activity.sleepForever(hal);
     }    
-    #ifdef USE_RTC
     hal.sleep<>();
-    #else
-    hal.activity.savePower<Sleep<>>(hal);
-    #endif
   }
 }
