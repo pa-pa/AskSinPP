@@ -85,6 +85,7 @@ script:
   - buildSketch HM-SEC-WDS
   - buildSketch HM-SEN-MDIR-WM55
   - buildSketch HM-WDS10-TH-O
+  - buildSketch HM-WDS40-TH-I
   - buildSketch HM-WDS100-C6-O-2
   - buildSketch HM-LC-DW-WM
   - buildSketch HM-DW-WM
