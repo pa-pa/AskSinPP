@@ -150,14 +150,18 @@ public:
         printFreq(0x210000 + freq);DPRINTLN("");
 
         // store frequency
-        DPRINT("Store into config area: ");DHEX((uint8_t)(freq>>8));DHEXLN((uint8_t)(freq&0xff));
+        DPRINT("Store into config area: ");DHEX((uint8_t)(freq>>8));DHEX((uint8_t)(freq&0xff));
         StorageConfig sc = getConfigArea();
 #if defined ARDUINO_ARCH_STM32F1
         Wire.begin();
+        DPRINT(".");
 #endif
         sc.clear();
+        DPRINT(".");
         sc.setByte(CONFIG_FREQ1, freq>>8);
+        DPRINT(".");
         sc.setByte(CONFIG_FREQ2, freq&0xff);
+        DPRINT(".");
         sc.validate();
 
         DPRINTLN("stored!");
@@ -251,6 +255,9 @@ public:
 } info;
 
 void setup () {
+#if defined ARDUINO_ARCH_STM32F1
+  delay(5000);
+#endif
   DINIT(57600,ASKSIN_PLUS_PLUS_IDENTIFIER);
   sdev.init(hal);
   // start sender
