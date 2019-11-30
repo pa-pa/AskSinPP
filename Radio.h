@@ -747,12 +747,18 @@ public:   //--------------------------------------------------------------------
     return digitalRead(GDO0);
   }
 
-  void enable () {
+void enable () {
+  if( digitalPinToInterrupt(GDO0) == NOT_AN_INTERRUPT )
+    enableInterrupt(GDO0,isr,FALLING);
+  else
     attachInterrupt(digitalPinToInterrupt(GDO0),isr,FALLING);
-  }
-  void disable () {
+}
+void disable () {
+  if( digitalPinToInterrupt(GDO0) == NOT_AN_INTERRUPT )
+    disableInterrupt(GDO0);
+  else
     detachInterrupt(digitalPinToInterrupt(GDO0));
-  }
+}
 
   // read the message form the internal buffer, if any
   uint8_t read (Message& msg) {
