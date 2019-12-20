@@ -181,7 +181,7 @@ sub parseValueFormat {
     $valuedata->{'numbytes'} = $1;
     if ($valuedata->{'numbytes'} > 30) {
 	  # numbytes is > max payload length of AskSin message
-	  $valuedata->{'numbytes'} = undef;
+	  $valuedata->{'numbytes'} = '';
     }
     my $flags = $2 or '';
     $valuedata->{'signed'} = $flags =~ /s/;
