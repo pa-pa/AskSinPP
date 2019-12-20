@@ -179,7 +179,7 @@ sub parseValueFormat {
     my $valuedata = {};
     $parts[0] =~ m/([0-9]+)([sx]*)/;
     $valuedata->{'numbytes'} = $1;
-    if ($valuedata->{'numbytes'} > 30) {
+    if ($valuedata->{'numbytes'} > 17) {
 	  # numbytes is > max payload length of AskSin message
 	  $valuedata->{'numbytes'} = '';
     }
