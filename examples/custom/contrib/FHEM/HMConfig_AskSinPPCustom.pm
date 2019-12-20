@@ -177,10 +177,15 @@ sub parseValueFormat {
     #print $value."\n";
     my @parts = split /:/,$value;
     my $valuedata = {};
-    my $numb = $parts[0];
-    $numb =~ s/([1,2,4,8])s?/$1/g;
-    $valuedata->{'numbytes'} = $numb;
-    $valuedata->{'signed'} = $parts[0] =~ m/([1,2,4,8])s/;
+    $parts[0] =~ m/([0-9]+)([sx]*)/;
+    $valuedata->{'numbytes'} = $1;
+    if ($valuedata->{'numbytes'} > 17) {
+	  # numbytes is > max payload length of AskSin message
+	  $valuedata->{'numbytes'} = '';
+    }
+    my $flags = $2 or '';
+    $valuedata->{'signed'} = $flags =~ /s/;
+    $valuedata->{'hex'} = $flags =~ /x/;
     $valuedata->{'reading'} = "value".scalar @v + 1;
     $valuedata->{'factor'} = 1;
     if( defined $parts[1] ) { $valuedata->{'reading'} = $parts[1]; }
@@ -485,6 +490,9 @@ sub CUL_HM_Parsecustom($$$$$$) {
 	      }
 	      $val /= $data->{'factor'};
 	      # print $data->{'reading'}." : ".$val."\n";
+		  if( $data->{'hex'} ) {
+			$val = sprintf('%0'.($data->{'numbytes'}*2).'X', $val);
+		  }
         push @evtEt,[$chnHash,1,$data->{'reading'}.":".$val];
 	      $state = $state.$val." ";
       }
