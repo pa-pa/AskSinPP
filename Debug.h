@@ -29,38 +29,45 @@
 #else
 
 #ifdef ARDUINO
+
+// can be used to move the debug output to Serial1 (useful on STM32 BluePill)
+// must be defined in main .ino before any eader inclusion!
+#ifndef DSERIAL
+  #define DSERIAL Serial
+#endif
+
   template <class T>
-  inline void DPRINT(T str) { Serial.print(str); }
+  inline void DPRINT(T str) { DSERIAL.print(str); }
   template <class T>
   inline void DPRINTLN(T str) { DPRINT(str); DPRINT(F("\n")); }
   inline void DHEX(uint8_t b) {
-    if( b<0x10 ) Serial.print('0');
-    Serial.print(b,HEX);
+    if( b<0x10 ) DSERIAL.print('0');
+    DSERIAL.print(b,HEX);
   }
   inline void DHEX(uint16_t b) { 
-    if( b<0x10 ) Serial.print(F("000")); 
-    else if( b<0x100 ) Serial.print(F("00"));
-    else if( b<0x1000 ) Serial.print(F("0"));
-    Serial.print(b,HEX);
+    if( b<0x10 ) DSERIAL.print(F("000")); 
+    else if( b<0x100 ) DSERIAL.print(F("00"));
+    else if( b<0x1000 ) DSERIAL.print(F("0"));
+    DSERIAL.print(b,HEX);
   }
   inline void DHEX(uint32_t b) {
-    if( b<0x10 ) Serial.print(F("0000000"));
-    else if( b<0x100 ) Serial.print(F("000000"));
-    else if( b<0x1000 ) Serial.print(F("00000"));
-    else if( b<0x10000 ) Serial.print(F("0000"));
-    else if( b<0x100000 ) Serial.print(F("000"));
-    else if( b<0x1000000 ) Serial.print(F("00"));
-    else if( b<0x10000000 ) Serial.print(F("0"));
-    Serial.print(b,HEX);
+    if( b<0x10 ) DSERIAL.print(F("0000000"));
+    else if( b<0x100 ) DSERIAL.print(F("000000"));
+    else if( b<0x1000 ) DSERIAL.print(F("00000"));
+    else if( b<0x10000 ) DSERIAL.print(F("0000"));
+    else if( b<0x100000 ) DSERIAL.print(F("000"));
+    else if( b<0x1000000 ) DSERIAL.print(F("00"));
+    else if( b<0x10000000 ) DSERIAL.print(F("0"));
+    DSERIAL.print(b,HEX);
   }
 
   template<typename TYPE>
   inline void DDEC(TYPE b) {
-    Serial.print(b,DEC);
+    DSERIAL.print(b,DEC);
   }
 
   #define DINIT(baudrate,msg) \
-    Serial.begin(baudrate); \
+    DSERIAL.begin(baudrate); \
     DPRINTLN(msg);
 
   #define DDEVINFO(dev) \

@@ -23,19 +23,24 @@
 #include <sensors/Ds18b20.h>
 
 
-// we use a STM32
-// STM32 pin for the LED
+// we use a Pro Mini
+// Arduino pin for the LED
+// D4 == PIN 4 on Pro Mini
 #define LED_PIN LED_BUILTIN
-
-// STM32 pin for the config button
+// Arduino pin for the config button
+// B0 == PIN 8 on Pro Mini
 #define CONFIG_BUTTON_PIN PB12
 
 #define DIMMER1_PIN PB1
+#define DIMMER2_PIN PA3
 
 #define ENCODER1_SWITCH PB15
 #define ENCODER1_CLOCK  PB13
 #define ENCODER1_DATA   PB14
 
+#define ENCODER2_SWITCH PB10
+#define ENCODER2_CLOCK  PB9
+#define ENCODER2_DATA   PB8
 
 // number of available peers per channel
 #define PEERS_PER_CHANNEL 6
@@ -45,10 +50,10 @@ using namespace as;
 
 // define all device properties
 const struct DeviceInfo PROGMEM devinfo = {
-    // ID and Serial gets derived from STM32-UUID (see #define USE_HW_SERIAL)
+    // ID and Serial is derived from STM32-UUID (see #define USE_HW_SERIAL)
     {0x00,0x00,0x00},       // Device ID
     "0000000000",           // Device Serial
-    {0x00,0x67},            // Device Model
+    {0x01,0x08},            // Device Model: HM-LC-DW-WM dual white LED dimmer
     0x2C,                   // Firmware Version
     as::DeviceType::Dimmer, // Device Type
     {0x01,0x00}             // Info Bytes
@@ -64,10 +69,10 @@ typedef DimmerDevice<HalType,ChannelType,6,3> DimmerType;
 
 HalType hal;
 DimmerType sdev(devinfo,0x20);
-DimmerControl<HalType,DimmerType,PWM16<> > control(sdev);
+DualWhiteControl<HalType,DimmerType,PWM16<> > control(sdev);
 ConfigButton<DimmerType> cfgBtn(sdev);
 InternalEncoder<DimmerType> enc1(sdev,1);
-
+InternalEncoder<DimmerType> enc2(sdev,2);
 
 class TempSens : public Alarm {
   Ds18b20  temp;
@@ -106,33 +111,39 @@ void setup () {
   delay(5000);
   DINIT(57600,ASKSIN_PLUS_PLUS_IDENTIFIER);
   Wire.begin();
-  bool first = control.init(hal,DIMMER1_PIN);
+  bool first = control.init(hal,DIMMER1_PIN,DIMMER2_PIN,PA2,PA9,PA8);
   buttonISR(cfgBtn,CONFIG_BUTTON_PIN);
   buttonISR(enc1,ENCODER1_SWITCH);
   encoderISR(enc1,ENCODER1_CLOCK,ENCODER1_DATA);
-
+  buttonISR(enc2,ENCODER2_SWITCH);
+  encoderISR(enc2,ENCODER2_CLOCK,ENCODER2_DATA);
 
   if( first == true ) {
     sdev.channel(1).peer(enc1.peer());
     DimmerList3 l3 = sdev.channel(1).getList3(enc1.peer());
+    l3.lg().actionType(AS_CM_ACTIONTYPE_INACTIVE);
+
+    sdev.channel(2).peer(enc2.peer());
+    l3 = sdev.channel(2).getList3(enc2.peer());
     l3.lg().actionType(AS_CM_ACTIONTYPE_INACTIVE);
   }
 
   tempsensor.init();
 
   sdev.initDone();
-  sdev.led().invert(true);
-  
+
   // Adjust CC1101 frequency
   // hal.radio.initReg(CC1101_FREQ2, 0x21);
   // hal.radio.initReg(CC1101_FREQ1, 0x65);
   // hal.radio.initReg(CC1101_FREQ0, 0xE2);
 
+  sdev.led().invert(true);
   DDEVINFO(sdev);
 }
 
 void loop () {
   enc1.process<ChannelType>(sdev.channel(1));
+  enc2.process<ChannelType>(sdev.channel(2));
 
   bool worked = hal.runready();
   bool poll = sdev.pollRadio();
@@ -140,3 +151,4 @@ void loop () {
 //    hal.activity.savePower<Idle<true> >(hal);
   }
 }
+

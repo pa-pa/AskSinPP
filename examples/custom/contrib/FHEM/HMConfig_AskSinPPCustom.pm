@@ -206,6 +206,20 @@ $customMsg{"HB-IBUT-8"} = sub {
   return ();
 };
 
+# 2 channel blind actor
+$HMConfig::culHmModel{"F207"} = {name=>"HB-LC-BL1-FM-2",st=>'custom',cyc=>'',rxt=>'',lst=>'1,3:1p.2p',chn=>"Blind:1:2"};
+$HMConfig::culHmChanSets{"HB-LC-BL1-FM-200"}{fwUpdate} = "<filename>";
+$HMConfig::culHmChanSets{"HB-LC-BL1-FM-201"} = $HMConfig::culHmSubTypeSets{"blindActuator"};
+$HMConfig::culHmChanSets{"HB-LC-BL1-FM-202"} = $HMConfig::culHmSubTypeSets{"blindActuator"};
+#$HMConfig::culHmRegModel{"HB-LC-BL1-FM-2"}   = {};
+$HMConfig::culHmRegChan {"HB-LC-BL1-FM-201"} = $HMConfig::culHmRegType{blindActuator};
+$HMConfig::culHmRegChan {"HB-LC-BL1-FM-202"} = $HMConfig::culHmRegType{blindActuator};
+$customMsg{"HB-LC-BL1-FM-2"} = sub {
+  my ($msg,$target) = @_;
+  return $msg->processBlindStatus($target) if $msg->isStatus;
+  return ();
+};
+
 $HMConfig::culHmModel{"F9D2"} = {name=>"HB-UNI-Sen-LEV-US",st=>'custom',cyc=>'',rxt=>'c:l',lst=>'1',chn=>"Level:1:1"};
 $HMConfig::culHmChanSets{"HB-UNI-Sen-LEV-US00"}{fwUpdate} = "<filename>";
 $HMConfig::culHmChanSets{"HB-UNI-Sen-LEV-US01"} = {};
@@ -257,7 +271,9 @@ $customMsg{"HB-UNI-Sen-CAP-MOIST-T"} = sub {
   my @evtEt=();
   my $cnum = $msg->payloadByte(1) & 0x3f; # get channel from byte 1 of payload
   my $device = main::CUL_HM_id2Hash($msg->from);
-  push @evtEt,[$device,1,"battery:".(($msg->payloadByte(0) & 0x80)==0x80 ? "low" : "ok")];
+  my $batstat = "ok";
+  $batstat = "low" if (($msg->payloadByte(0) & 0x80)==0x80);
+  push @evtEt,[$device,1,"battery:".$batstat];
   my $channel = $main::modules{CUL_HM}{defptr}{$msg->channelId($cnum)};
   if( defined($channel) ) {
     my $temp = $msg->payloadWord(2);
@@ -280,6 +296,50 @@ $customMsg{"HB-UNI-Sen-CAP-MOIST-T"} = sub {
   }
   return @evtEt;
 };
+
+$HMConfig::culHmModel{"F33A"} = {name=>"HB-UNI-SenAct-8-8-SC",st=>'custom',cyc=>'',rxt=>'c:l',lst=>'1,3:1p.2p.3p.4p.5p.6p.7p.8p,4:9p.10p.11p.12p.13p.14p.15p.16p',chn=>"Sw:1:8,Sen:9:16"};
+$HMConfig::culHmChanSets{"HB-UNI-SenAct-8-8-SC00"}{fwUpdate} = "<filename>";
+$HMConfig::culHmChanSets{"HB-UNI-SenAct-8-8-SC01"} = $HMConfig::culHmSubTypeSets{"switch"};
+$HMConfig::culHmChanSets{"HB-UNI-SenAct-8-8-SC02"} = $HMConfig::culHmSubTypeSets{"switch"};
+$HMConfig::culHmChanSets{"HB-UNI-SenAct-8-8-SC03"} = $HMConfig::culHmSubTypeSets{"switch"};
+$HMConfig::culHmChanSets{"HB-UNI-SenAct-8-8-SC04"} = $HMConfig::culHmSubTypeSets{"switch"};
+$HMConfig::culHmChanSets{"HB-UNI-SenAct-8-8-SC05"} = $HMConfig::culHmSubTypeSets{"switch"};
+$HMConfig::culHmChanSets{"HB-UNI-SenAct-8-8-SC06"} = $HMConfig::culHmSubTypeSets{"switch"};
+$HMConfig::culHmChanSets{"HB-UNI-SenAct-8-8-SC07"} = $HMConfig::culHmSubTypeSets{"switch"};
+$HMConfig::culHmChanSets{"HB-UNI-SenAct-8-8-SC08"} = $HMConfig::culHmSubTypeSets{"switch"};
+$HMConfig::culHmChanSets{"HB-UNI-SenAct-8-8-SC09"} = $HMConfig::culHmSubTypeSets{"THSensor"};
+$HMConfig::culHmChanSets{"HB-UNI-SenAct-8-8-SC0A"} = $HMConfig::culHmSubTypeSets{"THSensor"};
+$HMConfig::culHmChanSets{"HB-UNI-SenAct-8-8-SC0B"} = $HMConfig::culHmSubTypeSets{"THSensor"};
+$HMConfig::culHmChanSets{"HB-UNI-SenAct-8-8-SC0C"} = $HMConfig::culHmSubTypeSets{"THSensor"};
+$HMConfig::culHmChanSets{"HB-UNI-SenAct-8-8-SC0D"} = $HMConfig::culHmSubTypeSets{"THSensor"};
+$HMConfig::culHmChanSets{"HB-UNI-SenAct-8-8-SC0E"} = $HMConfig::culHmSubTypeSets{"THSensor"};
+$HMConfig::culHmChanSets{"HB-UNI-SenAct-8-8-SC0F"} = $HMConfig::culHmSubTypeSets{"THSensor"};
+$HMConfig::culHmChanSets{"HB-UNI-SenAct-8-8-SC10"} = $HMConfig::culHmSubTypeSets{"THSensor"};
+$HMConfig::culHmRegModel{"HB-UNI-SenAct-8-8-SC"}   = { intKeyVisib=>1, cyclicInfoMsg=>1, sabotageMsg=>1 };
+$HMConfig::culHmRegChan {"HB-UNI-SenAct-8-8-SC01"} = $HMConfig::culHmRegType{switch};
+$HMConfig::culHmRegChan {"HB-UNI-SenAct-8-8-SC02"} = $HMConfig::culHmRegType{switch};
+$HMConfig::culHmRegChan {"HB-UNI-SenAct-8-8-SC03"} = $HMConfig::culHmRegType{switch};
+$HMConfig::culHmRegChan {"HB-UNI-SenAct-8-8-SC04"} = $HMConfig::culHmRegType{switch};
+$HMConfig::culHmRegChan {"HB-UNI-SenAct-8-8-SC05"} = $HMConfig::culHmRegType{switch};
+$HMConfig::culHmRegChan {"HB-UNI-SenAct-8-8-SC06"} = $HMConfig::culHmRegType{switch};
+$HMConfig::culHmRegChan {"HB-UNI-SenAct-8-8-SC07"} = $HMConfig::culHmRegType{switch};
+$HMConfig::culHmRegChan {"HB-UNI-SenAct-8-8-SC08"} = $HMConfig::culHmRegType{switch};
+$HMConfig::culHmRegChan {"HB-UNI-SenAct-8-8-SC09"} = $HMConfig::culHmRegType{threeStateSensor};
+$HMConfig::culHmRegChan {"HB-UNI-SenAct-8-8-SC0A"} = $HMConfig::culHmRegType{threeStateSensor};
+$HMConfig::culHmRegChan {"HB-UNI-SenAct-8-8-SC0B"} = $HMConfig::culHmRegType{threeStateSensor};
+$HMConfig::culHmRegChan {"HB-UNI-SenAct-8-8-SC0C"} = $HMConfig::culHmRegType{threeStateSensor};
+$HMConfig::culHmRegChan {"HB-UNI-SenAct-8-8-SC0D"} = $HMConfig::culHmRegType{threeStateSensor};
+$HMConfig::culHmRegChan {"HB-UNI-SenAct-8-8-SC0E"} = $HMConfig::culHmRegType{threeStateSensor};
+$HMConfig::culHmRegChan {"HB-UNI-SenAct-8-8-SC0F"} = $HMConfig::culHmRegType{threeStateSensor};
+$HMConfig::culHmRegChan {"HB-UNI-SenAct-8-8-SC10"} = $HMConfig::culHmRegType{threeStateSensor};
+$customMsg{"HB-UNI-SenAct-8-8-SC"} = sub {
+  my ($msg,$target) = @_;
+  my $channel = $msg->channel;
+  return $msg->processThreeState($target) if $channel > 8;
+  return $msg->processSwitchStatus($target) if $msg->isStatus;
+  return ();
+};
+
 
 $HMConfig::culHmModel{"F1D0"} = {name=>"HB-UNI-Sen-WEA",st=>'custom',cyc=>'',rxt=>'c:l',lst=>'1,4:1p',chn=>"Weather:1:1"};
 $HMConfig::culHmChanSets{"HB-UNI-Sen-WEA00"}{fwUpdate} = "<filename>";
@@ -324,7 +384,7 @@ $customMsg{"HB-UNI-Sen-WEA"} = sub {
     push @evtEt,[$channel,1,"uvindex:".$uvindex];
     push @evtEt,[$channel,1,"lightningdistance:".$lightningdistance*3];
     push @evtEt,[$channel,1,"lightningcounter:".$lightningcounter];
-    push @evtEt,[$channel,1,"state:T: ".($temp/10)." P: ".$pressure." H: ".$humidity];
+    push @evtEt,[$channel,1,"state:T: ".($temp/10)." P: ".($pressure/10)." H: ".$humidity];
   }
   else {
     Log 1,"No channel for ".$msg->channelId(1);

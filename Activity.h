@@ -78,8 +78,9 @@ public:
     uint32_t ticks = sysclock.next();
     if( sysclock.isready() == false ) {
       if( ticks == 0 || ticks > millis2ticks(15) ) {
-        hal.radio.setIdle();
+        hal.setIdle();
         uint32_t offset = doSleep(ticks);
+        hal.unsetIdle();
         sysclock.correct(offset);
         sysclock.enable();
       }
@@ -123,8 +124,9 @@ public:
     uint32_t ticks = sysclock.next();
     if( sysclock.isready() == false ) {
       if( ticks == 0 || ticks > millis2ticks(15) ) {
-        hal.radio.setIdle();
+        hal.setIdle();
         uint32_t offset = doSleep(ticks);
+        hal.unsetIdle();
         sysclock.correct(offset);
         sysclock.enable();
       }
@@ -182,13 +184,13 @@ public:
     }
     else {
       // ensure radio is up and running
-      hal.radio.wakeup();
+      hal.wakeup();
     }
   }
 
   template <class Hal>
   void sleepForever (Hal& hal) {
-    hal.radio.setIdle();
+    hal.setIdle();
     while( true ) {
 #if defined(ARDUINO_ARCH_AVR) && ! (defined(ARDUINO_AVR_ATmega32) || defined(__AVR_ATmega644__))
       LowPower.powerDown(SLEEP_FOREVER,ADC_OFF,BOD_OFF);
