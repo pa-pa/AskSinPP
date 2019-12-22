@@ -474,8 +474,8 @@ public:
 
   uint8_t txMindelay () const { return this->readRegister(CREG_TX_MINDELAY,0x7f,0,8); }
   bool txMindelay (uint8_t v) { return this->writeRegister(CREG_TX_MINDELAY,0x7f,0,v); }
-  bool txThresholdPercent () const { return this->readBit(CREG_TX_THRESHOLD_PERCENT,0,true); }
-  bool txThresholdPercent (bool v) const { return this->writeBit(CREG_TX_THRESHOLD_PERCENT,0,v); }
+  uint8_t txThresholdPercent () const { return this->readBit(CREG_TX_THRESHOLD_PERCENT,0,0); }
+  bool txThresholdPercent (uint8_t v) const { return this->writeBit(CREG_TX_THRESHOLD_PERCENT,0,v); }
   uint8_t waterUpperThreshold () const { return this->readRegister(CREG_WATER_UPPER_THRESHOLD_CH,0xff); }
   bool waterUpperThreshold (uint8_t v) const { return this->writeRegister(CREG_WATER_UPPER_THRESHOLD_CH,v); }
   
