@@ -18,7 +18,7 @@
 
 namespace as {
 
-void(* resetFunc) (void) = 0;
+extern void(* resetFunc) (void);
 
 #define REPLAY_NO   0
 #define REPLAY_ACK  1
