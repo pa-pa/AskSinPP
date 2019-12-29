@@ -18,7 +18,7 @@
 
 namespace as {
 
-void(* resetFunc) (void) = 0;
+extern void(* resetFunc) (void);
 
 #define REPLAY_NO   0
 #define REPLAY_ACK  1
@@ -141,13 +141,15 @@ public:
   }
 
   void reset () {
-    DPRINTLN(F("RESET"));
-    storage().reset();
+    if( getList0().localResetDisable() == false ) {
+      DPRINTLN(F("RESET"));
+      storage().reset();
 #if ARDUINO_ARCH_AVR
-    resetFunc();
+      resetFunc();
 #elif ARDUINO_ARCH_STM32F1
-    nvic_sys_reset();
+      nvic_sys_reset();
 #endif
+    }
   }
 
   void bootloader () {

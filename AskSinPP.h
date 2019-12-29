@@ -134,6 +134,24 @@ public:
     return value;
   }
 
+  static uint8_t readPin(uint8_t pinnr,uint8_t enablenr=0,uint8_t ms=0) {
+    uint8_t value=0;
+    if( enablenr != 0 ) {
+      digitalWrite(enablenr,HIGH);
+      if( ms != 0 ) {
+        _delay_ms(ms);
+      }
+    }
+    pinMode(pinnr,INPUT_PULLUP);
+    value = digitalRead(pinnr);
+    pinMode(pinnr,OUTPUT);
+    digitalWrite(pinnr,LOW);
+    if( enablenr != 0 ) {
+      digitalWrite(enablenr,LOW);
+    }
+    return value;
+  }
+
 };
 
 template <class StatusLed,class Battery,class Radio,class Buzzer=NoBuzzer>

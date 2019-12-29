@@ -16,14 +16,14 @@
 namespace as {
 
 template <class Sensor,class HALTYPE,class List0Type,class List1Type,class List4Type,int PEERCOUNT>
-class ThreeStateGenericChannel : public Channel<HALTYPE,List1Type,EmptyList,List4Type,PEERCOUNT,List0Type>, public Alarm {
+class StateGenericChannel : public Channel<HALTYPE,List1Type,EmptyList,List4Type,PEERCOUNT,List0Type>, public Alarm {
 
   class EventSender : public Alarm {
   public:
-    ThreeStateGenericChannel& channel;
+    StateGenericChannel& channel;
     uint8_t count, state;
 
-    EventSender (ThreeStateGenericChannel& c) : Alarm(0), channel(c), count(0), state(255) {}
+    EventSender (StateGenericChannel& c) : Alarm(0), channel(c), count(0), state(255) {}
     virtual ~EventSender () {}
     virtual void trigger (__attribute__ ((unused)) AlarmClock& clock) {
       SensorEventMsg& msg = (SensorEventMsg&)channel.device().message();
@@ -42,8 +42,8 @@ protected:
 public:
   typedef Channel<HALTYPE,List1Type,EmptyList,List4Type,PEERCOUNT,List0Type> BaseChannel;
 
-  ThreeStateGenericChannel () : BaseChannel(), Alarm(0), sender(*this), sabpin(0), sabotage(false) {}
-  virtual ~ThreeStateGenericChannel () {}
+  StateGenericChannel () : BaseChannel(), Alarm(0), sender(*this), sabpin(0), sabotage(false) {}
+  virtual ~StateGenericChannel () {}
 
   void setup(Device<HALTYPE,List0Type>* dev,uint8_t number,uint16_t addr) {
     BaseChannel::setup(dev,number,addr);
@@ -68,15 +68,6 @@ public:
     uint8_t flags = sabotage ? 0x07 << 1 : 0x00;
     flags |= this->device().battery().low() ? 0x80 : 0x00;
     return flags;
-  }
-
-  uint8_t readPin(uint8_t pinnr) {
-    uint8_t value=0;
-    pinMode(pinnr,INPUT_PULLUP);
-    value = digitalRead(pinnr);
-    pinMode(pinnr,OUTPUT);
-    digitalWrite(pinnr,LOW);
-    return value;
   }
 
   void trigger (__attribute__ ((unused)) AlarmClock& clock)  {
@@ -120,7 +111,7 @@ public:
       }
     }
     if( sabpin != 0 ) {
-      bool sabstate = (readPin(sabpin) == SABOTAGE_ACTIVE_STATE);
+      bool sabstate = (AskSinBase::readPin(sabpin) == SABOTAGE_ACTIVE_STATE);
       if( sabotage != sabstate && this->device().getList0().sabotageMsg() == true ) {
         sabotage = sabstate;
         this->changed(true); // trigger StatusInfoMessage to central
@@ -128,6 +119,10 @@ public:
     }
   }
 };
+
+// alias for old code
+template <class Sensor,class HALTYPE,class List0Type,class List1Type,class List4Type,int PEERCOUNT>
+using ThreeStateGenericChannel = StateGenericChannel<Sensor,HALTYPE,List0Type,List1Type,List4Type,PEERCOUNT>;
 
 class TwoPinPosition : public Position {
   // pin mapping can be changed by bootloader config data
@@ -148,25 +143,16 @@ public:
   }
 
   void measure (__attribute__((unused)) bool async=false) {
-    uint8_t pinstate = readPin(sens2) << 1 | readPin(sens1);
+    uint8_t pinstate = AskSinBase::readPin(sens2) << 1 | AskSinBase::readPin(sens1);
     _position = posmap[pinstate & 0x03];
-  }
-
-  uint8_t readPin(uint8_t pinnr) {
-    uint8_t value=0;
-    pinMode(pinnr,INPUT_PULLUP);
-    value = digitalRead(pinnr);
-    pinMode(pinnr,OUTPUT);
-    digitalWrite(pinnr,LOW);
-    return value;
   }
 };
 
 
 template <class HALTYPE,class List0Type,class List1Type,class List4Type,int PEERCOUNT>
-class ThreeStateChannel : public ThreeStateGenericChannel<TwoPinPosition,HALTYPE,List0Type,List1Type,List4Type,PEERCOUNT> {
+class ThreeStateChannel : public StateGenericChannel<TwoPinPosition,HALTYPE,List0Type,List1Type,List4Type,PEERCOUNT> {
 public:
-  typedef ThreeStateGenericChannel<TwoPinPosition,HALTYPE,List0Type,List1Type,List4Type,PEERCOUNT> BaseChannel;
+  typedef StateGenericChannel<TwoPinPosition,HALTYPE,List0Type,List1Type,List4Type,PEERCOUNT> BaseChannel;
 
   ThreeStateChannel () : BaseChannel() {};
   ~ThreeStateChannel () {}
@@ -196,11 +182,11 @@ public:
 
 #define DEFCYCLETIME seconds2ticks(60UL*60*20)
 template<class HalType,class ChannelType,int ChannelCount,class List0Type,uint32_t CycleTime=DEFCYCLETIME> // at least one message per day
-class ThreeStateDevice : public MultiChannelDevice<HalType,ChannelType,ChannelCount,List0Type> {
+class StateDevice : public MultiChannelDevice<HalType,ChannelType,ChannelCount,List0Type> {
   class CycleInfoAlarm : public Alarm {
-    ThreeStateDevice& dev;
+    StateDevice& dev;
   public:
-    CycleInfoAlarm (ThreeStateDevice& d) : Alarm (CycleTime), dev(d) {}
+    CycleInfoAlarm (StateDevice& d) : Alarm (CycleTime), dev(d) {}
     virtual ~CycleInfoAlarm () {}
 
     void trigger (AlarmClock& clock)  {
@@ -213,8 +199,8 @@ class ThreeStateDevice : public MultiChannelDevice<HalType,ChannelType,ChannelCo
   } cycle;
 public:
   typedef MultiChannelDevice<HalType,ChannelType,ChannelCount,List0Type> DevType;
-  ThreeStateDevice(const DeviceInfo& info,uint16_t addr) : DevType(info,addr), cycle(*this) {}
-  virtual ~ThreeStateDevice () {}
+  StateDevice(const DeviceInfo& info,uint16_t addr) : DevType(info,addr), cycle(*this) {}
+  virtual ~StateDevice () {}
 
   virtual void configChanged () {
     // activate cycle info message
@@ -230,6 +216,10 @@ public:
     }
   }
 };
+
+// alias for old code
+template<class HalType,class ChannelType,int ChannelCount,class List0Type,uint32_t CycleTime=DEFCYCLETIME>
+using ThreeStateDevice = StateDevice<HalType,ChannelType,ChannelCount,List0Type,CycleTime>;
 
 }
 
