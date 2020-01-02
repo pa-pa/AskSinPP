@@ -472,13 +472,13 @@ public:
       CC1101_MDMCFG2,   0x03,   //  0x02    30 of 32 bits of sync word need to match
     //CC1101_MDMCFG1,   0x22,   //  0x22
     //CC1101_MDMCFG0,   0xF8,   //  0xF8
-      CC1101_DEVIATN,   0x34,   //  0x47    devaition = 19.042969 kHz
+      CC1101_DEVIATN,   0x34,   //  0x47    deviation = 19.042969 kHz
     //CC1101_MCSM2,     0x07,   //  0x07
-      CC1101_MCSM1,     0x03,   //  0x30    always clear channel indication, RX after TX
+      CC1101_MCSM1,     0x33,   //  0x30    CCA, RX after TX
       CC1101_MCSM0,     0x18,   //  0x04    auto cal when going from IDLE to RX/TX, XOSC stable count = 64
       CC1101_FOCCFG,    0x16,   //  0x36    don't freeze freq offset compensation
     //CC1101_BSCFG,     0x6C,   //  0x6C
-      CC1101_AGCCTRL2,  0x43,   //  0x03    forbit highst gain setting for DVGA
+      CC1101_AGCCTRL2,  0x43,   //  0x03    forbid highest gain setting for DVGA
     //CC1101_AGCCTRL1,  0x40,   //  0x40
     //CC1101_AGCCTRL0,  0x91,   //  0x91
       CC1101_WOREVT1,   0x2f,   //  0x87    see next line
