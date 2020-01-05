@@ -22,6 +22,7 @@
 #define SENSOR_BME280
 //#define SENSOR_DHT22
 //#define SENSOR_SHT10
+//#define SENSOR_SHT21
 //#define SENSOR_SHT31
 //#define SENSOR_SI7021
 
@@ -73,6 +74,10 @@ typedef Dht<4,DHT22> SensorType; // <DataPin, Type>
 #ifdef SENSOR_SHT10
 #include <sensors/Sht10.h>
 typedef Sht10<A4, A5> SensorType; // <DataPin, ClockPin>
+#endif
+#ifdef SENSOR_SHT21
+#include <sensors/Sht21.h>
+typedef Sht21<> SensorType; // I2C
 #endif
 #ifdef SENSOR_SHT31
 #include <sensors/Sht31.h>
