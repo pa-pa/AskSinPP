@@ -62,7 +62,7 @@ using namespace as;
 
 // define all device properties
 const struct DeviceInfo PROGMEM devinfo = {
-    // ID and Serial is derived from STM32-UUID (see #define USE_HW_SERIAL)
+    // ID and last 6 digits of Serial are derived from STM32-UUID (see #define USE_HW_SERIAL)
     {0x00,0x00,0x00},       // Device ID
     "0000000000",           // Device Serial
     {0xF5,0x11},            // Device Model: HM-LC-Dim5PWM-CV
@@ -137,8 +137,10 @@ void setup () {
   encoderISR(enc2,ENCODER2_CLOCK,ENCODER2_DATA);
 
   if( first == true ) {
+    DimmerList3 l3;
+    
     sdev.channel(1).peer(enc1.peer());
-    DimmerList3 l3 = sdev.channel(1).getList3(enc1.peer());
+    l3 = sdev.channel(1).getList3(enc1.peer());
     l3.lg().actionType(AS_CM_ACTIONTYPE_INACTIVE);
 
     sdev.channel(2).peer(enc2.peer());
@@ -146,19 +148,22 @@ void setup () {
     l3.lg().actionType(AS_CM_ACTIONTYPE_INACTIVE);
 
     sdev.channel(3).peer(btn3.peer());
+    l3 = sdev.channel(3).getList3(btn3.peer());
+    l3.lg().actionType(AS_CM_ACTIONTYPE_INACTIVE);
+
     sdev.channel(4).peer(btn4.peer());
+    l3 = sdev.channel(4).getList3(btn4.peer());
+    l3.lg().actionType(AS_CM_ACTIONTYPE_INACTIVE);
+
     sdev.channel(5).peer(btn5.peer());
+    l3 = sdev.channel(5).getList3(btn5.peer());
+    l3.lg().actionType(AS_CM_ACTIONTYPE_INACTIVE);
   }
 
   tempsensor.init();
 
   sdev.initDone();
   sdev.led().invert(true);
-  
-  // Adjust CC1101 frequency
-  // hal.radio.initReg(CC1101_FREQ2, 0x21);
-  // hal.radio.initReg(CC1101_FREQ1, 0x65);
-  // hal.radio.initReg(CC1101_FREQ0, 0xE2);
 
   DDEVINFO(sdev);
 }
