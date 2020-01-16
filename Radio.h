@@ -275,7 +275,13 @@ public:
   }
   
   void waitMiso () {
+#ifdef ARDUINO_ARCH_STM32F1
+    while(digitalRead(SPI.misoPin()));
+#elif defined (PIN_SPI_MISO)
+    while(digitalRead(PIN_SPI_MISO));
+#else
     _delay_us(10);
+#endif
   }
 
   uint8_t send (uint8_t data) {
