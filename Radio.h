@@ -554,7 +554,16 @@ public:
     return (state & 0x01<<6) == (0x01<<6);
   }
 
+  void pollRSSI() {
+    calculateRSSI(spi.readReg(CC1101_RSSI, CC1101_STATUS));         // read RSSI from STATUS register
+  }
+
 protected:
+
+  void calculateRSSI(uint8_t rsshex) {
+    rss = -1 * ((((int16_t)rsshex-((int16_t)rsshex >= 128 ? 256 : 0))/2)-74);
+  }
+
   uint8_t sndData(uint8_t *buf, uint8_t size, uint8_t burst) {
     // Going from RX to TX does not work if there was a reception less than 0.5
     // sec ago. Due to CCA? Using IDLE helps to shorten this period(?)
@@ -608,8 +617,7 @@ protected:
       // check that packet fits into the buffer
       if (packetBytes <= size) {
         spi.readBurst(buf, CC1101_RXFIFO, packetBytes);          // read data packet
-        uint8_t rsshex = spi.readReg(CC1101_RXFIFO, CC1101_CONFIG);         // read RSSI
-        rss = -1 * ((((int16_t)rsshex-((int16_t)rsshex >= 128 ? 256 : 0))/2)-74);
+        calculateRSSI(spi.readReg(CC1101_RXFIFO, CC1101_CONFIG)); // read RSSI from RXFIFO
         uint8_t val = spi.readReg(CC1101_RXFIFO, CC1101_CONFIG); // read LQI and CRC_OK
         // lqi = val & 0x7F;
         if( (val & 0x80) == 0x80 ) { // check crc_ok
