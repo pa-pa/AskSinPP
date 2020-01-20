@@ -8,9 +8,6 @@
 
 #include <Sensors.h>
 #include <Wire.h>
-#ifdef ARDUINO_ARCH_STM32F1
-  typedef HardWire TwoWire;
-#endif
 #include <BH1750.h>
 
 namespace as {
