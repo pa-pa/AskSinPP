@@ -26,7 +26,7 @@ static const uint8_t zctable[45] PROGMEM = {
 	 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40,
 	 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 58, 75 
 };
-template<uint8_t STEPS=200>
+template<uint8_t STEPS=200, bool LINEAR=false, bool INVERSE=false>
 class PWM8 {
   uint8_t  pin;
 public:
@@ -39,9 +39,17 @@ public:
   }
   void set(uint8_t value) {
     uint8_t pwm = 0;
-    if( value > 0 ) {
-      uint8_t offset = value*31/STEPS;
-      pwm = pgm_read_word (& pwmtable[offset]);
+    if(LINEAR) {
+      if(INVERSE) {
+        pwm = map(value, 0, STEPS, 255, 0); // https://www.arduino.cc/reference/en/language/functions/math/map/
+      } else {
+        pwm = map(value, 0, STEPS, 0, 255);
+      }
+    } else {
+      if( value > 0 ) {
+        uint8_t offset = value*31/STEPS;
+        pwm = pgm_read_word (& pwmtable[offset]);
+      }
     }
     analogWrite(pin,pwm);
   }
