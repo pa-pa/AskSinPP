@@ -112,7 +112,7 @@ public:
     if (iTime == 0x00) return 0x00;
     if (iTime == 0xffff) return 0xffffffff;
 
-    uint8_t tByte;
+    uint32_t tByte;
     if ((iTime & 0x1F) != 0) {
       tByte = 2;
       for (uint8_t i = 1; i < (iTime & 0x1F); i++) tByte *= 2;
