@@ -77,8 +77,21 @@ protected:
   void jumpToTarget(const PeerList& lst) {
     uint8_t next = getJumpTarget(state,lst);
     if( next != AS_CM_JT_NONE ) {
-      // get delay
+      // get delay for the next state
       uint32_t dly = getDelayForState(next,lst);
+      // on/off time mode / absolute / minimal
+      if( next == state && (next == AS_CM_JT_ON || next == AS_CM_JT_OFF) && dly < DELAY_INFINITE) {
+        bool minimal = next == AS_CM_JT_ON ? lst.onTimeMode() : lst.offTimeMode();
+        // if minimal is set - we jump out if the new delay is shorter
+        if( minimal == true ) {
+          // DPRINT("Minimal");DDECLN(dly);
+          uint32_t curdly = sysclock.get(*this); // 0 means DELAY_INFINITE
+          if( curdly == 0 || curdly > dly ) {
+            // DPRINTLN(F("Skip short Delay"));
+            return;
+          }
+        }
+      }
       // switch to next
       setState(next,dly,lst);
     }
