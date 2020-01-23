@@ -665,7 +665,7 @@ class Radio : public HWRADIO {
         // }
       }
       if( SENDDELAY > 0) {
-        set(millis2ticks(100));
+        set(millis2ticks(SENDDELAY));
         // signal new wait cycle
         wait = true;
         // add to system clock
@@ -673,7 +673,7 @@ class Radio : public HWRADIO {
       }
     }
 
-    void setTimeout (uint16_t millis=100) {
+    void setTimeout (uint16_t millis=SENDDELAY) {
       // cancel possible old timeout
       sysclock.cancel(*this);
       // set to 100ms
