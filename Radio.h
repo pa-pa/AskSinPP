@@ -692,7 +692,7 @@ class Radio : public HWRADIO {
 
 public:
   //  this will delay next send by given millis
-  void setSendTimeout(uint16_t millis) {
+  void setSendTimeout(uint16_t millis=SENDDELAY) {
     timeout.setTimeout(millis);
   }
   // use the radio timer to wait given millis

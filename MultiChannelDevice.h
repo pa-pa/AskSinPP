@@ -219,7 +219,7 @@ public:
      this->getDeviceID(devid);
      if( msg.to() == devid || this->isBroadcastMsg(msg) ) {
        // we got a message - we do not answer before 100ms
-       this->radio().setSendTimeout(100);
+       this->radio().setSendTimeout(); // use default value from radio
        DPRINT(F("-> "));
        msg.dump();
        // ignore repeated messages
