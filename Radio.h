@@ -480,7 +480,11 @@ public:
     //CC1101_MDMCFG0,   0xF8,   //  0xF8
       CC1101_DEVIATN,   0x34,   //  0x47    deviation = 19.042969 kHz
     //CC1101_MCSM2,     0x07,   //  0x07
+#ifdef USE_CCA
       CC1101_MCSM1,     0x33,   //  0x30    CCA, RX after TX
+#else
+      CC1101_MCSM1,     0x03,   //  0x30    always clear channel indication, RX after TX
+#endif
       CC1101_MCSM0,     0x18,   //  0x04    auto cal when going from IDLE to RX/TX, XOSC stable count = 64
       CC1101_FOCCFG,    0x16,   //  0x36    don't freeze freq offset compensation
     //CC1101_BSCFG,     0x6C,   //  0x6C
