@@ -94,6 +94,7 @@ script:
   - buildSketch HB-IBUT-8
   - buildSketch HB-RC-3-ENC
   - buildSketch HB-SW2-SENS
+  - buildSketch HB-UW-Sen-THPL
   - export SKETCHPATH=$HOME/Beispiel_AskSinPP/examples
   - buildSketch HB-LC-Bl1PBU-FM
   - buildSketch HB-LC-SW12-FM
