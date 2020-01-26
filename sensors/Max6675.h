@@ -15,7 +15,7 @@ class MAX6675 : public Temperature {
   private:
     uint8_t spiread() {
       uint8_t d = 0;
-      for (uint8_t i = 7; i >= 0; i--) {
+      for (int i = 7; i >= 0; i--) {
         digitalWrite(SCK, LOW);
         _delay_ms(1);
         if (digitalRead(SO)) {
