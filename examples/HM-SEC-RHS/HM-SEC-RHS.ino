@@ -158,7 +158,7 @@ public:
   }
   void measure (__attribute__((unused)) bool async=false) {
     TwoPinPosition::measure(async);
-    if( _position == State::PosA && readPin(pin3) == HIGH) {
+    if( _position == State::PosA && AskSinBase::readPin(pin3) == HIGH) {
       _position = State::PosB;
     }
   }
@@ -205,11 +205,11 @@ public:
 RHSType sdev(devinfo,0x20);
 ConfigButton<RHSType> cfgBtn(sdev);
 
+const uint8_t posmap[4] = {Position::State::PosB,Position::State::PosC,Position::State::PosA,Position::State::PosB};
 void setup () {
   DINIT(57600,ASKSIN_PLUS_PLUS_IDENTIFIER);
   sdev.init(hal);
   buttonISR(cfgBtn,CONFIG_BUTTON_PIN);
-  const uint8_t posmap[4] = {Position::State::PosB,Position::State::PosC,Position::State::PosA,Position::State::PosB};
 #ifdef SENS3_PIN
   sdev.channel(1).init(SENS1_PIN,SENS2_PIN,SENS3_PIN,SABOTAGE_PIN,posmap);
 #else

@@ -166,23 +166,29 @@ sub processMotion {
   my @evtEt=();
   my $channel = $main::modules{CUL_HM}{defptr}{$self->channelId};
   if( defined($channel) ) {
-    my $cnt = $self->payloadByte(1);
-    my $bright = $self->payloadByte(2);
-    my $next = $self->payloadByte(3);
-    if( $next ) {
-      my $stamp =  ::gettimeofday(); # take reception time;
-      $next = (15 << ($next >> 4) - 4); # strange mapping of literals
-      main::RemoveInternalTimer($channel->{NAME}.":motionCheck");
-      main::InternalTimer($stamp+$next+2,"CUL_HM_motionCheck", $channel->{NAME}.":motionCheck", 0);
-      $channel->{helper}{moStart} = $stamp if (!defined $channel->{helper}{moStart});
-    }
-    else {
-      $next = "none";
-    }
-    push @evtEt,[$channel,1,"state:motion"];
-    push @evtEt,[$channel,1,"motion:on$target"];
-    push @evtEt,[$channel,1,"motionCount:$cnt"."_next:$next"."s"];
-    push @evtEt,[$channel,1,"brightness:$bright"];
+  	if( $self->isStatus ) {
+      my $bright = $self->payloadByte(2);
+      push @evtEt,[$channel,1,"brightness:$bright"];
+  	}
+  	if( $self->isSensor ) {
+      my $cnt = $self->payloadByte(1);
+      my $bright = $self->payloadByte(2);
+      my $next = $self->payloadByte(3);
+      if( $next ) {
+        my $stamp =  ::gettimeofday(); # take reception time;
+        $next = (15 << ($next >> 4) - 4); # strange mapping of literals
+        main::RemoveInternalTimer($channel->{NAME}.":motionCheck");
+        main::InternalTimer($stamp+$next+2,"CUL_HM_motionCheck", $channel->{NAME}.":motionCheck", 0);
+        $channel->{helper}{moStart} = $stamp if (!defined $channel->{helper}{moStart});
+      }
+      else {
+        $next = "none";
+      }
+      push @evtEt,[$channel,1,"state:motion"];
+      push @evtEt,[$channel,1,"motion:on$target"];
+      push @evtEt,[$channel,1,"motionCount:$cnt"."_next:$next"."s"];
+      push @evtEt,[$channel,1,"brightness:$bright"];
+  	}
   }
   else {
     main::Log 1,"No object for ".$self->channelId;

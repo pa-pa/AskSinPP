@@ -275,7 +275,13 @@ public:
   }
   
   void waitMiso () {
+#ifdef ARDUINO_ARCH_STM32F1
+    while(digitalRead(SPI.misoPin()));
+#elif defined (PIN_SPI_MISO)
+    while(digitalRead(PIN_SPI_MISO));
+#else
     _delay_us(10);
+#endif
   }
 
   uint8_t send (uint8_t data) {
@@ -472,13 +478,17 @@ public:
       CC1101_MDMCFG2,   0x03,   //  0x02    30 of 32 bits of sync word need to match
     //CC1101_MDMCFG1,   0x22,   //  0x22
     //CC1101_MDMCFG0,   0xF8,   //  0xF8
-      CC1101_DEVIATN,   0x34,   //  0x47    devaition = 19.042969 kHz
+      CC1101_DEVIATN,   0x34,   //  0x47    deviation = 19.042969 kHz
     //CC1101_MCSM2,     0x07,   //  0x07
+#ifdef USE_CCA
+      CC1101_MCSM1,     0x33,   //  0x30    CCA, RX after TX
+#else
       CC1101_MCSM1,     0x03,   //  0x30    always clear channel indication, RX after TX
+#endif
       CC1101_MCSM0,     0x18,   //  0x04    auto cal when going from IDLE to RX/TX, XOSC stable count = 64
       CC1101_FOCCFG,    0x16,   //  0x36    don't freeze freq offset compensation
     //CC1101_BSCFG,     0x6C,   //  0x6C
-      CC1101_AGCCTRL2,  0x43,   //  0x03    forbit highst gain setting for DVGA
+      CC1101_AGCCTRL2,  0x43,   //  0x03    forbid highest gain setting for DVGA
     //CC1101_AGCCTRL1,  0x40,   //  0x40
     //CC1101_AGCCTRL0,  0x91,   //  0x91
       CC1101_WOREVT1,   0x2f,   //  0x87    see next line
@@ -548,7 +558,16 @@ public:
     return (state & 0x01<<6) == (0x01<<6);
   }
 
+  void pollRSSI() {
+    calculateRSSI(spi.readReg(CC1101_RSSI, CC1101_STATUS));         // read RSSI from STATUS register
+  }
+
 protected:
+
+  void calculateRSSI(uint8_t rsshex) {
+    rss = -1 * ((((int16_t)rsshex-((int16_t)rsshex >= 128 ? 256 : 0))/2)-74);
+  }
+
   uint8_t sndData(uint8_t *buf, uint8_t size, uint8_t burst) {
     // Going from RX to TX does not work if there was a reception less than 0.5
     // sec ago. Due to CCA? Using IDLE helps to shorten this period(?)
@@ -602,8 +621,7 @@ protected:
       // check that packet fits into the buffer
       if (packetBytes <= size) {
         spi.readBurst(buf, CC1101_RXFIFO, packetBytes);          // read data packet
-        uint8_t rsshex = spi.readReg(CC1101_RXFIFO, CC1101_CONFIG);         // read RSSI
-        rss = -1 * ((((int16_t)rsshex-((int16_t)rsshex >= 128 ? 256 : 0))/2)-74);
+        calculateRSSI(spi.readReg(CC1101_RXFIFO, CC1101_CONFIG)); // read RSSI from RXFIFO
         uint8_t val = spi.readReg(CC1101_RXFIFO, CC1101_CONFIG); // read LQI and CRC_OK
         // lqi = val & 0x7F;
         if( (val & 0x80) == 0x80 ) { // check crc_ok
@@ -651,7 +669,7 @@ class Radio : public HWRADIO {
         // }
       }
       if( SENDDELAY > 0) {
-        set(millis2ticks(100));
+        set(millis2ticks(SENDDELAY));
         // signal new wait cycle
         wait = true;
         // add to system clock
@@ -659,7 +677,7 @@ class Radio : public HWRADIO {
       }
     }
 
-    void setTimeout (uint16_t millis=100) {
+    void setTimeout (uint16_t millis=SENDDELAY) {
       // cancel possible old timeout
       sysclock.cancel(*this);
       // set to 100ms
@@ -678,7 +696,7 @@ class Radio : public HWRADIO {
 
 public:
   //  this will delay next send by given millis
-  void setSendTimeout(uint16_t millis) {
+  void setSendTimeout(uint16_t millis=SENDDELAY) {
     timeout.setTimeout(millis);
   }
   // use the radio timer to wait given millis

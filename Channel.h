@@ -278,6 +278,11 @@ public:
     return StateMachine::status();
   }
 
+  void status (uint8_t stat, uint16_t delay) {
+    StateMachine::status(stat,delay);
+  }
+
+
   void stop () {
     StateMachine::stop();
   }

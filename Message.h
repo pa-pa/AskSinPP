@@ -108,6 +108,18 @@ public:
 	  len++;
 	}
 
+  void append (uint16_t data) {
+    uint8_t* ptr = buffer() + len;
+    *ptr = (uint8_t)(data >> 8);
+    *(ptr+1) = (uint8_t)(data & 0xff);
+    len += 2;
+  }
+
+  void append (uint32_t data) {
+    append((uint16_t)(data >> 16));
+    append((uint16_t)(data & 0xffff));
+  }
+
   void append (void* data,uint8_t l) {
     memcpy(buffer()+len,data,l);
     len += l;

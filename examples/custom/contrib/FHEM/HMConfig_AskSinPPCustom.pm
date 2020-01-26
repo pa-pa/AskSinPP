@@ -220,6 +220,28 @@ $customMsg{"HB-LC-BL1-FM-2"} = sub {
   return ();
 };
 
+# 4 channel switch actor with extra motion sensor
+$HMConfig::culHmModel{"F208"} = {name=>"HB-LC-SW4-MDIR",st=>'custom',cyc=>'',rxt=>'',lst=>'1,3:1p.2p.3p.4p,4:5p',chn=>"Sw:1:4,Motion:5:5"};
+$HMConfig::culHmChanSets{"HB-LC-SW4-MDIR00"}{fwUpdate} = "<filename>";
+$HMConfig::culHmChanSets{"HB-LC-SW4-MDIR01"} = $HMConfig::culHmSubTypeSets{"switch"};
+$HMConfig::culHmChanSets{"HB-LC-SW4-MDIR02"} = $HMConfig::culHmSubTypeSets{"switch"};
+$HMConfig::culHmChanSets{"HB-LC-SW4-MDIR03"} = $HMConfig::culHmSubTypeSets{"switch"};
+$HMConfig::culHmChanSets{"HB-LC-SW4-MDIR04"} = $HMConfig::culHmSubTypeSets{"switch"};
+$HMConfig::culHmChanSets{"HB-LC-SW4-MDIR05"} = $HMConfig::culHmSubTypeSets{"THSensor"};
+#$HMConfig::culHmRegModel{"HB-LC-SW4-MDIR"}   = {};
+$HMConfig::culHmRegChan {"HB-LC-SW4-MDIR01"} = $HMConfig::culHmRegType{switch};
+$HMConfig::culHmRegChan {"HB-LC-SW4-MDIR02"} = $HMConfig::culHmRegType{switch};
+$HMConfig::culHmRegChan {"HB-LC-SW4-MDIR03"} = $HMConfig::culHmRegType{switch};
+$HMConfig::culHmRegChan {"HB-LC-SW4-MDIR04"} = $HMConfig::culHmRegType{switch};
+$HMConfig::culHmRegChan {"HB-LC-SW4-MDIR05"} = $HMConfig::culHmRegType{motionDetector};
+$customMsg{"HB-LC-SW4-MDIR"} = sub {
+  my ($msg,$target) = @_;
+  my $channel = $msg->channel;
+  return $msg->processMotion($target) if $channel == 5;
+  return $msg->processSwitchStatus($target) if $msg->isStatus;
+  return ();
+};
+
 $HMConfig::culHmModel{"F9D2"} = {name=>"HB-UNI-Sen-LEV-US",st=>'custom',cyc=>'',rxt=>'c:l',lst=>'1',chn=>"Level:1:1"};
 $HMConfig::culHmChanSets{"HB-UNI-Sen-LEV-US00"}{fwUpdate} = "<filename>";
 $HMConfig::culHmChanSets{"HB-UNI-Sen-LEV-US01"} = {};

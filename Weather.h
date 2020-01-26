@@ -25,7 +25,7 @@ public:
 };
 
 template <class HAL,class CLOCKTYPE,class SENSORSTYPE,int PEERS_PER_CHANNEL,int EXTRADELAY,class LIST0,class LIST1=List1,class LIST4=List4>
-class WeatherChannel : public Channel<HAL,LIST1,EmptyList,LIST4,PEERS_PER_CHANNEL,LIST0>, RTCAlarm {
+class WeatherChannel : public Channel<HAL,LIST1,EmptyList,LIST4,PEERS_PER_CHANNEL,LIST0>, protected RTCAlarm {
 
 private:
   SENSORSTYPE sens;

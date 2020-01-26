@@ -332,13 +332,6 @@ public:
   }
 };
 
-
-ISR(ADC_vect) {
-  if( __gb_BatIrq != 0 ) {
-    __gb_BatIrq();
-  }
-}
-
 #endif
 
 }

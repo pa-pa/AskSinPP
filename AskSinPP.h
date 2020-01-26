@@ -6,7 +6,7 @@
 #ifndef __ASKSINPP_h__
 #define __ASKSINPP_h__
 
-#define ASKSIN_PLUS_PLUS_VERSION "4.1.1"
+#define ASKSIN_PLUS_PLUS_VERSION "4.1.2"
 
 #define ASKSIN_PLUS_PLUS_IDENTIFIER F("AskSin++ V" ASKSIN_PLUS_PLUS_VERSION " (" __DATE__ " " __TIME__ ")")
 
@@ -113,7 +113,7 @@ public:
     if (iTime == 0x00) return 0x00;
     if (iTime == 0xffff) return 0xffffffff;
 
-    uint8_t tByte;
+    uint32_t tByte;
     if ((iTime & 0x1F) != 0) {
       tByte = 2;
       for (uint8_t i = 1; i < (iTime & 0x1F); i++) tByte *= 2;
@@ -131,6 +131,24 @@ public:
 
     DDEC(value / 1000);DPRINT(".");DDECLN(value % 1000);
 
+    return value;
+  }
+
+  static uint8_t readPin(uint8_t pinnr,uint8_t enablenr=0,uint8_t ms=0) {
+    uint8_t value=0;
+    pinMode(pinnr,INPUT_PULLUP);
+    if( enablenr != 0 ) {
+      digitalWrite(enablenr,HIGH);
+      if( ms != 0 ) {
+        _delay_ms(ms);
+      }
+    }
+    value = digitalRead(pinnr);
+    pinMode(pinnr,OUTPUT);
+    digitalWrite(pinnr,LOW);
+    if( enablenr != 0 ) {
+      digitalWrite(enablenr,LOW);
+    }
     return value;
   }
 

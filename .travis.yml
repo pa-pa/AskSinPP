@@ -55,7 +55,7 @@ install:
 # setup arduino IDE
   - arduino --pref "update.check=false" --save-prefs
   - arduino --pref "boardsmanager.additional.urls=http://dan.drown.org/stm32duino/package_STM32duino_index.json,https://mcudude.github.io/MightyCore/package_MCUdude_MightyCore_index.json" --save-prefs
-  - arduino --install-boards stm32duino:STM32F1:2017.9.5
+  - arduino --install-boards stm32duino:STM32F1:2019.10.9
 #  - arduino --install-boards stm32duino:STM32F1:2019.3.31
   - arduino --install-boards MightyCore:avr:2.0.1
   - echo "compiler.cpp.extra_flags=-DUSE_AES -DHM_DEF_KEY=0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x0a,0x0b,0x0c,0x0d,0x0e,0x0f,0x10 -DHM_DEF_KEY_INDEX=0" >$HOME/arduino-ide/hardware/arduino/avr/platform.local.txt
@@ -94,6 +94,7 @@ script:
   - buildSketch HB-IBUT-8
   - buildSketch HB-RC-3-ENC
   - buildSketch HB-SW2-SENS
+  - buildSketch HB-UW-Sen-THPL
   - export SKETCHPATH=$HOME/Beispiel_AskSinPP/examples
   - buildSketch HB-LC-Bl1PBU-FM
   - buildSketch HB-LC-SW12-FM

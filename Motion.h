@@ -76,7 +76,7 @@ class MotionChannel : public Channel<HalType,MotionList1,EmptyList,DefList4,Peer
 
   // return timer ticks
   uint32_t getMinInterval () {
-    switch( ChannelType::getList1().minInterval() ) {
+    switch( this->getList1().minInterval() ) {
       case 0: return seconds2ticks(15);
       case 1: return seconds2ticks(30);
       case 2: return seconds2ticks(60);
@@ -118,12 +118,12 @@ public:
   }
 
   uint8_t flags () const {
-    return ChannelType::device().battery().low() ? 0x80 : 0x00;
+    return this->device().battery().low() ? 0x80 : 0x00;
   }
 
   void sendState () {
     pirInterruptOff();
-    typename ChannelType::DeviceType& d = ChannelType::device();
+    typename ChannelType::DeviceType& d = this->device();
     d.sendInfoActuatorStatus(d.getMasterID(),d.nextcount(),*this);
     pirInterruptOn();
   }
@@ -150,17 +150,17 @@ public:
       quiet.enabled = true;
       sysclock.add(quiet);
       // blink led
-      if( ChannelType::device().led().active() == false ) {
-        ChannelType::device().led().ledOn( centis2ticks(ChannelType::getList1().ledOntime()) / 2);
+      if( this->device().led().active() == false ) {
+        this->device().led().ledOn( centis2ticks(this->getList1().ledOntime()) / 2);
       }
-      MotionEventMsg& msg = (MotionEventMsg&)ChannelType::device().message();
-      msg.init(ChannelType::device().nextcount(),ChannelType::number(),++counter,status(),ChannelType::getList1().minInterval());
+      MotionEventMsg& msg = (MotionEventMsg&)this->device().message();
+      msg.init(this->device().nextcount(),this->number(),++counter,status(),this->getList1().minInterval());
 	  
 	    pirInterruptOff();
-      ChannelType::device().sendPeerEvent(msg,*this);
+	    this->device().sendPeerEvent(msg,*this);
 	    pirInterruptOn();
     }
-    else if ( ChannelType::getList1().captureWithinInterval() == true ) {	
+    else if ( this->getList1().captureWithinInterval() == true ) {
       // we have had a motion during quiet interval
       quiet.motion = true;
     }
