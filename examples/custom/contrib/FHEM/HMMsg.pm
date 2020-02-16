@@ -126,7 +126,7 @@ sub processSwitchStatus {
 
     push @evtEt,[$channel,1,"level:$value %"];
     push @evtEt,[$channel,1,"pct:$value"];     # duplicate to level - necessary for "slider"
-    push @evtEt,[$channel,1,"deviceMsg:.$valuestr.$target"];
+    push @evtEt,[$channel,1,"deviceMsg:$valuestr$target"];
     push @evtEt,[$channel,1,"state:".$valuestr];
     push @evtEt,[$channel,1,"timedOn:".(($flags & 0x40)?"running":"off")];
   }
@@ -151,7 +151,7 @@ sub processBlindStatus {
     push @evtEt,[$channel,1,"level:$value"];
     push @evtEt,[$channel,1,"motor:$dirName{$dir}:$valuestr"];
     push @evtEt,[$channel,1,"pct:$value"];     # duplicate to level - necessary for "slider"
-    push @evtEt,[$channel,1,"deviceMsg:.$valuestr.$target"];
+    push @evtEt,[$channel,1,"deviceMsg:$valuestr$target"];
     push @evtEt,[$channel,1,"state:".$valuestr];
     push @evtEt,[$channel,1,"timedOn:".(($flags & 0x40)?"running":"off")];
   }
