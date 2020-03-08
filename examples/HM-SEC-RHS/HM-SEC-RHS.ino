@@ -114,8 +114,6 @@ class Hal : public BaseHal {
 public:
   void init (const HMID& id) {
     BaseHal::init(id);
-    // measure battery every 1h
-    battery.init(seconds2ticks(60UL*60),sysclock);
   }
 } hal;
 
@@ -216,6 +214,9 @@ void setup () {
   sdev.channel(1).init(SENS1_PIN,SENS2_PIN,SABOTAGE_PIN,posmap);
 #endif
   sdev.initDone();
+    
+  // measure battery every 1h
+  hal.battery.init(seconds2ticks(60UL*60),sysclock);
 }
 
 void loop() {
