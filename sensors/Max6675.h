@@ -13,19 +13,19 @@ namespace as {
 template <uint8_t SCK, uint8_t CS, uint8_t SO>
 class MAX6675 : public Temperature {
   private:
-    uint8_t spiread() {
-      uint8_t d = 0;
-      for (uint8_t i = 7; i >= 0; i--) {
-        digitalWrite(SCK, LOW);
-        _delay_ms(1);
-        if (digitalRead(SO)) {
-          d |= (1 << i);
-        }
-        digitalWrite(SCK, HIGH);
-        _delay_ms(1);
+  uint8_t spiread() {
+    uint8_t d = 0;
+    for (uint8_t i = 0x80; i != 0; i >>= 1) {
+      digitalWrite(SCK, LOW);
+      _delay_ms(1);
+      if (digitalRead(SO)) {
+        d |= i;
       }
-      return d;
+      digitalWrite(SCK, HIGH);
+      _delay_ms(1);
     }
+    return d;
+  }
 
     uint16_t readCelsius() {
       uint16_t v;
