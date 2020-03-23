@@ -78,6 +78,23 @@ $customMsg{"HM-LC-Sw2-FM-CustomFW"} = sub {
   return ();
 };
 
+$HMConfig::culHmModel{"F336"} = {name=>"HM-LC-Sw2PBU-FM-CustomFW",st=>'custom',cyc=>'',rxt=>'',lst=>'1,3:1p.2p,4:3p.4p',chn=>"Sw:1:2,Btn:3:4"};
+$HMConfig::culHmChanSets{"HM-LC-Sw2PBU-FM-CustomFW00"}{fwUpdate} ="<filename>";
+$HMConfig::culHmChanSets{"HM-LC-Sw2PBU-FM-CustomFW01"} = $HMConfig::culHmSubTypeSets{"switch"};
+$HMConfig::culHmChanSets{"HM-LC-Sw2PBU-FM-CustomFW02"} = $HMConfig::culHmSubTypeSets{"switch"};
+$HMConfig::culHmChanSets{"HM-LC-Sw2PBU-FM-CustomFW03"} = $HMConfig::culHmSubTypeSets{"THSensor"};
+$HMConfig::culHmChanSets{"HM-LC-Sw2PBU-FM-CustomFW04"} = $HMConfig::culHmSubTypeSets{"THSensor"};
+$HMConfig::culHmRegChan{"HM-LC-Sw2PBU-FM-CustomFW01"}  = $HMConfig::culHmRegType{switch};
+$HMConfig::culHmRegChan{"HM-LC-Sw2PBU-FM-CustomFW02"}  = $HMConfig::culHmRegType{switch};
+$HMConfig::culHmRegChan{"HM-LC-Sw2PBU-FM-CustomFW03"}  = $HMConfig::culHmRegType{remote};
+$HMConfig::culHmRegChan{"HM-LC-Sw2PBU-FM-CustomFW04"}  = $HMConfig::culHmRegType{remote};
+$customMsg{"HM-LC-Sw2PBU-FM-CustomFW"} = sub {
+  my ($msg,$target) = @_;
+  return $msg->processRemote if $msg->isRemote;
+  return $msg->processSwitchStatus($target) if $msg->isStatus;
+  return ();
+};
+
 $HMConfig::culHmModel{"F332"} = {name=>"HB-UNI-SenAct-4-4-RC",st=>'custom',cyc=>'',rxt=>'',lst=>'1,3:1p.2p.3p.4p,4:5p.6p.7p.8p',chn=>"Sw:1:4,Btn:5:8"};
 $HMConfig::culHmChanSets{"HB-UNI-SenAct-4-4-RC00"}{fwUpdate} = "<filename>";
 $HMConfig::culHmChanSets{"HB-UNI-SenAct-4-4-RC01"} = $HMConfig::culHmSubTypeSets{"switch"};
