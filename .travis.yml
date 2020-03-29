@@ -156,13 +156,14 @@ script:
   - buildSketch HB-RC-12-EP
   - export SKETCHPATH=$HOME/SmartHome
   - export BOARD=$BOARD328P
-  - buildSketch HB-UNI-Sensor1
   - buildSketch HB-SEN-LJet
   - buildSketch HB-SCI-3-FM
 # disable AES support
   - echo "" >$HOME/arduino-ide/hardware/arduino/avr/platform.local.txt
   - export SKETCHPATH=$HOME/Beispiel_AskSinPP/examples
   - buildSketch HB-OU-MP3-LED
+  - export SKETCHPATH=$HOME/SmartHome
+  - buildSketch HB-UNI-Sensor1
 notifications:
   email:
     recipients:
