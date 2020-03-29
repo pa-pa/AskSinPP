@@ -52,6 +52,9 @@ install:
   - git clone https://github.com/jp112sdl/HB-UNI-Sen-WEIGHT.git $HOME/Beispiel_AskSinPP/examples/HB-UNI-Sen-WEIGHT
   - git clone https://github.com/jp112sdl/HB-Dis-EP-42BW.git $HOME/Beispiel_AskSinPP/examples/HB-Dis-EP-42BW
   - git clone https://github.com/jp112sdl/HB-OU-MP3-LED.git $HOME/Beispiel_AskSinPP/examples/HB-OU-MP3-LED
+  - git clone https://github.com/jp112sdl/HB-RC-12-EP.git  $HOME/Beispiel_AskSinPP/examples/HB-RC-12-EP
+# Sketches from TomMajor
+  - git clone https://github.com/TomMajor/SmartHome.git $HOME/SmartHome
 # setup arduino IDE
   - arduino --pref "update.check=false" --save-prefs
   - arduino --pref "boardsmanager.additional.urls=http://dan.drown.org/stm32duino/package_STM32duino_index.json,https://mcudude.github.io/MightyCore/package_MCUdude_MightyCore_index.json" --save-prefs
@@ -150,9 +153,15 @@ script:
   - export SKETCHPATH=$HOME/Beispiel_AskSinPP/examples
   - export BOARD=$BOARD1284P
   - buildSketch HB-Dis-EP-42BW
+  - buildSketch HB-RC-12-EP
   - export BOARD=$BOARD328P
+# disable AES support
   - echo "" >$HOME/arduino-ide/hardware/arduino/avr/platform.local.txt
   - buildSketch HB-OU-MP3-LED
+  - export SKETCHPATH=$HOME/SmartHome
+  - buildSketch HB-UNI-Sensor1
+  - buildSketch HB-SEN-LJet
+  - buildSketch HB-SCI-3-FM
 notifications:
   email:
     recipients:
