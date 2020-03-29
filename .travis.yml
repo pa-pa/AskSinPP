@@ -62,6 +62,7 @@ install:
 #  - arduino --install-boards stm32duino:STM32F1:2019.3.31
   - arduino --install-boards MightyCore:avr:2.0.1
   - echo "compiler.cpp.extra_flags=-w -DUSE_AES -DHM_DEF_KEY=0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x0a,0x0b,0x0c,0x0d,0x0e,0x0f,0x10 -DHM_DEF_KEY_INDEX=0" >$HOME/arduino-ide/hardware/arduino/avr/platform.local.txt
+  - echo "compiler.c.extra_flags=-w" >>$HOME/arduino-ide/hardware/arduino/avr/platform.local.txt
 script:
   - export BOARD=$BOARDMAPLE
   - export SKETCHPATH=$PWD/examples/stm32
@@ -161,6 +162,7 @@ script:
   - buildSketch HB-SCI-3-FM
 # disable AES support
   - echo "compiler.cpp.extra_flags=-w" >$HOME/arduino-ide/hardware/arduino/avr/platform.local.txt
+  - echo "compiler.c.extra_flags=-w" >>$HOME/arduino-ide/hardware/arduino/avr/platform.local.txt
   - buildSketch HB-OU-MP3-LED
 notifications:
   email:
