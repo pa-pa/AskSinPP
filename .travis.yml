@@ -161,6 +161,7 @@ script:
   - buildSketch HB-SCI-3-FM
 # disable AES support
   - echo "" >$HOME/arduino-ide/hardware/arduino/avr/platform.local.txt
+  - export SKETCHPATH=$HOME/Beispiel_AskSinPP/examples
   - buildSketch HB-OU-MP3-LED
 notifications:
   email:
