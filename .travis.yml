@@ -160,7 +160,7 @@ script:
   - buildSketch HB-SEN-LJet
   - buildSketch HB-SCI-3-FM
 # disable AES support
-  - echo "compiler.cpp.extra_flags=-w" >$HOME/arduino-ide/hardware/arduino/avr/platform.local.txt
+  - echo "" >$HOME/arduino-ide/hardware/arduino/avr/platform.local.txt
   - buildSketch HB-OU-MP3-LED
 notifications:
   email:
