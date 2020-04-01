@@ -29,6 +29,10 @@ class StateGenericChannel : public Channel<HALTYPE,List1Type,EmptyList,List4Type
     virtual void trigger (__attribute__ ((unused)) AlarmClock& clock) {
       SensorEventMsg& msg = (SensorEventMsg&)channel.device().message();
       msg.init(channel.device().nextcount(),channel.number(),count++,state,channel.device().battery().low());
+#ifdef CONTACT_STATE_WITH_BATTERY
+      msg.append(channel.device().battery().current());
+      // msg.append(__gb_BatCount);
+#endif
       channel.device().sendPeerEvent(msg,channel);
     }
   };
@@ -57,8 +61,10 @@ public:
 
   void init () {
     // start polling
-    set(possens.interval());
-    sysclock.add(*this);
+    if( possens.interval() > 0) {
+      set(possens.interval());
+      sysclock.add(*this);
+    }
   }
 
   uint8_t status () const {
@@ -72,8 +78,10 @@ public:
   }
 
   void trigger (__attribute__ ((unused)) AlarmClock& clock)  {
-    set(possens.interval());
-    clock.add(*this);
+    if( possens.interval() > 0) {
+      set(possens.interval());
+      clock.add(*this);
+    }
     uint8_t newstate = sender.state;
     uint8_t msg = 0;
     possens.measure();
@@ -218,6 +226,12 @@ public:
 // alias for old code
 template<class HalType,class ChannelType,int ChannelCount,class List0Type,uint32_t CycleTime=DEFCYCLETIME>
 using ThreeStateDevice = StateDevice<HalType,ChannelType,ChannelCount,List0Type,CycleTime>;
+
+
+#define contactISR(pin,func) if( digitalPinToInterrupt(pin) == NOT_AN_INTERRUPT ) \
+  enableInterrupt(pin,func,CHANGE); \
+else \
+  attachInterrupt(digitalPinToInterrupt(pin),func,CHANGE);
 
 }
 
