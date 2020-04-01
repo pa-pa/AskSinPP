@@ -259,6 +259,22 @@ $customMsg{"HB-LC-SW4-MDIR"} = sub {
   return ();
 };
 
+# window contact RHS3
+$HMConfig::culHmModel{"F209"} = {name=>"HB-Sec-RHS-3",st=>'custom',cyc=>'',rxt=>'c:l',lst=>'1,4:1p',chn=>"Sens:1:1"};
+$HMConfig::culHmChanSets{"HB-Sec-RHS-30"}{fwUpdate} = "<filename>";
+$HMConfig::culHmChanSets{"HB-Sec-RHS-301"} = $HMConfig::culHmSubTypeSets{"THSensor"};
+$HMConfig::culHmRegModel{"HB-Sec-RHS-3"}   = { lowBatLimitBA2=>1, sabotageMsg=>1, transmDevTryMax=>1, cyclicInfoMsg=>1 };
+$HMConfig::culHmRegChan {"HB-Sec-RHS-301"} = { msgRhsPosA=>1, msgRhsPosB=>1, msgRhsPosC=>1, ledOnTime=>1, eventDlyTime=>1 };
+$customMsg{"HB-Sec-RHS-3"} = sub {
+  my ($msg,$target) = @_;
+  my $channel = $main::modules{CUL_HM}{defptr}{$msg->channelId(1)};
+  my @evtEt = $msg->processThreeState($target);
+  # add battery value
+  my $bat = $msg->payloadByte(3);
+  push @evtEt,[$channel,1,"batVoltage:".$bat/10];
+  return @evtEt;
+};
+
 $HMConfig::culHmModel{"F9D2"} = {name=>"HB-UNI-Sen-LEV-US",st=>'custom',cyc=>'',rxt=>'c:l',lst=>'1',chn=>"Level:1:1"};
 $HMConfig::culHmChanSets{"HB-UNI-Sen-LEV-US00"}{fwUpdate} = "<filename>";
 $HMConfig::culHmChanSets{"HB-UNI-Sen-LEV-US01"} = {};
