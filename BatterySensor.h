@@ -28,12 +28,21 @@
 
 namespace as {
 
+/**
+ * Fake Battery class - empty implementation of all methods. This class can be used
+ * if battery measurement is not needed.
+ */
 class NoBattery {
 public:
+  /// get current battery voltage - returns always 0
   uint8_t current () const { return 0; }
+  /// check if battery voltage is below critical value - returns always false
   bool critical () const { return false; }
+  /// check if battery voltage is below low value - returns always false
   bool low () const { return false; }
+  /// called when systems enter idle state
   void setIdle () {}
+  /// called when systems returns from idle state
   void unsetIdle () {}
 };
 
@@ -275,58 +284,108 @@ public:
 #ifdef ARDUINO_ARCH_AVR
 
 extern volatile uint16_t __gb_BatCurrent;
+extern volatile uint8_t  __gb_BatIgnore;
+extern volatile uint16_t __gb_BatCount;
 extern void (*__gb_BatIrq)();
 
+/**
+ * IrqInternalBatt class uses continue measurement in background.
+ * It uses the ADC and IRQ to get battery voltage during normal operation. If a device needs to sample
+ * analog values, it has to call setIdle() before and unsetIdle() after analogRead().
+ */
 class IrqInternalBatt {
-  uint8_t   m_Low, m_Critical;
+  /// value for low battery
+  uint8_t m_Low;
+  /// value for critical battery
+  uint8_t m_Critical;
 public:
+  /** Constructor
+   */
   IrqInternalBatt () : m_Low(0), m_Critical(0) {}
+  /** Destructor
+   */
   ~IrqInternalBatt() {}
-
+  /** get current battery voltage value
+   * \return the current battery value multiplied by 10
+   */
   uint8_t current () const { return (__gb_BatCurrent + 50) / 100; }
+  /** check if the battery is below critical value
+   *  \return true if battery voltage below critical value
+   */
   bool critical () const { return current() < m_Critical; }
+  /** set critical battery value
+   * \param value critical battery value
+   */
   void critical (uint8_t value ) { m_Critical = value; }
+  /** check if the battery is below low value
+   *  \return true if battery voltage below low value
+   */
   bool low () const { return current() < m_Low; }
-  void low (uint8_t value ) { m_Low = value; }
-
+  /** set low battery value
+   * \param value low battery value
+   */
+  void low (uint8_t value ) {
+    m_Low = value;
+    if( __gb_BatCurrent == 0 ) {
+      __gb_BatCurrent = value*2*100;
+    }
+  }
+  /** init measurement with periode and used clock
+   * \param period ticks until next measurement
+   * \param clock clock to use for waiting
+   */
   void init(__attribute__((unused)) uint32_t period,__attribute__((unused)) AlarmClock& clock) {
-    pinMode(17,OUTPUT);  // debug interrupt
     unsetIdle();
   }
 
-  // for backward compatibility
+  /// for backward compatibility
   uint16_t voltageHighRes() { return __gb_BatCurrent; }
+  /// for backward compatibility
   uint8_t voltage() { return current(); }
-
+  /** called by HAL before enter idle/sleep state
+   */
   void setIdle () {
-    __gb_BatIrq = 0;
+    ATOMIC_BLOCK( ATOMIC_RESTORESTATE ) {
+      __gb_BatIrq = 0;
+    }
     ADCSRA &= ~((1 << ADIE) | (1 << ADIF));  // disable interrupt
     while (ADCSRA & (1 << ADSC)) ;  // wait finish
     irq();    // ensure value is read
   }
-
+  /** called by HAL after return from idle/sleep state
+   */
   void unsetIdle () {
     //DDECLN(__gb_BatCurrent);
-    __gb_BatIrq = irq;
+    ATOMIC_BLOCK( ATOMIC_RESTORESTATE ) {
+      __gb_BatIgnore = 10; // first 10 values will be ignored
+      __gb_BatIrq = irq;
+    }
     ADMUX &= ~(ADMUX_REFMASK | ADMUX_ADCMASK);
     ADMUX |= ADMUX_REF_AVCC;      // select AVCC as reference
     ADMUX |= ADMUX_ADC_VBG;       // measure bandgap reference voltage
-    ADCSRA |= (1 << ADIE);        // enable interrupt
+    ADCSRA |= (1 << ADIE) | (1<<ADPS0) | (1<<ADPS1) | (1<<ADPS2); // enable interrupt & 128 prescaler
     ADCSRA |= (1 << ADSC);        // start conversion
   }
-
+  /** ISR function to get current measured value
+   */
   static void irq () {
-    uint16_t v = 1100UL * 1024 / ADC;
-    if( __gb_BatCurrent == 0 ) {
-      __gb_BatCurrent = v;
+    __gb_BatCount++;
+    if( __gb_BatIgnore > 0 ) {
+      __gb_BatIgnore--;
     }
     else {
-      v = (__gb_BatCurrent + v) / 2;
-      if( v < __gb_BatCurrent ) {
+      uint16_t v = 1100UL * 1024 / ADC;
+      if( __gb_BatCurrent == 0 ) {
         __gb_BatCurrent = v;
       }
+      else {
+        v = (__gb_BatCurrent + v) / 2;
+        if( v < __gb_BatCurrent ) {
+          __gb_BatCurrent = v;
+        }
+      }
     }
-    digitalWrite(17, digitalRead(17)==LOW?HIGH:LOW);  // debug
+
     if( __gb_BatIrq != 0 )
       ADCSRA |= (1 << ADSC);        // start conversion again
   }
