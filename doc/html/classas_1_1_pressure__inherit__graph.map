@@ -1,0 +1,6 @@
+<map id="as::Pressure" name="as::Pressure">
+<area shape="rect" id="node1" title=" " alt="" coords="61,80,157,107"/>
+<area shape="rect" id="node3" href="$classas_1_1_bme280.html" title=" " alt="" coords="5,155,97,181"/>
+<area shape="rect" id="node4" href="$classas_1_1_bmp180.html" title=" " alt="" coords="121,155,213,181"/>
+<area shape="rect" id="node2" href="$classas_1_1_sensor.html" title=" " alt="" coords="66,5,151,32"/>
+</map>

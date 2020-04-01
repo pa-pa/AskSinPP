@@ -1,0 +1,5 @@
+<map id="as::DimmerStateMachine" name="as::DimmerStateMachine">
+<area shape="rect" id="node1" title=" " alt="" coords="5,27,175,54"/>
+<area shape="rect" id="node2" href="$classas_1_1_actor_channel.html" title=" " alt="" coords="223,5,457,76"/>
+<area shape="rect" id="node3" href="$classas_1_1_dimmer_channel.html" title=" " alt="" coords="505,13,652,69"/>
+</map>
