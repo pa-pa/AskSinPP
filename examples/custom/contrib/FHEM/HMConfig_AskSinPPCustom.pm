@@ -267,11 +267,15 @@ $HMConfig::culHmRegModel{"HB-Sec-RHS-3"}   = { lowBatLimitBA2=>1, sabotageMsg=>1
 $HMConfig::culHmRegChan {"HB-Sec-RHS-301"} = { msgRhsPosA=>1, msgRhsPosB=>1, msgRhsPosC=>1, ledOnTime=>1, eventDlyTime=>1 };
 $customMsg{"HB-Sec-RHS-3"} = sub {
   my ($msg,$target) = @_;
-  my $channel = $main::modules{CUL_HM}{defptr}{$msg->channelId(1)};
-  my @evtEt = $msg->processThreeState($target);
+  my @evtEt = $msg->processThreeState($target) if $msg->channel == 1;
+  my $device = main::CUL_HM_id2Hash($msg->from);
   # add battery value
   my $bat = $msg->payloadByte(3);
-  push @evtEt,[$channel,1,"batVoltage:".$bat/10];
+  push @evtEt,[$device,1,"batVoltage:".$bat/10];
+  # add battery state
+  my $batstat = "ok";
+  $batstat = "low" if (($msg->payloadByte(0) & 0x80)==0x80);
+  push @evtEt,[$device,1,"battery:".$batstat];
   return @evtEt;
 };
 
