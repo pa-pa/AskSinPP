@@ -318,13 +318,57 @@ $customMsg{"HB-UNI-Sen-PRESS"} = sub {
   return @evtEt;
 };
 
-$HMConfig::culHmModel{"F312"} = {name=>"HB-UNI-Sen-CAP-MOIST-T",st=>'custom',cyc=>'',rxt=>'c:l',lst=>'1',chn=>"Weather:1:1,Moisture:2:2"};
+$HMConfig::culHmModel{"F311"} = {name=>"HB-UNI-Sen-CAP-MOIST",st=>'custom',cyc=>'',rxt=>'c:l',lst=>'1',chn=>"Data:1:1,Moisture:2:4"};
+$HMConfig::culHmChanSets{"HB-UNI-Sen-CAP-MOIST00"}{fwUpdate} = "<filename>";
+$HMConfig::culHmChanSets{"HB-UNI-Sen-CAP-MOIST01"} = {};
+$HMConfig::culHmChanSets{"HB-UNI-Sen-CAP-MOIST02"} = {};
+$HMConfig::culHmChanSets{"HB-UNI-Sen-CAP-MOIST03"} = {};
+$HMConfig::culHmChanSets{"HB-UNI-Sen-CAP-MOIST04"} = {};
+$HMConfig::culHmRegModel{"HB-UNI-Sen-CAP-MOIST"}   = { lowBatteryLimit=>1, transmitInterval=>1 };
+$HMConfig::culHmRegChan {"HB-UNI-Sen-CAP-MOIST01"} = {};
+$HMConfig::culHmRegChan {"HB-UNI-Sen-CAP-MOIST02"} = { highValue=>1, lowValue=>1 };
+$HMConfig::culHmRegChan {"HB-UNI-Sen-CAP-MOIST03"} = { highValue=>1, lowValue=>1 };
+$HMConfig::culHmRegChan {"HB-UNI-Sen-CAP-MOIST04"} = { highValue=>1, lowValue=>1 };
+$customMsg{"HB-UNI-Sen-CAP-MOIST"} = sub {
+  my ($msg,$target) = @_;
+  my @evtEt=();
+  my $cnum = $msg->payloadByte(1) & 0x3f; # get channel from byte 1 of payload
+  my $device = main::CUL_HM_id2Hash($msg->from);
+  my $batstat = "ok";
+  $batstat = "low" if (($msg->payloadByte(0) & 0x80)==0x80);
+  push @evtEt,[$device,1,"battery:".$batstat];
+  my $channel = $main::modules{CUL_HM}{defptr}{$msg->channelId($cnum)};
+  if( defined($channel) ) {
+    my $bat = $msg->payloadByte(2);
+    push @evtEt,[$channel,1,"batVoltage:".$bat/10];
+    push @evtEt,[$channel,1,"state:".($bat/10)." V"];
+  }
+  for( my $offset=3; $offset < length($msg->payload)/2; $offset += 2 ) {
+    $cnum = $msg->payloadByte($offset) & 0x3f; # get channel for next value
+    $channel = $main::modules{CUL_HM}{defptr}{$msg->channelId($cnum)};
+    if( defined($channel) ) {
+      my $moist = $msg->payloadByte($offset+1);
+      push @evtEt,[$channel,1,"humidity:".$moist];
+      push @evtEt,[$channel,1,"state:".$moist." %"];
+    }
+    else {
+      Log 1,"No channel for ".$msg->channelId($cnum);
+    }
+  }
+  return @evtEt;
+};
+
+$HMConfig::culHmModel{"F312"} = {name=>"HB-UNI-Sen-CAP-MOIST-T",st=>'custom',cyc=>'',rxt=>'c:l',lst=>'1',chn=>"Weather:1:1,Moisture:2:4"};
 $HMConfig::culHmChanSets{"HB-UNI-Sen-CAP-MOIST-T00"}{fwUpdate} = "<filename>";
 $HMConfig::culHmChanSets{"HB-UNI-Sen-CAP-MOIST-T01"} = {};
 $HMConfig::culHmChanSets{"HB-UNI-Sen-CAP-MOIST-T02"} = {};
+$HMConfig::culHmChanSets{"HB-UNI-Sen-CAP-MOIST-T03"} = {};
+$HMConfig::culHmChanSets{"HB-UNI-Sen-CAP-MOIST-T04"} = {};
 $HMConfig::culHmRegModel{"HB-UNI-Sen-CAP-MOIST-T"}   = { lowBatteryLimit=>1, transmitInterval=>1 };
 $HMConfig::culHmRegChan {"HB-UNI-Sen-CAP-MOIST-T01"} = { tempOffset=>1 };
 $HMConfig::culHmRegChan {"HB-UNI-Sen-CAP-MOIST-T02"} = { highValue=>1, lowValue=>1 };
+$HMConfig::culHmRegChan {"HB-UNI-Sen-CAP-MOIST-T03"} = { highValue=>1, lowValue=>1 };
+$HMConfig::culHmRegChan {"HB-UNI-Sen-CAP-MOIST-T04"} = { highValue=>1, lowValue=>1 };
 $customMsg{"HB-UNI-Sen-CAP-MOIST-T"} = sub {
   my ($msg,$target) = @_;
   my @evtEt=();
