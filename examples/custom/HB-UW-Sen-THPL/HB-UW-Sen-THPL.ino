@@ -8,7 +8,7 @@
 // define this to read the device id, serial and device type from bootloader section
 //#define USE_OTA_BOOTLOADER
 
-#define USE_BME_280
+// #define USE_BME_280
 #define EXTRAMILLIS 730 // 730 millisecond extra time to better hit the slot
 #define EI_NOTEXTERNAL
 #include <EnableInterrupt.h>
