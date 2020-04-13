@@ -52,7 +52,7 @@ typedef DimmerDevice<HalType,ChannelType,3,3> DimmerType;
 
 HalType hal;
 DimmerType sdev(devinfo,0x20);
-DimmerControl<HalType,DimmerType,PWM8<> > control(sdev);
+DimmerControl<HalType,DimmerType,PWM16ext<> > control(sdev);
 ConfigToggleButton<DimmerType> cfgBtn(sdev);
 
 void setup () {
