@@ -13,6 +13,7 @@
 
 #include <Dimmer.h>
 
+#include <actors/PCA9685.h>
 
 // we use a Pro Mini
 // Arduino pin for the LED
@@ -47,7 +48,7 @@ typedef AvrSPI<10,11,12,13> SPIType;
 typedef Radio<SPIType,2> RadioType;
 typedef StatusLed<LED_PIN> LedType;
 typedef AskSin<LedType,NoBattery,RadioType> HalType;
-typedef DimmerChannel<HalType,PEERS_PER_CHANNEL> ChannelType;
+typedef DimmerChannel<HalType,PEERS_PER_CHANNEL,PWM16ext> ChannelType;
 typedef DimmerDevice<HalType,ChannelType,3,3> DimmerType;
 
 HalType hal;

@@ -24,6 +24,10 @@
 #define PCA9685_REG_LED0_ON_H     0x07    /* LED0 on tick, high byte*/
 #define PCA9685_REG_LED0_OFF_L    0x08    /* LED0 off tick, low byte */
 #define PCA9685_REG_LED0_OFF_H    0x09    /* LED0 off tick, high byte */
+#define PCA9685_REG_LEDx_ON_L(x)  (PCA9685_REG_LED0_ON_L  + 4*x)
+#define PCA9685_REG_LEDx_ON_H(x)  (PCA9685_REG_LED0_ON_H  + 4*x)
+#define PCA9685_REG_LEDx_OFF_L(x) (PCA9685_REG_LED0_OFF_L + 4*x)
+#define PCA9685_REG_LEDx_OFF_H(x) (PCA9685_REG_LED0_OFF_H + 4*x)
 // etc all 16:  LED15_OFF_H 0x45
 #define PCA9685_REG_ALLLED_ON_L   0xFA    /* load all the LEDn_ON registers, low */
 #define PCA9685_REG_ALLLED_ON_H   0xFB    /* load all the LEDn_ON registers, high */
@@ -47,7 +51,10 @@
 #define PCA9685_MODE2_OUTDRV      0x04    /* totem pole structure vs open-drain */
 #define PCA9685_MODE2_OCH         0x08    /* Outputs change on ACK vs STOP */
 #define PCA9685_MODE2_INVRT       0x10    /* Output logic state inverted */
-
+/* PCA9685 LEDx_ON_H register bits */
+#define PCA9685_LEDx_FULL_ON      0x10    /* LEDx full ON */
+/* PCA9685 LEDx_OFF_H register bits */
+#define PCA9685_LEDx_FULL_OFF     0x10    /* LEDx full OFF */
 
 
 namespace as {
@@ -78,12 +85,35 @@ class PCA9685 {
 
     void init () {
       Wire.begin();
-      reset();
+    }
+
+    void set (uint8_t channel, uint16_t value) {
+      /* LEDx_ON contains the timeslot where LED is turned ON */
+      /* LEDx_OFF contains the timeslot where LED is turned OFF */
+      /* timeslots count from 0 to 4095 */
+      if (value == 0) {
+        writeRegister (PCA9685_REG_LEDx_OFF_H(channel), PCA9685_LEDx_FULL_OFF);
+        //writeRegister (PCA9685_REG_LEDx_OFF_L(channel), 0);
+        //writeRegister (PCA9685_REG_LEDx_ON_H(channel), 0);
+        //writeRegister (PCA9685_REG_LEDx_ON_L(channel), 0);
+      } else if (value == 0x0FFF) {
+        writeRegister (PCA9685_REG_LEDx_ON_H(channel), PCA9685_LEDx_FULL_ON);
+        //writeRegister (PCA9685_REG_LEDx_ON_L(channel), 0);
+        writeRegister (PCA9685_REG_LEDx_OFF_H(channel), 0);
+        //writeRegister (PCA9685_REG_LEDx_OFF_L(channel), 0);
+      } else {
+        /* no delay, turn LED on in the first timeslot */
+        writeRegister (PCA9685_REG_LEDx_ON_H(channel), 0);
+        writeRegister (PCA9685_REG_LEDx_ON_L(channel), 0);
+
+        writeRegister (PCA9685_REG_LEDx_OFF_H(channel), (value >> 8) & 0x0F);
+        writeRegister (PCA9685_REG_LEDx_OFF_L(channel), value & 0xFF);
+      }
     }
 
     /* send reset command */
     void reset () {
-      writeRegister (PCA9685_REG_MODE1, MODE1_RESTART);
+      writeRegister (PCA9685_REG_MODE1, PCA9685_MODE1_RESTART);
       delay(10);
     }
 }

@@ -103,19 +103,20 @@ public:
   void set(uint8_t value) {
     uint16_t duty = 0;
     if ( value == STEPS) {
-      duty = FREQU;
+      duty = 0x0FFF;
     }
     else if (value > 0) {
       // https://diarmuid.ie/blog/pwm-exponential-led-fading-on-arduino-or-other-platforms/
       // duty = pow(2,(value/R)) + 4;
       // duty = pow(2,(value/20.9)+6.5);
       // duty = pow(1.37,(value/15.0)+22.0)-500;
-      duty = pow(1.28,(value/13.0)+29.65)-1300;
+      //duty = pow(1.28,(value/13.0)+29.65)-1300;
       // http://harald.studiokubota.com/wordpress/index.php/2010/09/05/linear-led-fading/index.html
       //duty = exp(value/18.0) + 4;
+      duty = 1.0 * value * 4096 / STEPS;
     }
     // DDEC(pin);DPRINT(" - ");DDECLN(duty);
-    //pwmWrite(pin,duty);
+    PCA9685::set(pin,duty);
   }
 };
 
