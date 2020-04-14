@@ -88,7 +88,7 @@ class ZC_Control {
 #endif
 
 template<uint8_t STEPS=200,uint16_t FREQU=65535>
-class PWM16ext {
+class PWM16ext:PCA9685 {
   uint8_t pin;
 public:
   PWM16ext () : pin(0) {}
