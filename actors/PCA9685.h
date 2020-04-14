@@ -59,7 +59,7 @@
 
 namespace as {
 
-template <byte ADDRESS=PCA9685_ADDRESS>
+template <uint8_t ADDRESS=PCA9685_ADDRESS>
 class PCA9685 {
   private:
     static void writeRegister (uint8_t reg, uint8_t val) {
@@ -70,7 +70,7 @@ class PCA9685 {
     }
     static uint8_t readRegister (uint8_t reg) {
       Wire.beginTransmission(ADDRESS);
-      Wire.write(adr);
+      Wire.write(reg);
       Wire.endTransmission();
       Wire.requestFrom(ADDRESS, 1);
 
@@ -116,7 +116,7 @@ class PCA9685 {
       writeRegister (PCA9685_REG_MODE1, PCA9685_MODE1_RESTART);
       delay(10);
     }
-}
+};
 
 
 }
