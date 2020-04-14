@@ -10,7 +10,7 @@
 #include <Arduino.h>
 #include "PhaseCut.h"
 
-
+#include "actors/PCA9685.h"
 
 
 namespace as {
@@ -87,14 +87,17 @@ class ZC_Control {
 };
 #endif
 
-template<uint8_t STEPS=200,uint16_t FREQU=65535>
-class PWM16ext:PCA9685 {
+template<uint8_t STEPS=200,uint16_t FREQU=65535, uint8_t ADDRESS=PCA9685_ADDRESS>
+class PWM16ext {
+private:
+  PCA9685<ADDRESS> pca;
   uint8_t pin;
 public:
   PWM16ext () : pin(0) {}
   ~PWM16ext () {}
 
   void init(uint8_t p) {
+    pca.init();
     pin = p;
     //pinMode(pin, PWM);
     set(0);
@@ -116,7 +119,7 @@ public:
       duty = 1.0 * value * 4096 / STEPS;
     }
     // DDEC(pin);DPRINT(" - ");DDECLN(duty);
-    PCA9685::set(pin,duty);
+    pca.set(pin,duty);
   }
 };
 
