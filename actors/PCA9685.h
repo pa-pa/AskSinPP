@@ -67,6 +67,7 @@ class PCA9685 {
       Wire.write(reg);
       Wire.write(val);
       Wire.endTransmission();
+//      DPRINT(F("###   write 0x"));DHEX(val);DPRINT(F(" to 0x"));DHEX(reg);DPRINTLN("");
     }
     static uint8_t readRegister (uint8_t reg) {
       Wire.beginTransmission(ADDRESS);
@@ -78,13 +79,24 @@ class PCA9685 {
       if(Wire.available() <=1) {
         ret = Wire.read();
       }
+//        DPRINT(F("###   read 0x"));DHEX((uint8_t)ret);DPRINT(F(" from 0x"));DHEX(reg);DPRINTLN("");
       return ret;
     }
 
   public:
 
     void init () {
+      uint8_t myReg;
       Wire.begin();
+      myReg = readRegister(PCA9685_REG_MODE1);
+      /* turn internal oscillator on */
+      myReg &= ~PCA9685_MODE1_SLEEP;
+      writeRegister(PCA9685_REG_MODE1, myReg);
+      DPRINT(F("PCA9685 MODE1: 0x"));
+      DHEX(readRegister(PCA9685_REG_MODE1));
+      DPRINT(F(" MODE2: 0x"));
+      DHEX(readRegister(PCA9685_REG_MODE2));
+      DPRINT("\n");
     }
 
     void set (uint8_t channel, uint16_t value) {
@@ -92,17 +104,20 @@ class PCA9685 {
       /* LEDx_OFF contains the timeslot where LED is turned OFF */
       /* timeslots count from 0 to 4095 */
       if (value == 0) {
+        DPRINT(F("### PCA9685 channel "));DDEC(channel);DPRINTLN(F(" full off"));
         writeRegister (PCA9685_REG_LEDx_OFF_H(channel), PCA9685_LEDx_FULL_OFF);
         //writeRegister (PCA9685_REG_LEDx_OFF_L(channel), 0);
         //writeRegister (PCA9685_REG_LEDx_ON_H(channel), 0);
         //writeRegister (PCA9685_REG_LEDx_ON_L(channel), 0);
       } else if (value == 0x0FFF) {
+        DPRINT(F("### PCA9685 channel "));DDEC(channel);DPRINTLN(F(" full on"));
         writeRegister (PCA9685_REG_LEDx_ON_H(channel), PCA9685_LEDx_FULL_ON);
         //writeRegister (PCA9685_REG_LEDx_ON_L(channel), 0);
         writeRegister (PCA9685_REG_LEDx_OFF_H(channel), 0);
         //writeRegister (PCA9685_REG_LEDx_OFF_L(channel), 0);
       } else {
         /* no delay, turn LED on in the first timeslot */
+        DPRINT(F("### PCA9685 channel "));DDEC(channel);DPRINT(F(" to "));DDEC(value);DPRINT(" (");DDEC(value/41);DPRINTLN("%)");
         writeRegister (PCA9685_REG_LEDx_ON_H(channel), 0);
         writeRegister (PCA9685_REG_LEDx_ON_L(channel), 0);
 
