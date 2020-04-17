@@ -18,12 +18,16 @@
 // we use a Pro Mini
 // Arduino pin for the LED
 // D4 == PIN 4 on Pro Mini
-#define LED_PIN 4
+//#define LED_PIN 4
+// tmStamp
+#define LED_PIN 3
 // Arduino pin for the config button
 // B0 == PIN 8 on Pro Mini
-#define CONFIG_BUTTON_PIN 8
+//#define CONFIG_BUTTON_PIN 8
+// tmStamp
+#define CONFIG_BUTTON_PIN 4
 
-#define DIMMER_PIN 3
+#define DIMMER_PIN 1
 
 // number of available peers per channel
 #define PEERS_PER_CHANNEL 4
