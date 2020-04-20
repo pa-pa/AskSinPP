@@ -284,7 +284,6 @@ public:
 #ifdef ARDUINO_ARCH_AVR
 
 extern volatile uint16_t __gb_BatCurrent;
-extern volatile uint8_t  __gb_BatIgnore;
 extern volatile uint16_t __gb_BatCount;
 extern void (*__gb_BatIrq)();
 
@@ -324,12 +323,7 @@ public:
   /** set low battery value
    * \param value low battery value
    */
-  void low (uint8_t value ) {
-    m_Low = value;
-    if( __gb_BatCurrent == 0 ) {
-      __gb_BatCurrent = value*2*100;
-    }
-  }
+  void low (uint8_t value ) { m_Low = value; }
   /** init measurement with periode and used clock
    * \param period ticks until next measurement
    * \param clock clock to use for waiting
@@ -342,7 +336,10 @@ public:
   uint16_t voltageHighRes() { return __gb_BatCurrent; }
   /// for backward compatibility
   uint8_t voltage() { return current(); }
-  /** called by HAL before enter idle/sleep state
+  /**
+   * Disable the continues battery measurement
+   * Called by HAL before enter idle/sleep state
+   * Call this before your application code uses the ADC.
    */
   void setIdle () {
     ATOMIC_BLOCK( ATOMIC_RESTORESTATE ) {
@@ -352,13 +349,16 @@ public:
     while (ADCSRA & (1 << ADSC)) ;  // wait finish
     irq();    // ensure value is read
   }
-  /** called by HAL after return from idle/sleep state
+  /**
+   * Enable the continues measurement of the battery voltage
+   * Called by HAL after return from idle/sleep state
+   * Call this after the application doesn't need ADC longer
    */
   void unsetIdle () {
     //DDECLN(__gb_BatCurrent);
     ATOMIC_BLOCK( ATOMIC_RESTORESTATE ) {
-      __gb_BatIgnore = 10; // first 10 values will be ignored
-      __gb_BatIrq = irq;
+      __gb_BatCount = 0; // reset irq counter
+      __gb_BatIrq = irq; // set irq method
     }
     ADMUX &= ~(ADMUX_REFMASK | ADMUX_ADCMASK);
     ADMUX |= ADMUX_REF_AVCC;      // select AVCC as reference
@@ -370,10 +370,7 @@ public:
    */
   static void irq () {
     __gb_BatCount++;
-    if( __gb_BatIgnore > 0 ) {
-      __gb_BatIgnore--;
-    }
-    else {
+    if( __gb_BatCount > 10 ) { // ignore first 10 values
       uint16_t v = 1100UL * 1024 / ADC;
       if( __gb_BatCurrent == 0 ) {
         __gb_BatCurrent = v;

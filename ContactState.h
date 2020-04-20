@@ -60,11 +60,8 @@ public:
   }
 
   void init () {
-    // start polling
-    if( possens.interval() > 0) {
-      set(possens.interval());
-      sysclock.add(*this);
-    }
+    // get the current state
+    trigger(sysclock);
   }
 
   uint8_t status () const {
@@ -78,6 +75,7 @@ public:
   }
 
   void trigger (__attribute__ ((unused)) AlarmClock& clock)  {
+    // reactivate polling - if interval greater 0
     if( possens.interval() > 0) {
       set(possens.interval());
       clock.add(*this);
@@ -103,7 +101,11 @@ public:
     else if( msg == 2) newstate = 200;
     else if( msg == 3) newstate = 100;
 
-    if( newstate != sender.state ) {
+    if( sender.state == 255 ) {
+      // we are in the init stage - store state only
+      sender.state = newstate;
+    }
+    else if( newstate != sender.state ) {
       uint8_t delay = this->getList1().eventDelaytime();
       sender.state = newstate;
       sysclock.cancel(sender);
@@ -120,13 +122,20 @@ public:
       }
     }
     if( sabpin != 0 ) {
-      bool sabstate = (AskSinBase::readPin(sabpin) == SABOTAGE_ACTIVE_STATE);
+      bool sabstate = (possens.interval()==0 ? digitalRead(sabpin) : AskSinBase::readPin(sabpin) == SABOTAGE_ACTIVE_STATE);
       if( sabotage != sabstate && this->device().getList0().sabotageMsg() == true ) {
         sabotage = sabstate;
         this->changed(true); // trigger StatusInfoMessage to central
       }
     }
   }
+
+#ifdef CONTACT_STATE_WITH_BATTERY
+  void patchStatus (Message& msg) {
+    // append current battery value to status message
+    msg.append(this->device().battery().current());
+  }
+#endif
 };
 
 // alias for old code

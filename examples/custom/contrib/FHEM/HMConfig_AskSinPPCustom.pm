@@ -260,7 +260,7 @@ $customMsg{"HB-LC-SW4-MDIR"} = sub {
 };
 
 # window contact RHS3
-$HMConfig::culHmModel{"F209"} = {name=>"HB-Sec-RHS-3",st=>'custom',cyc=>'',rxt=>'c:l',lst=>'1,4:1p',chn=>"Sens:1:1"};
+$HMConfig::culHmModel{"F209"} = {name=>"HB-Sec-RHS-3",st=>'custom',cyc=>'28:00',rxt=>'c:l',lst=>'1,4:1p',chn=>"Sens:1:1"};
 $HMConfig::culHmChanSets{"HB-Sec-RHS-30"}{fwUpdate} = "<filename>";
 $HMConfig::culHmChanSets{"HB-Sec-RHS-301"} = $HMConfig::culHmSubTypeSets{"THSensor"};
 $HMConfig::culHmRegModel{"HB-Sec-RHS-3"}   = { lowBatLimitBA2=>1, sabotageMsg=>1, transmDevTryMax=>1, cyclicInfoMsg=>1 };
@@ -268,22 +268,26 @@ $HMConfig::culHmRegChan {"HB-Sec-RHS-301"} = { msgRhsPosA=>1, msgRhsPosB=>1, msg
 $customMsg{"HB-Sec-RHS-3"} = sub {
   my ($msg,$target) = @_;
   my $batflags = 0;
+  my $bat = 0;
   my $device = main::CUL_HM_id2Hash($msg->from);
   my @evtEt = $msg->processThreeState($target) if $msg->channel == 1;
   if( $msg->isSensor ) {
     # add battery value
-    my $bat = $msg->payloadByte(3);
-    push @evtEt,[$device,1,"batVoltage:".$bat/10];
+    $bat = $msg->payloadByte(3);
     $batflags = $msg->payloadByte(0);
   }
   if( $msg->isStatus ) {
+    # add battery value
+    $bat = $msg->payloadByte(5);
     $batflags = $msg->payloadByte(3);
-    # TODO - sabotage
+    # set sabotage status
+    push @evtEt,[$device,1,"sabotageError:".(($batflags & 0x0E) ? "on" : "off")];
   }
   # add battery state
   my $batstat = "ok";
   $batstat = "low" if (($batflags & 0x80)==0x80);
   push @evtEt,[$device,1,"battery:".$batstat];
+  push @evtEt,[$device,1,"batVoltage:".$bat/10];
   return @evtEt;
 };
 
