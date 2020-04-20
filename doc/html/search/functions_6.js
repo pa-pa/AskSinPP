@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['readpin_472',['readPin',['../classas_1_1_ask_sin_base.html#ad8d630efffcff47fc19a343679ecac71',1,'as::AskSinBase']]]
+  ['pgm_5fread_481',['pgm_read',['../classas_1_1_ask_sin_base.html#a93d8dbc2612a3c630f275d834e09a799',1,'as::AskSinBase']]]
 ];

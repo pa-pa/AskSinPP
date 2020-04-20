@@ -168,7 +168,7 @@ public:
   }
   /**
    * Read status of pin.
-   * \param pinnr the number fo he pin to read
+   * \param pinnr the number of the pin to read
    * \param enablenr pin to set to high for enabling the read
    * \param ms milli seconds to wait between enablement and pin read
    * \return status of read pin
