@@ -151,23 +151,23 @@ public:
   ~ThreeStateChannel () {}
 
   void init (uint8_t pin1,uint8_t pin2, uint8_t sab,const uint8_t* pmap) {
-    BaseChannel::init(sab);
     BaseChannel::possens.init(pin1,pin2,pmap);
+    BaseChannel::init(sab);
   }
 
   void init (uint8_t pin1,uint8_t pin2, const uint8_t* pmap) {
-    BaseChannel::init();
     BaseChannel::possens.init(pin1,pin2,pmap);
+    BaseChannel::init();
   }
 
   void init (uint8_t pin1,uint8_t pin2, uint8_t sab) {
-    BaseChannel::init(sab);
     BaseChannel::possens.init(pin1,pin2);
+    BaseChannel::init(sab);
   }
 
   void init (uint8_t pin1,uint8_t pin2) {
-    BaseChannel::init();
     BaseChannel::possens.init(pin1,pin2);
+    BaseChannel::init();
   }
 };
 
