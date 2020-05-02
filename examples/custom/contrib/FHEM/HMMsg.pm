@@ -137,9 +137,12 @@ sub processSwitchStatus {
 }
 
 sub processBlindStatus {
-  my ($self,$target) = @_;
+  my ($self,$target,$channel) = @_;
   my @evtEt=();
-  my $channel = $main::modules{CUL_HM}{defptr}{$self->channelId};
+  # no channel given - calc channel
+  if( ! defined($channel) ) {
+    $channel = $main::modules{CUL_HM}{defptr}{$self->channelId};
+  }
   if( defined($channel) ) {
     my $value = $self->payloadByte(2)/2;
     my $flags = $self->payloadByte(3);
@@ -230,6 +233,9 @@ sub processThreeState {
   my ($self,$target,$name0,$name100,$name50) = @_;
   my @evtEt=();
   my $channel = $main::modules{CUL_HM}{defptr}{$self->channelId};
+  if( ! defined($channel) ) {
+  	$channel = main::CUL_HM_id2Hash($self->from);
+  }
   my $val = $self->payloadByte(2)/2;
   $name0   = "closed" if ! defined($name0);
   $name100 = "open" if ! defined($name100);

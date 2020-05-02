@@ -34,12 +34,16 @@ namespace as {
  */
 class NoBattery {
 public:
-  /// get current battery voltage - returns always 0
-  uint8_t current () const { return 0; }
+  /// get current battery voltage - returns always 3.3
+  uint8_t current () const { return 33; }
   /// check if battery voltage is below critical value - returns always false
   bool critical () const { return false; }
+  /// set critical value - do nothing
+  void critical (__attribute__((unused)) uint8_t value ) {}
   /// check if battery voltage is below low value - returns always false
   bool low () const { return false; }
+  /// set low value - do nothing
+  void low (__attribute__((unused)) uint8_t value ) {}
   /// called when systems enter idle state
   void setIdle () {}
   /// called when systems returns from idle state

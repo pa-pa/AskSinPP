@@ -260,11 +260,10 @@ $customMsg{"HB-LC-SW4-MDIR"} = sub {
 };
 
 # window contact RHS3
-$HMConfig::culHmModel{"F209"} = {name=>"HB-Sec-RHS-3",st=>'custom',cyc=>'28:00',rxt=>'c:l',lst=>'1,4:1p',chn=>"Sens:1:1"};
-$HMConfig::culHmChanSets{"HB-Sec-RHS-30"}{fwUpdate} = "<filename>";
-$HMConfig::culHmChanSets{"HB-Sec-RHS-301"} = $HMConfig::culHmSubTypeSets{"THSensor"};
-$HMConfig::culHmRegModel{"HB-Sec-RHS-3"}   = { lowBatLimitBA2=>1, sabotageMsg=>1, transmDevTryMax=>1, cyclicInfoMsg=>1 };
-$HMConfig::culHmRegChan {"HB-Sec-RHS-301"} = { msgRhsPosA=>1, msgRhsPosB=>1, msgRhsPosC=>1, ledOnTime=>1, eventDlyTime=>1 };
+$HMConfig::culHmModel{"F209"} = {name=>"HB-Sec-RHS-3",st=>'custom',cyc=>'28:00',rxt=>'c:l',lst=>'1,4:1p',chn=>""};
+$HMConfig::culHmChanSets{"HB-Sec-RHS-300"} = $HMConfig::culHmSubTypeSets{"THSensor"};
+$HMConfig::culHmRegModel{"HB-Sec-RHS-3"}   = { lowBatLimitBA2=>1, sabotageMsg=>1, transmDevTryMax=>1, cyclicInfoMsg=>1,
+                                               msgRhsPosA=>1, msgRhsPosB=>1, msgRhsPosC=>1, ledOnTime=>1, eventDlyTime=>1 };
 $customMsg{"HB-Sec-RHS-3"} = sub {
   my ($msg,$target) = @_;
   my $batflags = 0;
@@ -289,6 +288,24 @@ $customMsg{"HB-Sec-RHS-3"} = sub {
   push @evtEt,[$device,1,"battery:".$batstat];
   push @evtEt,[$device,1,"batVoltage:".$bat/10];
   return @evtEt;
+};
+
+# velux blind - simple blind with burst and battery state
+$HMConfig::culHmModel{"F20A"} = {name=>"HB-LC-Bl1-Velux",st=>'custom',cyc=>'',rxt=>'b',lst=>'1,3',chn=>""};
+$HMConfig::culHmChanSets{"HB-LC-Bl1-Velux00"} = $HMConfig::culHmSubTypeSets{"blindActuator"};
+$HMConfig::culHmRegModel{"HB-LC-Bl1-Velux"} = $HMConfig::culHmRegType{blindActuator};
+$customMsg{"HB-LC-Bl1-Velux"} = sub {
+  my ($msg,$target) = @_;
+  my $device = main::CUL_HM_id2Hash($msg->from);
+  if( $msg->isStatus ) {
+    my @evtEt = $msg->processBlindStatus($target,$device);
+    my $batflags = $msg->payloadByte(3);
+    my $batstat = "ok";
+    $batstat = "low" if (($batflags & 0x80)==0x80);
+    push @evtEt,[$device,1,"battery:".$batstat];
+    return @evtEt;
+  }
+  return ();
 };
 
 $HMConfig::culHmModel{"F9D2"} = {name=>"HB-UNI-Sen-LEV-US",st=>'custom',cyc=>'',rxt=>'c:l',lst=>'1',chn=>"Level:1:1"};
