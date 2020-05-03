@@ -101,6 +101,9 @@ public:
     else if( msg == 2) newstate = 200;
     else if( msg == 3) newstate = 100;
 
+    // lets the position sensor remap the new state
+    newstate = possens.remap(newstate);
+
     if( sender.state == 255 ) {
       // we are in the init stage - store state only
       sender.state = newstate;

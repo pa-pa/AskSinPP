@@ -183,7 +183,7 @@ $customMsg{"HB-DoorBell"} = sub {
   return $msg->processRemote if $msg->isRemote;
   return $msg->processValues if $msg->isValues;
   return $msg->processMotion($target) if $channel == 5;
-  return $msg->processThreeState($target,"absent","present","educate") if $channel >= 6;
+  return $msg->processThreeState($target,(0=>'absent',200=>'present',100=>'educate')) if $channel >= 6;
   return ();
 };
 
@@ -219,7 +219,7 @@ $HMConfig::culHmRegChan {"HB-IBUT-808"} = $HMConfig::culHmRegType{ibutton};
 $customMsg{"HB-IBUT-8"} = sub {
   my ($msg,$target) = @_;
   return $msg->processRemote if $msg->isRemote;
-  return $msg->processThreeState($target,"absent","present","educate");
+  return $msg->processThreeState($target,(0=>'absent',200=>'present',100=>'educate'));
   return ();
 };
 
@@ -269,7 +269,7 @@ $customMsg{"HB-Sec-RHS-3"} = sub {
   my $batflags = 0;
   my $bat = 0;
   my $device = main::CUL_HM_id2Hash($msg->from);
-  my @evtEt = $msg->processThreeState($target) if $msg->channel == 1;
+  my @evtEt = $msg->processThreeState($target,(0=>'closed',50=>'unlocked',100=>'tilted',200=>'open')) if $msg->channel == 1;
   if( $msg->isSensor ) {
     # add battery value
     $bat = $msg->payloadByte(3);
