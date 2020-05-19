@@ -37,6 +37,7 @@ install:
   - git clone https://github.com/bogde/HX711.git $HOME/arduino-ide/libraries/HX711
   - git clone https://github.com/ZinggJM/GxEPD.git $HOME/arduino-ide/libraries/GxEPD
   - git clone https://github.com/adafruit/Adafruit-GFX-Library.git $HOME/arduino-ide/libraries/Adafruit-GFX-Library
+  - git clone https://github.com/adafruit/Adafruit_BusIO.git $HOME/arduino-ide/libraries/Adafruit_BusIO
   - git clone https://github.com/olikraus/U8g2_for_Adafruit_GFX.git $HOME/arduino-ide/libraries/U8g2_for_Adafruit_GFX
   - git clone https://github.com/FastLED/FastLED.git $HOME/arduino-ide/libraries/FastLED
   - git clone https://github.com/PaulStoffregen/SoftwareSerial.git $HOME/arduino-ide/libraries/SoftwareSerial
