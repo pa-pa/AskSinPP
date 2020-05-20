@@ -257,7 +257,11 @@ class DimmerStateMachine {
       else { // dim up
         diff = destlevel - curlevel;
       }
-      if( ramptime > diff ) {
+      if (diff == 0) { 
+        dx = 0; 
+        tack = 1; 
+      } 
+      else if( ramptime > diff ) {
         dx = 1;
         tack = ramptime / diff;
       }
