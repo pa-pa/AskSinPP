@@ -1,0 +1,14 @@
+<map id="as::Temperature" name="as::Temperature">
+<area shape="rect" id="node1" title=" " alt="" coords="139,269,255,296"/>
+<area shape="rect" id="node3" href="$classas_1_1_bme280.html" title=" " alt="" coords="346,5,438,32"/>
+<area shape="rect" id="node4" href="$classas_1_1_bmp180.html" title=" " alt="" coords="346,56,438,83"/>
+<area shape="rect" id="node5" href="$classas_1_1_dht.html" title=" " alt="" coords="303,107,481,149"/>
+<area shape="rect" id="node6" href="$classas_1_1_ds18b20.html" title=" " alt="" coords="345,173,439,200"/>
+<area shape="rect" id="node7" href="$classas_1_1_m_a_x6675.html" title=" " alt="" coords="307,225,477,266"/>
+<area shape="rect" id="node8" href="$classas_1_1_ntc.html" title=" " alt="" coords="309,291,475,347"/>
+<area shape="rect" id="node9" href="$classas_1_1_sht10.html" title=" " alt="" coords="317,371,467,413"/>
+<area shape="rect" id="node10" href="$classas_1_1_sht21.html" title=" " alt="" coords="310,437,474,464"/>
+<area shape="rect" id="node11" href="$classas_1_1_sht31.html" title=" " alt="" coords="310,488,474,515"/>
+<area shape="rect" id="node12" href="$classas_1_1_si7021.html" title=" " alt="" coords="350,539,434,565"/>
+<area shape="rect" id="node2" href="$classas_1_1_sensor.html" title=" " alt="" coords="5,269,91,296"/>
+</map>

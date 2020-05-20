@@ -6,7 +6,7 @@
 #ifndef __ASKSINPP_h__
 #define __ASKSINPP_h__
 
-#define ASKSIN_PLUS_PLUS_VERSION "4.1.2"
+#define ASKSIN_PLUS_PLUS_VERSION "4.1.5"
 
 #define ASKSIN_PLUS_PLUS_IDENTIFIER F("AskSin++ V" ASKSIN_PLUS_PLUS_VERSION " (" __DATE__ " " __TIME__ ")")
 
@@ -55,20 +55,37 @@ namespace as {
 
 extern const char* __gb_chartable;
 
+/**
+ * AskSinBase provides basic methods for general use.
+ */
 class AskSinBase {
   Storage storage;
 public:
-
+  /**
+   * Read data from program space (AVR).
+   * \param dest pointer to destiantion in RAM
+   * \param adr address of program space to read data from
+   * \param size of data to read
+   */
   static void pgm_read(uint8_t* dest,uint16_t adr,uint8_t size) {
     for( int i=0; i<size; ++i, ++dest ) {
       *dest = pgm_read_byte(adr + i);
     }
   }
-
+  /**
+   * Convert numeric value to character for printing.
+   * \param c numeric value to convert
+   * \return character for output
+   */
   static uint8_t toChar (uint8_t c) {
     return *(__gb_chartable+c);
   }
-
+  /**
+   * Update CRC16 value
+   * \param crc current checksum value
+   * \param data to add
+   * \return new crc checksum value
+   */
   static uint16_t crc16 (uint16_t crc,uint8_t d) {
     crc ^= d;
     for( uint8_t i = 8; i != 0; --i ) {
@@ -77,6 +94,12 @@ public:
     return crc;
   }
 
+  /**
+   * Calculate CRC24 value from data
+   * \param data pointer to data to calculate CRC checksum
+   * \param len number of bytes to use for calculation
+   * \return CRC24 checksum
+   */
   static uint32_t crc24(const uint8_t* data,int len) {
     uint32_t crc = 0xB704CEL;
     for( uint8_t i=0; i<len; ++i) {
@@ -85,6 +108,12 @@ public:
     return crc;
   }
 
+  /**
+   * Update CRC24 value
+   * \param crc current checksum value
+   * \param data to add
+   * \return new crc checksum value
+   */
   static uint32_t crc24(uint32_t crc,uint8_t d) {
     crc ^= ((uint32_t)d) << 16;
     for( uint8_t i = 0; i < 8; i++) {
@@ -122,7 +151,11 @@ public:
     return decis2ticks( (uint32_t)tByte*(iTime>>5) );
   }
 
-  // calculate time until next send slot
+  /** Calculate time until next send slot
+   * \param id Homematic ID of the device
+   * \param msgcnt current message counter
+   * \return next send slot in sysclock ticks
+   */
   static uint32_t nextSendSlot (const HMID& id,uint8_t msgcnt) {
     uint32_t value = ((uint32_t)id) << 8 | msgcnt;
     value = (value * 1103515245 + 12345) >> 16;
@@ -133,7 +166,13 @@ public:
 
     return value;
   }
-
+  /**
+   * Read status of pin.
+   * \param pinnr the number of the pin to read
+   * \param enablenr pin to set to high for enabling the read
+   * \param ms milli seconds to wait between enablement and pin read
+   * \return status of read pin
+   */
   static uint8_t readPin(uint8_t pinnr,uint8_t enablenr=0,uint8_t ms=0) {
     uint8_t value=0;
     pinMode(pinnr,INPUT_PULLUP);

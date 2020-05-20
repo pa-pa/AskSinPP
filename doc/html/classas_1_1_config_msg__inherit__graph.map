@@ -1,0 +1,11 @@
+<map id="as::ConfigMsg" name="as::ConfigMsg">
+<area shape="rect" id="node1" title=" " alt="" coords="151,107,257,133"/>
+<area shape="rect" id="node3" href="$classas_1_1_config_end_msg.html" title=" " alt="" coords="329,5,459,32"/>
+<area shape="rect" id="node4" href="$classas_1_1_config_param_req_msg.html" title=" " alt="" coords="311,56,477,83"/>
+<area shape="rect" id="node6" href="$classas_1_1_config_peer_add_msg.html" title=" " alt="" coords="316,107,472,133"/>
+<area shape="rect" id="node8" href="$classas_1_1_config_peer_list_req_msg.html" title=" " alt="" coords="305,157,483,184"/>
+<area shape="rect" id="node9" href="$classas_1_1_config_write_index_msg.html" title=" " alt="" coords="310,208,478,235"/>
+<area shape="rect" id="node2" href="$classas_1_1_message.html" title=" " alt="" coords="5,107,103,133"/>
+<area shape="rect" id="node5" href="$classas_1_1_config_start_msg.html" title=" " alt="" coords="554,56,689,83"/>
+<area shape="rect" id="node7" href="$classas_1_1_config_peer_remove_msg.html" title=" " alt="" coords="531,107,712,133"/>
+</map>

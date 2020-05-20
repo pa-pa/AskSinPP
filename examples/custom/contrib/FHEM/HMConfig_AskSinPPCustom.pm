@@ -78,6 +78,23 @@ $customMsg{"HM-LC-Sw2-FM-CustomFW"} = sub {
   return ();
 };
 
+$HMConfig::culHmModel{"F336"} = {name=>"HM-LC-Sw2PBU-FM-CustomFW",st=>'custom',cyc=>'',rxt=>'',lst=>'1,3:1p.2p,4:3p.4p',chn=>"Sw:1:2,Btn:3:4"};
+$HMConfig::culHmChanSets{"HM-LC-Sw2PBU-FM-CustomFW00"}{fwUpdate} ="<filename>";
+$HMConfig::culHmChanSets{"HM-LC-Sw2PBU-FM-CustomFW01"} = $HMConfig::culHmSubTypeSets{"switch"};
+$HMConfig::culHmChanSets{"HM-LC-Sw2PBU-FM-CustomFW02"} = $HMConfig::culHmSubTypeSets{"switch"};
+$HMConfig::culHmChanSets{"HM-LC-Sw2PBU-FM-CustomFW03"} = $HMConfig::culHmSubTypeSets{"THSensor"};
+$HMConfig::culHmChanSets{"HM-LC-Sw2PBU-FM-CustomFW04"} = $HMConfig::culHmSubTypeSets{"THSensor"};
+$HMConfig::culHmRegChan{"HM-LC-Sw2PBU-FM-CustomFW01"}  = $HMConfig::culHmRegType{switch};
+$HMConfig::culHmRegChan{"HM-LC-Sw2PBU-FM-CustomFW02"}  = $HMConfig::culHmRegType{switch};
+$HMConfig::culHmRegChan{"HM-LC-Sw2PBU-FM-CustomFW03"}  = $HMConfig::culHmRegType{remote};
+$HMConfig::culHmRegChan{"HM-LC-Sw2PBU-FM-CustomFW04"}  = $HMConfig::culHmRegType{remote};
+$customMsg{"HM-LC-Sw2PBU-FM-CustomFW"} = sub {
+  my ($msg,$target) = @_;
+  return $msg->processRemote if $msg->isRemote;
+  return $msg->processSwitchStatus($target) if $msg->isStatus;
+  return ();
+};
+
 $HMConfig::culHmModel{"F332"} = {name=>"HB-UNI-SenAct-4-4-RC",st=>'custom',cyc=>'',rxt=>'',lst=>'1,3:1p.2p.3p.4p,4:5p.6p.7p.8p',chn=>"Sw:1:4,Btn:5:8"};
 $HMConfig::culHmChanSets{"HB-UNI-SenAct-4-4-RC00"}{fwUpdate} = "<filename>";
 $HMConfig::culHmChanSets{"HB-UNI-SenAct-4-4-RC01"} = $HMConfig::culHmSubTypeSets{"switch"};
@@ -166,7 +183,7 @@ $customMsg{"HB-DoorBell"} = sub {
   return $msg->processRemote if $msg->isRemote;
   return $msg->processValues if $msg->isValues;
   return $msg->processMotion($target) if $channel == 5;
-  return $msg->processThreeState($target,"absent","present","educate") if $channel >= 6;
+  return $msg->processThreeState($target,(0=>'absent',200=>'present',100=>'educate')) if $channel >= 6;
   return ();
 };
 
@@ -202,7 +219,7 @@ $HMConfig::culHmRegChan {"HB-IBUT-808"} = $HMConfig::culHmRegType{ibutton};
 $customMsg{"HB-IBUT-8"} = sub {
   my ($msg,$target) = @_;
   return $msg->processRemote if $msg->isRemote;
-  return $msg->processThreeState($target,"absent","present","educate");
+  return $msg->processThreeState($target,(0=>'absent',200=>'present',100=>'educate'));
   return ();
 };
 
@@ -239,6 +256,55 @@ $customMsg{"HB-LC-SW4-MDIR"} = sub {
   my $channel = $msg->channel;
   return $msg->processMotion($target) if $channel == 5;
   return $msg->processSwitchStatus($target) if $msg->isStatus;
+  return ();
+};
+
+# window contact RHS3
+$HMConfig::culHmModel{"F209"} = {name=>"HB-Sec-RHS-3",st=>'custom',cyc=>'28:00',rxt=>'c:l',lst=>'1,4:1p',chn=>""};
+$HMConfig::culHmChanSets{"HB-Sec-RHS-300"} = $HMConfig::culHmSubTypeSets{"THSensor"};
+$HMConfig::culHmRegModel{"HB-Sec-RHS-3"}   = { lowBatLimitBA2=>1, sabotageMsg=>1, transmDevTryMax=>1, cyclicInfoMsg=>1,
+                                               msgRhsPosA=>1, msgRhsPosB=>1, msgRhsPosC=>1, ledOnTime=>1, eventDlyTime=>1 };
+$customMsg{"HB-Sec-RHS-3"} = sub {
+  my ($msg,$target) = @_;
+  my $batflags = 0;
+  my $bat = 0;
+  my $device = main::CUL_HM_id2Hash($msg->from);
+  my @evtEt = $msg->processThreeState($target,(0=>'closed',50=>'unlocked',100=>'tilted',200=>'open')) if $msg->channel == 1;
+  if( $msg->isSensor ) {
+    # add battery value
+    $bat = $msg->payloadByte(3);
+    $batflags = $msg->payloadByte(0);
+  }
+  if( $msg->isStatus ) {
+    # add battery value
+    $bat = $msg->payloadByte(5);
+    $batflags = $msg->payloadByte(3);
+    # set sabotage status
+    push @evtEt,[$device,1,"sabotageError:".(($batflags & 0x0E) ? "on" : "off")];
+  }
+  # add battery state
+  my $batstat = "ok";
+  $batstat = "low" if (($batflags & 0x80)==0x80);
+  push @evtEt,[$device,1,"battery:".$batstat];
+  push @evtEt,[$device,1,"batVoltage:".$bat/10];
+  return @evtEt;
+};
+
+# velux blind - simple blind with burst and battery state
+$HMConfig::culHmModel{"F20A"} = {name=>"HB-LC-Bl1-Velux",st=>'custom',cyc=>'',rxt=>'b',lst=>'1,3',chn=>""};
+$HMConfig::culHmChanSets{"HB-LC-Bl1-Velux00"} = $HMConfig::culHmSubTypeSets{"blindActuator"};
+$HMConfig::culHmRegModel{"HB-LC-Bl1-Velux"} = $HMConfig::culHmRegType{blindActuator};
+$customMsg{"HB-LC-Bl1-Velux"} = sub {
+  my ($msg,$target) = @_;
+  my $device = main::CUL_HM_id2Hash($msg->from);
+  if( $msg->isStatus ) {
+    my @evtEt = $msg->processBlindStatus($target,$device);
+    my $batflags = $msg->payloadByte(3);
+    my $batstat = "ok";
+    $batstat = "low" if (($batflags & 0x80)==0x80);
+    push @evtEt,[$device,1,"battery:".$batstat];
+    return @evtEt;
+  }
   return ();
 };
 
@@ -281,13 +347,57 @@ $customMsg{"HB-UNI-Sen-PRESS"} = sub {
   return @evtEt;
 };
 
-$HMConfig::culHmModel{"F312"} = {name=>"HB-UNI-Sen-CAP-MOIST-T",st=>'custom',cyc=>'',rxt=>'c:l',lst=>'1',chn=>"Weather:1:1,Moisture:2:2"};
+$HMConfig::culHmModel{"F311"} = {name=>"HB-UNI-Sen-CAP-MOIST",st=>'custom',cyc=>'',rxt=>'c:l',lst=>'1',chn=>"Data:1:1,Moisture:2:4"};
+$HMConfig::culHmChanSets{"HB-UNI-Sen-CAP-MOIST00"}{fwUpdate} = "<filename>";
+$HMConfig::culHmChanSets{"HB-UNI-Sen-CAP-MOIST01"} = {};
+$HMConfig::culHmChanSets{"HB-UNI-Sen-CAP-MOIST02"} = {};
+$HMConfig::culHmChanSets{"HB-UNI-Sen-CAP-MOIST03"} = {};
+$HMConfig::culHmChanSets{"HB-UNI-Sen-CAP-MOIST04"} = {};
+$HMConfig::culHmRegModel{"HB-UNI-Sen-CAP-MOIST"}   = { lowBatteryLimit=>1, transmitInterval=>1 };
+$HMConfig::culHmRegChan {"HB-UNI-Sen-CAP-MOIST01"} = {};
+$HMConfig::culHmRegChan {"HB-UNI-Sen-CAP-MOIST02"} = { highValue=>1, lowValue=>1 };
+$HMConfig::culHmRegChan {"HB-UNI-Sen-CAP-MOIST03"} = { highValue=>1, lowValue=>1 };
+$HMConfig::culHmRegChan {"HB-UNI-Sen-CAP-MOIST04"} = { highValue=>1, lowValue=>1 };
+$customMsg{"HB-UNI-Sen-CAP-MOIST"} = sub {
+  my ($msg,$target) = @_;
+  my @evtEt=();
+  my $cnum = $msg->payloadByte(1) & 0x3f; # get channel from byte 1 of payload
+  my $device = main::CUL_HM_id2Hash($msg->from);
+  my $batstat = "ok";
+  $batstat = "low" if (($msg->payloadByte(0) & 0x80)==0x80);
+  push @evtEt,[$device,1,"battery:".$batstat];
+  my $channel = $main::modules{CUL_HM}{defptr}{$msg->channelId($cnum)};
+  if( defined($channel) ) {
+    my $bat = $msg->payloadByte(2);
+    push @evtEt,[$channel,1,"batVoltage:".$bat/10];
+    push @evtEt,[$channel,1,"state:".($bat/10)." V"];
+  }
+  for( my $offset=3; $offset < length($msg->payload)/2; $offset += 2 ) {
+    $cnum = $msg->payloadByte($offset) & 0x3f; # get channel for next value
+    $channel = $main::modules{CUL_HM}{defptr}{$msg->channelId($cnum)};
+    if( defined($channel) ) {
+      my $moist = $msg->payloadByte($offset+1);
+      push @evtEt,[$channel,1,"humidity:".$moist];
+      push @evtEt,[$channel,1,"state:".$moist." %"];
+    }
+    else {
+      Log 1,"No channel for ".$msg->channelId($cnum);
+    }
+  }
+  return @evtEt;
+};
+
+$HMConfig::culHmModel{"F312"} = {name=>"HB-UNI-Sen-CAP-MOIST-T",st=>'custom',cyc=>'',rxt=>'c:l',lst=>'1',chn=>"Weather:1:1,Moisture:2:4"};
 $HMConfig::culHmChanSets{"HB-UNI-Sen-CAP-MOIST-T00"}{fwUpdate} = "<filename>";
 $HMConfig::culHmChanSets{"HB-UNI-Sen-CAP-MOIST-T01"} = {};
 $HMConfig::culHmChanSets{"HB-UNI-Sen-CAP-MOIST-T02"} = {};
+$HMConfig::culHmChanSets{"HB-UNI-Sen-CAP-MOIST-T03"} = {};
+$HMConfig::culHmChanSets{"HB-UNI-Sen-CAP-MOIST-T04"} = {};
 $HMConfig::culHmRegModel{"HB-UNI-Sen-CAP-MOIST-T"}   = { lowBatteryLimit=>1, transmitInterval=>1 };
 $HMConfig::culHmRegChan {"HB-UNI-Sen-CAP-MOIST-T01"} = { tempOffset=>1 };
 $HMConfig::culHmRegChan {"HB-UNI-Sen-CAP-MOIST-T02"} = { highValue=>1, lowValue=>1 };
+$HMConfig::culHmRegChan {"HB-UNI-Sen-CAP-MOIST-T03"} = { highValue=>1, lowValue=>1 };
+$HMConfig::culHmRegChan {"HB-UNI-Sen-CAP-MOIST-T04"} = { highValue=>1, lowValue=>1 };
 $customMsg{"HB-UNI-Sen-CAP-MOIST-T"} = sub {
   my ($msg,$target) = @_;
   my @evtEt=();

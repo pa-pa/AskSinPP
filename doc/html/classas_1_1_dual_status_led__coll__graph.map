@@ -1,0 +1,5 @@
+<map id="as::DualStatusLed&lt; LEDPIN1, LEDPIN2, PINTYPE1, PINTYPE2 &gt;" name="as::DualStatusLed&lt; LEDPIN1, LEDPIN2, PINTYPE1, PINTYPE2 &gt;">
+<area shape="rect" id="node1" title=" " alt="" coords="5,171,224,227"/>
+<area shape="rect" id="node2" href="$classas_1_1_led_states.html" title=" " alt="" coords="63,95,166,121"/>
+<area shape="rect" id="node3" href="$structas_1_1_led_states_1_1_blink_pattern.html" title=" " alt="" coords="23,5,206,32"/>
+</map>

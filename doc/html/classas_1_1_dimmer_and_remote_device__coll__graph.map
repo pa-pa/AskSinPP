@@ -1,0 +1,13 @@
+<map id="as::DimmerAndRemoteDevice&lt; HalType, DimChannelType, RmtChannelType, DimChannelCount, DimVirtualCount, RmtChannelCount, List0Type &gt;" name="as::DimmerAndRemoteDevice&lt; HalType, DimChannelType, RmtChannelType, DimChannelCount, DimVirtualCount, RmtChannelCount, List0Type &gt;">
+<area shape="rect" id="node1" title=" " alt="" coords="919,115,1160,200"/>
+<area shape="rect" id="node2" href="$classas_1_1_channel_device.html" title=" " alt="" coords="595,27,841,112"/>
+<area shape="rect" id="node3" href="$classas_1_1_device.html" title=" " alt="" coords="393,49,540,90"/>
+<area shape="rect" id="node4" href="$structas_1_1_device_info.html" title=" " alt="" coords="192,5,299,32"/>
+<area shape="rect" id="node5" href="$classas_1_1_message.html" title=" " alt="" coords="197,56,294,83"/>
+<area shape="rect" id="node6" href="$classas_1_1_h_m_i_d.html" title=" " alt="" coords="14,53,91,80"/>
+<area shape="rect" id="node7" href="$classas_1_1_key_store.html" title=" " alt="" coords="196,109,295,136"/>
+<area shape="rect" id="node8" href="$classas_1_1_base_list.html" title=" " alt="" coords="5,109,100,136"/>
+<area shape="rect" id="node9" href="$classas_1_1_virt_channel.html" title=" " alt="" coords="617,137,819,178"/>
+<area shape="rect" id="node10" href="$classas_1_1_virt_base_channel.html" title=" " alt="" coords="388,173,545,214"/>
+<area shape="rect" id="node11" href="$classas_1_1_virt_channel.html" title=" " alt="" coords="618,202,818,243"/>
+</map>

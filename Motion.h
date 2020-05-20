@@ -175,6 +175,12 @@ public:
       sysclock.add(*this);
     }
   }
+
+  // we are in quiet mode - means we have a motion detected
+  bool isMotion () const {
+    return quiet.enabled == true;
+  }
+
 };
 
 #define motionISR(device,chan,pin) class device##chan##ISRHandler { \

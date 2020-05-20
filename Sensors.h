@@ -63,6 +63,8 @@ public:
   Position () : _position(NoPos) {}
   // return the last measured position
   uint8_t position () { return _position; }
+  // remap the state before send to central
+  uint8_t remap (uint8_t state) { return state; }
   // return the measure interval in sysclock ticks
   uint32_t interval () { return seconds2ticks(1); }
 };

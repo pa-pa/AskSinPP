@@ -1,0 +1,10 @@
+<map id="as::Humidity" name="as::Humidity">
+<area shape="rect" id="node1" title=" " alt="" coords="139,159,233,185"/>
+<area shape="rect" id="node3" href="$classas_1_1_bme280.html" title=" " alt="" coords="325,5,417,32"/>
+<area shape="rect" id="node4" href="$classas_1_1_dht.html" title=" " alt="" coords="281,57,460,98"/>
+<area shape="rect" id="node5" href="$classas_1_1_sht10.html" title=" " alt="" coords="295,122,446,163"/>
+<area shape="rect" id="node6" href="$classas_1_1_sht21.html" title=" " alt="" coords="289,188,453,215"/>
+<area shape="rect" id="node7" href="$classas_1_1_sht31.html" title=" " alt="" coords="289,239,453,265"/>
+<area shape="rect" id="node8" href="$classas_1_1_si7021.html" title=" " alt="" coords="329,289,413,316"/>
+<area shape="rect" id="node2" href="$classas_1_1_sensor.html" title=" " alt="" coords="5,159,91,185"/>
+</map>

@@ -270,12 +270,16 @@ public:
     StateMachine::setup(this->getList1());
   }
 
-  uint8_t flags () const {
-    return StateMachine::flags();
-  }
-
   uint8_t status () const {
     return StateMachine::status();
+  }
+
+  uint8_t flags () const {
+    uint8_t flags = StateMachine::flags();
+    if( this->device().battery().low() == true ) {
+      flags |= 0x80;
+    }
+    return flags;
   }
 
   void status (uint8_t stat, uint16_t delay) {

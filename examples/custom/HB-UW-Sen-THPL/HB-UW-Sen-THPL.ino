@@ -6,8 +6,9 @@
 //- -----------------------------------------------------------------------------------------------------------------------
 
 // define this to read the device id, serial and device type from bootloader section
-// #define USE_OTA_BOOTLOADER
+//#define USE_OTA_BOOTLOADER
 
+// #define USE_BME_280
 #define EXTRAMILLIS 730 // 730 millisecond extra time to better hit the slot
 #define EI_NOTEXTERNAL
 #include <EnableInterrupt.h>
@@ -19,9 +20,13 @@
 #include <Weather.h>
 
 #include <Wire.h>
-#include <sensors/Bmp180.h>
+#ifdef USE_BME_280
+  #include <sensors/Bme280.h>
+#else
+  #include <sensors/Bmp180.h>
+  #include <sensors/Sht10.h>
+#endif
 #include <sensors/Tsl2561.h>
-#include <sensors/Sht10.h>
 
 // we use a Pro Mini
 // Arduino pin for the LED
@@ -40,7 +45,7 @@ using namespace as;
 // define all device properties
 const struct DeviceInfo PROGMEM devinfo = {
 //    {0xab,0xcd,0xef},       // Device ID
-    {0x0b,0x00,0x01},       // Device ID
+    {0x0b,0x00,0x02},       // Device ID
     "HB0Default",           // Device Serial
     {0xf1,0x01},            // Device Model
     0x10,                   // Firmware Version
@@ -71,13 +76,52 @@ public:
   uint16_t altitude () const {
     return (this->readRegister(36,0) << 8) + this->readRegister(37,0);
   }
-
+  void defaults () {
+    RegList0<WeatherRegsList0>::defaults();
+    transmitDevTryMax(6);
+    lowBatLimit(22);
+  }
 };
 
 /*
  * Sensors class is used by the WeatherChannel to measure the data. It has to implement
  * temperature(), humidity(), pressure(), brightness()
  */
+#ifdef USE_BME_280
+class Sensors : public Alarm {
+  Bme280          bme;
+  Tsl2561<>       tsl;
+public:
+  Sensors () {}
+  virtual ~Sensors() {}
+
+  // init the used hardware
+  void init () {
+    pinMode(6,OUTPUT);
+    pinMode(3,OUTPUT);
+    digitalWrite(3,LOW);
+    digitalWrite(6,HIGH);
+    Wire.begin();
+    bme.init();
+    tsl.init();
+  }
+  // return how many milliseconds the measure should start in front of sending the message
+  uint16_t before () const { return 4000; }
+  // get the data
+  virtual void trigger (__attribute__ ((unused)) AlarmClock& clock) {
+    DPRINTLN("Measure...  ");
+    tsl.measure();
+    bme.measure();
+    DPRINT("T: ");DDEC(bme.temperature());DPRINT("  H: ");DDECLN(bme.humidity());
+    DPRINT("P: ");DDEC(bme.pressure());DPRINT("  B: ");DDECLN(tsl.brightness());
+  }
+
+  uint16_t temperature () { return bme.temperature(); }
+  uint8_t  humidity () { return bme.humidity(); }
+  uint16_t pressure () { return bme.pressure() * 10; }
+  uint32_t brightness () { return tsl.brightness(); }
+};
+#else
 class Sensors : public Alarm {
   Sht10<A4,A5>    sht10;
   Bmp180          bmp;
@@ -97,18 +141,19 @@ public:
   // get the data
   virtual void trigger (__attribute__ ((unused)) AlarmClock& clock) {
     DPRINTLN("Measure...  ");
+    tsl.measure();
     sht10.measure();
     bmp.measure();
-    tsl.measure();
     DPRINT("T: ");DDEC(sht10.temperature());DPRINT("  H: ");DDECLN(sht10.humidity());
     DPRINT("P: ");DDEC(bmp.pressure());DPRINT("  B: ");DDECLN(tsl.brightness());
   }
+
   uint16_t temperature () { return sht10.temperature(); }
   uint8_t  humidity () { return sht10.humidity(); }
   uint16_t pressure () { return bmp.pressure() * 10; }
   uint32_t brightness () { return tsl.brightness(); }
 };
-
+#endif
 
 class SensChannel : public WeatherChannel<Hal,RTC,Sensors,PEERS_PER_CHANNEL,EXTRAMILLIS,WeatherList0> {
 public:

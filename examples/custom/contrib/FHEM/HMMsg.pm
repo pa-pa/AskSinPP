@@ -137,9 +137,12 @@ sub processSwitchStatus {
 }
 
 sub processBlindStatus {
-  my ($self,$target) = @_;
+  my ($self,$target,$channel) = @_;
   my @evtEt=();
-  my $channel = $main::modules{CUL_HM}{defptr}{$self->channelId};
+  # no channel given - calc channel
+  if( ! defined($channel) ) {
+    $channel = $main::modules{CUL_HM}{defptr}{$self->channelId};
+  }
   if( defined($channel) ) {
     my $value = $self->payloadByte(2)/2;
     my $flags = $self->payloadByte(3);
@@ -227,15 +230,20 @@ sub processRemote {
 }
 
 sub processThreeState {
-  my ($self,$target,$name0,$name100,$name50) = @_;
+  my ($self,$target,%mapping) = @_;
   my @evtEt=();
   my $channel = $main::modules{CUL_HM}{defptr}{$self->channelId};
-  my $val = $self->payloadByte(2)/2;
-  $name0   = "closed" if ! defined($name0);
-  $name100 = "open" if ! defined($name100);
-  $name50  = "tilted" if ! defined($name50);
+  if( ! defined($channel) ) {
+  	# fallback to device
+  	$channel = main::CUL_HM_id2Hash($self->from);
+  }
+  if( ! %mapping ) {
+    %mapping = (0=>'closed',100=>'tilted',200=>'open');
+  }
+  my $val = $self->payloadByte(2);
   if( defined($channel) ) {
-    my $vs = ($val==100 ? $name100 : ($val==0 ? $name0 : $name50));
+    my $vs = $val/2;
+    $vs = $mapping{$val} if defined $mapping{$val};
     push @evtEt,[$channel,1,"state:".$vs];
     push @evtEt,[$channel,1,"contact:$vs$target"];
   }

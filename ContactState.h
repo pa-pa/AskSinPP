@@ -29,6 +29,10 @@ class StateGenericChannel : public Channel<HALTYPE,List1Type,EmptyList,List4Type
     virtual void trigger (__attribute__ ((unused)) AlarmClock& clock) {
       SensorEventMsg& msg = (SensorEventMsg&)channel.device().message();
       msg.init(channel.device().nextcount(),channel.number(),count++,state,channel.device().battery().low());
+#ifdef CONTACT_STATE_WITH_BATTERY
+      msg.append(channel.device().battery().current());
+      // msg.append(__gb_BatCount);
+#endif
       channel.device().sendPeerEvent(msg,channel);
     }
   };
@@ -56,9 +60,8 @@ public:
   }
 
   void init () {
-    // start polling
-    set(possens.interval());
-    sysclock.add(*this);
+    // get the current state
+    trigger(sysclock);
   }
 
   uint8_t status () const {
@@ -72,8 +75,11 @@ public:
   }
 
   void trigger (__attribute__ ((unused)) AlarmClock& clock)  {
-    set(possens.interval());
-    clock.add(*this);
+    // reactivate polling - if interval greater 0
+    if( possens.interval() > 0) {
+      set(possens.interval());
+      clock.add(*this);
+    }
     uint8_t newstate = sender.state;
     uint8_t msg = 0;
     possens.measure();
@@ -95,7 +101,14 @@ public:
     else if( msg == 2) newstate = 200;
     else if( msg == 3) newstate = 100;
 
-    if( newstate != sender.state ) {
+    // lets the position sensor remap the new state
+    newstate = possens.remap(newstate);
+
+    if( sender.state == 255 ) {
+      // we are in the init stage - store state only
+      sender.state = newstate;
+    }
+    else if( newstate != sender.state ) {
       uint8_t delay = this->getList1().eventDelaytime();
       sender.state = newstate;
       sysclock.cancel(sender);
@@ -112,13 +125,20 @@ public:
       }
     }
     if( sabpin != 0 ) {
-      bool sabstate = (AskSinBase::readPin(sabpin) == SABOTAGE_ACTIVE_STATE);
+      bool sabstate = (possens.interval()==0 ? digitalRead(sabpin) : AskSinBase::readPin(sabpin) == SABOTAGE_ACTIVE_STATE);
       if( sabotage != sabstate && this->device().getList0().sabotageMsg() == true ) {
         sabotage = sabstate;
         this->changed(true); // trigger StatusInfoMessage to central
       }
     }
   }
+
+#ifdef CONTACT_STATE_WITH_BATTERY
+  void patchStatus (Message& msg) {
+    // append current battery value to status message
+    msg.append(this->device().battery().current());
+  }
+#endif
 };
 
 // alias for old code
@@ -134,23 +154,23 @@ public:
   ~ThreeStateChannel () {}
 
   void init (uint8_t pin1,uint8_t pin2, uint8_t sab,const uint8_t* pmap) {
-    BaseChannel::init(sab);
     BaseChannel::possens.init(pin1,pin2,pmap);
+    BaseChannel::init(sab);
   }
 
   void init (uint8_t pin1,uint8_t pin2, const uint8_t* pmap) {
-    BaseChannel::init();
     BaseChannel::possens.init(pin1,pin2,pmap);
+    BaseChannel::init();
   }
 
   void init (uint8_t pin1,uint8_t pin2, uint8_t sab) {
-    BaseChannel::init(sab);
     BaseChannel::possens.init(pin1,pin2);
+    BaseChannel::init(sab);
   }
 
   void init (uint8_t pin1,uint8_t pin2) {
-    BaseChannel::init();
     BaseChannel::possens.init(pin1,pin2);
+    BaseChannel::init();
   }
 };
 
@@ -218,6 +238,12 @@ public:
 // alias for old code
 template<class HalType,class ChannelType,int ChannelCount,class List0Type,uint32_t CycleTime=DEFCYCLETIME>
 using ThreeStateDevice = StateDevice<HalType,ChannelType,ChannelCount,List0Type,CycleTime>;
+
+
+#define contactISR(pin,func) if( digitalPinToInterrupt(pin) == NOT_AN_INTERRUPT ) \
+  enableInterrupt(pin,func,CHANGE); \
+else \
+  attachInterrupt(digitalPinToInterrupt(pin),func,CHANGE);
 
 }
 

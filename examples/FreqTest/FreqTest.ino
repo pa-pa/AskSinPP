@@ -72,6 +72,7 @@ typedef AskSin<LedType,NoBattery,RadioType> HalType;
 #define BOUNDSTEP 0x10               // step width during upper/lower bound analysis
 
 
+// see https://github.com/AskSinPP/asksinpp.de/blob/master/Grundlagen/FAQ/Fehlerhafte_CC1101.md
 // #define ACTIVE_PING
 HMID PING_FROM(0x12,0x34,0x56);      // from address for status message e.g. switch
 HMID PING_TO(0x99,0x66,0x99);        // to address for status message / central / CCU
