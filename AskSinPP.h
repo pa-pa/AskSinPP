@@ -266,7 +266,7 @@ public:
     radio.wakeup();
   }
 
-#ifdef ARDUINO_ARCH_AVR
+#if defined(ARDUINO_ARCH_AVR) && ! ( defined(ARDUINO_AVR_ATmega32) || defined(__AVR_ATmega644__))
   template <bool ENABLETIMER2=false, bool ENABLEADC=false>
   void idle () { activity.savePower< Idle<ENABLETIMER2,ENABLEADC> >(*this); }
 
@@ -298,7 +298,7 @@ public:
       return rtc.runready() || AskSin<StatusLed,Battery,Radio,Buzzer>::runready();
   }
 
-#ifdef ARDUINO_ARCH_AVR
+#if defined(ARDUINO_ARCH_AVR) && ! ( defined(ARDUINO_AVR_ATmega32) || defined(__AVR_ATmega644__))
   template <bool ENABLETIMER2=false>
   void sleep () { this->activity.template savePower< SleepRTC >(*this); }
 #endif
