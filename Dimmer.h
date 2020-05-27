@@ -307,11 +307,12 @@ class DimmerStateMachine {
     uint8_t             tack;
     uint8_t             diff;
 
-    BlinkAlarm(DimmerStateMachine& m) : Alarm(0), sm(m), tack(20), diff(20) {}
+    BlinkAlarm(DimmerStateMachine& m) : Alarm(0), sm(m), tack(millis2ticks(500)), diff(0) {}
     void init(DimmerPeerList l) {
       if (!l.offDelayBlink()) return;
       origlevel = sm.status();
-      if (origlevel < diff + 20) return;
+      //if (origlevel < diff + 20) return;
+      diff = origlevel / 4;
       set(tack);
       sysclock.add(*this);
       //DPRINT("blink: "); DPRINT(l.offDelayBlink()); DPRINT(", level: "); DDEC(origlevel);  DPRINT(" - "); DDECLN(millis());
