@@ -300,6 +300,35 @@ class DimmerStateMachine {
     }
   };
 
+  class BlinkAlarm : public Alarm {
+  public:
+    DimmerStateMachine& sm;
+    uint8_t             origlevel;
+    uint8_t             tack;
+    uint8_t             diff;
+
+    BlinkAlarm(DimmerStateMachine& m) : Alarm(0), sm(m), tack(millis2ticks(500)), diff(0) {}
+    void init(DimmerPeerList l) {
+      if (!l.offDelayBlink()) return;
+      origlevel = sm.status();
+      //if (origlevel < diff + 20) return;
+      diff = origlevel / 4;
+      set(tack);
+      sysclock.add(*this);
+      //DPRINT("blink: "); DPRINT(l.offDelayBlink()); DPRINT(", level: "); DDEC(origlevel);  DPRINT(" - "); DDECLN(millis());
+    }
+    void end() {
+      sysclock.cancel(*this);
+      sm.updateLevel(origlevel);
+    }
+    virtual void trigger(AlarmClock& clock) {
+      uint8_t destlevel = (sm.status() == origlevel) ? origlevel - diff : origlevel;
+      sm.updateLevel(destlevel);
+      set(tack);
+      clock.add(*this);
+    }
+  };
+
   void updateLevel (uint8_t newlevel) {
     // DPRINT("UpdLevel: ");DDECLN(newlevel);
     level = newlevel;
@@ -326,6 +355,8 @@ class DimmerStateMachine {
       sysclock.cancel(alarm);
       // if state is different
       if (state != next) {
+        if (next == AS_CM_JT_OFFDELAY) blink.init(lst);
+        if (state == AS_CM_JT_OFFDELAY) blink.end();
         updateState(next,delay);
       }
       if ( state == AS_CM_JT_RAMPON || state == AS_CM_JT_RAMPOFF ) {
@@ -357,12 +388,13 @@ protected:
   bool         errreduced : 1;
   uint8_t      level, lastonlevel;
   RampAlarm    alarm;
+  BlinkAlarm   blink;
   ChangedAlarm calarm;
   DimmerList1  list1;
 
 public:
   DimmerStateMachine() : state(AS_CM_JT_NONE), change(false), toggledimup(true), erroverheat(false), erroroverload(false), errreduced(false),
-    level(0), lastonlevel(200), alarm(*this), calarm(*this), list1(0) {}
+    level(0), lastonlevel(200), alarm(*this), blink(*this), calarm(*this), list1(0) {}
   virtual ~DimmerStateMachine () {}
 
   bool changed () const { return change; }
