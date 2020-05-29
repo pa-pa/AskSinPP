@@ -748,15 +748,19 @@ public:   //--------------------------------------------------------------------
   }
 
 void enable () {
+#ifdef EnableInterrupt_h
   if( digitalPinToInterrupt(GDO0) == NOT_AN_INTERRUPT )
     enableInterrupt(GDO0,isr,FALLING);
   else
+#endif
     attachInterrupt(digitalPinToInterrupt(GDO0),isr,FALLING);
 }
 void disable () {
+#ifdef EnableInterrupt_h
   if( digitalPinToInterrupt(GDO0) == NOT_AN_INTERRUPT )
     disableInterrupt(GDO0);
   else
+#endif
     detachInterrupt(digitalPinToInterrupt(GDO0));
 }
 
