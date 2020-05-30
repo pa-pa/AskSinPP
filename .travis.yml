@@ -66,6 +66,10 @@ install:
 script:
   - export BOARD=$BOARDMAPLE
   - export SKETCHPATH=$PWD/examples/stm32
+  - buildSketch HM-LC-Dim1PWM-CV
+  - buildSketch HM-LC-DW-WM
+  - buildSketch HM-DW-WM
+  - buildSketch HB-LC-Dim5PWM-CV
   - buildSketch HB-DoorBell
   - buildSketch HM-LC-SWX-SM
   - export BOARD=$BOARDSTM
