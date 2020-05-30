@@ -54,6 +54,9 @@ install:
   - git clone https://github.com/jp112sdl/HB-Dis-EP-42BW.git $HOME/Beispiel_AskSinPP/examples/HB-Dis-EP-42BW
   - git clone https://github.com/jp112sdl/HB-OU-MP3-LED.git $HOME/Beispiel_AskSinPP/examples/HB-OU-MP3-LED
   - git clone https://github.com/jp112sdl/HB-RC-12-EP.git  $HOME/Beispiel_AskSinPP/examples/HB-RC-12-EP
+  - git clone https://github.com/jp112sdl/HB-OU-MOT-SERVO.git  $HOME/Beispiel_AskSinPP/examples/HB-OU-MOT-SERVO
+  - git clone https://github.com/jp112sdl/HB-UNI-Sen-RFID-RC.git $HOME/Beispiel_AskSinPP/examples/HB-UNI-Sen-RFID-RC
+  - git clone https://github.com/jp112sdl/HB-UNI-Sen-TEMP-MAX6675.git $HOME/Beispiel_AskSinPP/examples/HB-UNI-Sen-TEMP-MAX6675
 # Sketches from TomMajor
   - git clone https://github.com/TomMajor/SmartHome.git $HOME/SmartHome
 # setup arduino IDE
@@ -147,12 +150,17 @@ script:
   - buildSketch HB-UNI-DMX-MASTER
   - buildSketch HB-UNI-Sen-WEIGHT
   - buildSketch HB-UNI-Sen-CAP-MOIST
+  - buildSketch HB-OU-MOT-SERVO
+  - buildSketch HB-UNI-Sen-RFID-RC
   - export SKETCHPATH=$HOME/Beispiel_AskSinPP/examples/HB-UNI-SenAct-4-4
   - buildSketch HB-UNI-SenAct-4-4-RC
   - buildSketch HB-UNI-SenAct-4-4-SC
   - export SKETCHPATH=$HOME/Beispiel_AskSinPP/examples/HB-UNI-Sen-PRESS
   - buildSketch HB-UNI-Sen-PRESS
   - buildSketch HB-UNI-Sen-PRESS-SC
+  - export SKETCHPATH=$HOME/Beispiel_AskSinPP/examples/HB-UNI-Sen-TEMP-MAX6675
+  - buildSketch HB-UNI-Sen-TEMP-MAX6675
+  - buildSketch HB-UNI-Sen-TEMP-MAX6675-DT
   - export SKETCHPATH=$HOME/Beispiel_AskSinPP/examples
   - export BOARD=$BOARD1284P
   - buildSketch HB-Dis-EP-42BW
