@@ -137,7 +137,7 @@ void setup () {
   encoderISR(enc2,ENCODER2_CLOCK,ENCODER2_DATA);
 
   if( first == true ) {
-    DimmerList3 l3;
+    DimmerList3 l3(0);
     
     sdev.channel(1).peer(enc1.peer());
     l3 = sdev.channel(1).getList3(enc1.peer());
