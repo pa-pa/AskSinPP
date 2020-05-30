@@ -42,6 +42,7 @@ install:
   - git clone https://github.com/FastLED/FastLED.git $HOME/arduino-ide/libraries/FastLED
   - git clone https://github.com/PaulStoffregen/SoftwareSerial.git $HOME/arduino-ide/libraries/SoftwareSerial
   - git clone https://github.com/DFRobot/DFRobotDFPlayerMini.git $HOME/arduino-ide/libraries/DFRobotDFPlayerMini
+  - git clone https://github.com/miguelbalboa/rfid.git $HOME/arduino-ide/libraries/MFRC522
 # Sketches from Jerome to test
   - git clone https://github.com/jp112sdl/Beispiel_AskSinPP.git $HOME/Beispiel_AskSinPP
   - git clone https://github.com/jp112sdl/HB-UNI-Sen-LEV-US.git $HOME/Beispiel_AskSinPP/examples/HB-UNI-Sen-LEV-US
