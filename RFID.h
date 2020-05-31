@@ -14,9 +14,7 @@
 #include <MFRC522_I2C.h>
 #elif !defined USE_WIEGAND
 #include <MFRC522.h>
-#endif
-
-#ifdef USE_WIEGAND
+#elif defined USE_WIEGAND
 #include <Wiegand.h>
 #endif
 
