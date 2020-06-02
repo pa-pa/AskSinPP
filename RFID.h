@@ -12,10 +12,10 @@
 #ifdef USE_I2C_READER
 #include <Wire.h>
 #include <MFRC522_I2C.h>
-#elif !defined USE_WIEGAND
-#include <MFRC522.h>
 #elif defined USE_WIEGAND
 #include <Wiegand.h>
+#else
+#include <MFRC522.h>
 #endif
 
 #define   ID_ADDR_SIZE 8
