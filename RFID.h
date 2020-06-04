@@ -13,7 +13,7 @@
 #include <Wire.h>
 #include <MFRC522_I2C.h>
 #elif defined USE_WIEGAND
-#include <Wiegand.h>
+#include <Wiegand.h> // https://github.com/monkeyboard/Wiegand-Protocol-Library-for-Arduino
 #else
 #include <MFRC522.h>
 #endif
