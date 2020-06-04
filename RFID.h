@@ -12,6 +12,8 @@
 #ifdef USE_I2C_READER
 #include <Wire.h>
 #include <MFRC522_I2C.h>
+#elif defined USE_WIEGAND
+#include <Wiegand.h> // https://github.com/monkeyboard/Wiegand-Protocol-Library-for-Arduino
 #else
 #include <MFRC522.h>
 #endif
@@ -259,7 +261,11 @@ public:
   bool process (__attribute__((unused)) const SensorEventMsg& msg)   {return false; }
 };
 
-template <class RFIDDev,class RFIDChannel,MFRC522& m,int LED_GREEN,int LED_RED>
+#ifdef USE_WIEGAND
+template <class RFIDDev,class RFIDChannel,WIEGAND& rdrDev,int LED_GREEN,int LED_RED>
+#else
+template <class RFIDDev,class RFIDChannel,MFRC522& rdrDev,int LED_GREEN,int LED_RED>
+#endif
 class RFIDScanner : public Alarm {
   RFIDDev& dev;
   DualStatusLed<LED_GREEN,LED_RED> led;
@@ -329,16 +335,31 @@ public:
     return res;
   }
 
-  bool getRfidAddress(uint8_t *addr) {
-    if (!m.PICC_IsNewCardPresent())
-      if (!m.PICC_IsNewCardPresent())
-       return false;
-    if (!m.PICC_ReadCardSerial()) return false; 
-    memset(addr,0x00,ID_ADDR_SIZE);
-    memcpy(addr,m.uid.uidByte,m.uid.size);
+ bool getRfidAddress(uint8_t *addr) {
+#ifdef USE_WIEGAND
+   if (rdrDev.available()) {
+     memset(addr,0x00, ID_ADDR_SIZE);
+     unsigned long wgAddr = rdrDev.getCode();
+     byte addrArr[8];
+     for (uint8_t i = 0; i < ID_ADDR_SIZE; i++)
+       addrArr[i] = wgAddr >> (i*8) & 0xff;
+     memcpy(addr, addrArr, ID_ADDR_SIZE);
 
-    //DADDR(addr);
-    return true;
+     //DADDR(addr);
+     return true;
+   } 
+   return false;
+#else
+   if (!rdrDev.PICC_IsNewCardPresent())
+     if (!rdrDev.PICC_IsNewCardPresent())
+      return false;
+   if (!rdrDev.PICC_ReadCardSerial()) return false;
+   memset(addr,0x00,ID_ADDR_SIZE);
+   memcpy(addr,rdrDev.uid.uidByte,rdrDev.uid.size);
+
+   //DADDR(addr);
+   return true;
+#endif
   }
 
   bool readRfid(uint8_t *addr) {
