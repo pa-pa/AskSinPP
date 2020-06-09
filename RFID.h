@@ -9,13 +9,22 @@
 
 #include "MultiChannelDevice.h"
 #include "Register.h"
-#ifdef USE_I2C_READER
+
+#ifdef USE_MFRC522_I2C
 #include <Wire.h>
 #include <MFRC522_I2C.h>
-#elif defined USE_WIEGAND
+#endif
+
+#ifdef USE_WIEGAND
 #include <Wiegand.h> // https://github.com/monkeyboard/Wiegand-Protocol-Library-for-Arduino
-#else
+#endif
+
+#ifdef USE_MFRC522_SPI
 #include <MFRC522.h>
+#endif
+
+#ifdef USE_RDM6300
+#include <SoftwareSerial.h>
 #endif
 
 #define   ID_ADDR_SIZE 8
@@ -263,9 +272,15 @@ public:
 
 #ifdef USE_WIEGAND
 template <class RFIDDev,class RFIDChannel,WIEGAND& rdrDev,int LED_GREEN,int LED_RED>
-#else
+#endif
+#if (defined(USE_MFRC522_I2C) || defined(USE_MFRC522_SPI))
 template <class RFIDDev,class RFIDChannel,MFRC522& rdrDev,int LED_GREEN,int LED_RED>
 #endif
+#ifdef USE_RDM6300
+template <class RFIDDev,class RFIDChannel,SoftwareSerial& rdrDev,int LED_GREEN,int LED_RED>
+#endif
+
+
 class RFIDScanner : public Alarm {
   RFIDDev& dev;
   DualStatusLed<LED_GREEN,LED_RED> led;
@@ -334,7 +349,7 @@ public:
     }
     return res;
   }
-
+  
  bool getRfidAddress(uint8_t *addr) {
 #ifdef USE_WIEGAND
    if (rdrDev.available()) {
@@ -349,7 +364,9 @@ public:
      return true;
    } 
    return false;
-#else
+#endif
+
+#if (defined(USE_MFRC522_I2C) || defined(USE_MFRC522_SPI))
    if (!rdrDev.PICC_IsNewCardPresent())
      if (!rdrDev.PICC_IsNewCardPresent())
       return false;
@@ -359,6 +376,28 @@ public:
 
    //DADDR(addr);
    return true;
+#endif
+
+#ifdef USE_RDM6300
+   while (rdrDev.available()) {
+     char d = rdrDev.read();
+     static uint8_t bytecount = 0;
+     switch (d) {
+       case 0x02:
+         bytecount = 0;
+         break;
+       case 0x03:
+         bytecount = 0;
+         while (rdrDev.available()) rdrDev.read(); //empty rx buffer
+         return true;
+         break;
+       default:
+         if (bytecount < 8)
+           addr[bytecount++] =  (d > 57) ? d -= 55 : d -= 48;
+       break;
+     }
+   }
+   return false;
 #endif
   }
 
