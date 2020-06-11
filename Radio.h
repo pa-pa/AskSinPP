@@ -725,6 +725,7 @@ public:   //--------------------------------------------------------------------
     DPRINTLN(F("1"));
 
     HWRADIO::init();
+    HWRADIO::wakeup(true);
   }
 
   void setIdle () {
