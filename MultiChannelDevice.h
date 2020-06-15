@@ -474,6 +474,8 @@ public:
       ChannelType& c = channel(ch);
       if (numlist == 1) {
         return c.getList1();
+      } else if (numlist == 2) {
+        return c.getList2();
       } else if (c.hasList3() && numlist == 3) {
         return c.getList3(peer);
       } else if (c.hasList4() && numlist == 4) {

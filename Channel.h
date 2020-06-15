@@ -17,7 +17,7 @@ class ActionCommandMsg;
 class RemoteEventMsg;
 class SensorEventMsg;
 
-template<class HalType,class List1Type,class List3Type,class List4Type,int PeerCount,class List0Type=List0>
+template<class HalType,class List1Type,class List3Type,class List4Type,int PeerCount,class List0Type=List0, class List2Type=EmptyList>
 class Channel {
   Device<HalType,List0Type>*   dev;
   bool      change : 1; // the status is changed, we may need to send a status
@@ -27,6 +27,7 @@ class Channel {
 
 public:
   typedef List1Type List1;
+  typedef List2Type List2;
   typedef List3Type List3;
   typedef List4Type List4;
   typedef Device<HalType,List0Type> DeviceType;
@@ -158,13 +159,19 @@ public:
 
   void firstinit () {
     storage().clearData(address(),size());
-    List1Type cl = getList1();
-    cl.defaults();
+    List1Type cl1 = getList1();
+    List2Type cl2 = getList2();
+    cl1.defaults();
+    cl2.defaults();
   }
 
   List1Type getList1 () const {
     // we start always with list1
     return List1Type(address());
+  }
+
+  List2Type getList2 () const {
+    return List2Type(address());
   }
 
   List3Type getList3 (const Peer& p) const {
@@ -252,10 +259,10 @@ public:
   }
 };
 
-template <class HalType,class List1Type,class List3Type,int PeerCount,class List0Type,class StateMachine>
-class ActorChannel : public Channel<HalType,List1Type,List3Type,EmptyList,PeerCount,List0Type>, public StateMachine {
+template <class HalType,class List1Type,class List3Type,int PeerCount,class List0Type, class StateMachine, class List2Type=EmptyList>
+class ActorChannel : public Channel<HalType,List1Type, List3Type,EmptyList,PeerCount,List0Type, List2Type >, public StateMachine {
 public:
-  typedef Channel<HalType,List1Type,List3Type,EmptyList,PeerCount,List0Type> BaseChannel;
+  typedef Channel<HalType,List1Type, List3Type,EmptyList,PeerCount,List0Type, List2Type> BaseChannel;
   uint8_t lastmsgcnt;
 
 public:
@@ -373,6 +380,7 @@ public:
   virtual void configChanged () = 0;
 
   virtual GenericList getList1 () const = 0;
+  virtual GenericList getList2 () const = 0;
   virtual GenericList getList3 (const Peer& p) const = 0;
   virtual GenericList getList4 (const Peer& p) const = 0;
   virtual bool hasList3 () const = 0;
@@ -420,6 +428,7 @@ public:
   virtual void configChanged () { ch.configChanged(); }
 
   virtual GenericList getList1 () const { return ch.getList1(); }
+  virtual GenericList getList2 () const { return ch.getList2(); }
   virtual GenericList getList3 (const Peer& p) const { return ch.getList3(p); }
   virtual GenericList getList4 (const Peer& p) const { return ch.getList4(p); }
   virtual bool hasList3 () const { return ChannelType::hasList3(); }
