@@ -171,7 +171,7 @@ public:
   }
 
   List2Type getList2 () const {
-    return List2Type(address());
+    return List2Type(address()+List1::size());
   }
 
   List3Type getList3 (const Peer& p) const {
@@ -252,7 +252,7 @@ public:
       uint16_t offset = sizeof(Peer);
       offset += List3::size() + List4::size();
       offset *= pidx;
-      offset += List1::size();
+      offset += List1::size() + List2::size();
       return addr + offset;
     }
     return 0x00;
