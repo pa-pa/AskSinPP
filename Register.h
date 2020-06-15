@@ -387,6 +387,29 @@ public:
   bool buzzerEnabled () const { return this->readBit(DREG_BUZZER_ENABLED,0,false); }
 };
 
+template <class Register>
+class RegList2 : public RegisterList<Register> {
+public:
+  RegList2 (uint16_t addr) : RegisterList<Register>(addr) {}
+
+  bool    ADDRESS_SENDER_HIGH_BYTE(uint8_t index,uint8_t value) const { return this->writeRegister(1+(index*7), value); }
+  uint8_t ADDRESS_SENDER_HIGH_BYTE(uint8_t index)               const { return this->readRegister (1+(index*7), 0); }
+  bool    ADDRESS_SENDER_MID_BYTE (uint8_t index,uint8_t value) const { return this->writeRegister(2+(index*7), value); }
+  uint8_t ADDRESS_SENDER_MID_BYTE (uint8_t index)               const { return this->readRegister (2+(index*7), 0); }
+  bool    ADDRESS_SENDER_LOW_BYTE (uint8_t index,uint8_t value) const { return this->writeRegister(3+(index*7), value); }
+  uint8_t ADDRESS_SENDER_LOW_BYTE (uint8_t index)               const { return this->readRegister (3+(index*7), 0); }
+
+  bool    ADDRESS_RECEIVER_HIGH_BYTE(uint8_t index,uint8_t value) const { return this->writeRegister(4+(index*7), value); }
+  uint8_t ADDRESS_RECEIVER_HIGH_BYTE(uint8_t index)               const { return this->readRegister (4+(index*7), 0); }
+  bool    ADDRESS_RECEIVER_MID_BYTE (uint8_t index,uint8_t value) const { return this->writeRegister(5+(index*7), value); }
+  uint8_t ADDRESS_RECEIVER_MID_BYTE (uint8_t index)               const { return this->readRegister (5+(index*7), 0); }
+  bool    ADDRESS_RECEIVER_LOW_BYTE (uint8_t index,uint8_t value) const { return this->writeRegister(6+(index*7), value); }
+  uint8_t ADDRESS_RECEIVER_LOW_BYTE (uint8_t index)               const { return this->readRegister (6+(index*7), 0); }
+
+  bool    BROADCAST_BEHAVIOR (uint8_t index,uint8_t value) const { return this->writeRegister(7+(index*7), value); }
+  uint8_t BROADCAST_BEHAVIOR (uint8_t index)               const { return this->readRegister (7+(index*7), 0); }
+};
+
 
 template <class Register>
 class RegList1 : public RegisterList<Register> {
