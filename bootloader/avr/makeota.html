@@ -4,9 +4,35 @@
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
 <style>
 
-input[readonly]
-{
-    color: grey;
+body {
+  font-family: sans-serif;
+}
+
+input[readonly] {
+  color: grey;
+}
+
+label, input, select {
+  float: left;
+  margin-bottom: 10px;
+  margin-right: 5px;
+}
+label {
+  clear: left;
+  width: 40ex;
+  text-align: right;
+}
+input, select {
+  width: 33ex;
+}
+input[name=DevModel] {
+  width: 5ex;
+}
+select[name=DevList] {
+  width: 27ex;
+}
+button, input[type=submit] {
+  width: 20ex;
 }
 
 </style>
@@ -15,37 +41,51 @@ input[readonly]
 
 <body style="margin: 20px 20px 20px 20px">
 
-<form id="form" name="bl" action="">
- <div style="margin-bottom: 20px;">MCU Type: 
-   <select style="text" name="McuType">
-     <option>ATmega328</option>
-     <option>ATmega644</option>
-   </select>
- </div>
+<form id="form" name="bl" action="javascript:savebl()">
+  <label>MCU Type</label>
+  <select style="text" name="McuType">
+    <option>ATmega328</option>
+    <option>ATmega644</option>
+  </select>
+  
+  <label>Device Model - a 4 digit hex number</label>
+  <input id="devmodel" style="text" name="DevModel" size="4" pattern="[0-9A-Fa-f]{4}" required maxlength="4" />
+  <select style="text" name="DevList" onchange="Javascript:document.getElementById('devmodel').value = event.target.value">
+    <option value=""></option>
+    <option value="0002">HM-LC-SW1-SM</option>
+    <option value="000A">HM-LC-SW2-SM</option>
+    <option value="0003">HM-LC-SW4-SM</option>
+    <option value="0005">HM-LC-Bl1-FM</option>
+    <option value="0030">HM-SEC-RHS</option>
+    <option value="00C3">HM-SEC-RHS-2</option>
+    <option value="F209">HB-SEC-RHS-3</option>
+    <option value="F20A">HB-LC-Bl1-Velux</option>
+  </select>
 
- <div style="margin-bottom: 20px;">Device Model - a 4 digit hex number: 
-   <input style="text" name="DevModel" size="4" pattern="[0-9A-Fa-f]{4}" required maxlength="4" />
- </div>
+  <label>HM ID - a 6 digit hex number</label>
+  <input type="text"  name="HmID" value="0A0301" size="6" pattern="[0-9A-Fa-f]{6}" required maxlength="6"/>
 
- <div style="margin-bottom: 20px;">HM ID - a 6 digit hex number: 
- <input type="text"  name="HmID" value="0A0301" size="6" pattern="[0-9A-Fa-f]{6}" required maxlength="6"/></div>
-
-<div style="margin-bottom: 20px;">HM-Serial - 10 characters:
-  <input type="text"  name="Serial" value="XYZ1234567" size="10" pattern="[0-9A-Za-z]{10}" required maxlength="10"/></div>
-
- <div style="margin-bottom: 20px;">Config String - max. 32 digit hex number: 
- <input type="text"  name="CfgStr" value="0" size="32" pattern="[0-9A-Fa-f]{0,32}" maxlength="32"/></div>
-
- <div style="margin-bottom: 20px;">Firmware: <input type="file" name="file" id="file" accept=".hex"></div>
- <div>
+  <label>HM-Serial - 10 characters</label>
+  <input type="text"  name="Serial" value="XYZ1234567" size="10" pattern="[0-9A-Za-z]{10}" required maxlength="10"/>
+  
+  <label>CC1101 Frequence Settings - default 216550</label>
+  <input type="text"  name="FreqStr" value="" size="6" pattern="[0-9A-Fa-f]{6}" maxlength="6"/>
+  
+  <label>Config String - max. 32 digit hex number</label>
+  <input type="text"  name="CfgStr" value="0" size="32" pattern="[0-9A-Fa-f]{0,32}" maxlength="32"/>
+  
+  <label>OTA Firmware</label>
+  <input type="file" name="file" id="file" accept=".hex"/>
+ 
+ <div style="clear: both; margin-left: 20ex; padding-top: 2ex;">
    <div style="float: left; margin: 10px;"><button type="button" id="generate">Random</button></div>
-   <div style="float: left; margin: 10px;"><button type="button" id="create">Create Bootloader</button></div>
+   <div style="float: left; margin: 10px;"><input type="submit" id="create" value="Create Bootloader"/></div>
  </div>
  <div id="forsave"></div>
 
 </form>
 
-<div style="clear: both; padding-top: 30px;">
+<div style="clear: both; margin-left: 20ex; padding-top: 2ex;">
    <div style="float: left; margin: 10px;"><button type="button" id="addlabel">Add Label</button></div>
    <div style="float: left; margin: 10px;"><button type="button" id="print">Print Labels</button></div>
 </div>
@@ -131,11 +171,11 @@ function savebl() {
   var bootloader = '';
   switch (form.McuType.value) {
     case "ATmega328":
-      bootloader = bootloader328;
+      bootloader = bldata328;
       endadr = parseInt("6FFE",16);
       break;
     case "ATmega644":
-      bootloader = bootloader644;
+      bootloader = bldata644;
       endadr = parseInt("EFFE",16);
       break;
     default:
@@ -196,6 +236,14 @@ function patchbl (bootloader, output) {
     cfgdata = cfgdata + '0';
   }
 
+  var adrpatches = new Map();
+  var fstr = form.FreqStr.value.toUpperCase();
+  if( fstr.length == 6 ) {
+    adrpatches.set(bootloader.freq1,fstr.substr(0,2));
+    adrpatches.set(bootloader.freq2,fstr.substr(2,2));
+    adrpatches.set(bootloader.freq3,fstr.substr(4,2));
+  }
+
   var div = document.getElementById('forsave');
   var fc = div.firstChild;
   while( fc ) {
@@ -204,7 +252,7 @@ function patchbl (bootloader, output) {
   }
 
   // By lines
-  var lines = bootloader.split('\n');
+  var lines = bootloader.code.split('\n');
   for(var line = 0; line < lines.length; line++) {
     var block = lines[line];
 	  if( block.startsWith(':027FF000') ) { // DEVMODEL 328
@@ -236,6 +284,23 @@ function patchbl (bootloader, output) {
 	    output.push( block + checksum(block) + '\n' );
 	  }
 	  else {
+	    var blen = parseInt(block.substr(1,2),16);
+	    var badr = parseInt(block.substr(3,4),16);
+	    var data = block.substr(9,blen*2);
+	    var changed = false;
+	    for( var [padr, pvalue] of adrpatches ) {
+	      if( padr >= badr && (badr+blen) > padr ) {
+	        var offset = padr - badr;
+	        var pre = offset*2;
+	        var newdata = data.substr(0,pre) + pvalue + data.substr(pre+pvalue.length,(blen*2)-pvalue.length-pre);
+	        data = newdata;
+	        changed = true;
+	      }
+	    }
+	    if( changed == true ) {
+	      block = block.substr(0,9) + data;
+	      block = block + checksum(block);
+	    }
 	    output.push( block + '\n' );
 	  }
   }
@@ -314,10 +379,6 @@ printl.addEventListener('click',printlabels,true);
 
 var gen = document.getElementById('generate');
 gen.addEventListener('click',fillrand,true);
-
-var create = document.getElementById('create');
-create.addEventListener('click',savebl,true);
-fillrand();
 
 
 var bootloader328 = ':107000000C9420390C94003B0C9432390C94323996\n\
@@ -566,6 +627,14 @@ var bootloader328 = ':107000000C9420390C94003B0C9432390C94323996\n\
 :040000030000700089\n\
 :00000001FF\n';
 
+var bldata328 = { 
+  "code" : bootloader328, 
+  "freq1" : 0x721E, // 0x21
+  "freq2" : 0x7220, // 0x65
+  "freq3" : 0x7222  // 0x50
+};
+
+
 var bootloader644 = ':10F000000C941E790C94EF7A0C9430790C9430792E\n\
 :10F010000C9430790C9430790C9430790C943079CC\n\
 :10F020000C9430790C9430790C9430790C943079BC\n\
@@ -803,6 +872,13 @@ var bootloader644 = ':10F000000C941E790C94EF7A0C9430790C9430792E\n\
 :03FFFC0012345666\n\
 :040000030000F00009\n\
 :00000001FF\n';
+
+var bldata644 = { 
+  "code" : bootloader644, 
+  "freq1" : 0xF21A, // 0x21
+  "freq2" : 0xF21C, // 0x65
+  "freq3" : 0xF21E  // 0x50
+};
 
 </script> 
 
