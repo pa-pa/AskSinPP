@@ -37,6 +37,7 @@ button, input[type=submit] {
 
 </style>
 <script src="qrcode.min.js"  type="text/javascript"  language="javascript"></script>
+<script src="devlist.js"  type="text/javascript"  language="javascript"></script>
 </head>
 
 <body style="margin: 20px 20px 20px 20px">
@@ -50,7 +51,7 @@ button, input[type=submit] {
   
   <label>Device Model - a 4 digit hex number</label>
   <input id="devmodel" style="text" name="DevModel" size="4" pattern="[0-9A-Fa-f]{4}" required maxlength="4" />
-  <select style="text" name="DevList" onchange="Javascript:document.getElementById('devmodel').value = event.target.value">
+  <select id="devlist" style="text" name="DevList" onchange="Javascript:document.getElementById('devmodel').value = event.target.value">
     <option value=""></option>
     <option value="0002">HM-LC-SW1-SM</option>
     <option value="000A">HM-LC-SW2-SM</option>
@@ -380,6 +381,26 @@ printl.addEventListener('click',printlabels,true);
 var gen = document.getElementById('generate');
 gen.addEventListener('click',fillrand,true);
 
+// clear all options
+var dlselect = document.getElementById('devlist');
+while( dlselect.firstChild ) {
+  dlselect.removeChild(dlselect.firstChild);
+}
+
+// add empty
+dlselect.appendChild(document.createElement("option"));
+// add options from json structure
+for (const [key, value] of Object.entries(devlist)) {
+  var group = document.createElement("optgroup");
+  group.label=key;
+  dlselect.appendChild(group);
+  value.forEach( function(item,index) {
+    var opt = document.createElement("option");
+    opt.value = item.id;
+    opt.innerHTML = item.name;
+    group.appendChild(opt);
+  });
+}
 
 var bootloader328 = ':107000000C9420390C94003B0C9432390C94323996\n\
 :107010000C9432390C9432390C9432390C94323944\n\
