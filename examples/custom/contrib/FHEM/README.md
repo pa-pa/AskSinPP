@@ -19,6 +19,11 @@ Copy HMConfig_AskSinPPCustom.pm and HMMsg.pm into the FHEM folder and restart FH
 * [HB-UNI-Sen-CAP-MOIST-T](https://github.com/jp112sdl/HB-UNI-Sen-CAP-MOIST) Moisture Sensor
 * [HB-UNI-Sen-WEA](https://github.com/jp112sdl/HB-UNI-Sen-WEA) Weather Station
 * [HB-LC-Bl1-FM-2](https://github.com/jp112sdl/HM-LC-Bl1-FM-2) 2 Channel Blind Actor - change model to F207
+* [HB-UNI-SenAct-4-4-RC](https://github.com/jp112sdl/HB-UNI-SenAct-4-4) universal 4 Channel Actor and 4 Channel Sender
+* [HB-UNI-SenAct-8-8-SC](https://github.com/jp112sdl/HB-UNI-SenAct-8-8) universal 8 Channel Actor and 8 Channel Sender
+* [HM-LC-Sw1-FM-Cus](https://github.com/jp112sdl/Beispiel_AskSinPP/tree/master/examples/HB-LC-Sw1PBU-FM) alternativ Firmware for HM-LC-Sw1PBU-FM
+* [HB-Sec-RHS-3](https://github.com/pa-pa/HB-Sec-RHS-3) improved Window Sensor
+* [HB-LC-Bl1-Velux](https://github.com/pa-pa/AskSinPP/tree/master/examples/custom/HB-LC-Bl1-Velux) extend Velux KLI310 into HM Blind Actor
 
 # Add new Devices
 
