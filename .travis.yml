@@ -132,6 +132,7 @@ script:
   - buildSketch HM-PBI-4-FM
   - buildSketch HM-RC-2-PBU-FM
   - buildSketch HM-SCI-3-FM
+  - buildSketch HM-SWI-3-FM
   - buildSketch HM-SEC-SC
   - buildSketch HM-SEC-SCO
   - buildSketch HM-Sec-TiS
