@@ -176,7 +176,7 @@ script:
   - export SKETCHPATH=$HOME/Beispiel_AskSinPP/examples
   - buildSketch HB-OU-MP3-LED
   - export SKETCHPATH=$HOME/SmartHome
-  - buildSketch HB-UNI-Sensor1
+#  - buildSketch HB-UNI-Sensor1
 notifications:
   email:
     recipients:
