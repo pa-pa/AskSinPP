@@ -441,7 +441,7 @@ public:
   }
 
 
-  void init () {
+  bool init () {
     spi.init();                 // init the hardware to get access to the RF modul
     reset();
 
@@ -511,8 +511,11 @@ public:
       CC1101_PATABLE,   0x03,   //    NA
     };
 
+    bool initOK = true;
     for (uint8_t i=0; i<sizeof(initVal); i+=2) {                    // write init value to TRX868
-      initReg(pgm_read_byte(&initVal[i]), pgm_read_byte(&initVal[i+1]));
+      bool initres = initReg(pgm_read_byte(&initVal[i]), pgm_read_byte(&initVal[i+1]));
+      //if any initReg fails, initOK has to be false
+      if (initres == false) initOK = false;
     }
 
     // Settings that ELV sets
@@ -525,21 +528,25 @@ public:
     initReg(CC1101_PATABLE, PA_MaxPower);                        // configure PATABLE
 
     DPRINTLN(F(" - ready"));
+    return initOK;
   }
   
-  void initReg (uint8_t regAddr, uint8_t val, uint8_t retries=3) {
+  bool initReg (uint8_t regAddr, uint8_t val, uint8_t retries=3) {
     spi.writeReg(regAddr, val);
     uint8_t val_read = spi.readReg(regAddr, CC1101_CONFIG);
+    bool initResult = true;
     if( val_read != val ) {
       if( retries > 0 ) {
-        initReg(regAddr, val, --retries);
+        initResult = initReg(regAddr, val, --retries);
         _delay_ms(1);
       }
       else {
         DPRINT(F("Error at ")); DHEX(regAddr);
         DPRINT(F(" expected: ")); DHEX(val); DPRINT(F(" read: ")); DHEXLN(val_read);
+        return false;
       }
     }
+    return initResult;
   }
 
   uint8_t rssi () const {
@@ -714,7 +721,7 @@ private:
 public:   //---------------------------------------------------------------------------------------------------------
   Radio () :  intread(0), sending(0), idle(false) {}
 
-  void init () {
+  bool init () {
     // ensure ISR if off before we start to init CC1101
     // OTA boot loader may leave it on
     disable();
@@ -724,8 +731,10 @@ public:   //--------------------------------------------------------------------
 
     DPRINTLN(F("1"));
 
-    HWRADIO::init();
-    HWRADIO::wakeup(true);
+    bool initOK = HWRADIO::init();
+    if (initOK) HWRADIO::wakeup(true);
+    //DPRINT(F("CC init "));DPRINTLN(initOK ? F("OK"):F("FAIL"));
+    return initOK;
   }
 
   void setIdle () {
