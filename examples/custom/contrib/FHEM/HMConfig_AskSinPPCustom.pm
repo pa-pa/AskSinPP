@@ -567,7 +567,7 @@ sub CUL_HM_Parsecustom($$$$$$) {
 #  Log 1, $model;
   
   if( defined $customMsg{$model} ) {
-    my $msg = new HMMsg($mTp,$mFlg,$src,$dst,$p);
+    my $msg = HMMsg->new($mTp,$mFlg,$src,$dst,$p);
 #    Log 1, "Call custom Message Handler for ".$model;
     return $customMsg{$model}($msg,$target);
   }

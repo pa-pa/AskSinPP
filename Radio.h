@@ -22,6 +22,13 @@
   typedef uint8_t BitOrder;
 #endif
 
+// #define USE_CCA
+
+#ifndef USE_OTA_BOOTLOADER
+  // we can not reuse the frequency if the ota bootloader
+  #undef USE_OTA_BOOTLOADER_FREQUENCY
+#endif
+
 namespace as {
 
 // CC1101 config register                         // Reset  Description
@@ -374,9 +381,16 @@ class CC1101 {
 protected:
   SPIType spi;
   uint8_t rss;   // signal strength
+#ifdef USE_OTA_BOOTLOADER_FREQUENCY
+  uint8_t f1,f0; // storage for frequency values from boot loader
+#endif
 
 public:
-  CC1101 () : rss(0) {}
+  CC1101 () : rss(0)
+#ifdef USE_OTA_BOOTLOADER_FREQUENCY
+    , f1(0x65), f0(0x6A) // set to defaults
+#endif
+    {}
 
   void setIdle () {
     //DPRINTLN("CC enter powerdown");
@@ -443,6 +457,13 @@ public:
 
   bool init () {
     spi.init();                 // init the hardware to get access to the RF modul
+
+#ifdef USE_OTA_BOOTLOADER_FREQUENCY
+    // before we reset the CC1101 - store frequency settings from bootloader
+    f1 = spi.readReg(CC1101_FREQ1, CC1101_CONFIG);
+    f0 = spi.readReg(CC1101_FREQ0, CC1101_CONFIG);
+    DPRINT(F("Boot Loader Freq: 0x21"));DHEX(f1);DHEXLN(f0);
+#endif
     reset();
 
     // define init settings for CC1101
@@ -468,10 +489,12 @@ public:
       CC1101_FSCTRL1,   0x06,   //  0x0F    frequency synthesizer control
     //CC1101_FSCTRL0,   0x00,   //  0x00
 
+#ifndef USE_OTA_BOOTLOADER_FREQUENCY
       // 868.299866 MHz - if other values are found in EEPROM, these are overwritten later
       CC1101_FREQ2,     0x21,   //  0x1E
       CC1101_FREQ1,     0x65,   //  0xC4
       CC1101_FREQ0,     0x6A,   //  0xEC
+#endif
 
       CC1101_MDMCFG4,   0xC8,   //  0x8C    channel bandwidth
       CC1101_MDMCFG3,   0x93,   //  0x22    symbol data rate
@@ -517,6 +540,13 @@ public:
       //if any initReg fails, initOK has to be false
       if (initres == false) initOK = false;
     }
+
+#ifdef USE_OTA_BOOTLOADER_FREQUENCY
+    // set frequency from bootloader again
+    initReg(CC1101_FREQ2, 0x21);
+    initReg(CC1101_FREQ1, f1);
+    initReg(CC1101_FREQ0, f0);
+#endif
 
     // Settings that ELV sets
     DPRINT(F("CC Version: ")); DHEXLN(spi.readReg(CC1101_VERSION, CC1101_STATUS));
