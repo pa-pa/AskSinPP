@@ -212,12 +212,12 @@ public:
     srand((unsigned int&)id);
     led.init();
     buzzer.init();
-    radio.init();
+    bool ccinitOK = radio.init();
     radio.enable();
     // start the system timer
     sysclock.init();
     // signal start to user
-    led.set(LedStates::welcome);
+    led.set(ccinitOK ? LedStates::welcome : LedStates::failure);
     // delay first send by random time
     radio.setSendTimeout((rand() % 3500)+1000);
   }
