@@ -512,7 +512,7 @@ public:
     };
 
     bool initOK = true;
-    for (uint8_t i=0; i<sizeof(initVal); i+=2) {                    // write init value to TRX868
+    for (uint8_t i=0; i<sizeof(initVal); i+=2) { // write init value to TRX868
       bool initres = initReg(pgm_read_byte(&initVal[i]), pgm_read_byte(&initVal[i+1]));
       //if any initReg fails, initOK has to be false
       if (initres == false) initOK = false;
