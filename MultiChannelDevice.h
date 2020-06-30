@@ -55,7 +55,7 @@ public:
   }
 
   void channels (uint8_t num) {
-    DeviceType::channels(min(num,ChannelCount));
+    DeviceType::channels(min(num,(uint8_t)ChannelCount));
   }
 
   uint8_t channels () const {
