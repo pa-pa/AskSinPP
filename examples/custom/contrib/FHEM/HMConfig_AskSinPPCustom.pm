@@ -18,7 +18,6 @@ $HMConfig::culHmRegDefine{"buttonMode"} = {a=>50 ,s=>1,l=>0,min=>0,max=>1,      
 
 # HB-UNI-Sen-TEMP-DS18B20
 $HMConfig::culHmRegDefine{"lowBattLimit"}   = {a=>18 ,s=>1,l=>0,min=>19, max=>33,  c=>'',   p=>'n',f=>10,u=>'V',d=>1,t=>"low batterie limit, step .1V"};
-$HMConfig::culHmRegDefine{"tempOffset"}     = {a=>1  ,s=>4,l=>1,min=>-50,max=>50,  c=>'',   p=>'n',f=>10,u=>'K',d=>1,t=>"temperature offset"};
 
 # HB-UNI-Sen-LEV-US
 $HMConfig::culHmRegDefine{"sendInterval"}   = {a=>32, s=>2,l=>0,min=>10,max=>3600, c=>'',   p=>'n',f=>'',u=>'s', d=>1,t=>"send interval"};
@@ -34,7 +33,7 @@ $HMConfig::culHmRegDefine{"sendIntervalPress"}   = {a=>33, s=>2,l=>0,min=>20,max
 $HMConfig::culHmRegDefine{"sensorTypePress"}     = {a=>39 ,s=>1,l=>1,min=>0,max=>1,    c=>'lit',p=>'n',f=>'',u=>'',  d=>1,t=>"sensor type",lit=>{type12MPa=>0,type05MPa=>1}};
 
 # HB-UNI-Sen-CAP-MOIST-T
-$HMConfig::culHmRegDefine{"tempOffset"}         = {a=>1,  s=>4,l=>1,min=>-5,max=>5,   c=>'',   p=>'n',f=>10,u=>'°C', d=>1,t=>"temperature offset"};
+$HMConfig::culHmRegDefine{"tempOffset"}         = {a=>1,  s=>4,l=>1,min=>-50,max=>50, c=>'',   p=>'n',f=>10,u=>'K', d=>1,t=>"temperature offset"};
 $HMConfig::culHmRegDefine{"transmitInterval"}   = {a=>33, s=>2,l=>0,min=>1,max=>1440, c=>'',   p=>'n',f=>'',u=>'min',  d=>1,t=>"transmit interval"};
 $HMConfig::culHmRegDefine{"highValue"}          = {a=>35, s=>2,l=>1,min=>0,max=>1023, c=>'',   p=>'n',f=>'',u=>'',     d=>1,t=>"high value"};
 $HMConfig::culHmRegDefine{"lowValue"}           = {a=>37, s=>2,l=>1,min=>0,max=>1023, c=>'',   p=>'n',f=>'',u=>'',     d=>1,t=>"low value"};
