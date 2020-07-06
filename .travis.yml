@@ -169,7 +169,7 @@ script:
   - buildSketch HB-RC-12-EP
   - export SKETCHPATH=$HOME/SmartHome
   - export BOARD=$BOARD328P
-  - buildSketch HB-SEN-LJet
+#  - buildSketch HB-SEN-LJet
   - buildSketch HB-SCI-3-FM
 # disable AES support
   - echo "" >$HOME/arduino-ide/hardware/arduino/avr/platform.local.txt
