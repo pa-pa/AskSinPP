@@ -41,7 +41,6 @@ $HMConfig::culHmRegDefine{"lowBatteryLimit"}    = {a=>18 ,s=>1,l=>0,min=>0,max=>
 
 # HB-UNI-Sen-WEA
 $HMConfig::culHmRegDefine{"altitude"}         = {a=>34,  s=>2,l=>0,min=>0,max=>10000, c=>'',   p=>'n',f=>'',u=>'m', d=>1,t=>"altitude"};
-
 $HMConfig::culHmRegDefine{"anemometerRadius"}            = {a=>1.0, s=>1,l=>1,min=>0,max=>25.5,c=>'',   p=>'n',f=>10,  u=>'cm',  d=>1,t=>"Anemometer Radius"};
 $HMConfig::culHmRegDefine{"anemometerCalibrationFactor"} = {a=>2.0, s=>2,l=>1,min=>0,max=>1000,c=>'',   p=>'n',f=>10,  u=>'',    d=>1,t=>"Anemometer Calibration Factor"};
 $HMConfig::culHmRegDefine{"ldCapacitor"}                 = {a=>4.0, s=>1,l=>1,min=>0,max=>120, c=>'',   p=>'n',f=>'',  u=>'pF',  d=>1,t=>"Light Detector Capacitor"};
@@ -534,38 +533,53 @@ $customMsg{"HB-UNI-Sen-WEA"} = sub {
   my @evtEt=();
   my $channel = $main::modules{CUL_HM}{defptr}{$msg->channelId(1)}; # fixed channel 1
   if( defined($channel) ) {
-    my $temp = $msg->payloadWord(0) & 0x7fff;
-    my $pressure = $msg->payloadWord(2);
-    my $humidity = $msg->payloadByte(4);
-    my $lux = $msg->payload3Byte(5);
-    my $raincount = $msg->payloadWord(8);
-    my $raining = (($raincount & 0x8000) == 0) ? "off" : "on";
-    my $windspeed = ($msg->payloadWord(10) & 0x3fff) / 10;
-    my $winddirrange = $msg->payloadWord(10) >> 14;
-    my $winddir = $msg->payloadByte(12);
-    my $gustspeed = ($msg->payloadWord(13) & 0x3fff) / 10;
-    my $rdheating = (($msg->payloadByte(13) & 0x80) == 0) ? "off" : "on";
-    my $uvindex = $msg->payloadByte(15) & 0x0f;
-    my $lightningdistance = $msg->payloadByte(15) >> 4;
-    my $lightningcounter = $msg->payloadByte(16);
-    push @evtEt,[$channel,1,"temperature:".$temp/10];
-    push @evtEt,[$channel,1,"pressure:".$pressure/10];
-    push @evtEt,[$channel,1,"humidity:".$humidity];
-    push @evtEt,[$channel,1,"lux:".$lux/10];
-    push @evtEt,[$channel,1,"raining:".$raining];
-    push @evtEt,[$channel,1,"raincount:".($raincount & 0x7fff)];
-    push @evtEt,[$channel,1,"windspeed:".$windspeed/10];
-    push @evtEt,[$channel,1,"winddirrange:".($winddirrange*45)/2];
-    push @evtEt,[$channel,1,"winddir:".$winddir*3];
-    push @evtEt,[$channel,1,"gustspeed:".$gustspeed/10];
-    push @evtEt,[$channel,1,"rdheating:".$rdheating];
-    push @evtEt,[$channel,1,"uvindex:".$uvindex];
-    push @evtEt,[$channel,1,"lightningdistance:".$lightningdistance*3];
-    push @evtEt,[$channel,1,"lightningcounter:".$lightningcounter];
-    push @evtEt,[$channel,1,"state:T: ".($temp/10)." P: ".($pressure/10)." H: ".$humidity];
-  }
-  else {
-    Log 1,"No channel for ".$msg->channelId(1);
+	if($msg->type==0x70) {
+		my $temp = $msg->payloadWord(0) & 0x7fff;
+		my $pressure = $msg->payloadWord(2);
+		my $humidity = $msg->payloadByte(4);
+		my $lux = $msg->payload3Byte(5);
+		my $raincount = $msg->payloadWord(8);
+		my $raining = (($raincount & 0x8000) == 0) ? "off" : "on";
+		my $windspeed = ($msg->payloadWord(10) & 0x3fff);
+		my $winddirrange = $msg->payloadWord(10) >> 14;
+		my $winddir = $msg->payloadByte(12);
+		my $gustspeed = ($msg->payloadWord(13) & 0x3fff);
+		my $rdheating = (($msg->payloadByte(13) & 0x80) == 0) ? "off" : "on";
+		my $uvindex = $msg->payloadByte(15) & 0x0f;
+		my $lightningdistance = $msg->payloadByte(15) >> 4;
+		my $lightningcounter = $msg->payloadByte(16);		
+		push @evtEt,[$channel,1,"temperature:".$temp/10];
+		push @evtEt,[$channel,1,"pressure:".$pressure/10];
+		push @evtEt,[$channel,1,"humidity:".$humidity];
+		push @evtEt,[$channel,1,"lux:".$lux/10];
+		push @evtEt,[$channel,1,"raining:".$raining];
+		push @evtEt,[$channel,1,"raincount:".($raincount & 0x7fff)];
+		push @evtEt,[$channel,1,"windspeed:".$windspeed/10];
+		push @evtEt,[$channel,1,"winddirrange:".($winddirrange*45)/2];
+		push @evtEt,[$channel,1,"winddir:".$winddir*3];
+		push @evtEt,[$channel,1,"gustspeed:".$gustspeed/10];
+		push @evtEt,[$channel,1,"rdheating:".$rdheating];
+		push @evtEt,[$channel,1,"uvindex:".$uvindex];
+		push @evtEt,[$channel,1,"lightningdistance:".$lightningdistance*3];
+		push @evtEt,[$channel,1,"lightningcounter:".$lightningcounter];
+		push @evtEt,[$channel,1,"state:T: ".($temp/10)." P: ".($pressure/10)." H: ".$humidity];
+		}
+	if($msg->type==0x53) {
+		my $xtrmsg1 = $msg->payloadByte(0);
+		my $xtrmsg2 = $msg->payloadByte(1);
+		my $raining = $msg->payloadByte(1) & 0x1;
+		my $rdheating= $msg->payloadByte(1) & 0x2;
+		my $xtrgustspeed = ($msg->payloadWord(2) & 0x3fff);
+		my $gustspeed = ($msg->payloadWord(2) & 0x3fff);
+		push @evtEt,[$channel,1,"rdheating:".$rdheating];
+		push @evtEt,[$channel,1,"raining:".$raining];
+		push @evtEt,[$channel,1,"gustspeed:".$gustspeed/10];
+	}
+	push @evtEt,[$channel,1,"lastmessagetype:".$msg->type];
+	main::Log 1,"HM-UNI-SEN-WEA => Messagetype=".$msg->type;
+	}
+	else {
+    main::Log 1,"No channel for ".$msg->channelId(1);
   }
   return @evtEt;
 };
