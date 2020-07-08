@@ -533,7 +533,7 @@ $customMsg{"HB-UNI-Sen-WEA"} = sub {
   my @evtEt=();
   my $channel = $main::modules{CUL_HM}{defptr}{$msg->channelId(1)}; # fixed channel 1
   if( defined($channel) ) {
-	if($msg->type==0x70) {
+	if( $msg->iSweather ) {
 		my $temp = $msg->payloadWord(0) & 0x7fff;
 		my $pressure = $msg->payloadWord(2);
 		my $humidity = $msg->payloadByte(4);
@@ -563,10 +563,8 @@ $customMsg{"HB-UNI-Sen-WEA"} = sub {
 		push @evtEt,[$channel,1,"lightningdistance:".$lightningdistance*3];
 		push @evtEt,[$channel,1,"lightningcounter:".$lightningcounter];
 		push @evtEt,[$channel,1,"state:T: ".($temp/10)." P: ".($pressure/10)." H: ".$humidity];
-		}
-	if($msg->type==0x53) {
-		my $xtrmsg1 = $msg->payloadByte(0);
-		my $xtrmsg2 = $msg->payloadByte(1);
+	  }
+	  else if( $msg->isSensor ) {
 		my $raining = $msg->payloadByte(1) & 0x1;
 		my $rdheating= $msg->payloadByte(1) & 0x2;
 		my $xtrgustspeed = ($msg->payloadWord(2) & 0x3fff);
@@ -574,12 +572,12 @@ $customMsg{"HB-UNI-Sen-WEA"} = sub {
 		push @evtEt,[$channel,1,"rdheating:".$rdheating];
 		push @evtEt,[$channel,1,"raining:".$raining];
 		push @evtEt,[$channel,1,"gustspeed:".$gustspeed/10];
-	}
-	push @evtEt,[$channel,1,"lastmessagetype:".$msg->type];
-	main::Log 1,"HM-UNI-SEN-WEA => Messagetype=".$msg->type;
+	  }
+	  push @evtEt,[$channel,1,"lastmessagetype:".$msg->type];
+	  # main::Log 1,"HM-UNI-SEN-WEA => Messagetype=".$msg->type;
 	}
 	else {
-    main::Log 1,"No channel for ".$msg->channelId(1);
+      main::Log 1,"No channel for ".$msg->channelId(1);
   }
   return @evtEt;
 };

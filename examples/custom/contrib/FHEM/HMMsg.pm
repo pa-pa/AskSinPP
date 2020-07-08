@@ -83,6 +83,10 @@ sub isValues {
   my ($self) = @_;
   return $self->type == 0x53;
 }
+sub isWeather {
+  my ($self) = @_;
+  return $self->type == 0x70;
+}
 
 sub isRemoteLong {
   my ($self) = @_;
