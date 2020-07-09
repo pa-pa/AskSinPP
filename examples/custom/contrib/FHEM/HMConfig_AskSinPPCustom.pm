@@ -568,7 +568,7 @@ $customMsg{"HB-UNI-Sen-WEA"} = sub {
 		my $raining = (($msg->payloadByte(1) & 0x1)== 0) ? "off" : "on";
 		my $rdheating= (($msg->payloadByte(1) & 0x2)== 0) ? "off" : "on";
 		my $gustspeed = ($msg->payloadWord(2) & 0x3fff);
-		push @evtEt,[$channel,1,"rdheating:".$rdheating]== 0);
+		push @evtEt,[$channel,1,"rdheating:".$rdheating];
 		push @evtEt,[$channel,1,"raining:".$raining];
 		push @evtEt,[$channel,1,"gustspeed:".$gustspeed/10];
 	  }
