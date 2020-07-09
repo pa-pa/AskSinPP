@@ -533,7 +533,7 @@ $customMsg{"HB-UNI-Sen-WEA"} = sub {
   my @evtEt=();
   my $channel = $main::modules{CUL_HM}{defptr}{$msg->channelId(1)}; # fixed channel 1
   if( defined($channel) ) {
-	if( $msg->iSweather ) {
+	if( $msg->isWeather ) {
 		my $temp = $msg->payloadWord(0) & 0x7fff;
 		my $pressure = $msg->payloadWord(2);
 		my $humidity = $msg->payloadByte(4);
@@ -564,12 +564,11 @@ $customMsg{"HB-UNI-Sen-WEA"} = sub {
 		push @evtEt,[$channel,1,"lightningcounter:".$lightningcounter];
 		push @evtEt,[$channel,1,"state:T: ".($temp/10)." P: ".($pressure/10)." H: ".$humidity];
 	  }
-	  else if( $msg->isSensor ) {
-		my $raining = $msg->payloadByte(1) & 0x1;
-		my $rdheating= $msg->payloadByte(1) & 0x2;
-		my $xtrgustspeed = ($msg->payloadWord(2) & 0x3fff);
+	  elsif ( $msg->isSensor ) {
+		my $raining = (($msg->payloadByte(1) & 0x1)== 0) ? "off" : "on";
+		my $rdheating= (($msg->payloadByte(1) & 0x2)== 0) ? "off" : "on";
 		my $gustspeed = ($msg->payloadWord(2) & 0x3fff);
-		push @evtEt,[$channel,1,"rdheating:".$rdheating];
+		push @evtEt,[$channel,1,"rdheating:".$rdheating]== 0);
 		push @evtEt,[$channel,1,"raining:".$raining];
 		push @evtEt,[$channel,1,"gustspeed:".$gustspeed/10];
 	  }
