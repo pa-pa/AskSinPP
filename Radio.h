@@ -17,9 +17,11 @@
 #include "Message.h"
 #include "AlarmClock.h"
 
-#ifdef ARDUINO_ARCH_AVR
+#if defined ARDUINO_ARCH_AVR && !defined Adafruit_SPIDevice_h
   #include <util/delay.h>
   typedef uint8_t BitOrder;
+  #define SPI_BITORDER_MSBFIRST MSBFIRST
+  #define SPI_BITORDER_LSBFIRST LSBFIRST
 #endif
 
 // #define USE_CCA
@@ -255,7 +257,7 @@ public:
 
 #ifdef SPI_MODE0
 
-template <uint8_t CS,uint32_t CLOCK=2000000, BitOrder BITORDER=MSBFIRST, uint8_t MODE=SPI_MODE0>
+template <uint8_t CS,uint32_t CLOCK=2000000, BitOrder BITORDER=SPI_BITORDER_MSBFIRST, uint8_t MODE=SPI_MODE0>
 class LibSPI {
 
 public:
