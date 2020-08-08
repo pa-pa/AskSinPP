@@ -368,13 +368,13 @@ public:
   void enable () {}
   void flushrx() {}
   uint8_t getGDO0 () { return 0; }
-  void init () {}
+  bool init () { return true; }
   bool isIdle () { return true; }
   uint8_t read (__attribute__ ((unused)) Message& msg) { return 0; }
   uint8_t reset () { return 0; }
   uint8_t rssi () { return 0; }
   void setIdle () {}
-  void setSendTimeout (__attribute__ ((unused)) uint16_t timeout) {}
+  void setSendTimeout (__attribute__ ((unused)) uint16_t timeout=0) {}
   void waitTimeout (__attribute__ ((unused)) uint16_t timeout) {}
   void wakeup () {}
   void initReg(__attribute__ ((unused)) uint8_t val0, __attribute__ ((unused)) uint8_t val1) {}
