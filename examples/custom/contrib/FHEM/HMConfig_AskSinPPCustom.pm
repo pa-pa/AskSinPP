@@ -305,10 +305,11 @@ $customMsg{"HB-LC-SW4-MDIR"} = sub {
 };
 
 # window contact RHS3
-$HMConfig::culHmModel{"F209"} = {name=>"HB-Sec-RHS-3",st=>'custom',cyc=>'28:00',rxt=>'c:l',lst=>'1,4:1p',chn=>""};
+$HMConfig::culHmModel{"F209"} = {name=>"HB-Sec-RHS-3",st=>'custom',cyc=>'28:00',rxt=>'c:w:l',lst=>'1,4:1p',chn=>""};
 $HMConfig::culHmChanSets{"HB-Sec-RHS-300"} = $HMConfig::culHmSubTypeSets{"THSensor"};
 $HMConfig::culHmRegModel{"HB-Sec-RHS-3"}   = { lowBatLimitBA2=>1, sabotageMsg=>1, transmDevTryMax=>1, cyclicInfoMsg=>1,
-                                               msgRhsPosA=>1, msgRhsPosB=>1, msgRhsPosC=>1, ledOnTime=>1, eventDlyTime=>1 };
+                                               msgRhsPosA=>1, msgRhsPosB=>1, msgRhsPosC=>1, ledOnTime=>1, eventDlyTime=>1,
+                                               peerNeedsBurst=>1, expectAES=>1 };
 $customMsg{"HB-Sec-RHS-3"} = sub {
   my ($msg,$target) = @_;
   my $batflags = 0;
