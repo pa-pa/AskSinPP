@@ -287,10 +287,6 @@ public:
 
 #ifdef ARDUINO_ARCH_AVR
 
-extern volatile uint16_t __gb_BatCurrent;
-extern volatile uint16_t __gb_BatCount;
-extern void (*__gb_BatIrq)();
-
 /**
  * IrqInternalBatt class uses continue measurement in background.
  * It uses the ADC and IRQ to get battery voltage during normal operation. If a device needs to sample
@@ -301,10 +297,16 @@ class IrqInternalBatt {
   uint8_t m_Low;
   /// value for critical battery
   uint8_t m_Critical;
+
+  static volatile uint16_t __gb_BatCurrent;
+  static volatile uint8_t __gb_BatCount;
+  static void (*__gb_BatIrq)();
+  uint8_t m_BatSkip;
+
 public:
   /** Constructor
    */
-  IrqInternalBatt () : m_Low(0), m_Critical(0) {}
+  IrqInternalBatt () : m_Low(0), m_Critical(0), m_BatSkip(0) {}
   /** Destructor
    */
   ~IrqInternalBatt() {}
@@ -346,6 +348,17 @@ public:
    * Call this before your application code uses the ADC.
    */
   void setIdle () {
+    if( __gb_BatCount < 10 ) {
+      // if we skip to often - force reading
+      if( ++m_BatSkip > 10 ) {
+        // wait for valid bat value
+        while( __gb_BatCount < 10 ) {
+          while (ADCSRA & (1 << ADSC)) ;  // wait ADC finish
+          irq();    // read value - will restart ADC too
+        }
+        m_BatSkip = 0;
+      }
+    }
     ATOMIC_BLOCK( ATOMIC_RESTORESTATE ) {
       __gb_BatIrq = 0;
     }
@@ -390,6 +403,8 @@ public:
     if( __gb_BatIrq != 0 )
       ADCSRA |= (1 << ADSC);        // start conversion again
   }
+
+  static void vecfunc() __asm__("__vector_21")  __attribute__((__signal__, __used__, __externally_visible__));
 };
 
 #endif
