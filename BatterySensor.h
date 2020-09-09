@@ -304,6 +304,7 @@ class IrqInternalBatt {
   uint8_t m_BatSkip;
 
   static volatile uint8_t m_SensPin;
+  static volatile uint8_t m_Factor;
   uint8_t m_ActivationPin;
 public:
   /** Constructor
@@ -340,10 +341,11 @@ public:
     unsetIdle();
   }
 
-  void initExternal(uint8_t s, uint8_t a) {
+  void initExternal(uint8_t s, uint8_t a, uint8_t f=57) {
     DPRINTLN("Batt init external");
     m_SensPin = s;
     m_ActivationPin = a;
+    m_Factor = f;
     pinMode(m_SensPin, INPUT);
     unsetIdle();
   }
@@ -413,7 +415,7 @@ public:
     if( __gb_BatCount > 10 ) { // ignore first 10 values
 
       uint16_t v =(m_SensPin > 0) ?
-          1100UL * 57UL * ADC / 1024 / 10
+          1100UL * m_Factor * ADC / 1024 / 10
           :
           1100UL * 1024 / ADC;
 

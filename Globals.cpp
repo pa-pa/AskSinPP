@@ -15,6 +15,7 @@ void(* resetFunc) (void) = 0;
 volatile uint16_t IrqInternalBatt::__gb_BatCurrent = 0;
 volatile uint8_t IrqInternalBatt::__gb_BatCount = 0;
 volatile uint8_t IrqInternalBatt::m_SensPin = 0;
+volatile uint8_t IrqInternalBatt::m_Factor = 0;
 void (*IrqInternalBatt::__gb_BatIrq)() = 0;
 
 void IrqInternalBatt::vecfunc() {
