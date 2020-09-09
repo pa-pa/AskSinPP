@@ -350,6 +350,7 @@ protected:
     ATOMIC_BLOCK( ATOMIC_RESTORESTATE ) {
       __gb_BatIrq = 0;
     }
+
     ADCSRA &= ~((1 << ADIE) | (1 << ADIF));  // disable interrupt
     while (ADCSRA & (1 << ADSC)) ;  // wait finish
     __vectorfunc(); // ensure value is read and stored
@@ -432,7 +433,7 @@ public:
 };
 
 template <uint8_t SENSPIN,uint8_t ACTIVATIONPIN,uint8_t FACTOR=57>
-class IrqExternalBatt : public IrqBaseBatt {
+class IrqExternalBatt :  public IrqBaseBatt {
 public:
   /** Constructor
    */
@@ -466,34 +467,32 @@ public:
   void unsetIdle () {
     pinMode(ACTIVATIONPIN, OUTPUT);
     digitalWrite(ACTIVATIONPIN, LOW);
-    // wait for stable values
-
+   // _delay_ms(5);
     ATOMIC_BLOCK( ATOMIC_RESTORESTATE ) {
       __gb_BatCount = 0; // reset irq counter
       __gb_BatIrq = irq; // set irq method
     }
     ADMUX &= ~(ADMUX_REFMASK | ADMUX_ADCMASK);
-    ADMUX |= ADMUX_REF_VBG;      // select bandgap as reference
-    ADMUX |= SENSPIN - 14;     // select channel
+    ADMUX |= ADMUX_REF_AVCC;    // select AVCC as reference
+    ADMUX |= SENSPIN - 14;      // select channel
     ADCSRA |= (1 << ADIE) | (1<<ADPS0) | (1<<ADPS1) | (1<<ADPS2); // enable interrupt & 128 prescaler
-    ADCSRA |= (1 << ADSC);        // start conversion
-
-    int maxnum = 50;  // we will wait max 50
-    uint16_t last=0 ,current=0;
-    do {
-      last = current;
-      while (ADCSRA & (1 << ADSC)) ; // wait ADC finish
-      current = ADC >> 2; // remove some bits ???
-    } while( current != last && --maxnum > 0);
-
-
+    ADCSRA |= (1 << ADSC);        // start conversion*/
   }
   /** ISR function to get current measured value
    */
   static uint16_t irq () {
-      return 1100UL * FACTOR * ADC / 1024 / 10;
-  }
+    uint16_t EXTADCVAL = ADC;
 
+    //read internal Vcc as reference voltage
+    ADMUX &= ~(ADMUX_REFMASK | ADMUX_ADCMASK);
+    ADMUX |= ADMUX_REF_AVCC;      // select AVCC as reference
+    ADMUX |= ADMUX_ADC_VBG;       // measure bandgap reference voltage
+    _delay_us(350);
+    ADCSRA |= (1 << ADSC);         // start conversion
+    while (ADCSRA & (1 << ADSC)) ; // wait to finish
+
+    return 1100UL * 1024 / ADC * FACTOR * EXTADCVAL / 1024 / 10;
+  }
 };
 
 #endif
