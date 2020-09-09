@@ -12,6 +12,8 @@ const char* __gb_chartable = "0123456789ABCDEF";
 void(* resetFunc) (void) = 0;
 
 #ifdef ARDUINO_ARCH_AVR
+volatile uint16_t intVCC=0;
+
 volatile uint16_t IrqBaseBatt::__gb_BatCurrent = 0;
 volatile uint8_t IrqBaseBatt::__gb_BatCount = 0;
 uint16_t (*IrqBaseBatt::__gb_BatIrq)() = 0;

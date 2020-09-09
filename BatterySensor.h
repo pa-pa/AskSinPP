@@ -432,6 +432,7 @@ public:
 
 };
 
+extern volatile uint16_t intVCC;
 template <uint8_t SENSPIN,uint8_t ACTIVATIONPIN,uint8_t FACTOR=57>
 class IrqExternalBatt :  public IrqBaseBatt {
 public:
@@ -448,6 +449,17 @@ public:
   void init(__attribute__((unused)) uint32_t period,__attribute__((unused)) AlarmClock& clock) {
     pinMode(SENSPIN, INPUT);
     unsetIdle();
+  }
+
+  uint16_t getInternalVcc() {
+    //read internal Vcc as reference voltage
+    ADMUX &= ~(ADMUX_REFMASK | ADMUX_ADCMASK);
+    ADMUX |= ADMUX_REF_AVCC;      // select AVCC as reference
+    ADMUX |= ADMUX_ADC_VBG;       // measure bandgap reference voltage
+    _delay_us(350);
+    ADCSRA |= (1 << ADSC);         // start conversion
+    while (ADCSRA & (1 << ADSC)) ; // wait to finish
+    return 1100UL * 1024 / ADC;
   }
 
   /**
@@ -472,6 +484,9 @@ public:
       __gb_BatCount = 0; // reset irq counter
       __gb_BatIrq = irq; // set irq method
     }
+
+    intVCC = getInternalVcc();
+
     ADMUX &= ~(ADMUX_REFMASK | ADMUX_ADCMASK);
     ADMUX |= ADMUX_REF_AVCC;    // select AVCC as reference
     ADMUX |= SENSPIN - 14;      // select channel
@@ -481,17 +496,7 @@ public:
   /** ISR function to get current measured value
    */
   static uint16_t irq () {
-    uint16_t EXTADCVAL = ADC;
-
-    //read internal Vcc as reference voltage
-    ADMUX &= ~(ADMUX_REFMASK | ADMUX_ADCMASK);
-    ADMUX |= ADMUX_REF_AVCC;      // select AVCC as reference
-    ADMUX |= ADMUX_ADC_VBG;       // measure bandgap reference voltage
-    _delay_us(350);
-    ADCSRA |= (1 << ADSC);         // start conversion
-    while (ADCSRA & (1 << ADSC)) ; // wait to finish
-
-    return 1100UL * 1024 / ADC * FACTOR * EXTADCVAL / 1024 / 10;
+    return 1UL * intVCC * FACTOR * ADC / 1024 / 10;
   }
 };
 
