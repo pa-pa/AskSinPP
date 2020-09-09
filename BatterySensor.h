@@ -303,17 +303,19 @@ class IrqInternalBatt {
   static void (*__gb_BatIrq)();
   uint8_t m_BatSkip;
 
+  static volatile uint8_t m_SensPin;
+  uint8_t m_ActivationPin;
 public:
   /** Constructor
    */
-  IrqInternalBatt () : m_Low(0), m_Critical(0), m_BatSkip(0) {}
+  IrqInternalBatt () : m_Low(0), m_Critical(0), m_BatSkip(0), m_ActivationPin(0) {}
   /** Destructor
    */
   ~IrqInternalBatt() {}
   /** get current battery voltage value
    * \return the current battery value multiplied by 10
    */
-  uint8_t current () const { return (__gb_BatCurrent + 50) / 100; }
+  uint8_t current () const { return (__gb_BatCurrent + 50 ) / 100; }
   /** check if the battery is below critical value
    *  \return true if battery voltage below critical value
    */
@@ -335,6 +337,14 @@ public:
    * \param clock clock to use for waiting
    */
   void init(__attribute__((unused)) uint32_t period,__attribute__((unused)) AlarmClock& clock) {
+    unsetIdle();
+  }
+
+  void initExternal(uint8_t s, uint8_t a) {
+    DPRINTLN("Batt init external");
+    m_SensPin = s;
+    m_ActivationPin = a;
+    pinMode(m_SensPin, INPUT);
     unsetIdle();
   }
 
@@ -365,21 +375,34 @@ public:
     ADCSRA &= ~((1 << ADIE) | (1 << ADIF));  // disable interrupt
     while (ADCSRA & (1 << ADSC)) ;  // wait finish
     irq();    // ensure value is read
+    if (m_ActivationPin > 0)
+      pinMode(m_ActivationPin, INPUT);
   }
   /**
    * Enable the continues measurement of the battery voltage
    * Called by HAL after return from idle/sleep state
    * Call this after the application doesn't need ADC longer
    */
+
   void unsetIdle () {
     //DDECLN(__gb_BatCurrent);
+    if (m_ActivationPin > 0) {
+      pinMode(m_ActivationPin, OUTPUT);
+      digitalWrite(m_ActivationPin, LOW);
+    }
     ATOMIC_BLOCK( ATOMIC_RESTORESTATE ) {
       __gb_BatCount = 0; // reset irq counter
       __gb_BatIrq = irq; // set irq method
     }
     ADMUX &= ~(ADMUX_REFMASK | ADMUX_ADCMASK);
-    ADMUX |= ADMUX_REF_AVCC;      // select AVCC as reference
-    ADMUX |= ADMUX_ADC_VBG;       // measure bandgap reference voltage
+    if (m_SensPin > 0) {
+      _delay_ms(5);
+      ADMUX |= ADMUX_REF_VBG;      // select bandgap as reference
+      ADMUX |= m_SensPin - 14;     // select channel
+    } else {
+      ADMUX |= ADMUX_REF_AVCC;      // select AVCC as reference
+      ADMUX |= ADMUX_ADC_VBG;       // measure bandgap reference voltage
+    }
     ADCSRA |= (1 << ADIE) | (1<<ADPS0) | (1<<ADPS1) | (1<<ADPS2); // enable interrupt & 128 prescaler
     ADCSRA |= (1 << ADSC);        // start conversion
   }
@@ -388,7 +411,12 @@ public:
   static void irq () {
     __gb_BatCount++;
     if( __gb_BatCount > 10 ) { // ignore first 10 values
-      uint16_t v = 1100UL * 1024 / ADC;
+
+      uint16_t v =(m_SensPin > 0) ?
+          1100UL * 57UL * ADC / 1024 / 10
+          :
+          1100UL * 1024 / ADC;
+
       if( __gb_BatCurrent == 0 ) {
         __gb_BatCurrent = v;
       }
@@ -403,8 +431,11 @@ public:
     if( __gb_BatIrq != 0 )
       ADCSRA |= (1 << ADSC);        // start conversion again
   }
-
+#if defined(__AVR_ATmega32U4__) || defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__) || defined(__AVR_ATmega644P__) || defined(__AVR_ATmega1284P__)
+  static void vecfunc() __asm__("__vector_24")  __attribute__((__signal__, __used__, __externally_visible__));
+#else
   static void vecfunc() __asm__("__vector_21")  __attribute__((__signal__, __used__, __externally_visible__));
+#endif
 };
 
 #endif
