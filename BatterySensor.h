@@ -287,12 +287,8 @@ public:
 
 #ifdef ARDUINO_ARCH_AVR
 
-/**
- * IrqInternalBatt class uses continue measurement in background.
- * It uses the ADC and IRQ to get battery voltage during normal operation. If a device needs to sample
- * analog values, it has to call setIdle() before and unsetIdle() after analogRead().
- */
-class IrqInternalBatt {
+class IrqBaseBatt {
+protected:
   /// value for low battery
   uint8_t m_Low;
   /// value for critical battery
@@ -300,16 +296,13 @@ class IrqInternalBatt {
 
   static volatile uint16_t __gb_BatCurrent;
   static volatile uint8_t __gb_BatCount;
-  static void (*__gb_BatIrq)();
+  static uint16_t (*__gb_BatIrq)();
   uint8_t m_BatSkip;
 
+  IrqBaseBatt () : m_Low(0), m_Critical(0), m_BatSkip(0) {}
+  ~IrqBaseBatt () {}
+
 public:
-  /** Constructor
-   */
-  IrqInternalBatt () : m_Low(0), m_Critical(0), m_BatSkip(0) {}
-  /** Destructor
-   */
-  ~IrqInternalBatt() {}
   /** get current battery voltage value
    * \return the current battery value multiplied by 10
    */
@@ -330,18 +323,13 @@ public:
    * \param value low battery value
    */
   void low (uint8_t value ) { m_Low = value; }
-  /** init measurement with periode and used clock
-   * \param period ticks until next measurement
-   * \param clock clock to use for waiting
-   */
-  void init(__attribute__((unused)) uint32_t period,__attribute__((unused)) AlarmClock& clock) {
-    unsetIdle();
-  }
 
   /// for backward compatibility
   uint16_t voltageHighRes() { return __gb_BatCurrent; }
   /// for backward compatibility
   uint8_t voltage() { return current(); }
+
+protected:
   /**
    * Disable the continues battery measurement
    * Called by HAL before enter idle/sleep state
@@ -352,9 +340,9 @@ public:
       // if we skip to often - force reading
       if( ++m_BatSkip > 10 ) {
         // wait for valid bat value
-        while( __gb_BatCount < 10 ) {
-          while (ADCSRA & (1 << ADSC)) ;  // wait ADC finish
-          irq();    // read value - will restart ADC too
+        while( __gb_BatCount++ < 10 ) {
+          while (ADCSRA & (1 << ADSC)) ; // wait ADC finish
+          ADCSRA |= (1 << ADSC);         // start conversion again
         }
         m_BatSkip = 0;
       }
@@ -364,18 +352,14 @@ public:
     }
     ADCSRA &= ~((1 << ADIE) | (1 << ADIF));  // disable interrupt
     while (ADCSRA & (1 << ADSC)) ;  // wait finish
-    irq();    // ensure value is read
+    __vectorfunc(); // ensure value is read and stored
   }
-  /**
-   * Enable the continues measurement of the battery voltage
-   * Called by HAL after return from idle/sleep state
-   * Call this after the application doesn't need ADC longer
-   */
-  void unsetIdle () {
+
+  void unsetIdle (uint16_t (*irqfunc)()) {
     //DDECLN(__gb_BatCurrent);
     ATOMIC_BLOCK( ATOMIC_RESTORESTATE ) {
       __gb_BatCount = 0; // reset irq counter
-      __gb_BatIrq = irq; // set irq method
+      __gb_BatIrq = irqfunc; // set irq method
     }
     ADMUX &= ~(ADMUX_REFMASK | ADMUX_ADCMASK);
     ADMUX |= ADMUX_REF_AVCC;      // select AVCC as reference
@@ -383,28 +367,65 @@ public:
     ADCSRA |= (1 << ADIE) | (1<<ADPS0) | (1<<ADPS1) | (1<<ADPS2); // enable interrupt & 128 prescaler
     ADCSRA |= (1 << ADSC);        // start conversion
   }
-  /** ISR function to get current measured value
-   */
-  static void irq () {
-    __gb_BatCount++;
-    if( __gb_BatCount > 10 ) { // ignore first 10 values
-      uint16_t v = 1100UL * 1024 / ADC;
-      if( __gb_BatCurrent == 0 ) {
-        __gb_BatCurrent = v;
-      }
-      else {
-        v = (__gb_BatCurrent + v) / 2;
-        if( v < __gb_BatCurrent ) {
-          __gb_BatCurrent = v;
-        }
-      }
-    }
 
-    if( __gb_BatIrq != 0 )
-      ADCSRA |= (1 << ADSC);        // start conversion again
+  static void __vectorfunc() __asm__("__vector_21")  __attribute__((__signal__, __used__, __externally_visible__));
+
+};
+
+/**
+ * IrqInternalBatt class uses continue measurement in background.
+ * It uses the ADC and IRQ to get battery voltage during normal operation. If a device needs to sample
+ * analog values, it has to call setIdle() before and unsetIdle() after analogRead().
+ */
+class IrqInternalBatt : public IrqBaseBatt {
+
+public:
+  /** Constructor
+   */
+  IrqInternalBatt () {}
+  /** Destructor
+   */
+  ~IrqInternalBatt() {}
+  /** init measurement with period and used clock
+   * \param period ticks until next measurement
+   * \param clock clock to use for waiting
+   */
+  void init(__attribute__((unused)) uint32_t period,__attribute__((unused)) AlarmClock& clock) {
+    unsetIdle();
   }
 
-  static void vecfunc() __asm__("__vector_21")  __attribute__((__signal__, __used__, __externally_visible__));
+  /**
+   * Disable the continues battery measurement
+   * Called by HAL before enter idle/sleep state
+   * Call this before your application code uses the ADC.
+   */
+  void setIdle () {
+    IrqBaseBatt::setIdle();
+  }
+  /**
+   * Enable the continues measurement of the battery voltage
+   * Called by HAL after return from idle/sleep state
+   * Call this after the application doesn't need ADC longer
+   */
+  void unsetIdle () {
+    IrqBaseBatt::unsetIdle(irq);
+    // wait for stable values
+    /*
+    int maxnum = 50;  // we will wait max 50
+    uint16_t last=0 ,current=0;
+    do {
+      last = current;
+      while (ADCSRA & (1 << ADSC)) ; // wait ADC finish
+      current = ADC >> 2; // remove some bits ???
+    } while( current != last && --maxnum > 0);
+    */
+  }
+  /** ISR function to get current measured value
+   */
+  static uint16_t irq () {
+      return 1100UL * 1024 / ADC;
+  }
+
 };
 
 #endif
