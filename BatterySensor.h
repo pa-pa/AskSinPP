@@ -350,6 +350,7 @@ protected:
     ATOMIC_BLOCK( ATOMIC_RESTORESTATE ) {
       __gb_BatIrq = 0;
     }
+
     ADCSRA &= ~((1 << ADIE) | (1 << ADIF));  // disable interrupt
     while (ADCSRA & (1 << ADSC)) ;  // wait finish
     __vectorfunc(); // ensure value is read and stored
@@ -368,8 +369,11 @@ protected:
     ADCSRA |= (1 << ADSC);        // start conversion
   }
 
+#if defined(__AVR_ATmega32U4__) || defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__) || defined(__AVR_ATmega644P__) || defined(__AVR_ATmega1284P__)
+  static void __vectorfunc() __asm__("__vector_24")  __attribute__((__signal__, __used__, __externally_visible__));
+#else
   static void __vectorfunc() __asm__("__vector_21")  __attribute__((__signal__, __used__, __externally_visible__));
-
+#endif
 };
 
 /**
@@ -426,6 +430,74 @@ public:
       return 1100UL * 1024 / ADC;
   }
 
+};
+
+extern volatile uint16_t intVCC;
+template <uint8_t SENSPIN,uint8_t ACTIVATIONPIN,uint8_t FACTOR=57>
+class IrqExternalBatt :  public IrqBaseBatt {
+public:
+  /** Constructor
+   */
+  IrqExternalBatt () {}
+  /** Destructor
+   */
+  ~IrqExternalBatt() {}
+  /** init measurement with period and used clock
+   * \param period ticks until next measurement
+   * \param clock clock to use for waiting
+   */
+  void init(__attribute__((unused)) uint32_t period,__attribute__((unused)) AlarmClock& clock) {
+    pinMode(SENSPIN, INPUT);
+    unsetIdle();
+  }
+
+  uint16_t getInternalVcc() {
+    //read internal Vcc as reference voltage
+    ADMUX &= ~(ADMUX_REFMASK | ADMUX_ADCMASK);
+    ADMUX |= ADMUX_REF_AVCC;      // select AVCC as reference
+    ADMUX |= ADMUX_ADC_VBG;       // measure bandgap reference voltage
+    _delay_us(350);
+    ADCSRA |= (1 << ADSC);         // start conversion
+    while (ADCSRA & (1 << ADSC)) ; // wait to finish
+    return 1100UL * 1024 / ADC;
+  }
+
+  /**
+   * Disable the continues battery measurement
+   * Called by HAL before enter idle/sleep state
+   * Call this before your application code uses the ADC.
+   */
+  void setIdle () {
+    IrqBaseBatt::setIdle();
+    pinMode(ACTIVATIONPIN, INPUT);
+  }
+  /**
+   * Enable the continues measurement of the battery voltage
+   * Called by HAL after return from idle/sleep state
+   * Call this after the application doesn't need ADC longer
+   */
+  void unsetIdle () {
+    pinMode(ACTIVATIONPIN, OUTPUT);
+    digitalWrite(ACTIVATIONPIN, LOW);
+   // _delay_ms(5);
+    ATOMIC_BLOCK( ATOMIC_RESTORESTATE ) {
+      __gb_BatCount = 0; // reset irq counter
+      __gb_BatIrq = irq; // set irq method
+    }
+
+    intVCC = getInternalVcc();
+
+    ADMUX &= ~(ADMUX_REFMASK | ADMUX_ADCMASK);
+    ADMUX |= ADMUX_REF_AVCC;    // select AVCC as reference
+    ADMUX |= SENSPIN - 14;      // select channel
+    ADCSRA |= (1 << ADIE) | (1<<ADPS0) | (1<<ADPS1) | (1<<ADPS2); // enable interrupt & 128 prescaler
+    ADCSRA |= (1 << ADSC);        // start conversion*/
+  }
+  /** ISR function to get current measured value
+   */
+  static uint16_t irq () {
+    return 1UL * intVCC * FACTOR * ADC / 1024 / 10;
+  }
 };
 
 #endif
