@@ -39,7 +39,7 @@
   template <class T>
   inline void DPRINT(T str) { DSERIAL.print(str); }
   template <class T>
-  inline void DPRINTLN(T str) { DPRINT(str); DPRINT(F("\n")); }
+  inline void DPRINTLN(T str) { DPRINT(str); DPRINT(F("\r\n")); }
   inline void DHEX(uint8_t b) {
     if( b<0x10 ) DSERIAL.print('0');
     DSERIAL.print(b,HEX);
@@ -106,12 +106,12 @@
       DHEX(*b); DPRINT(F(" "));
     }
   }
-  inline void DHEXLN(uint8_t b) { DHEX(b); DPRINT(F("\n")); }
-  inline void DHEXLN(uint16_t b) { DHEX(b); DPRINT(F("\n")); }
-  inline void DHEXLN(uint32_t b) { DHEX(b); DPRINT(F("\n")); }
+  inline void DHEXLN(uint8_t b) { DHEX(b); DPRINT(F("\r\n")); }
+  inline void DHEXLN(uint16_t b) { DHEX(b); DPRINT(F("\r\n")); }
+  inline void DHEXLN(uint32_t b) { DHEX(b); DPRINT(F("\r\n")); }
   template<typename TYPE>
-  inline void DDECLN(TYPE b) { DDEC(b); DPRINT(F("\n")); }
-  inline void DHEXLN(const uint8_t* b,uint8_t l) { DHEX(b,l); DPRINT(F("\n")); }
+  inline void DDECLN(TYPE b) { DDEC(b); DPRINT(F("\r\n")); }
+  inline void DHEXLN(const uint8_t* b,uint8_t l) { DHEX(b,l); DPRINT(F("\r\n")); }
 
 #endif
 
