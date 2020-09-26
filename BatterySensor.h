@@ -493,7 +493,7 @@ public:
 
     ADMUX &= ~(ADMUX_REFMASK | ADMUX_ADCMASK);
     ADMUX |= ADMUX_REF_AVCC;    // select AVCC as reference
-    ADMUX |= SENSPIN - 14;      // select channel
+    ADMUX |= analogPinToChannel(SENSPIN);  // select channel
     ADCSRA |= (1 << ADIE) | (1<<ADPS0) | (1<<ADPS1) | (1<<ADPS2); // enable interrupt & 128 prescaler
     ADCSRA |= (1 << ADSC);        // start conversion*/
   }
