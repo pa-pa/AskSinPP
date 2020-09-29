@@ -52,7 +52,11 @@ public:
 
 #ifdef ARDUINO_ARCH_AVR
 
+#if defined(__AVR_ATmega32U4__) || defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__) || defined(__AVR_ATmega644P__) || defined(__AVR_ATmega1284P__)
+#define ADMUX_ADCMASK  ((1 << MUX4)|(1 << MUX3)|(1 << MUX2)|(1 << MUX1)|(1 << MUX0))
+#else
 #define ADMUX_ADCMASK  ((1 << MUX3)|(1 << MUX2)|(1 << MUX1)|(1 << MUX0))
+#endif
 #define ADMUX_REFMASK  ((1 << REFS1)|(1 << REFS0))
 
 #define ADMUX_REF_AREF ((0 << REFS1)|(0 << REFS0))
@@ -489,7 +493,7 @@ public:
 
     ADMUX &= ~(ADMUX_REFMASK | ADMUX_ADCMASK);
     ADMUX |= ADMUX_REF_AVCC;    // select AVCC as reference
-    ADMUX |= SENSPIN - 14;      // select channel
+    ADMUX |= analogPinToChannel(SENSPIN);  // select channel
     ADCSRA |= (1 << ADIE) | (1<<ADPS0) | (1<<ADPS1) | (1<<ADPS2); // enable interrupt & 128 prescaler
     ADCSRA |= (1 << ADSC);        // start conversion*/
   }
