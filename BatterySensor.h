@@ -492,6 +492,11 @@ public:
    * Called by HAL after return from idle/sleep state
    * Call this after the application doesn't need ADC longer
    */
+
+#ifndef analogPinToChannel
+ #define analogPinToChannel(p) ((p)-14)
+#endif
+
   void unsetIdle () {
     pinMode(ACTIVATIONPIN, OUTPUT);
     digitalWrite(ACTIVATIONPIN, LOW);
