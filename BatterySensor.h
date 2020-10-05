@@ -48,6 +48,8 @@ public:
   void setIdle () {}
   /// called when systems returns from idle state
   void unsetIdle () {}
+  /// reset current battery value
+  void resetCurrent () {}
 };
 
 #ifdef ARDUINO_ARCH_AVR
@@ -150,6 +152,9 @@ class SyncMeter {
   volatile typename SENSOR::ValueType m_Value;
 public:
   SyncMeter () : m_Value(0) {}
+
+  void resetCurrent() { m_Value = 0; }
+
   void start () {
     sensor().start();
     if( DELAY > 0 ) {
@@ -181,6 +186,9 @@ public:
       m_Value = tmp;
     }
   }
+
+  void resetCurrent() { m_Value = 0; }
+
   void start () {
     sensor().start();
     set(millis2ticks(DELAY));
@@ -216,6 +224,7 @@ public:
   void critical (uint8_t value ) { m_Critical = value; }
   bool low () const { return current() < m_Low; }
   void low (uint8_t value ) { m_Low = value; }
+  void resetCurrent() { m_Meter.resetCurrent(); }
 
   void init(uint32_t period,AlarmClock& clock) {
     m_Meter.sensor().init();
@@ -332,6 +341,9 @@ public:
   uint16_t voltageHighRes() { return __gb_BatCurrent; }
   /// for backward compatibility
   uint8_t voltage() { return current(); }
+
+  /// reset current battery value
+  void resetCurrent() { __gb_BatCurrent = 0; }
 
 protected:
   /**
