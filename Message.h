@@ -465,7 +465,7 @@ public:
     if( lowbat == true ) {
       flags |= 0x80; // low battery
     }
-    Message::init(0xb,msgcnt,0x40, BIDI|WKMEUP,(ch & 0x3f) | flags,counter);
+    Message::init(0xb,msgcnt,AS_MESSAGE_REMOTE_EVENT,BIDI|WKMEUP,(ch & 0x3f) | flags,counter);
   }
 
   Peer peer () const { return Peer(from(),command() & 0x3f); }
@@ -485,7 +485,7 @@ public:
       if( lowbat == true ) {
           flags |= 0x80; // low battery
       }
-      Message::init(0xc,msgcnt,0x41, BIDI|WKMEUP,(ch & 0x3f) | flags,counter);
+      Message::init(0xc,msgcnt,AS_MESSAGE_SENSOR_EVENT,BIDI|WKMEUP,(ch & 0x3f) | flags,counter);
       *data() = value;
   }
   uint8_t value () const { return *data(); }
@@ -619,7 +619,7 @@ class InfoActuatorStatusMsg : public Message {
 public:
   template <class ChannelType>
   void init (uint8_t count,ChannelType& ch,uint8_t rssi) {
-    Message::init(0x0e,count,0x10,BIDI|WKMEUP,0x06,ch.number());
+    Message::init(0x0e,count,AS_MESSAGE_INFO,BIDI|WKMEUP,AS_INFO_ACTUATOR_STATUS,ch.number());
     pload[0] = ch.status();
     pload[1] = ch.flags();
     pload[2] = rssi;
@@ -629,7 +629,7 @@ public:
 class InfoParamResponsePairsMsg : public Message {
 public:
   void init (uint8_t count) {
-    initWithCount(0x0b-1+(8*2),0x10,BIDI,0x02);
+    initWithCount(0x0b-1+(8*2),AS_MESSAGE_INFO,BIDI,AS_INFO_PARAM_RESPONSE_PAIRS);
     cnt = count;
   }
   uint8_t* data() { return Message::data()-1; }
@@ -639,7 +639,7 @@ public:
 class InfoPeerListMsg : public Message {
 public:
   void init (uint8_t count) {
-    initWithCount(0x0b-1+(4*sizeof(Peer)),0x10,Message::BIDI,0x01);
+    initWithCount(0x0b-1+(4*sizeof(Peer)),AS_MESSAGE_INFO,Message::BIDI,AS_INFO_PEER_LIST);
     cnt = count;
   }
   uint8_t* data() { return Message::data()-1; }
@@ -649,7 +649,7 @@ public:
 class DeviceInfoMsg : public Message {
 public:
   void init (__attribute__((unused)) const HMID& to,uint8_t count) {
-    Message::init(0x1a,count,0x00,0x00,0x00,0x00);
+    Message::init(0x1a,count,AS_MESSAGE_DEVINFO,0x00,AS_INFO_SERIAL,0x00);
   }
   uint8_t* data() { return Message::data()-2; }
   void fill(uint8_t firmversion,uint8_t modelid[2],const char* serial,uint8_t subtype,uint8_t devinfo[3]) {
@@ -673,7 +673,7 @@ public:
 class SerialInfoMsg : public Message {
 public:
   void init (__attribute__((unused)) const HMID& to,uint8_t count) {
-    Message::init(0x14,count,0x10,0x00,0x00,0x00);
+    Message::init(0x14,count,AS_MESSAGE_INFO,0x00,AS_INFO_SERIAL,0x00);
   }
   uint8_t* data() { return Message::data()-4; }
   void fill(const char* serial) {
@@ -686,7 +686,7 @@ public:
 class ValuesMsg : public Message {
 public:
   void init(uint8_t msgcnt,uint8_t ch) {
-    Message::init(0x0b,msgcnt,0x53,BIDI|WKMEUP,ch,0);
+    Message::init(0x0b,msgcnt,AS_MESSAGE_SENSOR_DATA,BIDI|WKMEUP,ch,0);
   }
   template <typename T>
   void add (T value) {

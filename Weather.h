@@ -19,7 +19,7 @@ public:
     if( batlow == true ) {
       t1 |= 0x80; // set bat low bit
     }
-    Message::init(0xc,msgcnt,0x70,BIDI,t1,t2);
+    Message::init(0xc,msgcnt,AS_MESSAGE_WEATHER_EVENT,BIDI,t1,t2);
     pload[0] = humidity;
   }
 };

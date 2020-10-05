@@ -75,7 +75,7 @@ class ChipIdMsg : public Message {
 
       }
       //DPRINT("hexstr=");DPRINTLN(hexstr);
-      Message::init(0x1a, msgcnt, 0x53, BIDI , ch , hexstr[0]);
+      Message::init(0x1a, msgcnt, AS_MESSAGE_SENSOR_DATA, BIDI , ch , hexstr[0]);
       for (uint8_t i = 1; i < (ID_ADDR_SIZE * 2); i++) {
     	  pload[i-1] = hexstr[i];
       }
