@@ -62,7 +62,6 @@ public:
     return DeviceType::channels();
   }
 
-
   void dumpSize () {
     ChannelType& ch = channel(this->channels());
     DPRINT(F("Address Space: "));DDEC(this->keystore().address());DPRINT(F(" - "));DDECLN((uint16_t)(ch.address() + ch.size()));
@@ -70,6 +69,7 @@ public:
 
   uint16_t checksum () {
     uint16_t crc = 0;
+#ifndef NOCRC
     // size of keystore data
     crc = HalType::crc16(crc,DeviceType::keystore().size());
     // add register of list0
@@ -97,6 +97,7 @@ public:
       // add number of peers
       crc = HalType::crc16(crc,ch.peers());
     }
+#endif
     return crc;
   }
 

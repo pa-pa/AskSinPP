@@ -6,7 +6,7 @@
 #ifndef __ASKSINPP_h__
 #define __ASKSINPP_h__
 
-#define ASKSIN_PLUS_PLUS_VERSION "4.1.6"
+#define ASKSIN_PLUS_PLUS_VERSION "4.1.7"
 
 #define ASKSIN_PLUS_PLUS_IDENTIFIER F("AskSin++ V" ASKSIN_PLUS_PLUS_VERSION " (" __DATE__ " " __TIME__ ")")
 
@@ -277,7 +277,7 @@ public:
 #endif
 };
 
-
+#ifndef NORTC
 template <class StatusLed,class Battery,class Radio,class Buzzer=NoBuzzer>
 class AskSinRTC : public AskSin<StatusLed,Battery,Radio,Buzzer> {
 public:
@@ -303,6 +303,7 @@ public:
   void sleep () { this->activity.template savePower< SleepRTC >(*this); }
 #endif
 };
+#endif
 
 }
 

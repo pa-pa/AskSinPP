@@ -180,6 +180,7 @@ public:
 extern SysClock sysclock;
 
 
+#ifndef NORTC
 
 class RTC : public AlarmClock {
   uint8_t ovrfl;
@@ -272,6 +273,7 @@ public:
 };
 
 extern RTC rtc;
+#endif
 
 }
 

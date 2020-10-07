@@ -471,6 +471,69 @@ public:
 #endif
     reset();
 
+#ifdef SIMPLE_CC1101_INIT
+    static const uint8_t initVal[] PROGMEM = {
+    /* register          value       reset   explanation of delta to reset value   */
+    /* CC1101_IOCFG2 */  0x2E,   //  0x29    high impedance tri state (pin not used)
+    /* CC1101_IOCFG1 */  0x2E,   //  0x2E    high impedance tri state (pin not used)
+    /* CC1101_IOCFG0,*/  0x06,   //  0x3F    Asserts when sync word has been sent / received, and de-asserts at the end of the packet. In RX, the pin will also deassert when a packet is discarded due to address or maximum length filtering or when the radio enters RXFIFO_OVERFLOW state. In TX the pin will de-assert if the TX FIFO underflows.
+    /* CC1101_FIFOTHR,*/ 0x0D,   //  0x07    TX FIFO = 9, RX FIFO = 56 byte
+    /* CC1101_SYNC1, */  0xE9,   //  0xD3    Sync word MSB
+    /* CC1101_SYNC0, */  0xCA,   //  0x91    Sync word LSB
+    /* CC1101_PKTLEN,*/  0xFF,   //  0xFF
+    /* CC1101_PKTCTRL1,*/0x0C,   //  0x04    CRC auto flush = 1, append status = 1,
+    /* CC1101_PKTCTRL0,*/0x45,   //  0x45
+    /* CC1101_ADDR, */   0x00,   //  0x00
+    /* CC1101_CHANNR,*/  0x00,   //  0x00
+    /* CC1101_FSCTRL1,*/ 0x06,   //  0x0F    frequency synthesizer control
+    /* CC1101_FSCTRL0,*/ 0x00,   //  0x00
+    /* CC1101_FREQ2, */  0x21,   //  0x1E
+    /* CC1101_FREQ1, */  0x65,   //  0xC4
+    /* CC1101_FREQ0, */  0x6A,   //  0xEC
+    /* CC1101_MDMCFG4,*/ 0xC8,   //  0x8C    channel bandwidth
+    /* CC1101_MDMCFG3,*/ 0x93,   //  0x22    symbol data rate
+    /* CC1101_MDMCFG2,*/ 0x03,   //  0x02    30 of 32 bits of sync word need to match
+    /* CC1101_MDMCFG1,*/ 0x22,   //  0x22
+    /* CC1101_MDMCFG0,*/ 0xF8,   //  0xF8
+    /* CC1101_DEVIATN,*/ 0x34,   //  0x47    deviation = 19.042969 kHz
+    /* CC1101_MCSM2, */  0x07,   //  0x07
+#ifdef USE_CCA
+    /* CC1101_MCSM1,*/   0x33,   //  0x30    CCA, RX after TX
+#else
+    /* CC1101_MCSM1,*/   0x03,   //  0x30    always clear channel indication, RX after TX
+#endif
+    /* CC1101_MCSM0,*/   0x18,   //  0x04    auto cal when going from IDLE to RX/TX, XOSC stable count = 64
+    /* CC1101_FOCCFG,*/  0x16,   //  0x36    don't freeze freq offset compensation
+    /* CC1101_BSCFG,*/   0x6C,   //  0x6C
+    /* CC1101_AGCCTRL2,*/0x43,   //  0x03    forbid highest gain setting for DVGA
+    /* CC1101_AGCCTRL1,*/0x40,   //  0x40
+    /* CC1101_AGCCTRL0,*/0x91,   //  0x91
+    /* CC1101_WOREVT1,*/ 0x2f,   //  0x87    see next line
+    /* CC1101_WOREVT0,*/ 0x65,   //  0x6B    t_Event0 = 350ms
+    /* CC1101_WORCTRL,*/ 0x78,   //  0xF8    RC_PD=0
+    /* CC1101_FREND1,*/  0x56,   //  0x56
+    /* CC1101_FREND0,*/  0x10,   //  0x10
+    /* CC1101_FSCAL3,*/  0xE9,   //  0xA9    charge pump calib stage
+    /* CC1101_FSCAL2,*/  0x2A,   //  0x0A    high VCO
+    /* CC1101_FSCAL1,*/  0x1F,   //  0x20    freq synthesizer calib result
+    /* CC1101_FSCAL0,*/  0x11,   //  0x0D    freq synthesizer calib control
+    //CC1101_RCCTRL1,   0x41,   //  0x41
+    //CC1101_RCCTRL0,   0x00,   //  0x00
+    //CC1101_FSTEST,    0x59,   //  0x59
+    //CC1101_PTEST,     0x7f,   //  0x7f
+    //CC1101_AGCTEST,   0x3f,   //  0x3f
+    //CC1101_TEST2,     0x88,   //  0x88
+    //CC1101_TEST1,     0x31,   //  0x31
+    //CC1101_TEST0,     0x0b,   //  0x0b
+    //  CC1101_PATABLE,   0x03,   //    NA
+    };
+    bool initOK = true;
+    for (uint8_t i=0; i<sizeof(initVal); ++i) { // write init value to TRX868
+      bool initres = initReg(i, pgm_read_byte(&initVal[i]));
+      //if any initReg fails, initOK has to be false
+      if (initres == false) initOK = false;
+    }
+#else
     // define init settings for CC1101
     static const uint8_t initVal[] PROGMEM = {
     /*register          value       reset   explanation of delta to reset value   */
@@ -545,6 +608,8 @@ public:
       //if any initReg fails, initOK has to be false
       if (initres == false) initOK = false;
     }
+#endif
+
 
 #ifdef USE_OTA_BOOTLOADER_FREQUENCY
     // set frequency from bootloader again
@@ -565,7 +630,13 @@ public:
     DPRINTLN(F(" - ready"));
     return initOK;
   }
-  
+
+#ifdef SIMPLE_CC1101_INIT
+  bool initReg (uint8_t regAddr, uint8_t val) {
+    spi.writeReg(regAddr, val);
+    return true;
+  }
+#else
   bool initReg (uint8_t regAddr, uint8_t val, uint8_t retries=3) {
     spi.writeReg(regAddr, val);
     uint8_t val_read = spi.readReg(regAddr, CC1101_CONFIG);
@@ -583,6 +654,7 @@ public:
     }
     return initResult;
   }
+#endif
 
   uint8_t rssi () const {
     return rss;
