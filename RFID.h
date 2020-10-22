@@ -379,22 +379,36 @@ public:
 #endif
 
 #ifdef USE_RDM6300
-   while (rdrDev.available()) {
+   while (rdrDev.available() > 0) {
      char d = rdrDev.read();
      static uint8_t bytecount = 0;
+     static uint8_t addrval = 0;
+     static bool decode = false;
      switch (d) {
        case 0x02:
          bytecount = 0;
+         memset(addr,0x00,ID_ADDR_SIZE);
+         decode = true;
          break;
        case 0x03:
-         bytecount = 0;
+         decode = false;
          while (rdrDev.available()) rdrDev.read(); //empty rx buffer
          return true;
          break;
        default:
-         if (bytecount < 8)
-           addr[bytecount++] =  (d > 57) ? d -= 55 : d -= 48;
-       break;
+         if (decode == true) {
+           uint8_t val = (d > 57) ? d -= 55 : d -= 48;
+           if (bytecount % 2 == 0) {
+             addrval = val << 4;
+           } else {
+             addrval |= val;
+             addr[bytecount/2] =  addrval;
+             //DPRINT("[");DDEC(bytecount/2);DPRINT("]=");DHEXLN(addrval);
+             addrval = 0;
+           }
+           bytecount++;
+         }
+         break;
      }
    }
    return false;
