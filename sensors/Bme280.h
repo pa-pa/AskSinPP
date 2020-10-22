@@ -28,6 +28,7 @@ class Bme280 : public Temperature, public Pressure, public Humidity {
 public:
   Bme280 () {}
   void init () {
+    Wire.begin();
     _present = _bme.begin();
     _bme.setSettings(settings);
   }
