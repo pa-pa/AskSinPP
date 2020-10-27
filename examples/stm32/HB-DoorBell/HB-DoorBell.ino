@@ -145,7 +145,7 @@ public:
     msg.add((uint16_t)bh1750.brightness());
     device().send(msg, device().getMasterID());
 
-    uint8_t delay = max(15,this->getList1().eventDelaytime());
+    uint8_t delay = max((uint8_t)15,this->getList1().eventDelaytime());
     set(AskSinBase::byteTimeCvtSeconds(delay));
     clock.add(*this);
   }

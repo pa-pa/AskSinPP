@@ -8,26 +8,30 @@
 namespace as {
 
 SysClock sysclock;
-RTC rtc;
 
 void callback(void) {
   --sysclock;
 }
 
+#ifndef NORTC
+RTC rtc;
 void rtccallback () {
   //  DPRINT(".");
     rtc.overflow();
   //  rtc.debug();
     --rtc;
 }
+#endif
 
 #if ARDUINO_ARCH_AVR
 ISR(TIMER1_OVF_vect) {
   callback();
 }
+#ifndef NORTC
 ISR(TIMER2_OVF_vect) {
   rtccallback();
 }
+#endif
 #endif
 
 
@@ -127,6 +131,9 @@ bool RTCAlarm::delayMillis () {
 }
 
 SysClock& SysClock::instance() { return sysclock; }
+
+#ifndef NORTC
 RTC& RTC::instance() { return rtc; }
+#endif
 
 }

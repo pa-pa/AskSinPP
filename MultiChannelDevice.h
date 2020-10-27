@@ -55,13 +55,12 @@ public:
   }
 
   void channels (uint8_t num) {
-    DeviceType::channels(min(num,ChannelCount));
+    DeviceType::channels(min(num,(uint8_t)ChannelCount));
   }
 
   uint8_t channels () const {
     return DeviceType::channels();
   }
-
 
   void dumpSize () {
     ChannelType& ch = channel(this->channels());
@@ -70,6 +69,7 @@ public:
 
   uint16_t checksum () {
     uint16_t crc = 0;
+#ifndef NOCRC
     // size of keystore data
     crc = HalType::crc16(crc,DeviceType::keystore().size());
     // add register of list0
@@ -97,6 +97,7 @@ public:
       // add number of peers
       crc = HalType::crc16(crc,ch.peers());
     }
+#endif
     return crc;
   }
 
@@ -474,6 +475,8 @@ public:
       ChannelType& c = channel(ch);
       if (numlist == 1) {
         return c.getList1();
+      } else if (numlist == 2) {
+        return c.getList2();
       } else if (c.hasList3() && numlist == 3) {
         return c.getList3(peer);
       } else if (c.hasList4() && numlist == 4) {

@@ -9,11 +9,22 @@
 
 #include "MultiChannelDevice.h"
 #include "Register.h"
-#ifdef USE_I2C_READER
+
+#ifdef USE_MFRC522_I2C
 #include <Wire.h>
 #include <MFRC522_I2C.h>
-#else
+#endif
+
+#ifdef USE_WIEGAND
+#include <Wiegand.h> // https://github.com/monkeyboard/Wiegand-Protocol-Library-for-Arduino
+#endif
+
+#ifdef USE_MFRC522_SPI
 #include <MFRC522.h>
+#endif
+
+#ifdef USE_RDM6300
+#include <SoftwareSerial.h>
 #endif
 
 #define   ID_ADDR_SIZE 8
@@ -64,7 +75,7 @@ class ChipIdMsg : public Message {
 
       }
       //DPRINT("hexstr=");DPRINTLN(hexstr);
-      Message::init(0x1a, msgcnt, 0x53, BIDI , ch , hexstr[0]);
+      Message::init(0x1a, msgcnt, AS_MESSAGE_SENSOR_DATA, BIDI , ch , hexstr[0]);
       for (uint8_t i = 1; i < (ID_ADDR_SIZE * 2); i++) {
     	  pload[i-1] = hexstr[i];
       }
@@ -259,7 +270,17 @@ public:
   bool process (__attribute__((unused)) const SensorEventMsg& msg)   {return false; }
 };
 
-template <class RFIDDev,class RFIDChannel,MFRC522& m,int LED_GREEN,int LED_RED>
+#ifdef USE_WIEGAND
+template <class RFIDDev,class RFIDChannel,WIEGAND& rdrDev,int LED_GREEN,int LED_RED>
+#endif
+#if (defined(USE_MFRC522_I2C) || defined(USE_MFRC522_SPI))
+template <class RFIDDev,class RFIDChannel,MFRC522& rdrDev,int LED_GREEN,int LED_RED>
+#endif
+#ifdef USE_RDM6300
+template <class RFIDDev,class RFIDChannel,SoftwareSerial& rdrDev,int LED_GREEN,int LED_RED>
+#endif
+
+
 class RFIDScanner : public Alarm {
   RFIDDev& dev;
   DualStatusLed<LED_GREEN,LED_RED> led;
@@ -328,17 +349,70 @@ public:
     }
     return res;
   }
+  
+ bool getRfidAddress(uint8_t *addr) {
+#ifdef USE_WIEGAND
+   if (rdrDev.available()) {
+     memset(addr,0x00, ID_ADDR_SIZE);
+     unsigned long wgAddr = rdrDev.getCode();
+     byte addrArr[8];
+     for (uint8_t i = 0; i < ID_ADDR_SIZE; i++)
+       addrArr[i] = wgAddr >> (i*8) & 0xff;
+     memcpy(addr, addrArr, ID_ADDR_SIZE);
 
-  bool getRfidAddress(uint8_t *addr) {
-    if (!m.PICC_IsNewCardPresent())
-      if (!m.PICC_IsNewCardPresent())
-       return false;
-    if (!m.PICC_ReadCardSerial()) return false; 
-    memset(addr,0x00,ID_ADDR_SIZE);
-    memcpy(addr,m.uid.uidByte,m.uid.size);
+     //DADDR(addr);
+     return true;
+   } 
+   return false;
+#endif
 
-    //DADDR(addr);
-    return true;
+#if (defined(USE_MFRC522_I2C) || defined(USE_MFRC522_SPI))
+   if (!rdrDev.PICC_IsNewCardPresent())
+     if (!rdrDev.PICC_IsNewCardPresent())
+      return false;
+   if (!rdrDev.PICC_ReadCardSerial()) return false;
+   memset(addr,0x00,ID_ADDR_SIZE);
+   memcpy(addr,rdrDev.uid.uidByte,rdrDev.uid.size);
+
+   //DADDR(addr);
+   return true;
+#endif
+
+#ifdef USE_RDM6300
+   while (rdrDev.available() > 0) {
+     char d = rdrDev.read();
+     static uint8_t bytecount = 0;
+     static uint8_t addrval = 0;
+     static bool decode = false;
+     switch (d) {
+       case 0x02:
+         bytecount = 0;
+         memset(addr,0x00,ID_ADDR_SIZE);
+         decode = true;
+         break;
+       case 0x03:
+         decode = false;
+         while (rdrDev.available()) rdrDev.read(); //empty rx buffer
+         return true;
+         break;
+       default:
+         if (decode == true) {
+           uint8_t val = (d > 57) ? d -= 55 : d -= 48;
+           if (bytecount % 2 == 0) {
+             addrval = val << 4;
+           } else {
+             addrval |= val;
+             addr[bytecount/2] =  addrval;
+             //DPRINT("[");DDEC(bytecount/2);DPRINT("]=");DHEXLN(addrval);
+             addrval = 0;
+           }
+           bytecount++;
+         }
+         break;
+     }
+   }
+   return false;
+#endif
   }
 
   bool readRfid(uint8_t *addr) {

@@ -3,9 +3,20 @@
 // 2016-10-31 papa Creative Commons - http://creativecommons.org/licenses/by-nc-sa/3.0/de/
 //- -----------------------------------------------------------------------------------------------------------------------
 
+// define this to implement new RHS3 device
+// #define RHS3
+
 // define this to read the device id, serial and device type from bootloader section
 // #define USE_OTA_BOOTLOADER
+
+// use background internal VCC measure
 // #define BATTERY_IRQ
+
+#ifdef RHS3
+  // send battery value
+  #define CONTACT_STATE_WITH_BATTERY
+#endif
+
 
 #define CFG_STEPUP_BYTE 0x00
 #define CFG_STEPUP_OFF  0x00
@@ -25,7 +36,7 @@
 #include <LowPower.h>
 
 #include <Register.h>
-#include <ThreeState.h>
+#include <ContactState.h>
 
 // we use a Pro Mini
 // Arduino pin for the LED
@@ -51,6 +62,16 @@
 using namespace as;
 
 // define all device properties
+#ifdef RHS3
+const struct DeviceInfo PROGMEM devinfo = {
+    {0xa9,0xb8,0xc7},       // Device ID
+    "papaa9b8c7",           // Device Serial
+    {0xF2,0x09},            // Device Model
+    0x10,                   // Firmware Version
+    as::DeviceType::ThreeStateSensor, // Device Type
+    {0x01,0x00}             // Info Bytes
+};
+#else
 const struct DeviceInfo PROGMEM devinfo = {
     {0x09,0x56,0x34},       // Device ID
     "papa222111",           // Device Serial
@@ -59,7 +80,7 @@ const struct DeviceInfo PROGMEM devinfo = {
     as::DeviceType::ThreeStateSensor, // Device Type
     {0x01,0x00}             // Info Bytes
 };
-
+#endif
 
 class SwitchSensor {
   InternalVCC internal;
@@ -117,7 +138,11 @@ public:
   }
 } hal;
 
-DEFREGISTER(Reg0,DREG_INTKEY,DREG_CYCLICINFOMSG,MASTERID_REGS,DREG_TRANSMITTRYMAX,DREG_SABOTAGEMSG)
+#ifdef RHS3
+  DEFREGISTER(Reg0,DREG_CYCLICINFOMSG,MASTERID_REGS,DREG_TRANSMITTRYMAX,DREG_SABOTAGEMSG,DREG_LOWBATLIMIT)
+#else
+  DEFREGISTER(Reg0,DREG_CYCLICINFOMSG,MASTERID_REGS,DREG_TRANSMITTRYMAX,DREG_SABOTAGEMSG)
+#endif
 class RHSList0 : public RegList0<Reg0> {
 public:
   RHSList0(uint16_t addr) : RegList0<Reg0>(addr) {}
@@ -126,6 +151,9 @@ public:
     cycleInfoMsg(true);
     transmitDevTryMax(6);
     sabotageMsg(true);
+#ifdef RHS3
+    lowBatLimit(22); // default low bat 2.2V
+#endif
   }
 };
 
@@ -191,8 +219,13 @@ public:
   virtual void configChanged () {
     TSDevice::configChanged();
     // set battery low/critical values
+    #ifdef RHS3
+    battery().low(getList0().lowBatLimit());
+    battery().critical(getList0().lowBatLimit()-3);
+    #else
     battery().low(getConfigByte(CFG_BAT_LOW_BYTE));
     battery().critical(getConfigByte(CFG_BAT_CRITICAL_BYTE));
+    #endif
     #ifndef BATTERY_IRQ
     // set the battery mode
     battery().meter().sensor().mode(getConfigByte(CFG_STEPUP_BYTE));

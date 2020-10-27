@@ -6,7 +6,7 @@
 #ifndef __ASKSINPP_h__
 #define __ASKSINPP_h__
 
-#define ASKSIN_PLUS_PLUS_VERSION "4.1.5"
+#define ASKSIN_PLUS_PLUS_VERSION "4.1.7"
 
 #define ASKSIN_PLUS_PLUS_IDENTIFIER F("AskSin++ V" ASKSIN_PLUS_PLUS_VERSION " (" __DATE__ " " __TIME__ ")")
 
@@ -212,12 +212,12 @@ public:
     srand((unsigned int&)id);
     led.init();
     buzzer.init();
-    radio.init();
+    bool ccinitOK = radio.init();
     radio.enable();
     // start the system timer
     sysclock.init();
     // signal start to user
-    led.set(LedStates::welcome);
+    led.set(ccinitOK ? LedStates::welcome : LedStates::failure);
     // delay first send by random time
     radio.setSendTimeout((rand() % 3500)+1000);
   }
@@ -266,7 +266,7 @@ public:
     radio.wakeup();
   }
 
-#ifdef ARDUINO_ARCH_AVR
+#if defined(ARDUINO_ARCH_AVR) && ! ( defined(ARDUINO_AVR_ATmega32) || defined(__AVR_ATmega644__))
   template <bool ENABLETIMER2=false, bool ENABLEADC=false>
   void idle () { activity.savePower< Idle<ENABLETIMER2,ENABLEADC> >(*this); }
 
@@ -277,7 +277,7 @@ public:
 #endif
 };
 
-
+#ifndef NORTC
 template <class StatusLed,class Battery,class Radio,class Buzzer=NoBuzzer>
 class AskSinRTC : public AskSin<StatusLed,Battery,Radio,Buzzer> {
 public:
@@ -298,11 +298,12 @@ public:
       return rtc.runready() || AskSin<StatusLed,Battery,Radio,Buzzer>::runready();
   }
 
-#ifdef ARDUINO_ARCH_AVR
+#if defined(ARDUINO_ARCH_AVR) && ! ( defined(ARDUINO_AVR_ATmega32) || defined(__AVR_ATmega644__))
   template <bool ENABLETIMER2=false>
   void sleep () { this->activity.template savePower< SleepRTC >(*this); }
 #endif
 };
+#endif
 
 }
 

@@ -39,17 +39,33 @@ has to provided with **HM_DEF_KEY** and **HM_DEF_KEY_INDEX**.
 
     #define USE_AES
     #define HM_DEF_KEY 0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x0a,0x0b,0x0c,0x0d,0x0e,0x0f,0x10
-    #deifne HM_DEF_KEY_INDEX 0
+    #define HM_DEF_KEY_INDEX 0
     
 In FHEM you can get the key from the *hmKey*, 
 *hmKey2*, *hmKey3* attributes of the VCCU. The index is the key
 number multiplied by 2.
 
 ## Extra Defines for Configuration
+
+All defines has to set in the sketch before any header file is included.
+
 - **USE_WOR** - enables WOR listening during idle (burst devices)
 - **USE_CCA** - enable Clear Channel Assessment / Listen Before Talk
-- **SENSOR_ONLY** - save some byte by exclude code for actor devices
 - **DEVICE_CHANNEL_COUNT** - set number of device channels, skip calculation
+- **USE_HW_SERIAL** - generate device id and serial from cpu identifier (ATmega644, ATmega1284, STM32F1 only)
+- **USE_OTA_BOOTLOADER** - read device id and serial from the OTA bootloader
+- **USE_OTA_BOOTLOADER_FREQUENCY** - reuse the CC1101 frequence setting from the bootloader
+
+
+## Defnies to reduce code size
+
+The following defines can be used to reduce the size of the code.
+All defines has to set in the sketch before any header file is included.
+
+- **SENSOR_ONLY** - save some byte by exclude code for actor devices
+- **NORTC** - removes code for RTC support
+- **NOCRC** - removes CRC calculation during startup - The EEPROM will no longer initialized when channel configuration is changed. A extra RESET is needed to initialize it again.
+- **SIMPLE_CC1101_INIT** - simple CC1101 initialization - No error reporting in case of errors.
 
 ## Alternative Device RESET Method
 

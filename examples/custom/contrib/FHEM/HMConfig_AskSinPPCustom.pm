@@ -16,11 +16,14 @@ $HMConfig::culHmRegDefine{"addressHi"}  = {a=>224,s=>4,l=>1,min=>0,max=>0xffffff
 $HMConfig::culHmRegDefine{"addressLo"}  = {a=>228,s=>4,l=>1,min=>0,max=>0xffffffff,c=>'hex',p=>'n',f=>'',u=>'',d=>1,t=>"address low"};
 $HMConfig::culHmRegDefine{"buttonMode"} = {a=>50 ,s=>1,l=>0,min=>0,max=>1,         c=>'lit',p=>'n',f=>'',u=>'',d=>1,t=>"button mode",lit=>{remote=>0,state=>1}};
 
+# HB-UNI-Sen-TEMP-DS18B20
+$HMConfig::culHmRegDefine{"lowBattLimit"}   = {a=>18 ,s=>1,l=>0,min=>19, max=>33,  c=>'',   p=>'n',f=>10,u=>'V',d=>1,t=>"low batterie limit, step .1V"};
+
 # HB-UNI-Sen-LEV-US
 $HMConfig::culHmRegDefine{"sendInterval"}   = {a=>32, s=>2,l=>0,min=>10,max=>3600, c=>'',   p=>'n',f=>'',u=>'s', d=>1,t=>"send interval"};
-$HMConfig::culHmRegDefine{"distanceOffset"} = {a=>1 , s=>2,l=>1,min=>0,max=>600,   c=>'',   p=>'n',f=>'',u=>'cm',d=>1,t=>"distance offset"};
-$HMConfig::culHmRegDefine{"sensorType"}     = {a=>3 , s=>1,l=>1,min=>0,max=>1,     c=>'lit',p=>'n',f=>'',u=>'',  d=>1,t=>"sensor type",lit=>{jsn=>0,maxsonar=>1}};
-$HMConfig::culHmRegDefine{"caseDesign"}     = {a=>90, s=>1,l=>1,min=>0,max=>2,     c=>'lit',p=>'n',f=>'',u=>'',  d=>1,t=>"case design",lit=>{vertical=>0,horizontal=>1,rectangle=>2}};
+$HMConfig::culHmRegDefine{"distanceOffset"} = {a=>1 , s=>2,l=>1,min=>0, max=>600,  c=>'',   p=>'n',f=>'',u=>'cm',d=>1,t=>"distance offset"};
+$HMConfig::culHmRegDefine{"sensorType"}     = {a=>3 , s=>1,l=>1,min=>0, max=>1,    c=>'lit',p=>'n',f=>'',u=>'',  d=>1,t=>"sensor type",lit=>{jsn=>0,maxsonar=>1}};
+$HMConfig::culHmRegDefine{"caseDesign"}     = {a=>90, s=>1,l=>1,min=>0, max=>2,    c=>'lit',p=>'n',f=>'',u=>'',  d=>1,t=>"case design",lit=>{vertical=>0,horizontal=>1,rectangle=>2}};
 $HMConfig::culHmRegDefine{"caseHeight"}     = {a=>94, s=>2,l=>1,min=>30,max=>10000,c=>'',   p=>'n',f=>'',u=>'cm',d=>1,t=>"case height"};
 $HMConfig::culHmRegDefine{"caseWidth"}      = {a=>102,s=>2,l=>1,min=>30,max=>10000,c=>'',   p=>'n',f=>'',u=>'cm',d=>1,t=>"case width"};
 $HMConfig::culHmRegDefine{"caseLength"}     = {a=>106,s=>2,l=>1,min=>30,max=>10000,c=>'',   p=>'n',f=>'',u=>'cm',d=>1,t=>"case length"};
@@ -30,7 +33,7 @@ $HMConfig::culHmRegDefine{"sendIntervalPress"}   = {a=>33, s=>2,l=>0,min=>20,max
 $HMConfig::culHmRegDefine{"sensorTypePress"}     = {a=>39 ,s=>1,l=>1,min=>0,max=>1,    c=>'lit',p=>'n',f=>'',u=>'',  d=>1,t=>"sensor type",lit=>{type12MPa=>0,type05MPa=>1}};
 
 # HB-UNI-Sen-CAP-MOIST-T
-$HMConfig::culHmRegDefine{"tempOffset"}         = {a=>1,  s=>4,l=>1,min=>-5,max=>5,   c=>'',   p=>'n',f=>10,u=>'°C', d=>1,t=>"temperature offset"};
+$HMConfig::culHmRegDefine{"tempOffset"}         = {a=>1,  s=>4,l=>1,min=>-50,max=>50, c=>'',   p=>'n',f=>10,u=>'K', d=>1,t=>"temperature offset"};
 $HMConfig::culHmRegDefine{"transmitInterval"}   = {a=>33, s=>2,l=>0,min=>1,max=>1440, c=>'',   p=>'n',f=>'',u=>'min',  d=>1,t=>"transmit interval"};
 $HMConfig::culHmRegDefine{"highValue"}          = {a=>35, s=>2,l=>1,min=>0,max=>1023, c=>'',   p=>'n',f=>'',u=>'',     d=>1,t=>"high value"};
 $HMConfig::culHmRegDefine{"lowValue"}           = {a=>37, s=>2,l=>1,min=>0,max=>1023, c=>'',   p=>'n',f=>'',u=>'',     d=>1,t=>"low value"};
@@ -38,7 +41,6 @@ $HMConfig::culHmRegDefine{"lowBatteryLimit"}    = {a=>18 ,s=>1,l=>0,min=>0,max=>
 
 # HB-UNI-Sen-WEA
 $HMConfig::culHmRegDefine{"altitude"}         = {a=>34,  s=>2,l=>0,min=>0,max=>10000, c=>'',   p=>'n',f=>'',u=>'m', d=>1,t=>"altitude"};
-
 $HMConfig::culHmRegDefine{"anemometerRadius"}            = {a=>1.0, s=>1,l=>1,min=>0,max=>25.5,c=>'',   p=>'n',f=>10,  u=>'cm',  d=>1,t=>"Anemometer Radius"};
 $HMConfig::culHmRegDefine{"anemometerCalibrationFactor"} = {a=>2.0, s=>2,l=>1,min=>0,max=>1000,c=>'',   p=>'n',f=>10,  u=>'',    d=>1,t=>"Anemometer Calibration Factor"};
 $HMConfig::culHmRegDefine{"ldCapacitor"}                 = {a=>4.0, s=>1,l=>1,min=>0,max=>120, c=>'',   p=>'n',f=>'',  u=>'pF',  d=>1,t=>"Light Detector Capacitor"};
@@ -133,6 +135,49 @@ $customMsg{"HM-LC-Sw1-FM-Cus"} = sub {
   return $msg->processRemote if $msg->isRemote;
   return $msg->processSwitchStatus($target) if $msg->isStatus;
   return ();
+};
+
+$HMConfig::culHmModel{"F301"} = {name=>"HB-UNI-Sen-TEMP-DS18B20",st=>'custom',cyc=>'',rxt=>'c:l',lst=>'1',chn=>"Temp:1:8"};
+$HMConfig::culHmChanSets{"HB-UNI-Sen-TEMP-DS18B2000"}{fwUpdate} = "<filename>";
+$HMConfig::culHmChanSets{"HB-UNI-Sen-TEMP-DS18B2001"} = {};
+$HMConfig::culHmChanSets{"HB-UNI-Sen-TEMP-DS18B2002"} = {};
+$HMConfig::culHmChanSets{"HB-UNI-Sen-TEMP-DS18B2003"} = {};
+$HMConfig::culHmChanSets{"HB-UNI-Sen-TEMP-DS18B2004"} = {};
+$HMConfig::culHmChanSets{"HB-UNI-Sen-TEMP-DS18B2005"} = {};
+$HMConfig::culHmChanSets{"HB-UNI-Sen-TEMP-DS18B2006"} = {};
+$HMConfig::culHmChanSets{"HB-UNI-Sen-TEMP-DS18B2007"} = {};
+$HMConfig::culHmChanSets{"HB-UNI-Sen-TEMP-DS18B2008"} = {};
+$HMConfig::culHmRegModel{"HB-UNI-Sen-TEMP-DS18B20"}   = { lowBattLimit=>1, transmitInterval=>1 };
+$HMConfig::culHmRegChan {"HB-UNI-Sen-TEMP-DS18B2001"} = { tempOffset=>1 };
+$HMConfig::culHmRegChan {"HB-UNI-Sen-TEMP-DS18B2002"} = { tempOffset=>1 };
+$HMConfig::culHmRegChan {"HB-UNI-Sen-TEMP-DS18B2003"} = { tempOffset=>1 };
+$HMConfig::culHmRegChan {"HB-UNI-Sen-TEMP-DS18B2004"} = { tempOffset=>1 };
+$HMConfig::culHmRegChan {"HB-UNI-Sen-TEMP-DS18B2005"} = { tempOffset=>1 };
+$HMConfig::culHmRegChan {"HB-UNI-Sen-TEMP-DS18B2006"} = { tempOffset=>1 };
+$HMConfig::culHmRegChan {"HB-UNI-Sen-TEMP-DS18B2007"} = { tempOffset=>1 };
+$HMConfig::culHmRegChan {"HB-UNI-Sen-TEMP-DS18B2008"} = { tempOffset=>1 };
+$customMsg{"HB-UNI-Sen-TEMP-DS18B20"} = sub {
+  my ($msg,$target) = @_;
+  my @evtEt=();
+  my $device = main::CUL_HM_id2Hash($msg->from);
+  my $batstat = "ok";
+  $batstat = "low" if (($msg->payloadByte(0) & 0x80)==0x80);
+  push @evtEt,[$device,1,"battery:".$batstat];
+  if( $msg->isValues ) {
+    for( my $offset=1; $offset < length($msg->payload)/2; $offset += 3 ) {
+      my $cnum = ($msg->payloadByte($offset) & 0x3f); # get channel number
+      my $channel = $main::modules{CUL_HM}{defptr}{$msg->channelId($cnum)};
+      if( defined($channel) ) {
+        my $value = $msg->payloadWord($offset+1); # get temperature
+        push @evtEt,[$channel,1,"temperature:".$value/10];
+        push @evtEt,[$channel,1,"state:".$value/10];
+      }
+      else {
+        Log 1,"No channel for ".$msg->channelId($cnum);
+      }
+    }
+  }
+  return @evtEt;
 };
 
 $HMConfig::culHmModel{"F202"} = {name=>"HB-SW2-SENS",st=>'custom',cyc=>'',rxt=>'',lst=>'1,3:1p.2p,4:3p',chn=>"Sw:1:2,Sen:3:3"};
@@ -260,10 +305,11 @@ $customMsg{"HB-LC-SW4-MDIR"} = sub {
 };
 
 # window contact RHS3
-$HMConfig::culHmModel{"F209"} = {name=>"HB-Sec-RHS-3",st=>'custom',cyc=>'28:00',rxt=>'c:l',lst=>'1,4:1p',chn=>""};
+$HMConfig::culHmModel{"F209"} = {name=>"HB-Sec-RHS-3",st=>'custom',cyc=>'28:00',rxt=>'c:w:l',lst=>'1,4:1p',chn=>""};
 $HMConfig::culHmChanSets{"HB-Sec-RHS-300"} = $HMConfig::culHmSubTypeSets{"THSensor"};
 $HMConfig::culHmRegModel{"HB-Sec-RHS-3"}   = { lowBatLimitBA2=>1, sabotageMsg=>1, transmDevTryMax=>1, cyclicInfoMsg=>1,
-                                               msgRhsPosA=>1, msgRhsPosB=>1, msgRhsPosC=>1, ledOnTime=>1, eventDlyTime=>1 };
+                                               msgRhsPosA=>1, msgRhsPosB=>1, msgRhsPosC=>1, ledOnTime=>1, eventDlyTime=>1,
+                                               peerNeedsBurst=>1, expectAES=>1 };
 $customMsg{"HB-Sec-RHS-3"} = sub {
   my ($msg,$target) = @_;
   my $batflags = 0;
@@ -488,38 +534,50 @@ $customMsg{"HB-UNI-Sen-WEA"} = sub {
   my @evtEt=();
   my $channel = $main::modules{CUL_HM}{defptr}{$msg->channelId(1)}; # fixed channel 1
   if( defined($channel) ) {
-    my $temp = $msg->payloadWord(0) & 0x7fff;
-    my $pressure = $msg->payloadWord(2);
-    my $humidity = $msg->payloadByte(4);
-    my $lux = $msg->payload3Byte(5);
-    my $raincount = $msg->payloadWord(8);
-    my $raining = (($raincount & 0x8000) == 0) ? "off" : "on";
-    my $windspeed = ($msg->payloadWord(10) & 0x3fff) / 10;
-    my $winddirrange = $msg->payloadWord(10) >> 14;
-    my $winddir = $msg->payloadByte(12);
-    my $gustspeed = ($msg->payloadWord(13) & 0x3fff) / 10;
-    my $rdheating = (($msg->payloadByte(13) & 0x80) == 0) ? "off" : "on";
-    my $uvindex = $msg->payloadByte(15) & 0x0f;
-    my $lightningdistance = $msg->payloadByte(15) >> 4;
-    my $lightningcounter = $msg->payloadByte(16);
-    push @evtEt,[$channel,1,"temperature:".$temp/10];
-    push @evtEt,[$channel,1,"pressure:".$pressure/10];
-    push @evtEt,[$channel,1,"humidity:".$humidity];
-    push @evtEt,[$channel,1,"lux:".$lux/10];
-    push @evtEt,[$channel,1,"raining:".$raining];
-    push @evtEt,[$channel,1,"raincount:".($raincount & 0x7fff)];
-    push @evtEt,[$channel,1,"windspeed:".$windspeed/10];
-    push @evtEt,[$channel,1,"winddirrange:".($winddirrange*45)/2];
-    push @evtEt,[$channel,1,"winddir:".$winddir*3];
-    push @evtEt,[$channel,1,"gustspeed:".$gustspeed/10];
-    push @evtEt,[$channel,1,"rdheating:".$rdheating];
-    push @evtEt,[$channel,1,"uvindex:".$uvindex];
-    push @evtEt,[$channel,1,"lightningdistance:".$lightningdistance*3];
-    push @evtEt,[$channel,1,"lightningcounter:".$lightningcounter];
-    push @evtEt,[$channel,1,"state:T: ".($temp/10)." P: ".($pressure/10)." H: ".$humidity];
-  }
-  else {
-    Log 1,"No channel for ".$msg->channelId(1);
+	if( $msg->isWeather ) {
+		my $temp = $msg->payloadWord(0) & 0x7fff;
+		my $pressure = $msg->payloadWord(2);
+		my $humidity = $msg->payloadByte(4);
+		my $lux = $msg->payload3Byte(5);
+		my $raincount = $msg->payloadWord(8);
+		my $raining = (($raincount & 0x8000) == 0) ? "off" : "on";
+		my $windspeed = ($msg->payloadWord(10) & 0x3fff);
+		my $winddirrange = $msg->payloadWord(10) >> 14;
+		my $winddir = $msg->payloadByte(12);
+		my $gustspeed = ($msg->payloadWord(13) & 0x3fff);
+		my $rdheating = (($msg->payloadByte(13) & 0x80) == 0) ? "off" : "on";
+		my $uvindex = $msg->payloadByte(15) & 0x0f;
+		my $lightningdistance = $msg->payloadByte(15) >> 4;
+		my $lightningcounter = $msg->payloadByte(16);		
+		push @evtEt,[$channel,1,"temperature:".$temp/10];
+		push @evtEt,[$channel,1,"pressure:".$pressure/10];
+		push @evtEt,[$channel,1,"humidity:".$humidity];
+		push @evtEt,[$channel,1,"lux:".$lux/10];
+		push @evtEt,[$channel,1,"raining:".$raining];
+		push @evtEt,[$channel,1,"raincount:".($raincount & 0x7fff)];
+		push @evtEt,[$channel,1,"windspeed:".$windspeed/10];
+		push @evtEt,[$channel,1,"winddirrange:".($winddirrange*45)/2];
+		push @evtEt,[$channel,1,"winddir:".$winddir*3];
+		push @evtEt,[$channel,1,"gustspeed:".$gustspeed/10];
+		push @evtEt,[$channel,1,"rdheating:".$rdheating];
+		push @evtEt,[$channel,1,"uvindex:".$uvindex];
+		push @evtEt,[$channel,1,"lightningdistance:".$lightningdistance*3];
+		push @evtEt,[$channel,1,"lightningcounter:".$lightningcounter];
+		push @evtEt,[$channel,1,"state:T: ".($temp/10)." P: ".($pressure/10)." H: ".$humidity];
+	  }
+	  elsif ( $msg->isValues ) {
+		my $raining = (($msg->payloadByte(1) & 0x1)== 0) ? "off" : "on";
+		my $rdheating= (($msg->payloadByte(1) & 0x2)== 0) ? "off" : "on";
+		my $gustspeed = ($msg->payloadWord(2) & 0x3fff);
+		push @evtEt,[$channel,1,"rdheating:".$rdheating];
+		push @evtEt,[$channel,1,"raining:".$raining];
+		push @evtEt,[$channel,1,"gustspeed:".$gustspeed/10];
+	  }
+	  push @evtEt,[$channel,1,"lastmessagetype:".$msg->type];
+	  # main::Log 1,"HM-UNI-SEN-WEA => Messagetype=".$msg->type;
+	}
+	else {
+      main::Log 1,"No channel for ".$msg->channelId(1);
   }
   return @evtEt;
 };
@@ -567,7 +625,7 @@ sub CUL_HM_Parsecustom($$$$$$) {
 #  Log 1, $model;
   
   if( defined $customMsg{$model} ) {
-    my $msg = new HMMsg($mTp,$mFlg,$src,$dst,$p);
+    my $msg = HMMsg->new($mTp,$mFlg,$src,$dst,$p);
 #    Log 1, "Call custom Message Handler for ".$model;
     return $customMsg{$model}($msg,$target);
   }

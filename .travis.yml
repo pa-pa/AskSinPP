@@ -42,6 +42,7 @@ install:
   - git clone https://github.com/FastLED/FastLED.git $HOME/arduino-ide/libraries/FastLED
   - git clone https://github.com/PaulStoffregen/SoftwareSerial.git $HOME/arduino-ide/libraries/SoftwareSerial
   - git clone https://github.com/DFRobot/DFRobotDFPlayerMini.git $HOME/arduino-ide/libraries/DFRobotDFPlayerMini
+  - git clone https://github.com/miguelbalboa/rfid.git $HOME/arduino-ide/libraries/MFRC522
 # Sketches from Jerome to test
   - git clone https://github.com/jp112sdl/Beispiel_AskSinPP.git $HOME/Beispiel_AskSinPP
   - git clone https://github.com/jp112sdl/HB-UNI-Sen-LEV-US.git $HOME/Beispiel_AskSinPP/examples/HB-UNI-Sen-LEV-US
@@ -54,12 +55,15 @@ install:
   - git clone https://github.com/jp112sdl/HB-Dis-EP-42BW.git $HOME/Beispiel_AskSinPP/examples/HB-Dis-EP-42BW
   - git clone https://github.com/jp112sdl/HB-OU-MP3-LED.git $HOME/Beispiel_AskSinPP/examples/HB-OU-MP3-LED
   - git clone https://github.com/jp112sdl/HB-RC-12-EP.git  $HOME/Beispiel_AskSinPP/examples/HB-RC-12-EP
+  - git clone https://github.com/jp112sdl/HB-OU-MOT-SERVO.git  $HOME/Beispiel_AskSinPP/examples/HB-OU-MOT-SERVO
+  - git clone https://github.com/jp112sdl/HB-UNI-Sen-RFID-RC.git $HOME/Beispiel_AskSinPP/examples/HB-UNI-Sen-RFID-RC
+  - git clone https://github.com/jp112sdl/HB-UNI-Sen-TEMP-MAX6675.git $HOME/Beispiel_AskSinPP/examples/HB-UNI-Sen-TEMP-MAX6675
 # Sketches from TomMajor
   - git clone https://github.com/TomMajor/SmartHome.git $HOME/SmartHome
 # setup arduino IDE
   - arduino --pref "update.check=false" --save-prefs
   - arduino --pref "boardsmanager.additional.urls=http://dan.drown.org/stm32duino/package_STM32duino_index.json,https://mcudude.github.io/MightyCore/package_MCUdude_MightyCore_index.json" --save-prefs
-  - arduino --install-boards stm32duino:STM32F1:2019.10.9
+  - arduino --install-boards stm32duino:STM32F1:2020.6.20
 #  - arduino --install-boards stm32duino:STM32F1:2019.3.31
   - arduino --install-boards MightyCore:avr:2.0.1
   - echo "compiler.cpp.extra_flags=-DUSE_AES -DHM_DEF_KEY=0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x0a,0x0b,0x0c,0x0d,0x0e,0x0f,0x10 -DHM_DEF_KEY_INDEX=0" >$HOME/arduino-ide/hardware/arduino/avr/platform.local.txt
@@ -69,6 +73,7 @@ script:
   - buildSketch HB-DoorBell
   - buildSketch HM-LC-SWX-SM
   - export BOARD=$BOARDSTM
+  - buildSketch HB-LC-Dim5PWM-CV
   - buildSketch HM-DW-WM
   - buildSketch HM-LC-DW-WM
   - buildSketch HM-LC-Dim1PWM-CV
@@ -127,6 +132,7 @@ script:
   - buildSketch HM-PBI-4-FM
   - buildSketch HM-RC-2-PBU-FM
   - buildSketch HM-SCI-3-FM
+  - buildSketch HM-SWI-3-FM
   - buildSketch HM-SEC-SC
   - buildSketch HM-SEC-SCO
   - buildSketch HM-Sec-TiS
@@ -146,26 +152,31 @@ script:
   - buildSketch HB-UNI-DMX-MASTER
   - buildSketch HB-UNI-Sen-WEIGHT
   - buildSketch HB-UNI-Sen-CAP-MOIST
+  - buildSketch HB-OU-MOT-SERVO
+  - buildSketch HB-UNI-Sen-RFID-RC
   - export SKETCHPATH=$HOME/Beispiel_AskSinPP/examples/HB-UNI-SenAct-4-4
   - buildSketch HB-UNI-SenAct-4-4-RC
   - buildSketch HB-UNI-SenAct-4-4-SC
   - export SKETCHPATH=$HOME/Beispiel_AskSinPP/examples/HB-UNI-Sen-PRESS
   - buildSketch HB-UNI-Sen-PRESS
   - buildSketch HB-UNI-Sen-PRESS-SC
+  - export SKETCHPATH=$HOME/Beispiel_AskSinPP/examples/HB-UNI-Sen-TEMP-MAX6675
+  - buildSketch HB-UNI-Sen-TEMP-MAX6675
+  - buildSketch HB-UNI-Sen-TEMP-MAX6675-DT
   - export SKETCHPATH=$HOME/Beispiel_AskSinPP/examples
   - export BOARD=$BOARD1284P
   - buildSketch HB-Dis-EP-42BW
   - buildSketch HB-RC-12-EP
   - export SKETCHPATH=$HOME/SmartHome
   - export BOARD=$BOARD328P
-  - buildSketch HB-SEN-LJet
+#  - buildSketch HB-SEN-LJet
   - buildSketch HB-SCI-3-FM
 # disable AES support
   - echo "" >$HOME/arduino-ide/hardware/arduino/avr/platform.local.txt
   - export SKETCHPATH=$HOME/Beispiel_AskSinPP/examples
   - buildSketch HB-OU-MP3-LED
   - export SKETCHPATH=$HOME/SmartHome
-  - buildSketch HB-UNI-Sensor1
+#  - buildSketch HB-UNI-Sensor1
 notifications:
   email:
     recipients:

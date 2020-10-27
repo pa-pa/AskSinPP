@@ -272,8 +272,8 @@ public:
 
   bool waitComplete () {
     //wait up to 50ms for the write to complete
-    for (uint8_t i=50; i; --i) {
-      _delay_ms(1); //no point in waiting too fast
+    for (uint8_t i=25; i; --i) {
+      _delay_ms(2); //no point in waiting too fast
       if( present() == true ) {
         return true;
       }
