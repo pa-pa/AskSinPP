@@ -148,7 +148,7 @@ public:
   }
 
   void disable () {
-  #ifdef ARDUINO_AVR_ATmega32
+  #if defined ARDUINO_AVR_ATmega32 || defined(__AVR_ATmega128__)
     TIMSK &= ~_BV(TOIE1);
   #elif defined(ARDUINO_ARCH_AVR)
     TIMSK1 &= ~_BV(TOIE1);
@@ -158,7 +158,7 @@ public:
   }
 
   void enable () {
-  #ifdef ARDUINO_AVR_ATmega32
+  #if defined ARDUINO_AVR_ATmega32|| defined(__AVR_ATmega128__)
     TIMSK |= _BV(TOIE1);
   #elif defined(ARDUINO_ARCH_AVR)
     TIMSK1 |= _BV(TOIE1);
@@ -194,12 +194,20 @@ public:
   static RTC& instance();
 
   void init () {
-#ifdef ARDUINO_AVR_ATmega32
+#if defined ARDUINO_AVR_ATmega32
     TIMSK &= ~(1<<TOIE2); //Disable timer2 interrupts
     ASSR  |= (1<<AS2); //Enable asynchronous mode
     TCNT2 = 0; //set initial counter value
     TCCR2 = (1<<CS22)|(1<<CS20); // mode normal & set prescaller 128
     while (ASSR & (1<<TCN2UB)); //wait for registers update
+    TIFR |= (1<<TOV2); //clear interrupt flags
+    TIMSK |= (1<<TOIE2); //enable TOV2 interrupt
+#elif defined(__AVR_ATmega128__)
+    TIMSK &= ~(1<<TOIE2); //Disable timer2 interrupts
+    ASSR  |= (1<<AS0); //Enable asynchronous mode
+    TCNT2 = 0; //set initial counter value
+    TCCR2 = (1<<CS22)|(1<<CS20); // mode normal & set prescaller 128
+    while (ASSR & (1<<TCN0UB)); //wait for registers update
     TIFR |= (1<<TOV2); //clear interrupt flags
     TIMSK |= (1<<TOIE2); //enable TOV2 interrupt
 #elif defined(ARDUINO_ARCH_AVR)

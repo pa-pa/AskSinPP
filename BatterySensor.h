@@ -11,7 +11,9 @@
 
 #ifdef ARDUINO_ARCH_AVR
 
+#ifndef __AVR_ATmega128__
 #include <avr/power.h>
+#endif
 
 #if defined(__AVR_ATmega32U4__) || defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__) || defined(__AVR_ATmega644P__) || defined(__AVR_ATmega1284P__)
 #define ADMUX_VCCWRT1V1 (_BV(REFS0) | _BV(MUX4) | _BV(MUX3) | _BV(MUX2) | _BV(MUX1))

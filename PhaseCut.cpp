@@ -12,7 +12,7 @@
 #include "PhaseCut.h"
 namespace as {
 
-#if defined(ARDUINO_ARCH_AVR) && ! (defined(ARDUINO_AVR_ATmega32) || defined(__AVR_ATmega644__))
+#if defined(ARDUINO_ARCH_AVR) && ! (defined(ARDUINO_AVR_ATmega32) || defined(__AVR_ATmega644__) || defined(__AVR_ATmega128__))
 	PhaseCut phaseCut;
 
 	PhaseCut::PhaseCut()
