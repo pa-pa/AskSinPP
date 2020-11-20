@@ -22,6 +22,13 @@ public:
   inline static void setHigh     (uint8_t pin) { digitalWrite(pin,HIGH); }
   inline static void setLow      (uint8_t pin) { digitalWrite(pin,LOW); }
   inline static uint8_t getState (uint8_t pin) { return digitalRead(pin); }
+#ifdef ARDUINO_ARCH_STM32F1
+  inline static void setPWM      (uint8_t pin) { pinMode(pin,PWM); }
+  inline static void setPWM      (uint8_t pin,uint16_t value) { pwmWrite(pin,value); }
+#else
+  inline static void setPWM      (uint8_t pin) { pinMode(pin,OUTPUT); }
+  inline static void setPWM      (uint8_t pin,uint8_t value) { analogWrite(pin,value); }
+#endif
 };
 
 #ifdef __AVR__
