@@ -133,7 +133,7 @@ namespace as {
         }
       }
       if (INVERSE) pwm = ~pwm ^ 0xF000;
-      DPRINT(F("PWM value ")); DPRINT(value); DPRINT(F(", pwm ")); DPRINTLN(pwm);
+      //DPRINT(F("PWM value ")); DPRINT(value); DPRINT(F(", pwm ")); DPRINTLN(pwm);
       set_channel_value(_channel, pwm);
     }
   };
