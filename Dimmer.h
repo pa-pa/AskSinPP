@@ -242,7 +242,7 @@ class DimmerStateMachine {
     void init (uint32_t ramptime,uint8_t level,uint32_t dly,DimmerPeerList l=DimmerPeerList(0)) {
       DPRINT(F("Ramp/Level: "));DDEC(ramptime);DPRINT(F("/"));DDECLN(level);
       // check that we start with the defined minimum
-      if( lst.valid() && sm.status() < lst.onMinLevel() ) {
+      if( lst.valid() && sm.status() !=0 && sm.status() < lst.onMinLevel() ) {
         sm.updateLevel(lst.onMinLevel());
       }
       lst=l;

@@ -43,7 +43,7 @@ namespace as {
 
   // reduced 12 bit PWM table, holds only every second value
   static const uint16_t pwm_12bit_table[101] PROGMEM = {
-    0, 9, 18, 28, 37, 47, 58, 68, 79, 90, 101, 113, 125, 137, 149, 162, 175, 189,203, 217, 231, 246, 262,
+    0, 2, 18, 28, 37, 47, 58, 68, 79, 90, 101, 113, 125, 137, 149, 162, 175, 189,203, 217, 231, 246, 262,
     277, 293, 310, 327, 344, 362, 381, 399, 419, 438, 459, 479, 501, 523, 545, 568, 592, 616, 641, 666,
     693, 719, 747, 775, 804, 834, 864, 896, 928, 961, 994, 1029, 1064, 1101, 1138, 1177, 1216, 1256, 
     1298, 1340, 1384, 1428, 1474, 1521, 1569, 1619, 1669, 1721, 1775, 1830, 1886, 1943, 2002, 2063, 2125, 
@@ -133,7 +133,7 @@ namespace as {
         }
       }
       if (INVERSE) pwm = ~pwm ^ 0xF000;
-      //DPRINT(F("PWM value "); DPRINTLN(value); DPRINT(F(", pwm "); DPRINTLN(pwm);
+      DPRINT(F("PWM value ")); DPRINT(value); DPRINT(F(", pwm ")); DPRINTLN(pwm);
       set_channel_value(_channel, pwm);
     }
   };
