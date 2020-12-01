@@ -253,9 +253,7 @@ public:
   virtual void state (uint8_t s) {
     ButtonType::state(s);
     if( s == ButtonType::released ) {
-      RemoteEventMsg& msg = fillMsg(false);
-      device.process(msg);
-      counter++;
+      shortPress();
     }
     else if( s == ButtonType::longpressed ) {
       RemoteEventMsg& msg = fillMsg(true);
@@ -278,6 +276,12 @@ public:
     HMID self;
     device.getDeviceID(self);
     return Peer(self,num);
+  }
+  // trigger a short press event - press button by software
+  void shortPress () {
+    RemoteEventMsg& msg = fillMsg(false);
+    device.process(msg);
+    counter++;
   }
 };
 
