@@ -90,7 +90,6 @@ script:
   - buildSketch HM-ES-TX-WM
   - buildSketch HM-LC-Bl1-FM
   - buildSketch HM-LC-Dim1PWM-CV
-  - buildSketch HM-LC-Dim1TPBU-FM
   - buildSketch HM-LC-SW1-BA-PCB
   - buildSketch HM-LC-SWX-SM
   - buildSketch HM-RC-4
@@ -106,6 +105,9 @@ script:
   - buildSketch HM-WDS100-C6-O-2
   - buildSketch HM-LC-DW-WM
   - buildSketch HM-DW-WM
+  - export BOARD=$BOARD644P
+  - buildSketch HM-LC-Dim1TPBU-FM
+  - export BOARD=$BOARD328P
   - export SKETCHPATH=$PWD/examples/custom
   - buildSketch HB-GEN-SENS
   - buildSketch HB-IBUT-8
