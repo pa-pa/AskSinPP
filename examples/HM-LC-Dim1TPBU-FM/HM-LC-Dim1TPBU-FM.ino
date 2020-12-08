@@ -81,8 +81,8 @@ typedef DimmerDevice<Hal, DimChannel, 3, 3> DimDevice;
 DimDevice sdev(devinfo, 0x20);
 DimmerControl<Hal,DimDevice,ZC_Control<>> control(sdev);
 ConfigButton<DimDevice> cfgBtn(sdev);
-InternalButton<DimmerType> btn1(sdev, 4);
-InternalButton<DimmerType> btn2(sdev, 5);
+InternalButton<DimDevice> btn1(sdev, 4);
+InternalButton<DimDevice> btn2(sdev, 5);
 
 class OverloadSens : public Alarm {
   uint8_t overloadcount = 0;
@@ -137,8 +137,8 @@ void setup () {
   }
  
   buttonISR(cfgBtn, CONFIG_BUTTON_PIN);
-  buttonISR(btn1, BUTTON1_PIN);
-  buttonISR(btn2, BUTTON2_PIN);
+  buttonISR(btn1, BTN_PIN_1);
+  buttonISR(btn2, BTN_PIN_2);
   tempsensor.init();
   overload.init();
   sdev.initDone();
