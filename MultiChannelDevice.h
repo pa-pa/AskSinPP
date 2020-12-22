@@ -145,6 +145,7 @@ public:
     if( getList0().localResetDisable() == false ) {
       DPRINTLN(F("RESET"));
       storage().reset();
+      storage().store();
 #if ARDUINO_ARCH_AVR
       resetFunc();
 #elif ARDUINO_ARCH_STM32F1
