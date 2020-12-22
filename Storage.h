@@ -136,6 +136,14 @@ public:
 
 #if defined(TwoWire_h) || defined(_WIRE_H_) || defined(_TWOWIRE_H_) || defined(_WIREBASE_H_)
 
+#ifndef BUFFER_LENGTH
+  #ifdef TWI_BUFFER_SIZE // MightyCore
+    #define BUFFER_LENGTH TWI_BUFFER_SIZE
+  #else // fall back to default value
+    #define BUFFER_LENGTH 32
+  #endif
+#endif
+
 // with help of https://github.com/JChristensen/extEEPROM
 
 template <uint8 ID,uint16_t PAGES,uint8_t PAGESIZE>
