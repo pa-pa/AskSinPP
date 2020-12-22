@@ -100,6 +100,10 @@ public:
       brightsens(), maxbright(1) {}
   virtual ~MotionChannel () {}
 
+  BrightnessSensor& brightnessSensor () {
+    return brightsens;
+  }
+
   void setup(Device<HalType,List0Type>* dev,uint8_t number,uint16_t addr) {
     ChannelType::setup(dev,number,addr);
     sysclock.add(cycle);
