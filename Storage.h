@@ -535,6 +535,16 @@ public:
     storage().getData(getAddress()+offset,buf,size);
   }
 
+  template <class T>
+  void setData (uint16_t offset,const T& obj) {
+    setData(offset,(uint8_t*)&obj,sizeof(T));
+  }
+
+  template <class T>
+  void getData (uint16_t offset,T* obj) {
+    getData(offset,(uint8_t*)obj,sizeof(T));
+  }
+
 };
 
 }
