@@ -63,8 +63,13 @@ public:
   }
 
   void dumpSize () {
+    DPRINT(F("Address Space: "));DDEC(this->keystore().address());DPRINT(F(" - "));DDECLN(getUserStorage().getAddress());
+  }
+
+  // get object to access free EEPROM after device data
+  UserStorage getUserStorage () {
     ChannelType& ch = channel(this->channels());
-    DPRINT(F("Address Space: "));DDEC(this->keystore().address());DPRINT(F(" - "));DDECLN((uint16_t)(ch.address() + ch.size()));
+    return UserStorage(ch.address() + ch.size());
   }
 
   uint16_t checksum () {

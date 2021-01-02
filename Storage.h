@@ -87,7 +87,11 @@ public:
   }
 
   uint16_t size () {
+#ifdef ARDUINO_ARCH_STM32F1
     return 1024;
+#else
+    return E2END + 1; // last EEPROM address + 1
+#endif
   }
 
   void store () {
@@ -492,6 +496,35 @@ public:
 
   void setByte(uint8_t offset,uint8_t data) {
     storage().setByte(STORAGE_CFG_START+offset,data);
+  }
+};
+
+/**
+ * This class is used to access the free EEPROM
+ */
+class UserStorage {
+  uint16_t start;
+public:
+  UserStorage (uint16_t s) : start(s) {}
+
+  uint16_t getAddress () const {
+    return start;
+  }
+
+  uint16_t getSize () const {
+    return storage().size() - getAddress();
+  }
+
+  void clear () {
+    storage().clearData(getAddress(),getSize());
+  }
+
+  uint8_t getByte (uint8_t offset) const {
+    return storage().getByte(getAddress()+offset);
+  }
+
+  void setByte(uint8_t offset,uint8_t data) {
+    storage().setByte(getAddress()+offset,data);
   }
 
 };
