@@ -246,6 +246,11 @@ public:
     return sysclock.runready();
   }
 
+  // call by the device before the device sends a message
+  // can be used to update data by the device sketch
+  void prepareSend (__attribute__((unused)) Message& msg) {}
+
+  // call after send a message to a peer
   void sendPeer () {}
 
   // use radio timer to wait given millis

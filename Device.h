@@ -290,6 +290,7 @@ public:
   }
 
   bool send(Message& msg) {
+    hal->prepareSend(msg);
     bool result = false;
     uint8_t maxsend = list0.transmitDevTryMax();
     bool ledmode = list0.ledMode();

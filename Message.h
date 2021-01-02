@@ -366,6 +366,10 @@ public:
     return typ==AS_MESSAGE_SENSOR_EVENT;
   }
 
+  bool isInfoActuatorStatusMsg () const {
+    return typ==AS_MESSAGE_INFO && comm==AS_INFO_ACTUATOR_STATUS;
+  }
+
   // cast to specific read-only message types
   const ConfigPeerAddMsg& configPeerAdd () const { return *(ConfigPeerAddMsg*)this; }
   const ConfigPeerRemoveMsg& configPeerRemove () const { return *(ConfigPeerRemoveMsg*)this; }
