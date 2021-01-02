@@ -519,12 +519,20 @@ public:
     storage().clearData(getAddress(),getSize());
   }
 
-  uint8_t getByte (uint8_t offset) const {
+  uint8_t getByte (uint16_t offset) const {
     return storage().getByte(getAddress()+offset);
   }
 
-  void setByte(uint8_t offset,uint8_t data) {
+  void setByte(uint16_t offset,uint8_t data) {
     storage().setByte(getAddress()+offset,data);
+  }
+
+  void setData (uint16_t offset,uint8_t* buf,uint16_t size) {
+    storage().setData(getAddress()+offset,buf,size);
+  }
+
+  void getData (uint16_t offset,uint8_t* buf,uint16_t size) {
+    storage().getData(getAddress()+offset,buf,size);
   }
 
 };
