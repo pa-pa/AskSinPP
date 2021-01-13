@@ -3,6 +3,7 @@
 // 2018-04-22 papa Creative Commons - http://creativecommons.org/licenses/by-nc-sa/3.0/de/
 //- -----------------------------------------------------------------------------------------------------------------------
 
+#define USE_CCA
 // define this to read the device id, serial and device type from bootloader section
 // #define USE_OTA_BOOTLOADER
 
@@ -10,6 +11,13 @@
 #define USE_SHT10
 // define if DS18b20 are connected
 // #define USE_DS18B20
+
+// read analog value from A0
+// #define ANALOG_PIN 14
+#define ANALOG_ENABLE_PIN 0
+#define ANALOG_ENABLE_STATE LOW
+#define ANALOG_VCCREF 0
+#define ANALOG_FACTOR 110
 
 #define EI_NOTEXTERNAL
 #include <EnableInterrupt.h>
@@ -85,6 +93,9 @@ class ValuesChannel : public Channel<Hal,ValuesList1,EmptyList,EmptyList,0,SensL
   Ds18b20  sensors[NUM_DS18B20];
   uint8_t  found;
 #endif
+#ifdef ANALOG_PIN
+    ExternalVCC<ANALOG_PIN,ANALOG_ENABLE_PIN,ANALOG_ENABLE_STATE,ANALOG_VCCREF,ANALOG_FACTOR> evcc;
+#endif
 public:
   typedef Channel<Hal,ValuesList1,EmptyList,EmptyList,0,SensList0> BaseChannel;
 
@@ -115,7 +126,12 @@ public:
     }
     DPRINTLN("");
 #endif
-    device().send(msg, device().getMasterID());
+#ifdef ANALOG_PIN
+    evcc.start();
+    uint16_t vin = evcc.finish();
+    msg.add(vin);
+#endif
+    device().broadcastEvent(msg);
 
     uint8_t delay = max(15,this->getList1().eventDelaytime());
     set(AskSinBase::byteTimeCvtSeconds(delay));
@@ -131,13 +147,15 @@ public:
     found = Ds18b20::init(ow, sensors, NUM_DS18B20);
     DPRINT("Number of DS18B20: ");DDECLN(found);
 #endif
+#ifdef ANALOG_PIN
+    evcc.init();
+#endif
     set(seconds2ticks(5));
     sysclock.add(*this);
   }
 
   uint8_t status () const { return 0; }
   uint8_t flags () const { return 0; }
-
 };
 
 class SensType : public MultiChannelDevice<Hal,ValuesChannel,1,SensList0> {
@@ -156,6 +174,10 @@ void setup () {
   sdev.init(hal);
   buttonISR(cfgBtn,CONFIG_BUTTON_PIN);
   sdev.initDone();
+  // we send device info on start
+  sdev.sendDeviceInfo();
+  // stay 2 minutes awake for pairing/...
+  hal.activity.stayAwake(seconds2ticks(120));
 }
 
 void loop() {
@@ -165,3 +187,4 @@ void loop() {
     hal.activity.savePower<Sleep<>>(hal);
   }
 }
+
