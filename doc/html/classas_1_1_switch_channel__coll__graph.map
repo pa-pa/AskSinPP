@@ -1,9 +1,9 @@
 <map id="as::SwitchChannel&lt; HalType, PeerCount, List0Type, IODriver &gt;" name="as::SwitchChannel&lt; HalType, PeerCount, List0Type, IODriver &gt;">
-<area shape="rect" id="node1" title=" " alt="" coords="1057,39,1208,95"/>
-<area shape="rect" id="node2" href="$classas_1_1_actor_channel.html" title=" " alt="" coords="779,31,1008,102"/>
-<area shape="rect" id="node3" href="$classas_1_1_channel.html" title=" " alt="" coords="499,5,729,61"/>
-<area shape="rect" id="node4" href="$classas_1_1_switch_state_machine.html" title=" " alt="" coords="533,85,695,112"/>
-<area shape="rect" id="node5" title=" " alt="" coords="251,78,413,119"/>
-<area shape="rect" id="node6" href="$classas_1_1_alarm.html" title=" " alt="" coords="123,85,201,112"/>
-<area shape="rect" id="node7" href="$classas_1_1_link.html" title=" " alt="" coords="5,85,73,112"/>
+<area shape="rect" id="node1" title=" " alt="" coords="1049,50,1200,106"/>
+<area shape="rect" id="node2" href="$classas_1_1_actor_channel.html" title=" " alt="" coords="771,43,1000,113"/>
+<area shape="rect" id="node3" href="$classas_1_1_channel.html" title=" " alt="" coords="499,5,721,76"/>
+<area shape="rect" id="node4" href="$classas_1_1_switch_state_machine.html" title=" " alt="" coords="529,101,691,127"/>
+<area shape="rect" id="node5" title=" " alt="" coords="251,93,413,135"/>
+<area shape="rect" id="node6" href="$classas_1_1_alarm.html" title=" " alt="" coords="123,101,201,127"/>
+<area shape="rect" id="node7" href="$classas_1_1_link.html" title=" " alt="" coords="5,101,73,127"/>
 </map>

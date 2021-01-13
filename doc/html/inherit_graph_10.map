@@ -1,9 +1,11 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$classas_1_1_device.html" title=" " alt="" coords="5,101,152,142"/>
-<area shape="rect" id="node2" href="$classas_1_1_channel_device.html" title=" " alt="" coords="232,45,415,101"/>
-<area shape="rect" id="node6" href="$classas_1_1_channel_device.html" title=" " alt="" coords="200,125,447,211"/>
-<area shape="rect" id="node3" href="$classas_1_1_multi_channel_device.html" title=" " alt="" coords="524,45,707,101"/>
-<area shape="rect" id="node4" href="$classas_1_1_dimmer_device.html" title=" " alt="" coords="784,5,979,61"/>
-<area shape="rect" id="node5" href="$classas_1_1_state_device.html" title=" " alt="" coords="784,85,979,141"/>
-<area shape="rect" id="node7" href="$classas_1_1_dimmer_and_remote_device.html" title=" " alt="" coords="495,125,736,211"/>
+<area shape="rect" id="node1" href="$classas_1_1_device.html" title=" " alt="" coords="5,93,152,134"/>
+<area shape="rect" id="node2" href="$classas_1_1_channel_device.html" title=" " alt="" coords="229,5,412,61"/>
+<area shape="rect" id="node3" href="$classas_1_1_channel_device.html" title=" " alt="" coords="241,85,401,141"/>
+<area shape="rect" id="node8" href="$classas_1_1_channel_device.html" title=" " alt="" coords="200,169,441,239"/>
+<area shape="rect" id="node4" href="$classas_1_1_multi_channel_device.html" title=" " alt="" coords="519,5,701,61"/>
+<area shape="rect" id="node6" href="$classas_1_1_multi_channel_device.html" title=" " alt="" coords="526,85,694,141"/>
+<area shape="rect" id="node5" href="$classas_1_1_state_device.html" title=" " alt="" coords="779,5,973,61"/>
+<area shape="rect" id="node7" href="$classas_1_1_dimmer_device.html" title=" " alt="" coords="779,85,973,141"/>
+<area shape="rect" id="node9" href="$classas_1_1_dimmer_and_remote_device.html" title=" " alt="" coords="489,165,731,251"/>
 </map>

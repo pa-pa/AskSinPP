@@ -1,6 +1,6 @@
 <map id="as::InternalButton&lt; DEVTYPE, OFFSTATE, ONSTATE, MODE &gt;" name="as::InternalButton&lt; DEVTYPE, OFFSTATE, ONSTATE, MODE &gt;">
-<area shape="rect" id="node1" title=" " alt="" coords="16,244,191,300"/>
-<area shape="rect" id="node2" href="$classas_1_1_state_button.html" title=" " alt="" coords="5,155,201,196"/>
-<area shape="rect" id="node3" href="$classas_1_1_alarm.html" title=" " alt="" coords="64,80,143,107"/>
-<area shape="rect" id="node4" href="$classas_1_1_link.html" title=" " alt="" coords="69,5,137,32"/>
+<area shape="rect" id="node1" title=" " alt="" coords="5,244,180,300"/>
+<area shape="rect" id="node2" href="$classas_1_1_state_button.html" title=" " alt="" coords="7,155,178,196"/>
+<area shape="rect" id="node3" href="$classas_1_1_alarm.html" title=" " alt="" coords="53,80,132,107"/>
+<area shape="rect" id="node4" href="$classas_1_1_link.html" title=" " alt="" coords="59,5,127,32"/>
 </map>

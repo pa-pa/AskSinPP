@@ -1,5 +1,5 @@
-<map id="as::RFIDScanner&lt; RFIDDev, RFIDChannel, m, LED_GREEN, LED_RED &gt;" name="as::RFIDScanner&lt; RFIDDev, RFIDChannel, m, LED_GREEN, LED_RED &gt;">
-<area shape="rect" id="node1" title=" " alt="" coords="5,155,217,211"/>
-<area shape="rect" id="node2" href="$classas_1_1_alarm.html" title=" " alt="" coords="72,80,151,107"/>
-<area shape="rect" id="node3" href="$classas_1_1_link.html" title=" " alt="" coords="77,5,145,32"/>
+<map id="as::RFIDScanner&lt; RFIDDev, RFIDChannel, rdrDev, LED_GREEN, LED_RED &gt;" name="as::RFIDScanner&lt; RFIDDev, RFIDChannel, rdrDev, LED_GREEN, LED_RED &gt;">
+<area shape="rect" id="node1" title=" " alt="" coords="5,155,196,211"/>
+<area shape="rect" id="node2" href="$classas_1_1_alarm.html" title=" " alt="" coords="61,80,140,107"/>
+<area shape="rect" id="node3" href="$classas_1_1_link.html" title=" " alt="" coords="67,5,135,32"/>
 </map>

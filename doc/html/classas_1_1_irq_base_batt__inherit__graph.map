@@ -1,0 +1,5 @@
+<map id="as::IrqBaseBatt" name="as::IrqBaseBatt">
+<area shape="rect" id="node1" title=" " alt="" coords="145,5,258,32"/>
+<area shape="rect" id="node2" href="$classas_1_1_irq_external_batt.html" title=" " alt="" coords="5,80,208,136"/>
+<area shape="rect" id="node3" href="$classas_1_1_irq_internal_batt.html" title=" " alt="" coords="233,95,359,121"/>
+</map>

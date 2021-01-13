@@ -1,7 +1,6 @@
 <map id="as::StateMachine&lt; PeerList &gt;" name="as::StateMachine&lt; PeerList &gt;">
-<area shape="rect" id="node1" title=" " alt="" coords="60,261,256,288"/>
-<area shape="rect" id="node2" href="$classas_1_1_alarm.html" title=" " alt="" coords="5,81,84,108"/>
-<area shape="rect" id="node5" title=" " alt="" coords="66,157,250,199"/>
-<area shape="rect" id="node3" href="$classas_1_1_link.html" title=" " alt="" coords="11,5,79,32"/>
-<area shape="rect" id="node4" title=" " alt="" coords="275,165,345,191"/>
+<area shape="rect" id="node1" title=" " alt="" coords="5,261,201,288"/>
+<area shape="rect" id="node2" href="$classas_1_1_alarm.html" title=" " alt="" coords="59,81,137,108"/>
+<area shape="rect" id="node4" title=" " alt="" coords="119,157,303,199"/>
+<area shape="rect" id="node3" href="$classas_1_1_link.html" title=" " alt="" coords="64,5,132,32"/>
 </map>

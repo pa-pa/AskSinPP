@@ -1,6 +1,6 @@
-<map id="as::ActorChannel&lt; HalType, List1Type, List3Type, PeerCount, List0Type, StateMachine &gt;" name="as::ActorChannel&lt; HalType, List1Type, List3Type, PeerCount, List0Type, StateMachine &gt;">
-<area shape="rect" id="node1" title=" " alt="" coords="492,50,743,106"/>
-<area shape="rect" id="node2" href="$classas_1_1_channel.html" title=" " alt="" coords="267,5,425,76"/>
+<map id="as::ActorChannel&lt; HalType, List1Type, List3Type, PeerCount, List0Type, StateMachine, List2Type &gt;" name="as::ActorChannel&lt; HalType, List1Type, List3Type, PeerCount, List0Type, StateMachine, List2Type &gt;">
+<area shape="rect" id="node1" title=" " alt="" coords="492,43,735,113"/>
+<area shape="rect" id="node2" href="$classas_1_1_channel.html" title=" " alt="" coords="265,5,427,76"/>
 <area shape="rect" id="node3" href="$classas_1_1_state_machine.html" title=" " alt="" coords="248,101,444,127"/>
 <area shape="rect" id="node4" href="$classas_1_1_alarm.html" title=" " alt="" coords="121,101,200,127"/>
 <area shape="rect" id="node5" href="$classas_1_1_link.html" title=" " alt="" coords="5,101,73,127"/>

@@ -1,13 +1,13 @@
 <map id="as::AskSin&lt; StatusLed, Battery, Radio, Buzzer &gt;" name="as::AskSin&lt; StatusLed, Battery, Radio, Buzzer &gt;">
-<area shape="rect" id="node1" title=" " alt="" coords="784,115,953,157"/>
-<area shape="rect" id="node2" href="$classas_1_1_ask_sin_base.html" title=" " alt="" coords="517,5,633,32"/>
-<area shape="rect" id="node3" href="$classas_1_1_status_led.html" title=" " alt="" coords="489,57,662,98"/>
-<area shape="rect" id="node4" href="$classas_1_1_led_states.html" title=" " alt="" coords="309,64,412,91"/>
+<area shape="rect" id="node1" title=" " alt="" coords="844,115,1013,157"/>
+<area shape="rect" id="node2" href="$classas_1_1_ask_sin_base.html" title=" " alt="" coords="577,5,693,32"/>
+<area shape="rect" id="node3" href="$classas_1_1_status_led.html" title=" " alt="" coords="549,57,722,98"/>
+<area shape="rect" id="node4" href="$classas_1_1_led_states.html" title=" " alt="" coords="339,64,442,91"/>
 <area shape="rect" id="node5" href="$structas_1_1_led_states_1_1_blink_pattern.html" title=" " alt="" coords="5,64,188,91"/>
-<area shape="rect" id="node6" href="$classas_1_1_activity.html" title=" " alt="" coords="531,123,619,149"/>
-<area shape="rect" id="node7" href="$classas_1_1_alarm.html" title=" " alt="" coords="321,152,400,179"/>
-<area shape="rect" id="node9" href="$classas_1_1_buzzer.html" title=" " alt="" coords="477,173,673,200"/>
-<area shape="rect" id="node8" href="$classas_1_1_link.html" title=" " alt="" coords="63,152,131,179"/>
-<area shape="rect" id="node10" href="$classas_1_1_radio.html" title=" " alt="" coords="461,225,689,266"/>
-<area shape="rect" id="node11" title=" " alt="" coords="319,232,403,259"/>
+<area shape="rect" id="node6" href="$classas_1_1_activity.html" title=" " alt="" coords="591,123,679,149"/>
+<area shape="rect" id="node7" href="$classas_1_1_alarm.html" title=" " alt="" coords="351,123,430,149"/>
+<area shape="rect" id="node8" href="$classas_1_1_link.html" title=" " alt="" coords="63,123,131,149"/>
+<area shape="rect" id="node9" href="$classas_1_1_no_buzzer.html" title=" " alt="" coords="585,173,686,200"/>
+<area shape="rect" id="node10" href="$classas_1_1_radio.html" title=" " alt="" coords="521,225,749,266"/>
+<area shape="rect" id="node11" href="$classas_1_1_c_c1101.html" title=" " alt="" coords="309,232,472,259"/>
 </map>

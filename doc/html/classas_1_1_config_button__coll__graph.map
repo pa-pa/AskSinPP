@@ -1,7 +1,8 @@
 <map id="as::ConfigButton&lt; DEVTYPE, OFFSTATE, ONSTATE, MODE &gt;" name="as::ConfigButton&lt; DEVTYPE, OFFSTATE, ONSTATE, MODE &gt;">
-<area shape="rect" id="node1" title=" " alt="" coords="5,261,225,303"/>
-<area shape="rect" id="node2" href="$classas_1_1_state_button.html" title=" " alt="" coords="153,157,349,199"/>
-<area shape="rect" id="node5" href="$classas_1_1_state_button_1_1_check_alarm.html" title=" " alt="" coords="250,261,474,303"/>
-<area shape="rect" id="node3" href="$classas_1_1_alarm.html" title=" " alt="" coords="280,81,359,108"/>
-<area shape="rect" id="node4" href="$classas_1_1_link.html" title=" " alt="" coords="285,5,353,32"/>
+<area shape="rect" id="node1" title=" " alt="" coords="5,352,225,393"/>
+<area shape="rect" id="node2" href="$classas_1_1_state_button.html" title=" " alt="" coords="30,261,201,303"/>
+<area shape="rect" id="node3" href="$classas_1_1_alarm.html" title=" " alt="" coords="225,81,304,108"/>
+<area shape="rect" id="node5" href="$classas_1_1_state_button_1_1_check_alarm.html" title=" " alt="" coords="153,157,377,199"/>
+<area shape="rect" id="node6" href="$classas_1_1_state_button.html" title=" " alt="" coords="225,261,421,303"/>
+<area shape="rect" id="node4" href="$classas_1_1_link.html" title=" " alt="" coords="231,5,299,32"/>
 </map>

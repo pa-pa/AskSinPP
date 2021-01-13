@@ -1,6 +1,6 @@
 <map id="as::IButtonChannel&lt; HALTYPE, PEERCOUNT, List0Type &gt;" name="as::IButtonChannel&lt; HALTYPE, PEERCOUNT, List0Type &gt;">
-<area shape="rect" id="node1" title=" " alt="" coords="408,39,593,95"/>
-<area shape="rect" id="node2" href="$classas_1_1_channel.html" title=" " alt="" coords="121,5,360,61"/>
-<area shape="rect" id="node3" href="$classas_1_1_alarm.html" title=" " alt="" coords="201,85,280,112"/>
+<area shape="rect" id="node1" title=" " alt="" coords="380,39,565,95"/>
+<area shape="rect" id="node2" href="$classas_1_1_channel.html" title=" " alt="" coords="121,5,332,61"/>
+<area shape="rect" id="node3" href="$classas_1_1_alarm.html" title=" " alt="" coords="187,85,266,112"/>
 <area shape="rect" id="node4" href="$classas_1_1_link.html" title=" " alt="" coords="5,85,73,112"/>
 </map>

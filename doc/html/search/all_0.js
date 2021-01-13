@@ -9,7 +9,7 @@ var searchData=
   ['actionsetmsg_6',['ActionSetMsg',['../classas_1_1_action_set_msg.html',1,'as']]],
   ['activity_7',['Activity',['../classas_1_1_activity.html',1,'as']]],
   ['actorchannel_8',['ActorChannel',['../classas_1_1_actor_channel.html',1,'as']]],
-  ['actorchannel_3c_20haltype_2c_20dimmerlist1_2c_20dimmerlist3_2c_20peercount_2c_20list0type_2c_20dimmerstatemachine_20_3e_9',['ActorChannel&lt; HalType, DimmerList1, DimmerList3, PeerCount, List0Type, DimmerStateMachine &gt;',['../classas_1_1_actor_channel.html',1,'as']]],
+  ['actorchannel_3c_20haltype_2c_20dimmerlist1_2c_20dimmerlist3_2c_20peercount_2c_20list0_2c_20dimmerstatemachine_20_3e_9',['ActorChannel&lt; HalType, DimmerList1, DimmerList3, PeerCount, List0, DimmerStateMachine &gt;',['../classas_1_1_actor_channel.html',1,'as']]],
   ['actorchannel_3c_20haltype_2c_20switchlist1_2c_20switchlist3_2c_20peercount_2c_20list0type_2c_20switchstatemachine_20_3e_10',['ActorChannel&lt; HalType, SwitchList1, SwitchList3, PeerCount, List0Type, SwitchStateMachine &gt;',['../classas_1_1_actor_channel.html',1,'as']]],
   ['aeschallengemsg_11',['AesChallengeMsg',['../classas_1_1_aes_challenge_msg.html',1,'as']]],
   ['aesexchangemsg_12',['AesExchangeMsg',['../classas_1_1_aes_exchange_msg.html',1,'as']]],
@@ -19,10 +19,11 @@ var searchData=
   ['arduinopins_16',['ArduinoPins',['../classas_1_1_arduino_pins.html',1,'as']]],
   ['as5600_17',['As5600',['../classas_1_1_as5600.html',1,'as']]],
   ['asksin_18',['AskSin',['../classas_1_1_ask_sin.html',1,'as']]],
-  ['asksinbase_19',['AskSinBase',['../classas_1_1_ask_sin_base.html',1,'as']]],
-  ['asksinregister_20',['AskSinRegister',['../classas_1_1_ask_sin_register.html',1,'as']]],
-  ['asksinrtc_21',['AskSinRTC',['../classas_1_1_ask_sin_r_t_c.html',1,'as']]],
-  ['asyncmeter_22',['AsyncMeter',['../classas_1_1_async_meter.html',1,'as']]],
-  ['at24cx_23',['at24cX',['../classas_1_1at24c_x.html',1,'as']]],
-  ['avrspi_24',['AvrSPI',['../classas_1_1_avr_s_p_i.html',1,'as']]]
+  ['asksin_3c_20statusled_2c_20battery_2c_20radio_2c_20nobuzzer_20_3e_19',['AskSin&lt; StatusLed, Battery, Radio, NoBuzzer &gt;',['../classas_1_1_ask_sin.html',1,'as']]],
+  ['asksinbase_20',['AskSinBase',['../classas_1_1_ask_sin_base.html',1,'as']]],
+  ['asksinregister_21',['AskSinRegister',['../classas_1_1_ask_sin_register.html',1,'as']]],
+  ['asksinrtc_22',['AskSinRTC',['../classas_1_1_ask_sin_r_t_c.html',1,'as']]],
+  ['asyncmeter_23',['AsyncMeter',['../classas_1_1_async_meter.html',1,'as']]],
+  ['at24cx_24',['at24cX',['../classas_1_1at24c_x.html',1,'as']]],
+  ['avrspi_25',['AvrSPI',['../classas_1_1_avr_s_p_i.html',1,'as']]]
 ];

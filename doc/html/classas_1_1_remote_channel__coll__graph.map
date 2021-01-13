@@ -1,9 +1,9 @@
 <map id="as::RemoteChannel&lt; HALTYPE, PEERCOUNT, List0Type, List1Type &gt;" name="as::RemoteChannel&lt; HALTYPE, PEERCOUNT, List0Type, List1Type &gt;">
-<area shape="rect" id="node1" title=" " alt="" coords="787,50,964,106"/>
-<area shape="rect" id="node2" href="$classas_1_1_channel.html" title=" " alt="" coords="556,5,723,76"/>
-<area shape="rect" id="node3" href="$classas_1_1_state_button.html" title=" " alt="" coords="609,101,669,127"/>
-<area shape="rect" id="node4" href="$classas_1_1_alarm.html" title=" " alt="" coords="123,163,201,190"/>
-<area shape="rect" id="node6" href="$classas_1_1_state_button_1_1_check_alarm.html" title=" " alt="" coords="251,156,475,197"/>
-<area shape="rect" id="node7" href="$classas_1_1_state_button.html" title=" " alt="" coords="541,201,737,243"/>
-<area shape="rect" id="node5" href="$classas_1_1_link.html" title=" " alt="" coords="5,163,73,190"/>
+<area shape="rect" id="node1" title=" " alt="" coords="38,367,215,423"/>
+<area shape="rect" id="node2" href="$classas_1_1_channel.html" title=" " alt="" coords="5,261,216,317"/>
+<area shape="rect" id="node3" href="$classas_1_1_state_button.html" title=" " alt="" coords="239,276,299,303"/>
+<area shape="rect" id="node4" href="$classas_1_1_alarm.html" title=" " alt="" coords="334,81,413,108"/>
+<area shape="rect" id="node6" href="$classas_1_1_state_button_1_1_check_alarm.html" title=" " alt="" coords="261,157,485,199"/>
+<area shape="rect" id="node7" href="$classas_1_1_state_button.html" title=" " alt="" coords="325,269,521,310"/>
+<area shape="rect" id="node5" href="$classas_1_1_link.html" title=" " alt="" coords="339,5,407,32"/>
 </map>

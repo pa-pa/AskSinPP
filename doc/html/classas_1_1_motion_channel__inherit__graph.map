@@ -1,6 +1,6 @@
 <map id="as::MotionChannel&lt; HalType, PeerCount, List0Type, BrightnessSensor &gt;" name="as::MotionChannel&lt; HalType, PeerCount, List0Type, BrightnessSensor &gt;">
-<area shape="rect" id="node1" title=" " alt="" coords="388,39,593,95"/>
-<area shape="rect" id="node2" href="$classas_1_1_channel.html" title=" " alt="" coords="121,5,340,61"/>
-<area shape="rect" id="node3" href="$classas_1_1_alarm.html" title=" " alt="" coords="191,85,270,112"/>
+<area shape="rect" id="node1" title=" " alt="" coords="360,39,565,95"/>
+<area shape="rect" id="node2" href="$classas_1_1_channel.html" title=" " alt="" coords="121,5,312,61"/>
+<area shape="rect" id="node3" href="$classas_1_1_alarm.html" title=" " alt="" coords="177,85,256,112"/>
 <area shape="rect" id="node4" href="$classas_1_1_link.html" title=" " alt="" coords="5,85,73,112"/>
 </map>

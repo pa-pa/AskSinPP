@@ -1,6 +1,7 @@
 <map id="as::Position" name="as::Position">
-<area shape="rect" id="node1" title=" " alt="" coords="178,80,269,107"/>
-<area shape="rect" id="node3" href="$classas_1_1_one_pin_position.html" title=" " alt="" coords="5,155,236,196"/>
-<area shape="rect" id="node4" href="$classas_1_1_two_pin_position.html" title=" " alt="" coords="261,162,394,189"/>
-<area shape="rect" id="node2" href="$classas_1_1_sensor.html" title=" " alt="" coords="181,5,266,32"/>
+<area shape="rect" id="node1" title=" " alt="" coords="139,71,229,98"/>
+<area shape="rect" id="node3" href="$classas_1_1_one_pin_position.html" title=" " alt="" coords="277,5,508,47"/>
+<area shape="rect" id="node4" href="$classas_1_1_two_pin_position.html" title=" " alt="" coords="326,71,459,98"/>
+<area shape="rect" id="node5" href="$classas_1_1_one_pin_position.html" title=" " alt="" coords="310,122,475,149"/>
+<area shape="rect" id="node2" href="$classas_1_1_sensor.html" title=" " alt="" coords="5,71,91,98"/>
 </map>

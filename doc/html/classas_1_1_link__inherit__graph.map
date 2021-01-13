@@ -1,7 +1,7 @@
 <map id="as::Link" name="as::Link">
-<area shape="rect" id="node1" title=" " alt="" coords="5,1365,73,1392"/>
-<area shape="rect" id="node2" href="$classas_1_1_alarm.html" title=" " alt="" coords="137,872,216,899"/>
-<area shape="rect" id="node44" href="$classas_1_1_alarm_clock.html" title=" " alt="" coords="121,1859,232,1885"/>
+<area shape="rect" id="node1" title=" " alt="" coords="5,1332,73,1359"/>
+<area shape="rect" id="node2" href="$classas_1_1_alarm.html" title=" " alt="" coords="137,843,216,869"/>
+<area shape="rect" id="node43" href="$classas_1_1_alarm_clock.html" title=" " alt="" coords="121,1792,232,1819"/>
 <area shape="rect" id="node3" href="$classas_1_1_activity.html" title=" " alt="" coords="373,5,461,32"/>
 <area shape="rect" id="node4" href="$classas_1_1_async_meter.html" title=" " alt="" coords="325,57,510,98"/>
 <area shape="rect" id="node5" href="$classas_1_1_batt_sensor.html" title=" " alt="" coords="328,123,507,149"/>
@@ -17,32 +17,31 @@
 <area shape="rect" id="node16" href="$classas_1_1_remote_encoder.html" title=" " alt="" coords="325,733,510,789"/>
 <area shape="rect" id="node17" href="$classas_1_1_reset_on_boot.html" title=" " alt="" coords="313,813,521,840"/>
 <area shape="rect" id="node18" href="$classas_1_1_r_f_i_d_channel.html" title=" " alt="" coords="319,865,515,906"/>
-<area shape="rect" id="node19" href="$classas_1_1_r_f_i_d_scanner.html" title=" " alt="" coords="311,931,523,987"/>
+<area shape="rect" id="node19" href="$classas_1_1_r_f_i_d_scanner.html" title=" " alt="" coords="322,931,513,987"/>
 <area shape="rect" id="node20" href="$classas_1_1_r_t_c_alarm.html" title=" " alt="" coords="365,1011,469,1037"/>
 <area shape="rect" id="node22" href="$classas_1_1_state_button.html" title=" " alt="" coords="319,1062,515,1103"/>
-<area shape="rect" id="node27" href="$classas_1_1_state_button_1_1_check_alarm.html" title=" " alt="" coords="305,1127,529,1169"/>
-<area shape="rect" id="node28" href="$classas_1_1_state_generic_channel.html" title=" " alt="" coords="294,1193,541,1249"/>
-<area shape="rect" id="node29" href="$classas_1_1_state_machine.html" title=" " alt="" coords="319,1273,515,1300"/>
-<area shape="rect" id="node31" href="$classas_1_1_batt_sensor.html" title=" " alt="" coords="318,1325,517,1395"/>
-<area shape="rect" id="node33" href="$classas_1_1_led.html" title=" " alt="" coords="338,1420,497,1447"/>
-<area shape="rect" id="node34" href="$classas_1_1_led.html" title=" " alt="" coords="341,1471,494,1497"/>
-<area shape="rect" id="node35" href="$classas_1_1_state_button.html" title=" " alt="" coords="332,1522,503,1563"/>
-<area shape="rect" id="node38" href="$classas_1_1_state_generic_channel.html" title=" " alt="" coords="310,1588,525,1673"/>
-<area shape="rect" id="node40" href="$classas_1_1_state_generic_channel.html" title=" " alt="" coords="310,1698,525,1769"/>
-<area shape="rect" id="node42" href="$classas_1_1_state_machine.html" title=" " alt="" coords="321,1793,513,1834"/>
+<area shape="rect" id="node23" href="$classas_1_1_state_button_1_1_check_alarm.html" title=" " alt="" coords="305,1127,529,1169"/>
+<area shape="rect" id="node24" href="$classas_1_1_state_generic_channel.html" title=" " alt="" coords="294,1193,541,1249"/>
+<area shape="rect" id="node25" href="$classas_1_1_state_machine.html" title=" " alt="" coords="319,1273,515,1300"/>
+<area shape="rect" id="node27" href="$classas_1_1_batt_sensor.html" title=" " alt="" coords="317,1325,517,1395"/>
+<area shape="rect" id="node29" href="$classas_1_1_led.html" title=" " alt="" coords="338,1420,497,1447"/>
+<area shape="rect" id="node30" href="$classas_1_1_state_button.html" title=" " alt="" coords="332,1471,503,1513"/>
+<area shape="rect" id="node37" href="$classas_1_1_state_generic_channel.html" title=" " alt="" coords="309,1537,526,1607"/>
+<area shape="rect" id="node39" href="$classas_1_1_state_generic_channel.html" title=" " alt="" coords="310,1631,525,1702"/>
+<area shape="rect" id="node41" href="$classas_1_1_state_machine.html" title=" " alt="" coords="321,1726,513,1767"/>
 <area shape="rect" id="node6" href="$classas_1_1_battery_sensor_ext.html" title=" " alt="" coords="636,115,839,157"/>
-<area shape="rect" id="node21" href="$classas_1_1_weather_channel.html" title=" " alt="" coords="603,886,872,957"/>
-<area shape="rect" id="node23" href="$classas_1_1_config_button.html" title=" " alt="" coords="636,981,839,1022"/>
-<area shape="rect" id="node24" href="$classas_1_1_config_toggle_button.html" title=" " alt="" coords="623,1046,851,1087"/>
-<area shape="rect" id="node25" href="$classas_1_1_internal_button.html" title=" " alt="" coords="651,1112,824,1168"/>
-<area shape="rect" id="node26" href="$classas_1_1_remote_channel.html" title=" " alt="" coords="632,1193,843,1234"/>
-<area shape="rect" id="node30" href="$classas_1_1_actor_channel.html" title=" " alt="" coords="612,1259,863,1315"/>
-<area shape="rect" id="node32" href="$classas_1_1_battery_sensor_uni.html" title=" " alt="" coords="636,1339,839,1395"/>
-<area shape="rect" id="node36" href="$classas_1_1_internal_button.html" title=" " alt="" coords="675,1522,800,1563"/>
-<area shape="rect" id="node37" href="$classas_1_1_internal_encoder.html" title=" " alt="" coords="920,1522,1055,1563"/>
-<area shape="rect" id="node39" href="$classas_1_1_two_state_channel.html" title=" " alt="" coords="643,1588,832,1673"/>
-<area shape="rect" id="node41" href="$classas_1_1_three_state_channel.html" title=" " alt="" coords="657,1698,818,1769"/>
-<area shape="rect" id="node43" href="$classas_1_1_blind_state_machine.html" title=" " alt="" coords="661,1800,814,1827"/>
-<area shape="rect" id="node45" href="$classas_1_1_r_t_c.html" title=" " alt="" coords="382,1859,453,1885"/>
-<area shape="rect" id="node46" href="$classas_1_1_sys_clock.html" title=" " alt="" coords="367,1909,467,1936"/>
+<area shape="rect" id="node21" href="$classas_1_1_weather_channel.html" title=" " alt="" coords="603,989,872,1059"/>
+<area shape="rect" id="node26" href="$classas_1_1_actor_channel.html" title=" " alt="" coords="616,1113,859,1183"/>
+<area shape="rect" id="node28" href="$classas_1_1_battery_sensor_uni.html" title=" " alt="" coords="636,1208,839,1264"/>
+<area shape="rect" id="node31" href="$classas_1_1_config_button.html" title=" " alt="" coords="627,1289,847,1330"/>
+<area shape="rect" id="node32" href="$classas_1_1_config_toggle_button.html" title=" " alt="" coords="616,1355,859,1411"/>
+<area shape="rect" id="node33" href="$classas_1_1_internal_button.html" title=" " alt="" coords="650,1435,825,1491"/>
+<area shape="rect" id="node34" href="$classas_1_1_remote_channel.html" title=" " alt="" coords="649,1515,826,1571"/>
+<area shape="rect" id="node35" href="$classas_1_1_internal_button.html" title=" " alt="" coords="675,1595,800,1637"/>
+<area shape="rect" id="node36" href="$classas_1_1_internal_encoder.html" title=" " alt="" coords="920,1595,1055,1637"/>
+<area shape="rect" id="node38" href="$classas_1_1_two_state_channel.html" title=" " alt="" coords="643,1661,832,1747"/>
+<area shape="rect" id="node40" href="$classas_1_1_three_state_channel.html" title=" " alt="" coords="657,1771,818,1842"/>
+<area shape="rect" id="node42" href="$classas_1_1_blind_state_machine.html" title=" " alt="" coords="661,1867,814,1893"/>
+<area shape="rect" id="node44" href="$classas_1_1_r_t_c.html" title=" " alt="" coords="382,1792,453,1819"/>
+<area shape="rect" id="node45" href="$classas_1_1_sys_clock.html" title=" " alt="" coords="367,1843,467,1869"/>
 </map>

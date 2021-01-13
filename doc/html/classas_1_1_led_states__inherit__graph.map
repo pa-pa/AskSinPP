@@ -1,9 +1,8 @@
 <map id="as::LedStates" name="as::LedStates">
-<area shape="rect" id="node1" title=" " alt="" coords="5,177,108,204"/>
+<area shape="rect" id="node1" title=" " alt="" coords="5,144,108,171"/>
 <area shape="rect" id="node2" href="$classas_1_1_dual_status_led.html" title=" " alt="" coords="156,5,375,61"/>
 <area shape="rect" id="node3" href="$classas_1_1_led.html" title=" " alt="" coords="192,85,339,112"/>
 <area shape="rect" id="node4" href="$classas_1_1_status_led.html" title=" " alt="" coords="179,137,352,178"/>
 <area shape="rect" id="node5" href="$classas_1_1_dual_status_led.html" title=" " alt="" coords="174,202,357,243"/>
 <area shape="rect" id="node6" href="$classas_1_1_led.html" title=" " alt="" coords="186,268,345,295"/>
-<area shape="rect" id="node7" href="$classas_1_1_led.html" title=" " alt="" coords="189,319,342,345"/>
 </map>

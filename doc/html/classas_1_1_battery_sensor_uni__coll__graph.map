@@ -1,6 +1,6 @@
 <map id="as::BatterySensorUni&lt; SENSPIN, ACTIVATIONPIN, VCC &gt;" name="as::BatterySensorUni&lt; SENSPIN, ACTIVATIONPIN, VCC &gt;">
-<area shape="rect" id="node1" title=" " alt="" coords="495,13,697,69"/>
-<area shape="rect" id="node2" href="$classas_1_1_batt_sensor.html" title=" " alt="" coords="248,5,447,76"/>
+<area shape="rect" id="node1" title=" " alt="" coords="496,13,699,69"/>
+<area shape="rect" id="node2" href="$classas_1_1_batt_sensor.html" title=" " alt="" coords="248,5,448,76"/>
 <area shape="rect" id="node3" href="$classas_1_1_alarm.html" title=" " alt="" coords="121,27,200,54"/>
 <area shape="rect" id="node4" href="$classas_1_1_link.html" title=" " alt="" coords="5,27,73,54"/>
 </map>
