@@ -4,13 +4,13 @@
 //- -----------------------------------------------------------------------------------------------------------------------
 
 // define this to implement new RHS3 device
-// #define RHS3
+#define RHS3
 
 // define this to read the device id, serial and device type from bootloader section
 // #define USE_OTA_BOOTLOADER
 
 // use background internal VCC measure
-// #define BATTERY_IRQ
+#define BATTERY_IRQ
 
 #ifdef RHS3
   // send battery value
@@ -250,6 +250,8 @@ void setup () {
     
   // measure battery every 1h
   hal.battery.init(seconds2ticks(60UL*60),sysclock);
+  // wait for valid battery value
+  while( hal.battery.current() == 0 ) ;
 }
 
 void loop() {

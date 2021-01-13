@@ -63,6 +63,7 @@ class Sensors : public Alarm {
   Sht10<A4,A5>    sht10;
 public:
   Sensors () {}
+  virtual ~Sensors () {}
   // init the used hardware
   void init () { sht10.init(); }
   // return how many milliseconds the measure should start in front of sending the message

@@ -354,6 +354,25 @@ $customMsg{"HB-LC-Bl1-Velux"} = sub {
   return ();
 };
 
+# switch with motion and weather
+$HMConfig::culHmModel{"F20B"} = {name=>"HB-LC-SW1-MDIR",st=>'custom',cyc=>'',rxt=>'',lst=>'1,3:1p,4:2p',chn=>"Sw:1:1,Motion:2:2,Value:3:3"};
+$HMConfig::culHmChanSets{"HB-LC-SW1-MDIR00"}{fwUpdate} = "<filename>";
+$HMConfig::culHmChanSets{"HB-LC-SW1-MDIR01"} = $HMConfig::culHmSubTypeSets{"switch"};
+$HMConfig::culHmChanSets{"HB-LC-SW1-MDIR02"} = $HMConfig::culHmSubTypeSets{"THSensor"};
+$HMConfig::culHmChanSets{"HB-LC-SW1-MDIR03"} = $HMConfig::culHmSubTypeSets{"Values"};
+#$HMConfig::culHmRegModel{"HB-LC-SW1-MDIR"}   = {};
+$HMConfig::culHmRegChan {"HB-LC-SW1-MDIR01"} = $HMConfig::culHmRegType{switch};
+$HMConfig::culHmRegChan {"HB-LC-SW1-MDIR02"} = $HMConfig::culHmRegType{motionDetector};
+$HMConfig::culHmRegChan {"HB-LC-SW1-MDIR03"} = $HMConfig::culHmRegType{values};
+$customMsg{"HB-LC-SW1-MDIR"} = sub {
+  my ($msg,$target) = @_;
+  my $channel = $msg->channel;
+  return $msg->processValues if $msg->isValues;
+  return $msg->processMotion($target) if $channel == 2;
+  return $msg->processSwitchStatus($target) if $msg->isStatus;
+  return ();
+};
+
 $HMConfig::culHmModel{"F9D2"} = {name=>"HB-UNI-Sen-LEV-US",st=>'custom',cyc=>'',rxt=>'c:l',lst=>'1',chn=>"Level:1:1"};
 $HMConfig::culHmChanSets{"HB-UNI-Sen-LEV-US00"}{fwUpdate} = "<filename>";
 $HMConfig::culHmChanSets{"HB-UNI-Sen-LEV-US01"} = {};
