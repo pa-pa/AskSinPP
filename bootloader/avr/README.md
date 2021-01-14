@@ -8,7 +8,7 @@ flash-ota can be found here https://git.zerfleddert.de/cgi-bin/gitweb.cgi/hmcfgu
 
 
 Required Windows tools
-  * cygwin with bash, sed, php-cli
+  * cygwin with bash
   * avrdude
   
 The first step is to create a bootloader with the specific device data
@@ -42,7 +42,7 @@ to transfer the firmware by air.
 To build the OTA enabled software USE_OTA_BOOLOADER needs to be defined. This enables the access of the device 
 specific data from the bootloader section. Before the firmware can be transfered it needs to converted.
 
-`prepareforota.sh path_to_firmware.hex`
+`prepota.sh path_to_firmware.hex`
 
 will convert your fimrware into the eq3 format. The result will be located in your current directory. The filename 
 is automatically appended by the current datestamp. To transfer the firmware run
