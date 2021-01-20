@@ -361,7 +361,7 @@ $customMsg{"HB-Sec-WDS-3"} = sub {
   my $batstat = "ok";
   $batstat = "low" if (($batflags & 0x80)==0x80);
   push @evtEt,[$device,1,"battery:".$batstat];
-  push @evtEt,[$device,1,"batVoltage:".$bat/1000];
+  push @evtEt,[$device,1,"batVoltage:".sprintf('%.2f',$bat/1000)];
   return @evtEt;
 };
 
