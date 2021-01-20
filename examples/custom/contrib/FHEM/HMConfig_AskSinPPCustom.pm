@@ -336,6 +336,35 @@ $customMsg{"HB-Sec-RHS-3"} = sub {
   return @evtEt;
 };
 
+# water contact WDS3
+$HMConfig::culHmModel{"F121"} = {name=>"HB-Sec-WDS-3",st=>'custom',cyc=>'28:00',rxt=>'c:w:l',lst=>'1,4:1p',chn=>""};
+$HMConfig::culHmChanSets{"HB-Sec-WDS-3"} = $HMConfig::culHmSubTypeSets{"THSensor"};
+$HMConfig::culHmRegModel{"HB-Sec-WDS-3"}   = { lowBatLimitBA2=>1, transmDevTryMax=>1, cyclicInfoMsg=>1, 
+                                               msgWdsPosA=>1, msgWdsPosB=>1, msgWdsPosC=>1, eventFilterTimeB=>1 };
+$customMsg{"HB-Sec-WDS-3"} = sub {
+  my ($msg,$target) = @_;
+  my $batflags = 0;
+  my $bat = 0;
+  my $device = main::CUL_HM_id2Hash($msg->from);
+  my @evtEt = $msg->processThreeState($target,(0=>'dry',100=>'damp',200=>'water')) if $msg->channel == 1;
+  if( $msg->isSensor ) {
+    # add battery value
+    $bat = $msg->payloadWord(3);
+    $batflags = $msg->payloadByte(0);
+  }
+  if( $msg->isStatus ) {
+    # add battery value
+    $bat = $msg->payloadByte(5);
+    $batflags = $msg->payloadByte(3);    
+  }
+  # add battery state
+  my $batstat = "ok";
+  $batstat = "low" if (($batflags & 0x80)==0x80);
+  push @evtEt,[$device,1,"battery:".$batstat];
+  push @evtEt,[$device,1,"batVoltage:".$bat/1000];
+  return @evtEt;
+};
+
 # velux blind - simple blind with burst and battery state
 $HMConfig::culHmModel{"F20A"} = {name=>"HB-LC-Bl1-Velux",st=>'custom',cyc=>'',rxt=>'b',lst=>'1,3',chn=>""};
 $HMConfig::culHmChanSets{"HB-LC-Bl1-Velux00"} = $HMConfig::culHmSubTypeSets{"blindActuator"};
