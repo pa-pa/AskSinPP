@@ -354,7 +354,7 @@ $customMsg{"HB-Sec-WDS-3"} = sub {
   }
   if( $msg->isStatus ) {
     # add battery value
-    $bat = $msg->payloadByte(5);
+    $bat = $msg->payloadWord(5);
     $batflags = $msg->payloadByte(3);    
   }
   # add battery state
