@@ -770,7 +770,7 @@ template <class SPIType ,uint8_t GDO0,int SENDDELAY=100,class HWRADIO=CC1101<SPI
 class Radio : public HWRADIO {
 
   static void isr () {
-    ((Radio<SPIType,GDO0,SENDDELAY,HWRADIO>*)__gb_radio)->handleInt();
+    instance().handleInt();
   }
 
   class MinSendTimeout : public Alarm {
@@ -822,14 +822,21 @@ public:
     timeout.waitTimeout();
   }
 
+  static Radio<SPIType,GDO0,SENDDELAY,HWRADIO>& instance () {
+    return *((Radio<SPIType,GDO0,SENDDELAY,HWRADIO>*)__gb_radio);
+  }
+
 private:
-  volatile uint8_t intread;
-  volatile uint8_t sending;
-  volatile bool idle;
+  enum States { IDLE=0x1, SENDING=0x2, READ=0x4, ALIVE=0x8, READ_ALIVE=0xc };
+  volatile uint8_t state;
   Message buffer;
 
+  bool isState(States s) { return (state & s)==s; }
+  void setState(States s) { state |= s; }
+  void unsetState(States s) { state &= ~s; }
+
 public:   //---------------------------------------------------------------------------------------------------------
-  Radio () :  intread(0), sending(0), idle(false) {}
+  Radio () : state(ALIVE) {}
 
   bool init () {
     // ensure ISR if off before we start to init CC1101
@@ -848,28 +855,34 @@ public:   //--------------------------------------------------------------------
   }
 
   void setIdle () {
-    if( idle == false ) {
+    if( isState(IDLE) == false ) {
       HWRADIO::setIdle();
-      idle = true;
+      setState(IDLE);
     }
   }
 
   void wakeup (bool flush=true) {
-    if( idle == true ) {
+    if( isState(IDLE) == true ) {
       HWRADIO::wakeup(flush);
-      idle = false;
+      unsetState(IDLE);
     }
   }
 
   bool isIdle () {
-    return idle;
+    return isState(IDLE);
   }
 
   void handleInt () {
-    if( sending == 0 ) {
+    if( isState(SENDING) == false ) {
 //      DPRINT(" * "); DPRINTLN(millis());
-      intread = 1;
+      setState(READ_ALIVE);
     }
+  }
+
+  bool clearAlive () {
+    bool result = isState(ALIVE);
+    unsetState(ALIVE);
+    return result;
   }
 
   bool detectBurst () {
@@ -904,10 +917,10 @@ void disable () {
 
   // read the message form the internal buffer, if any
   uint8_t read (Message& msg) {
-    if( intread == 0 )
+    if( isState(READ) == false )
       return 0;
 
-    intread = 0;
+    unsetState(READ);
     uint8_t len = this->rcvData(buffer.buffer(),buffer.buffersize());
     if( len > 0 ) {
       buffer.length(len);
@@ -946,35 +959,13 @@ void disable () {
     buffer.encode();
     return sndData(buffer.buffer(),buffer.length(),burst);
   }
-/*
-  bool readAck (const Message& msg) {
-    if( intread == 0 )
-      return false;
-	
-    intread = 0;
-    idle = false;
-    bool ack=false;
-    uint8_t len = this->rcvData(buffer.buffer(),buffer.buffersize());
-    if( len > 0 ) {
-      buffer.length(len);
-      // decode the message
-      buffer.decode();
-      ack = buffer.isAck() &&
-           (buffer.from() == msg.to()) &&
-           (buffer.to() == msg.from()) &&
-           (buffer.count() == msg.count());
-      // reset buffer
-      buffer.clear();
-    }
-    return ack;
-  }
-*/
+
   uint8_t sndData(uint8_t *buf, uint8_t size, uint8_t burst) {
     timeout.waitTimeout();
     this->wakeup();
-    sending = 1;
+    setState(SENDING);
     uint8_t result = HWRADIO::sndData(buf,size,burst);
-    sending = 0;
+    unsetState(SENDING);
     return result;
   }
 

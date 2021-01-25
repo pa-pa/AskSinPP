@@ -329,6 +329,28 @@ public:
 };
 #endif
 
+template <class HAL,int TIMEOUT=60>
+class RadioWatchdog : public Alarm {
+public:
+  RadioWatchdog () : Alarm(0,false) {}
+  virtual ~RadioWatchdog () {}
+
+  virtual void trigger (AlarmClock& clock) {
+    typename HAL::RadioType& radio = HAL::RadioType::instance();
+    bool alive = radio.clearAlive();
+    if( alive == false ) {
+      radio.init();
+      radio.enable();
+    }
+    set(seconds2ticks(TIMEOUT));
+    clock.add(*this);
+  }
+
+  void start (AlarmClock& clock) {
+    trigger(clock);
+  }
+};
+
 }
 
 #endif

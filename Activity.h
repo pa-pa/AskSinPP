@@ -103,11 +103,11 @@ public:
     period_t sleeptime = SLEEP_FOREVER;
 
     if( ticks > seconds2ticks(1) ) { sleeptime = SLEEP_FOREVER; }
-    else if( ticks > millis2ticks(500) ) { sleeptime = SLEEP_500MS; }
-    else if( ticks > millis2ticks(250) ) { sleeptime = SLEEP_250MS; }
+//    else if( ticks > millis2ticks(500) ) { sleeptime = SLEEP_500MS; }
+//    else if( ticks > millis2ticks(250) ) { sleeptime = SLEEP_250MS; }
     else if( ticks > millis2ticks(120) ) { sleeptime = SLEEP_120MS; }
-    else if( ticks > millis2ticks(60)  ) { sleeptime = SLEEP_60MS; }
-    else if( ticks > millis2ticks(30)  ) { sleeptime = SLEEP_30MS; }
+//    else if( ticks > millis2ticks(60)  ) { sleeptime = SLEEP_60MS; }
+//    else if( ticks > millis2ticks(30)  ) { sleeptime = SLEEP_30MS; }
     else if( ticks > millis2ticks(15)  ) { sleeptime = SLEEP_15MS; }
 
     uint32_t c1 = rtc.getCounter(true);
