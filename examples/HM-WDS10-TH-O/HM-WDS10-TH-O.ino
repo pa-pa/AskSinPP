@@ -79,7 +79,7 @@ public:
 };
 
 
-typedef WeatherChannel<Hal,RTC,Sensors,PEERS_PER_CHANNEL,EXTRAMILLIS,WeatherList0> ChannelType;
+typedef WeatherChannel<Hal,RealTimeClock,Sensors,PEERS_PER_CHANNEL,EXTRAMILLIS,WeatherList0> ChannelType;
 typedef MultiChannelDevice<Hal,ChannelType,1,WeatherList0> WeatherType;
 
 Hal hal;

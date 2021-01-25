@@ -124,7 +124,7 @@ public:
 };
 
 #ifdef USE_RTC
-typedef WeatherChannel<Hal,RTC,Sensors,PEERS_PER_CHANNEL,EXTRAMILLIS,WeatherList0> ChannelType;
+typedef WeatherChannel<Hal,RealTimeClock,Sensors,PEERS_PER_CHANNEL,EXTRAMILLIS,WeatherList0> ChannelType;
 #else
 typedef WeatherChannel<Hal,SysClock,Sensors,PEERS_PER_CHANNEL,EXTRAMILLIS,WeatherList0> ChannelType;
 #endif

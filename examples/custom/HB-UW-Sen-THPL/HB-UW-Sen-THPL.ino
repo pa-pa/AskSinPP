@@ -155,9 +155,9 @@ public:
 };
 #endif
 
-class SensChannel : public WeatherChannel<Hal,RTC,Sensors,PEERS_PER_CHANNEL,EXTRAMILLIS,WeatherList0> {
+class SensChannel : public WeatherChannel<Hal,RealTimeClock,Sensors,PEERS_PER_CHANNEL,EXTRAMILLIS,WeatherList0> {
 public:
-  SensChannel () : WeatherChannel<Hal,RTC,Sensors,PEERS_PER_CHANNEL,EXTRAMILLIS,WeatherList0>() {}
+  SensChannel () : WeatherChannel<Hal,RealTimeClock,Sensors,PEERS_PER_CHANNEL,EXTRAMILLIS,WeatherList0>() {}
   virtual ~SensChannel () {}
 
   virtual void trigger (__attribute__ ((unused)) AlarmClock& clock) {
