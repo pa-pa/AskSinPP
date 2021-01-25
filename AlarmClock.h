@@ -97,7 +97,7 @@ extern void rtccallback(void);
 
 
 class SysClock : public AlarmClock {
-#ifdef ARDUINO_ARCH_STM32 && defined STM32L1xx
+#if defined ARDUINO_ARCH_STM32 && defined STM32L1xx
   HardwareTimer* Timer = new HardwareTimer(TIM9);
 #endif
 public:
@@ -147,7 +147,7 @@ public:
     Timer2.setPeriod(1000000 / TICKS_PER_SECOND); // in microseconds
     Timer2.setCompare(TIMER_CH2, 1); // overflow might be small
   #endif
-  #ifdef ARDUINO_ARCH_STM32 && defined STM32L1xx
+  #if defined ARDUINO_ARCH_STM32 && defined STM32L1xx
     Timer->setOverflow(1000000 / TICKS_PER_SECOND, MICROSEC_FORMAT);
     Timer->attachInterrupt(callback);
   #endif
