@@ -97,11 +97,14 @@ extern void rtccallback(void);
 
 
 class SysClock : public AlarmClock {
+#ifdef ARDUINO_ARCH_STM32 && defined STM32L1xx
+  HardwareTimer* Timer = new HardwareTimer(TIM9);
+#endif
 public:
   static SysClock& instance();
 
   void init() {
-  #if ARDUINO_ARCH_AVR
+  #ifdef ARDUINO_ARCH_AVR
   #define TIMER1_RESOLUTION 65536UL  // Timer1 is 16 bit
     // use Time1 on AVR
     TCCR1B = _BV(WGM13);        // set mode as phase and frequency correct pwm, stop the timer
@@ -144,6 +147,10 @@ public:
     Timer2.setPeriod(1000000 / TICKS_PER_SECOND); // in microseconds
     Timer2.setCompare(TIMER_CH2, 1); // overflow might be small
   #endif
+  #ifdef ARDUINO_ARCH_STM32 && defined STM32L1xx
+    Timer->setOverflow(1000000 / TICKS_PER_SECOND, MICROSEC_FORMAT);
+    Timer->attachInterrupt(callback);
+  #endif
     enable();
   }
 
@@ -154,6 +161,8 @@ public:
     TIMSK1 &= ~_BV(TOIE1);
   #elif defined(ARDUINO_ARCH_STM32F1)
     Timer2.detachInterrupt(TIMER_CH2);
+  #elif defined ARDUINO_ARCH_STM32 && defined STM32L1xx
+    Timer->pause();
   #endif
   }
 
@@ -164,6 +173,8 @@ public:
     TIMSK1 |= _BV(TOIE1);
   #elif defined(ARDUINO_ARCH_STM32F1)
     Timer2.attachInterrupt(TIMER_CH2,callback);
+  #elif defined ARDUINO_ARCH_STM32 && defined STM32L1xx
+    Timer->resume();
   #endif
   }
 
@@ -182,16 +193,16 @@ extern SysClock sysclock;
 
 #ifndef NORTC
 
-class RTC : public AlarmClock {
+class RealTimeClock : public AlarmClock {
   uint8_t ovrfl;
 #if defined(ARDUINO_ARCH_STM32F1) && defined(_RTCLOCK_H_)
   RTClock rt;
 #endif
 public:
 
-  RTC () : ovrfl(0) {}
+  RealTimeClock() : ovrfl(0) {}
 
-  static RTC& instance();
+  static RealTimeClock& instance();
 
   void init () {
 #if defined ARDUINO_AVR_ATmega32
@@ -280,7 +291,7 @@ public:
 
 };
 
-extern RTC rtc;
+extern RealTimeClock rtc;
 #endif
 
 }

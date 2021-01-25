@@ -14,7 +14,7 @@ void callback(void) {
 }
 
 #ifndef NORTC
-RTC rtc;
+RealTimeClock rtc;
 void rtccallback () {
   //  DPRINT(".");
     rtc.overflow();
@@ -133,7 +133,7 @@ bool RTCAlarm::delayMillis () {
 SysClock& SysClock::instance() { return sysclock; }
 
 #ifndef NORTC
-RTC& RTC::instance() { return rtc; }
+RealTimeClock& RealTimeClock::instance() { return rtc; }
 #endif
 
 }

@@ -23,6 +23,9 @@ class InternalEprom {
   #elif defined(MCU_STM32F103C8)
     #define FlashPageSize 0x400
     #define FlashStartAddress 0x0800fc00  // Page63
+  #elif defined(MCU_STM32F103RC) // 256k
+    #define FlashPageSize 0x400
+    #define FlashStartAddress 0x0803fc00  // Page255
   #else
     #error Unknown CPU type
   #endif
@@ -42,8 +45,41 @@ class InternalEprom {
       memcpy(&data[offset],buf,size);
     }
   }
-#endif
+#elif defined ARDUINO_ARCH_STM32 && defined STM32L1xx
+  // this works for STM32L151C8, todo: check for other variants with more flash
+  #define EEADDR_EEPROM_START  0x08080000
+  #define EEINFO_EEPROM_SIZE   4096
 
+  void eeprom_read_block(void* buf, const void* addr, size_t size) {
+    // check if address is within our eeprom
+    uint32_t offset = (uintptr_t)addr;
+    if (offset >= EEINFO_EEPROM_SIZE) return;
+    offset += EEADDR_EEPROM_START;
+    uint8_t* ptr = (uint8_t*)buf;
+    // get the requested bytes
+    for (uint16_t i = 0; i < size; i++) {
+      uint32_t address = offset + i;
+      ptr[i] = *(volatile uint8_t*)address;
+    }
+  }
+
+  void eeprom_write_block(const void* buf, void* addr, size_t size) {
+    // check if address is within our eeprom
+    uint32_t offset = (uintptr_t)addr;
+    if (offset >= EEINFO_EEPROM_SIZE) return;
+    offset += EEADDR_EEPROM_START;
+    uint8_t* ptr = (uint8_t*)buf;
+    //DPRINT("offset: "); DHEX(offset); DPRINT(", data: "); DHEXLN(ptr,16);
+    // write the given bytes
+    HAL_FLASHEx_DATAEEPROM_Unlock();
+    for (uint16_t i = 0; i < size; i++) {
+      uint32_t address = offset + i;
+      HAL_FLASHEx_DATAEEPROM_Program(FLASH_TYPEPROGRAMDATA_BYTE, address, ptr[i]);
+    }
+    HAL_FLASHEx_DATAEEPROM_Lock();
+}
+
+#endif
 #ifndef ARDUINO
   // we mirror 1 Flash Page into RAM
   uint8_t data[1024];
@@ -150,7 +186,7 @@ public:
 
 // with help of https://github.com/JChristensen/extEEPROM
 
-template <uint8 ID,uint16_t PAGES,uint8_t PAGESIZE>
+template <uint8 ID,uint16_t EEPROM_NUM_PAGES,uint8_t EEPROM_PAGE_SIZE>
 class at24cX {
 public:
   at24cX () {}
@@ -163,7 +199,7 @@ public:
   }
 
   uint16_t size () {
-    return PAGES * PAGESIZE;
+    return EEPROM_NUM_PAGES * EEPROM_PAGE_SIZE;
   }
 
   void store () {}
@@ -195,7 +231,7 @@ public:
   }
 
   uint16_t calcBlockSize(uint16_t addr, uint16_t size) {
-    uint16_t block = PAGESIZE - (addr % PAGESIZE);
+    uint16_t block = EEPROM_PAGE_SIZE - (addr % EEPROM_PAGE_SIZE);
     // BUFFER_LENGTH from Wire.h - 2 byte address
     block = (BUFFER_LENGTH - 2) < block ? BUFFER_LENGTH - 2 : block;
     return (size < block) ? size : block;
@@ -296,13 +332,13 @@ public:
 
 };
 
-template <uint8_t ID,uint16_t PAGES,uint8_t PAGESIZE>
-class CachedAt24cX : public at24cX<ID,PAGES,PAGESIZE> {
-  uint8_t  pagecache[PAGESIZE];
+template <uint8_t ID,uint16_t PAGES,uint8_t EEPROM_PAGE_SIZE>
+class CachedAt24cX : public at24cX<ID,PAGES, EEPROM_PAGE_SIZE> {
+  uint8_t  pagecache[EEPROM_PAGE_SIZE];
   uint16_t pageaddr;
   bool     dirty;
 public:
-  typedef at24cX<ID,PAGES,PAGESIZE> Base;
+  typedef at24cX<ID,PAGES, EEPROM_PAGE_SIZE> Base;
   CachedAt24cX () : pageaddr(0xffff), dirty(false) {}
 
   void store () {
@@ -313,18 +349,18 @@ protected:
   void writecache () {
     if( pageaddr != 0xffff && dirty == true ) {
       // DPRINT("WRITECACHE "); DHEXLN(pageaddr);
-      Base::setData(pageaddr, pagecache, PAGESIZE);
+      Base::setData(pageaddr, pagecache, EEPROM_PAGE_SIZE);
       dirty = false;
     }
   }
 
   uint8_t* fillcache(uint16_t addr) {
-    uint16_t paddr = addr & ~(PAGESIZE-1);
+    uint16_t paddr = addr & ~(EEPROM_PAGE_SIZE -1);
     if( pageaddr != paddr ) {
       writecache();
       pageaddr = paddr;
       // DPRINT("FILLCACHE "); DHEXLN(pageaddr);
-      Base::getData(pageaddr,pagecache,PAGESIZE);
+      Base::getData(pageaddr,pagecache, EEPROM_PAGE_SIZE);
       dirty = false;
     }
     return pagecache;

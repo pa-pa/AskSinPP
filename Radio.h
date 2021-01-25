@@ -259,14 +259,17 @@ public:
 
 
 #ifdef SPI_MODE0
-
 template <uint8_t CS,uint32_t CLOCK=2000000, BitOrder BITORDER=SPI_BITORDER_MSBFIRST, uint8_t MODE=SPI_MODE0>
 class LibSPI {
-
 public:
   LibSPI () {}
   void init () {
-    pinMode(CS,OUTPUT);
+#if defined ARDUINO_ARCH_STM32 && defined STM32L1xx
+    SPI.setMOSI(PIN_SPI_MOSI);
+    SPI.setMISO(PIN_SPI_MISO);
+    SPI.setSCLK(PIN_SPI_SCK);
+#endif
+    pinMode(CS, OUTPUT);
     SPI.begin();
   }
 
