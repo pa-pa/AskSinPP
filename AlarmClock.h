@@ -291,6 +291,8 @@ public:
 
 };
 
+// backward compatibility
+typedef RealTimeClock RTC;
 extern RealTimeClock rtc;
 #endif
 
