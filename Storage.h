@@ -186,7 +186,7 @@ public:
 
 // with help of https://github.com/JChristensen/extEEPROM
 
-template <uint8 ID,uint16_t EEPROM_NUM_PAGES,uint8_t EEPROM_PAGE_SIZE>
+template <uint8 ID,uint16_t EEPROM_NUM_PAGES,uint8_t EEPROM_PAGESIZE>
 class at24cX {
 public:
   at24cX () {}
@@ -199,7 +199,7 @@ public:
   }
 
   uint16_t size () {
-    return EEPROM_NUM_PAGES * EEPROM_PAGE_SIZE;
+    return EEPROM_NUM_PAGES * EEPROM_PAGESIZE;
   }
 
   void store () {}
@@ -231,7 +231,7 @@ public:
   }
 
   uint16_t calcBlockSize(uint16_t addr, uint16_t size) {
-    uint16_t block = EEPROM_PAGE_SIZE - (addr % EEPROM_PAGE_SIZE);
+    uint16_t block = EEPROM_PAGESIZE - (addr % EEPROM_PAGESIZE);
     // BUFFER_LENGTH from Wire.h - 2 byte address
     block = (BUFFER_LENGTH - 2) < block ? BUFFER_LENGTH - 2 : block;
     return (size < block) ? size : block;
@@ -332,13 +332,13 @@ public:
 
 };
 
-template <uint8_t ID,uint16_t PAGES,uint8_t EEPROM_PAGE_SIZE>
-class CachedAt24cX : public at24cX<ID,PAGES, EEPROM_PAGE_SIZE> {
-  uint8_t  pagecache[EEPROM_PAGE_SIZE];
+template <uint8_t ID,uint16_t PAGES,uint8_t EEPROM_PAGESIZE>
+class CachedAt24cX : public at24cX<ID,PAGES, EEPROM_PAGESIZE> {
+  uint8_t  pagecache[EEPROM_PAGESIZE];
   uint16_t pageaddr;
   bool     dirty;
 public:
-  typedef at24cX<ID,PAGES, EEPROM_PAGE_SIZE> Base;
+  typedef at24cX<ID,PAGES, EEPROM_PAGESIZE> Base;
   CachedAt24cX () : pageaddr(0xffff), dirty(false) {}
 
   void store () {
@@ -349,18 +349,18 @@ protected:
   void writecache () {
     if( pageaddr != 0xffff && dirty == true ) {
       // DPRINT("WRITECACHE "); DHEXLN(pageaddr);
-      Base::setData(pageaddr, pagecache, EEPROM_PAGE_SIZE);
+      Base::setData(pageaddr, pagecache, EEPROM_PAGESIZE);
       dirty = false;
     }
   }
 
   uint8_t* fillcache(uint16_t addr) {
-    uint16_t paddr = addr & ~(EEPROM_PAGE_SIZE -1);
+    uint16_t paddr = addr & ~(EEPROM_PAGESIZE -1);
     if( pageaddr != paddr ) {
       writecache();
       pageaddr = paddr;
       // DPRINT("FILLCACHE "); DHEXLN(pageaddr);
-      Base::getData(pageaddr,pagecache, EEPROM_PAGE_SIZE);
+      Base::getData(pageaddr,pagecache, EEPROM_PAGESIZE);
       dirty = false;
     }
     return pagecache;
