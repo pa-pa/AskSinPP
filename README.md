@@ -1,5 +1,5 @@
 
-# AskSin++  [![Build Status](https://travis-ci.com/pa-pa/AskSinPP.svg?branch=master)](https://travis-ci.org/pa-pa/AskSinPP)
+# AskSin++  [![Build Status](https://travis-ci.com/pa-pa/AskSinPP.svg?branch=master)](https://travis-ci.com/pa-pa/AskSinPP)
 
 C++ implementation of the AskSin protocol
 
