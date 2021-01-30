@@ -194,6 +194,12 @@ public:
     PINTYPE::setLow(MOSI);
   }
 
+  void shutdown () {
+    PINTYPE::setInput(CS);
+    PINTYPE::setInput(MOSI);
+    PINTYPE::setInput(SCLK);
+  }
+
   void select () {
     PINTYPE::setLow(CS);
   }
@@ -271,6 +277,18 @@ public:
 #endif
     pinMode(CS, OUTPUT);
     SPI.begin();
+  }
+
+  void shutdown () {
+    SPI.end();
+    pinMode(CS, INPUT);
+#if defined ARDUINO_ARCH_STM32 && defined STM32L1xx
+    pinMode(PIN_SPI_MOSI, INPUT);
+    pinMode(PIN_SPI_SCK, INPUT);
+#else
+    pinMode(MOSI, INPUT);
+    pinMode(SCK, INPUT);
+#endif
   }
 
   void select () {
@@ -384,7 +402,7 @@ public:
   bool write (__attribute__ ((unused)) const Message& msg, __attribute__ ((unused)) uint8_t burst) { return false; }
 };
 
-template <class SPIType>
+template <class SPIType, uint8_t PWRPIN>
 class CC1101 {
 protected:
   SPIType spi;
@@ -418,9 +436,20 @@ public:
 #else
     spi.strobe(CC1101_SPWD);                // enter power down state
 #endif
+
+    if (PWRPIN < 0xff) {
+      spi.shutdown();
+      digitalWrite(PWRPIN, HIGH);
+    }
   }
 
   void wakeup (bool flush) {
+    if (PWRPIN < 0xff) {
+      digitalWrite(PWRPIN, LOW);
+      _delay_ms(10);
+      init();
+    }
+
     spi.ping();
     if( flush==true ) {
       flushrx();
@@ -464,6 +493,11 @@ public:
 
 
   bool init () {
+    if (PWRPIN < 0xff) {
+      pinMode(PWRPIN, OUTPUT);
+      digitalWrite(PWRPIN, LOW);
+      _delay_ms(10);
+    }
     spi.init();                 // init the hardware to get access to the RF modul
 
 #ifdef USE_OTA_BOOTLOADER_FREQUENCY
@@ -766,7 +800,7 @@ protected:
 
 };
 
-template <class SPIType ,uint8_t GDO0,int SENDDELAY=100,class HWRADIO=CC1101<SPIType> >
+template <class SPIType ,uint8_t GDO0, uint8_t PWRPIN=0xff, int SENDDELAY=100,class HWRADIO=CC1101<SPIType,PWRPIN> >
 class Radio : public HWRADIO {
 
   static void isr () {
@@ -822,8 +856,8 @@ public:
     timeout.waitTimeout();
   }
 
-  static Radio<SPIType,GDO0,SENDDELAY,HWRADIO>& instance () {
-    return *((Radio<SPIType,GDO0,SENDDELAY,HWRADIO>*)__gb_radio);
+  static Radio<SPIType,GDO0,PWRPIN,SENDDELAY,HWRADIO>& instance () {
+    return *((Radio<SPIType,GDO0,PWRPIN,SENDDELAY,HWRADIO>*)__gb_radio);
   }
 
 private:
