@@ -285,6 +285,7 @@ public:
     pinMode(PIN_SPI_MOSI, INPUT);
     pinMode(PIN_SPI_SCK, INPUT);
 #endif
+    SPI.end();
   }
 
   void select () {
