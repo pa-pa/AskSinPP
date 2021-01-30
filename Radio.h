@@ -280,9 +280,9 @@ public:
   }
 
   void deInit () {
-    PINTYPE::setInput(CS);
-    PINTYPE::setInput(PIN_SPI_MOSI);
-    PINTYPE::setInput(PIN_SPI_SCK);
+    pinMode(CS, INPUT);
+    pinMode(CS, PIN_SPI_MOSI);
+    pinMode(CS, PIN_SPI_SCK);
   }
 
   void select () {
