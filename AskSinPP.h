@@ -195,7 +195,7 @@ public:
   static uint8_t readPin(uint8_t pinnr,uint8_t enablenr=0,uint8_t ms=0) {
     uint8_t value=0;
     pinMode(pinnr,INPUT_PULLUP);
-    if( enablenr != 0 ) {
+    if( enablenr != 0 && enablenr != 0xff) {
       digitalWrite(enablenr,HIGH);
       if( ms != 0 ) {
         _delay_ms(ms);
@@ -204,7 +204,7 @@ public:
     value = digitalRead(pinnr);
     pinMode(pinnr,OUTPUT);
     digitalWrite(pinnr,LOW);
-    if( enablenr != 0 ) {
+    if( enablenr != 0 && enablenr != 0xff) {
       digitalWrite(enablenr,LOW);
     }
     return value;
