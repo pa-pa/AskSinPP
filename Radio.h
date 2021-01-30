@@ -434,14 +434,14 @@ public:
     spi.strobe(CC1101_SPWD);                // enter power down state
 #endif
 
-    if (PWRPIN < 255) {
+    if (PWRPIN < 0xff) {
       spi.shutdown();
       digitalWrite(PWRPIN, HIGH);
     }
   }
 
   void wakeup (bool flush) {
-    if (PWRPIN < 255) {
+    if (PWRPIN < 0xff) {
       digitalWrite(PWRPIN, LOW);
       _delay_ms(10);
       init();
@@ -490,7 +490,7 @@ public:
 
 
   bool init () {
-    if (PWRPIN < 255) {
+    if (PWRPIN < 0xff) {
       pinMode(PWRPIN, OUTPUT);
       digitalWrite(PWRPIN, LOW);
       _delay_ms(10);
@@ -797,7 +797,7 @@ protected:
 
 };
 
-template <class SPIType ,uint8_t GDO0, uint8_t PWRPIN=255, int SENDDELAY=100,class HWRADIO=CC1101<SPIType,PWRPIN> >
+template <class SPIType ,uint8_t GDO0, uint8_t PWRPIN=0xff, int SENDDELAY=100,class HWRADIO=CC1101<SPIType,PWRPIN> >
 class Radio : public HWRADIO {
 
   static void isr () {
