@@ -194,7 +194,7 @@ public:
     PINTYPE::setLow(MOSI);
   }
 
-  void deInit () {
+  void shutdown () {
     PINTYPE::setInput(CS);
     PINTYPE::setInput(MOSI);
     PINTYPE::setInput(SCLK);
@@ -279,7 +279,7 @@ public:
     SPI.begin();
   }
 
-  void deInit () {
+  void shutdown () {
     pinMode(CS, INPUT);
 #if defined ARDUINO_ARCH_STM32 && defined STM32L1xx
     pinMode(PIN_SPI_MOSI, INPUT);
@@ -434,7 +434,7 @@ public:
 #endif
 
     if (PWRPIN < 255) {
-      spi.deInit();
+      spi.shutdown();
       digitalWrite(PWRPIN, HIGH);
     }
   }
@@ -442,7 +442,6 @@ public:
   void wakeup (bool flush) {
     if (PWRPIN < 255) {
       digitalWrite(PWRPIN, LOW);
-      spi.init();
       _delay_ms(10);
       init();
     }
