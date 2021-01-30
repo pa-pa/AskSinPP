@@ -194,6 +194,12 @@ public:
     PINTYPE::setLow(MOSI);
   }
 
+  void deInit () {
+    PINTYPE::setInput(CS);
+    PINTYPE::setInput(MOSI);
+    PINTYPE::setInput(SCLK);
+  }
+
   void select () {
     PINTYPE::setLow(CS);
   }
@@ -271,6 +277,12 @@ public:
 #endif
     pinMode(CS, OUTPUT);
     SPI.begin();
+  }
+
+  void deInit () {
+    PINTYPE::setInput(CS);
+    PINTYPE::setInput(PIN_SPI_MOSI);
+    PINTYPE::setInput(PIN_SPI_SCK);
   }
 
   void select () {
@@ -420,6 +432,7 @@ public:
 #endif
 
     if (PWRPIN < 255) {
+      spi.deInit();
       digitalWrite(PWRPIN, HIGH);
     }
   }
@@ -427,6 +440,7 @@ public:
   void wakeup (bool flush) {
     if (PWRPIN < 255) {
       digitalWrite(PWRPIN, LOW);
+      spi.init();
       _delay_ms(10);
       init();
     }
