@@ -384,7 +384,7 @@ public:
   bool write (__attribute__ ((unused)) const Message& msg, __attribute__ ((unused)) uint8_t burst) { return false; }
 };
 
-template <class SPIType>
+template <class SPIType, uint8_t PWRPIN>
 class CC1101 {
 protected:
   SPIType spi;
@@ -418,9 +418,19 @@ public:
 #else
     spi.strobe(CC1101_SPWD);                // enter power down state
 #endif
+
+    if (PWRPIN < 255) {
+      digitalWrite(PWRPIN, HIGH);
+    }
   }
 
   void wakeup (bool flush) {
+    if (PWRPIN < 255) {
+      digitalWrite(PWRPIN, LOW);
+      _delay_ms(10);
+      init();
+    }
+
     spi.ping();
     if( flush==true ) {
       flushrx();
@@ -464,6 +474,11 @@ public:
 
 
   bool init () {
+    if (PWRPIN < 255) {
+      pinMode(PWRPIN, OUTPUT);
+      digitalWrite(PWRPIN, LOW);
+      _delay_ms(10);
+    }
     spi.init();                 // init the hardware to get access to the RF modul
 
 #ifdef USE_OTA_BOOTLOADER_FREQUENCY
@@ -766,7 +781,7 @@ protected:
 
 };
 
-template <class SPIType ,uint8_t GDO0,int SENDDELAY=100,class HWRADIO=CC1101<SPIType> >
+template <class SPIType ,uint8_t GDO0, uint8_t PWRPIN=255, int SENDDELAY=100,class HWRADIO=CC1101<SPIType,PWRPIN> >
 class Radio : public HWRADIO {
 
   static void isr () {
@@ -822,8 +837,8 @@ public:
     timeout.waitTimeout();
   }
 
-  static Radio<SPIType,GDO0,SENDDELAY,HWRADIO>& instance () {
-    return *((Radio<SPIType,GDO0,SENDDELAY,HWRADIO>*)__gb_radio);
+  static Radio<SPIType,GDO0,PWRPIN,SENDDELAY,HWRADIO>& instance () {
+    return *((Radio<SPIType,GDO0,PWRPIN,SENDDELAY,HWRADIO>*)__gb_radio);
   }
 
 private:
