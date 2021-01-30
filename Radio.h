@@ -280,12 +280,15 @@ public:
   }
 
   void shutdown () {
+    SPI.end();
     pinMode(CS, INPUT);
 #if defined ARDUINO_ARCH_STM32 && defined STM32L1xx
     pinMode(PIN_SPI_MOSI, INPUT);
     pinMode(PIN_SPI_SCK, INPUT);
+#else
+    pinMode(MOSI, INPUT);
+    pinMode(SCK, INPUT);
 #endif
-    SPI.end();
   }
 
   void select () {
