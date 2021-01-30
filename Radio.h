@@ -281,8 +281,10 @@ public:
 
   void deInit () {
     pinMode(CS, INPUT);
+#if defined ARDUINO_ARCH_STM32 && defined STM32L1xx
     pinMode(CS, PIN_SPI_MOSI);
     pinMode(CS, PIN_SPI_SCK);
+#endif
   }
 
   void select () {
