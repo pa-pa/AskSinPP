@@ -412,10 +412,15 @@ public:
    * \param period ticks until next measurement
    * \param clock clock to use for waiting
    */
-  void init(__attribute__((unused)) uint32_t period,__attribute__((unused)) AlarmClock& clock) {
+  void init() {
     unsetIdle();
   }
+  
+  void init(__attribute__((unused)) uint32_t period,__attribute__((unused)) AlarmClock& clock) {
+    init();
+  }
 
+  
   /**
    * Disable the continues battery measurement
    * Called by HAL before enter idle/sleep state
@@ -464,11 +469,16 @@ public:
    * \param period ticks until next measurement
    * \param clock clock to use for waiting
    */
-  void init(__attribute__((unused)) uint32_t period,__attribute__((unused)) AlarmClock& clock) {
+   
+  void init() {
     pinMode(SENSPIN, INPUT);
     unsetIdle();
   }
-
+  
+  void init(__attribute__((unused)) uint32_t period,__attribute__((unused)) AlarmClock& clock) {
+    init();
+  }
+  
   uint16_t getInternalVcc() {
     //read internal Vcc as reference voltage
     ADMUX &= ~(ADMUX_REFMASK | ADMUX_ADCMASK);
