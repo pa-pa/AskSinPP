@@ -412,13 +412,14 @@ public:
    * \param period ticks until next measurement
    * \param clock clock to use for waiting
    */
-  void init(__attribute__((unused)) uint32_t period,__attribute__((unused)) AlarmClock& clock) {
+  void init() {
     unsetIdle();
   }
   
-  void init() {
-    init(0,sysclock);
+  void init(__attribute__((unused)) uint32_t period,__attribute__((unused)) AlarmClock& clock) {
+    init();
   }
+
   
   /**
    * Disable the continues battery measurement
@@ -468,13 +469,14 @@ public:
    * \param period ticks until next measurement
    * \param clock clock to use for waiting
    */
-  void init(__attribute__((unused)) uint32_t period,__attribute__((unused)) AlarmClock& clock) {
+   
+  void init() {
     pinMode(SENSPIN, INPUT);
     unsetIdle();
   }
   
-  void init() {
-    init(0,sysclock);
+  void init(__attribute__((unused)) uint32_t period,__attribute__((unused)) AlarmClock& clock) {
+    init();
   }
   
   uint16_t getInternalVcc() {
