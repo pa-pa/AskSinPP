@@ -415,7 +415,11 @@ public:
   void init(__attribute__((unused)) uint32_t period,__attribute__((unused)) AlarmClock& clock) {
     unsetIdle();
   }
-
+  
+  void init() {
+    init(0,sysclock);
+  }
+  
   /**
    * Disable the continues battery measurement
    * Called by HAL before enter idle/sleep state
@@ -468,7 +472,11 @@ public:
     pinMode(SENSPIN, INPUT);
     unsetIdle();
   }
-
+  
+  void init() {
+    init(0,sysclock);
+  }
+  
   uint16_t getInternalVcc() {
     //read internal Vcc as reference voltage
     ADMUX &= ~(ADMUX_REFMASK | ADMUX_ADCMASK);
