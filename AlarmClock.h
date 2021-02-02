@@ -292,7 +292,9 @@ public:
 };
 
 // backward compatibility
+#ifndef ARDUINO_ARCH_STM32 
 typedef RealTimeClock RTC;
+#endif
 extern RealTimeClock rtc;
 #endif
 
