@@ -27,7 +27,6 @@ public:
   STM32L1xx_LowPower() {};
 
   void begin(void) {
-    attachAlarmCallback(rtcmatch, NULL);
     RTC_SetClockSource(LSI_CLOCK);
     RTC_setPrediv(36, 0);
     RTC_init(HOUR_FORMAT_24, LSI_CLOCK, true);
@@ -47,6 +46,7 @@ public:
   void deepSleep(uint32_t millis = 0) {
     if (millis > 0) programRtcWakeUp(millis);
     LowPower_stop(_serial);
+    detachAlarmCallback();
   }
 
   void shutdown(uint32_t millis = 0) {
@@ -63,12 +63,13 @@ public:
     struct tm tm = { _sec, _min, _hour, _day, 0, 100, 0, 0, -1 };
     time_t tmp = mktime(&tm);
     tmp += millis;
-    
+
     struct tm* ptm = gmtime(&tmp);
     //DPRINT(millis); DPRINT(", "); DPRINTLN((uint32_t)tmp);
     //DPRINT(tm.tm_mday); DPRINT(':'); DPRINT(tm.tm_hour); DPRINT(':'); DPRINT(tm.tm_min); DPRINT(':'); DPRINTLN(tm.tm_sec);
     //DPRINT(ptm->tm_mday); DPRINT(':'); DPRINT(ptm->tm_hour); DPRINT(':'); DPRINT(ptm->tm_min); DPRINT(':'); DPRINTLN(ptm->tm_sec);
     RTC_StartAlarm(ptm->tm_mday, ptm->tm_hour, ptm->tm_min, ptm->tm_sec, _subSeconds, p, 15);
+    attachAlarmCallback(rtcmatch, NULL);
   }
 
   void attachInterruptWakeup(uint32_t pin, voidFuncPtrVoid callback, uint32_t mode) {
@@ -244,9 +245,9 @@ public:
     sleeptime = ticks2millis(ticks);
 
     // ADC_OFF, BOD_OFF, TIMER_OFF
-    //DPRINT('d');DPRINT(sleeptime); delay(500);
+    //DPRINT(millis2ticks(sleeptime)); delay(500);
     LowPower.deepSleep(sleeptime);
-    return ticks;
+    return millis2ticks(sleeptime-1);
   }
 
   template <class Hal>
@@ -262,7 +263,7 @@ public:
         sysclock.enable();
       } else {
         sysclock.enable();
-        Idle<ENABLETIMER2>::powerSave(hal);
+        //Idle<ENABLETIMER2>::powerSave(hal);
       }
     } else {
       sysclock.enable();
