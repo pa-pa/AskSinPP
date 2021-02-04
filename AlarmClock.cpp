@@ -11,6 +11,7 @@ SysClock sysclock;
 
 void callback(void) {
   --sysclock;
+    //DPRINT(".");
 }
 
 #ifndef NORTC
