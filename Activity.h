@@ -272,7 +272,6 @@ public:
 };
 #endif
 
-
 class Activity : public Alarm {
 
   volatile bool  awake;
@@ -370,7 +369,5 @@ public:
   }
 };
 
-
 }
-
 #endif

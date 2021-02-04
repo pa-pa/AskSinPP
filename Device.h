@@ -20,8 +20,9 @@
 #ifdef USE_HW_SERIAL
   #if defined(__AVR_ATmega644__) || defined(__AVR_ATmega644P__) || defined(__AVR_ATmega644PA__) || defined(__AVR_ATmega1284__) || defined(__AVR_ATmega1284P__) || defined(__AVR_ATmega328PB__)
     #include <avr/boot.h>
-  #elif defined (ARDUINO_ARCH_STM32F1)
-  #else
+#elif defined (ARDUINO_ARCH_STM32F1)
+#elif defined (ARDUINO_ARCH_STM32) && defined (STM32L1xx)
+#else
     #error Using Hardware serial is not supported on MCU type currently used
   #endif
 #endif
@@ -183,6 +184,11 @@ public:
       device_id[0] = (uint8_t)(crc & 0x000000ff);
       device_id[1] = (uint8_t)(crc >> 8 & 0x000000ff);
       device_id[2] = (uint8_t)(crc >> 16 & 0x000000ff);
+  #elif defined (ARDUINO_ARCH_STM32) && (defined STM32L1xx)
+      uint32_t crc = AskSinBase::crc24((uint8_t*)0x1FF80050, 12);
+      device_id[0] = (uint8_t)(crc & 0x000000ff);
+      device_id[1] = (uint8_t)(crc >> 8 & 0x000000ff);
+      device_id[2] = (uint8_t)(crc >> 16 & 0x000000ff);
   #else
       device_id[0] = boot_signature_byte_get(21);
       device_id[1] = boot_signature_byte_get(22);
@@ -200,8 +206,8 @@ public:
   void getDeviceSerial (uint8_t* serial) {
 #ifdef USE_OTA_BOOTLOADER
     HalType::pgm_read((uint8_t*)serial,OTA_SERIAL_START,10);
-#elif defined(USE_HW_SERIAL)
-  #ifdef ARDUINO_ARCH_STM32F1
+#elif defined (USE_HW_SERIAL)
+  #if defined (ARDUINO_ARCH_STM32F1) || (defined (ARDUINO_ARCH_STM32) && (defined STM32L1xx))
     memcpy_P(serial,info.Serial,4);
     uint8_t* s = serial+4;
     for( int i=0; i<3; ++i ) {

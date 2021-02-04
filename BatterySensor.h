@@ -106,6 +106,9 @@ public:
     vcc = 1100UL * 1024 / ADC;
 #elif defined ARDUINO_ARCH_STM32F1
     vcc = 1200 * 4096 / adc_read(ADC1, 17);  // ADC sample to millivolts
+#elif defined ARDUINO_ARCH_STM32 && defined STM32L1xx
+    analogReadResolution(12);
+    vcc = 1216 * 4096 / analogRead(AVREF);
 #endif
     DPRINT(F("iVcc: ")); DDECLN(vcc);
     return vcc;
