@@ -179,6 +179,9 @@ public:
   void single () {}
   void even () {}
   void odd () {}
+
+  // allow compiler to optimize/remove code for EmptyList
+  static uint8_t size () { return 0; }
 };
 
 
