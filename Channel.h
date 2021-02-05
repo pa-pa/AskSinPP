@@ -102,7 +102,9 @@ public:
     uint8_t pidx = findpeer();
     if( pidx != 0xff ) {
       storage().setData(peerAddress(pidx),p);
-      getList3(pidx).single();
+      if( hasList3() == true ) {
+        getList3(pidx).single();
+      }
       return true;
     }
     return false;
@@ -117,13 +119,15 @@ public:
       uint8_t pidx2 = findpeer();
       if( pidx2 != 0xff ) {
         storage().setData(peerAddress(pidx2),p2);
-        if( p1.odd() == true ) {
-          getList3(pidx1).odd();
-          getList3(pidx2).even();
-        }
-        else {
-          getList3(pidx2).odd();
-          getList3(pidx1).even();
+        if( hasList3() == true ) {
+          if( p1.odd() == true ) {
+            getList3(pidx1).odd();
+            getList3(pidx2).even();
+          }
+          else {
+            getList3(pidx2).odd();
+            getList3(pidx1).even();
+          }
         }
         return true;
       }
@@ -160,9 +164,11 @@ public:
   void firstinit () {
     storage().clearData(address(),size());
     List1Type cl1 = getList1();
-    List2Type cl2 = getList2();
     cl1.defaults();
-    cl2.defaults();
+    if( hasList2() ) {
+      List2Type cl2 = getList2();
+      cl2.defaults();
+    }
   }
 
   List1Type getList1 () const {
@@ -214,6 +220,10 @@ public:
       liststart = peerAddress(pidx) + sizeof(Peer) + List3::size();
     }
     return List4Type(liststart);
+  }
+
+  static bool hasList2 () {
+    return List2Type::size() > 0;
   }
 
   static bool hasList3 () {
@@ -308,35 +318,39 @@ public:
   }
 
   bool process (const RemoteEventMsg& msg) {
-    bool lg = msg.isLong();
-    Peer p(msg.peer());
-    uint8_t cnt = msg.counter();
-    List3Type l3 = BaseChannel::getList3(p);
-    if( l3.valid() == true ) {
-      // l3.dump();
-      typename List3Type::PeerList pl = lg ? l3.lg() : l3.sh();
-      // pl.dump();
-      if( lg == false || cnt != lastmsgcnt || pl.multiExec() == true ) {
-        lastmsgcnt = cnt;
-        StateMachine::remote(pl,cnt);
+    if( BaseChannel::hasList3() ) {
+      bool lg = msg.isLong();
+      Peer p(msg.peer());
+      uint8_t cnt = msg.counter();
+      List3Type l3 = BaseChannel::getList3(p);
+      if( l3.valid() == true ) {
+        // l3.dump();
+        typename List3Type::PeerList pl = lg ? l3.lg() : l3.sh();
+        // pl.dump();
+        if( lg == false || cnt != lastmsgcnt || pl.multiExec() == true ) {
+          lastmsgcnt = cnt;
+          StateMachine::remote(pl,cnt);
+        }
+        return true;
       }
-      return true;
     }
     return false;
   }
 
   bool process (const SensorEventMsg& msg) {
-    bool lg = msg.isLong();
-    Peer p(msg.peer());
-    uint8_t cnt = msg.counter();
-    uint8_t value = msg.value();
-    List3Type l3 = BaseChannel::getList3(p);
-    if( l3.valid() == true ) {
-      // l3.dump();
-      typename List3Type::PeerList pl = lg ? l3.lg() : l3.sh();
-      // pl.dump();
-      StateMachine::sensor(pl,cnt,value);
-      return true;
+    if( BaseChannel::hasList3() ) {
+      bool lg = msg.isLong();
+      Peer p(msg.peer());
+      uint8_t cnt = msg.counter();
+      uint8_t value = msg.value();
+      List3Type l3 = BaseChannel::getList3(p);
+      if( l3.valid() == true ) {
+        // l3.dump();
+        typename List3Type::PeerList pl = lg ? l3.lg() : l3.sh();
+        // pl.dump();
+        StateMachine::sensor(pl,cnt,value);
+        return true;
+      }
     }
     return false;
   }
