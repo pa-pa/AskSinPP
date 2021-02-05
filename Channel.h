@@ -397,6 +397,7 @@ public:
   virtual GenericList getList2 () const = 0;
   virtual GenericList getList3 (const Peer& p) const = 0;
   virtual GenericList getList4 (const Peer& p) const = 0;
+  virtual bool hasList2 () const = 0;
   virtual bool hasList3 () const = 0;
   virtual bool hasList4 () const = 0;
 
@@ -445,6 +446,7 @@ public:
   virtual GenericList getList2 () const { return ch.getList2(); }
   virtual GenericList getList3 (const Peer& p) const { return ch.getList3(p); }
   virtual GenericList getList4 (const Peer& p) const { return ch.getList4(p); }
+  virtual bool hasList2 () const { return ChannelType::hasList2(); }
   virtual bool hasList3 () const { return ChannelType::hasList3(); }
   virtual bool hasList4 () const { return ChannelType::hasList4(); }
 };
