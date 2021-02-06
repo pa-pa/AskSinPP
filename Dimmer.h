@@ -812,7 +812,26 @@ public:
       for( uint8_t j=i; j<=channelCount(); j+=physicalCount() ) {
         dimmer.dimmerChannel(j).setPhysical(physical[i-1]);
         bool powerup = dimmer.dimmerChannel(j).getList1().powerUpAction();
-        dimmer.dimmerChannel(j).setLevel(powerup == true ? 200 : 0,0,0xffff);
+
+        Peer xwnID;
+        dimmer.getDeviceID(xwnID);
+        xwnID = { xwnID, 1 };
+        DimmerList3 l3 = dimmer.dimmerChannel(j).getList3(xwnID);
+        //l3.dump();
+
+        dimmer.dimmerChannel(j).setLevel(0, 0, 0xffff);
+        DPRINT("init cnl "); DPRINT(j);
+
+        if (powerup == true && l3.valid() == true) {
+          DPRINTLN(", powerup");
+          typename DimmerList3::PeerList pl = l3.sh();
+          //  pl.dump();
+          dimmer.dimmerChannel(j).remote(pl, 1);
+        }
+        else {
+          DPRINTLN(", set level 0");
+        }
+        //dimmer.dimmerChannel(j).setLevel(powerup == true ? 200 : 0,0,0xffff);
       }
     }
   }
