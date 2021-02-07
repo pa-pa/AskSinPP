@@ -90,12 +90,12 @@ public:
         crc = HalType::crc16(crc,l.getRegister(i));
       }
       // add register list 3
-      l = ch.getList3(0);
+      l = ch.getList3((uint8_t)0);
       for( uint8_t i=0; i<l.getSize(); ++i ) {
         crc = HalType::crc16(crc,l.getRegister(i));
       }
       // add register list 4
-      l = ch.getList4(0);
+      l = ch.getList4((uint8_t)0);
       for( uint8_t i=0; i<l.getSize(); ++i ) {
         crc = HalType::crc16(crc,l.getRegister(i));
       }
