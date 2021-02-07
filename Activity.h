@@ -319,6 +319,9 @@ public:
 
   template <class Hal>
   void sleepForever (Hal& hal) {
+#ifndef NDEBUG
+      Idle<>::waitSerial();
+#endif
     hal.setIdle();
     while( true ) {
 #if defined(ARDUINO_ARCH_AVR) && ! (defined(ARDUINO_AVR_ATmega32) || defined(__AVR_ATmega644__) || defined(__AVR_ATmega128__))
