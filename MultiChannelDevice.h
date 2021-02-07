@@ -151,11 +151,13 @@ public:
       DPRINTLN(F("RESET"));
       storage().reset();
       storage().store();
-#if ARDUINO_ARCH_AVR
+  #if ARDUINO_ARCH_AVR
       resetFunc();
-#elif ARDUINO_ARCH_STM32F1
+  #elif ARDUINO_ARCH_STM32F1
       nvic_sys_reset();
-#endif
+  #elif defined (ARDUINO_ARCH_STM32) && defined (STM32L1xx) 
+      NVIC_SystemReset();
+  #endif
     }
   }
 

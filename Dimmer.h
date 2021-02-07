@@ -807,12 +807,26 @@ public:
 
   PWM& pwm (uint8_t num) { return pwms[num]; }
 
-  void initChannels () {
-    for( uint8_t i=1; i<=physicalCount(); ++i ) {
-      for( uint8_t j=i; j<=channelCount(); j+=physicalCount() ) {
-        dimmer.dimmerChannel(j).setPhysical(physical[i-1]);
+  void initChannels() {
+    for (uint8_t i = 1; i <= physicalCount(); ++i) {
+      for (uint8_t j = i; j <= channelCount(); j += physicalCount()) {
+        dimmer.dimmerChannel(j).setPhysical(physical[i - 1]);
+        dimmer.dimmerChannel(j).setLevel(0, 0, 0xffff);
+
         bool powerup = dimmer.dimmerChannel(j).getList1().powerUpAction();
-        dimmer.dimmerChannel(j).setLevel(powerup == true ? 200 : 0,0,0xffff);
+        Peer xwnID(1);
+        dimmer.getDeviceID(xwnID);
+        DimmerList3 l3 = dimmer.dimmerChannel(j).getList3(xwnID);
+        //DPRINT(F("init cnl ")); DPRINT(j);
+
+        if (powerup == true && l3.valid() == true) {
+          //DPRINTLN(F(", powerup"));
+          typename DimmerList3::PeerList pl = l3.sh();
+          //  pl.dump();
+          dimmer.dimmerChannel(j).remote(pl, 1);
+        } else {
+          //DPRINTLN(F(", set level 0"));
+        }
       }
     }
   }

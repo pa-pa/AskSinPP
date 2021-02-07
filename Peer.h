@@ -18,6 +18,7 @@ public:
   Peer (const HMID& id,uint8_t ch) : HMID(id), chan(ch) {}
   Peer (uint8_t i1, uint8_t i2, uint8_t i3, uint8_t ch) : HMID(i1,i2,i3), chan(ch) {}
   Peer (uint8_t* ptr) : HMID(*ptr,*(ptr+1),*(ptr+2)), chan(*(ptr+4)) {}
+  Peer (uint8_t ch) : chan(ch) {}
   Peer (const Peer& other) : HMID(other) {
     chan = other.chan;
   }
