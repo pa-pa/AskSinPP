@@ -228,7 +228,6 @@ public:
   BuzzerType   buzzer;
 
   void init (const HMID& id) {
-    srand((unsigned int&)id);
     led.init();
     buzzer.init();
     bool ccinitOK = radio.init();
@@ -237,8 +236,8 @@ public:
     sysclock.init();
     // signal start to user
     led.set(ccinitOK ? LedStates::welcome : LedStates::failure);
-    // delay first send by random time
-    radio.setSendTimeout((rand() % 3500)+1000);
+    // delay first send by 'random' time
+    radio.setSendTimeout(id.id2()*20);
   }
 
   void initBattery(uint16_t interval,uint8_t low,uint8_t critical) {
