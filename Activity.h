@@ -319,15 +319,18 @@ public:
 
   template <class Hal>
   void sleepForever (Hal& hal) {
-#ifndef NDEBUG
-      Idle<>::waitSerial();
-#endif
     hal.setIdle();
     while( true ) {
 #if defined(ARDUINO_ARCH_AVR) && ! (defined(ARDUINO_AVR_ATmega32) || defined(__AVR_ATmega644__) || defined(__AVR_ATmega128__))
+  #ifndef NDEBUG
+      Idle<>::waitSerial();
+  #endif
       LowPower.powerDown(SLEEP_FOREVER,ADC_OFF,BOD_OFF);
 #endif
 #if defined ARDUINO_ARCH_STM32 && defined STM32L1xx
+  #ifndef NDEBUG
+    Idle<>::waitSerial();
+  #endif
       //DPRINTLN("shutdown");
       LowPower.shutdown(0);
 #endif
