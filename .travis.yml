@@ -47,6 +47,7 @@ install:
   - git clone https://github.com/ZinggJM/GxEPD2.git $HOME/arduino-ide/libraries/GxEPD2
   - git clone https://github.com/adafruit/Adafruit-GFX-Library.git $HOME/arduino-ide/libraries/Adafruit-GFX-Library
   - git clone https://github.com/adafruit/Adafruit_BusIO.git $HOME/arduino-ide/libraries/Adafruit_BusIO
+  - git clone https://github.com/adafruit/Adafruit_SHT31.git $HOME/arduino-ide/libraries/Adafruit_SHT31
   - git clone https://github.com/olikraus/U8g2_for_Adafruit_GFX.git $HOME/arduino-ide/libraries/U8g2_for_Adafruit_GFX
   - git clone https://github.com/FastLED/FastLED.git $HOME/arduino-ide/libraries/FastLED
   - git clone https://github.com/PaulStoffregen/SoftwareSerial.git $HOME/arduino-ide/libraries/SoftwareSerial
@@ -119,6 +120,15 @@ script:
   - buildSketch HB-SW2-SENS
   - buildSketch HB-UW-Sen-THPL
   - buildSketch HB-LC-Bl1-Velux
+  - export SKETCHPATH=$HOME/Beispiel_AskSinPP/examples/RWE
+  - export BOARD=$BOARD644P
+  - buildSketch HB-LC-Dim1TPBU-FM_ISD2
+  - buildSketch HM-LC-Sw1PBU-FM_ISS2
+  - export BOARD=$BOARD328P
+  - buildSketch HM-LC-Sw1-Pl-DN-R1_PSS
+  - buildSketch HM-PB-2-FM_WSC2
+  - buildSketch HM-RC-8_BRC8
+  - buildSketch HM-SEC-SC_WDS
   - export SKETCHPATH=$HOME/Beispiel_AskSinPP/examples
   - buildSketch HB-LC-Bl1PBU-FM
   - buildSketch HB-LC-SW12-FM
@@ -188,10 +198,10 @@ script:
   - buildSketch HB-SCI-3-FM
 # disable AES support
   - echo "" >$HOME/arduino-ide/hardware/arduino/avr/platform.local.txt
+  - export SKETCHPATH=$HOME/Beispiel_AskSinPP/examples
   - export BOARD=$BOARD168P
   - buildSketch HM-SEC-RHS-ATmega168
   - export BOARD=$BOARD328P
-  - export SKETCHPATH=$HOME/Beispiel_AskSinPP/examples
   - buildSketch HB-OU-MP3-LED
   - export SKETCHPATH=$HOME/SmartHome
 #  - buildSketch HB-UNI-Sensor1
