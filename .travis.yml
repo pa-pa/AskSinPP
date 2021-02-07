@@ -7,6 +7,7 @@ env:
     - BOARD644P="MightyCore:avr:644:pinout=bobuino,variant=modelP,LTO=Os,clock=8MHz_internal"
     - BOARD1284P="MightyCore:avr:1284:pinout=standard,variant=modelP,LTO=Os,clock=8MHz_internal"
     - BOARD328P="arduino:avr:pro:cpu=8MHzatmega328"
+    - BOARD168P="arduino:avr:pro:cpu=8MHzatmega168"
     - BOARD=$BOARD328P
 before_install:
   - wget http://downloads.arduino.cc/arduino-$IDE_VERSION-linux64.tar.xz
@@ -43,8 +44,10 @@ install:
   - git clone https://github.com/xoseperez/hlw8012.git $HOME/arduino-ide/libraries/hlw8012
   - git clone https://github.com/bogde/HX711.git $HOME/arduino-ide/libraries/HX711
   - git clone https://github.com/ZinggJM/GxEPD.git $HOME/arduino-ide/libraries/GxEPD
+  - git clone https://github.com/ZinggJM/GxEPD2.git $HOME/arduino-ide/libraries/GxEPD2
   - git clone https://github.com/adafruit/Adafruit-GFX-Library.git $HOME/arduino-ide/libraries/Adafruit-GFX-Library
   - git clone https://github.com/adafruit/Adafruit_BusIO.git $HOME/arduino-ide/libraries/Adafruit_BusIO
+  - git clone https://github.com/adafruit/Adafruit_SHT31.git $HOME/arduino-ide/libraries/Adafruit_SHT31
   - git clone https://github.com/olikraus/U8g2_for_Adafruit_GFX.git $HOME/arduino-ide/libraries/U8g2_for_Adafruit_GFX
   - git clone https://github.com/FastLED/FastLED.git $HOME/arduino-ide/libraries/FastLED
   - git clone https://github.com/PaulStoffregen/SoftwareSerial.git $HOME/arduino-ide/libraries/SoftwareSerial
@@ -62,9 +65,11 @@ install:
   - git clone https://github.com/jp112sdl/HB-Dis-EP-42BW.git $HOME/Beispiel_AskSinPP/examples/HB-Dis-EP-42BW
   - git clone https://github.com/jp112sdl/HB-OU-MP3-LED.git $HOME/Beispiel_AskSinPP/examples/HB-OU-MP3-LED
   - git clone https://github.com/jp112sdl/HB-RC-12-EP.git  $HOME/Beispiel_AskSinPP/examples/HB-RC-12-EP
+  - git clone https://github.com/jp112sdl/HB-RC-4-Dis-TH.git  $HOME/Beispiel_AskSinPP/examples/HB-RC-4-Dis-TH
   - git clone https://github.com/jp112sdl/HB-OU-MOT-SERVO.git  $HOME/Beispiel_AskSinPP/examples/HB-OU-MOT-SERVO
   - git clone https://github.com/jp112sdl/HB-UNI-Sen-RFID-RC.git $HOME/Beispiel_AskSinPP/examples/HB-UNI-Sen-RFID-RC
   - git clone https://github.com/jp112sdl/HB-UNI-Sen-TEMP-MAX6675.git $HOME/Beispiel_AskSinPP/examples/HB-UNI-Sen-TEMP-MAX6675
+  - git clone https://github.com/jp112sdl/HM-SEC-RHS-ATmega168.git $HOME/Beispiel_AskSinPP/examples/HM-SEC-RHS-ATmega168
 # Sketches from TomMajor
   - git clone https://github.com/TomMajor/SmartHome.git $HOME/SmartHome
 # setup arduino IDE
@@ -115,6 +120,16 @@ script:
   - buildSketch HB-SW2-SENS
   - buildSketch HB-UW-Sen-THPL
   - buildSketch HB-LC-Bl1-Velux
+  - export SKETCHPATH=$HOME/Beispiel_AskSinPP/examples/RWE
+  - export BOARD=$BOARD644P
+  - buildSketch HB-LC-Dim1TPBU-FM_ISD2
+  - buildSketch HM-LC-Sw1PBU-FM_ISS2
+  - buildSketch HB-LC-Bl1PBU-FM_ISR2
+  - export BOARD=$BOARD328P
+  - buildSketch HM-LC-Sw1-Pl-DN-R1_PSS
+  - buildSketch HM-PB-2-FM_WSC2
+  - buildSketch HM-RC-8_BRC8
+  - buildSketch HM-SEC-SC_WDS
   - export SKETCHPATH=$HOME/Beispiel_AskSinPP/examples
   - buildSketch HB-LC-Bl1PBU-FM
   - buildSketch HB-LC-SW12-FM
@@ -177,13 +192,18 @@ script:
   - export BOARD=$BOARD1284P
   - buildSketch HB-Dis-EP-42BW
   - buildSketch HB-RC-12-EP
+  - buildSketch HB-RC-4-Dis-TH
   - export SKETCHPATH=$HOME/SmartHome
   - export BOARD=$BOARD328P
 #  - buildSketch HB-SEN-LJet
   - buildSketch HB-SCI-3-FM
 # disable AES support
   - echo "" >$HOME/arduino-ide/hardware/arduino/avr/platform.local.txt
+  - sed -i "s/pro.menu.cpu.8MHzatmega168.upload.maximum_size=14336/pro.menu.cpu.8MHzatmega168.upload.maximum_size=16384/g" $HOME/arduino-ide/hardware/arduino/avr/boards.txt
   - export SKETCHPATH=$HOME/Beispiel_AskSinPP/examples
+  - export BOARD=$BOARD168P
+  - buildSketch HM-SEC-RHS-ATmega168
+  - export BOARD=$BOARD328P
   - buildSketch HB-OU-MP3-LED
   - export SKETCHPATH=$HOME/SmartHome
 #  - buildSketch HB-UNI-Sensor1
