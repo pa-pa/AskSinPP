@@ -42,6 +42,7 @@ class SerialInfoMsg;
 class DeviceInfoMsg;
 class RemoteEventMsg;
 class SensorEventMsg;
+class SwitchSimMsg;
 class ActionMsg;
 class ActionSetMsg;
 class ActionCommandMsg;
@@ -380,7 +381,8 @@ public:
   const ConfigWriteIndexMsg& configWriteIndex () const { return *(ConfigWriteIndexMsg*)this; }
 
   const RemoteEventMsg& remoteEvent () const { return *(RemoteEventMsg*)this; }
-  const SensorEventMsg& sensorEvent () const { return *(SensorEventMsg*)this; }
+  const SensorEventMsg& sensorEvent() const { return *(SensorEventMsg*)this; }
+  const SwitchSimMsg& switchSim () const { return *(SwitchSimMsg*)this; }
   const ActionMsg& action () const { return *(ActionMsg*)this; }
   const ActionSetMsg& actionSet () const { return *(ActionSetMsg*)this; }
   const ActionCommandMsg& actionCommand () const { return *(ActionCommandMsg*)this; }
@@ -494,6 +496,27 @@ public:
   }
   uint8_t value () const { return *data(); }
 };
+
+class SwitchSimMsg : public Message {
+protected:
+  SwitchSimMsg() {}
+  //       00 01 02 030405 060708 09 10 11 12 13 14
+  // -> 0F 72 A0 3E 4C3CDF 952A73 95 2A 73 40 01 53 - 726356
+  //    3E			Switch - Simulierter Tastendruck
+  //    4C3CDF		From
+  //    952A73		To
+  //    95 2A 73	Zu simulierender Absender
+  //    40			Remote Message soll simuliert werden
+  //    01			Kanal 1
+  //    53			Zähler
+
+public:
+  HMID fromSim() const { return HMID(buffer()[9], buffer()[10], buffer()[11]); }
+  Peer peer() const { return Peer(fromSim(), buffer()[13] & 0x3f); }
+  uint8_t counter() const { return buffer()[14]; }
+  uint8_t msg_type() const { return buffer()[12]; }
+};
+
 
 class ActionMsg : public Message {
 protected:

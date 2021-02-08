@@ -414,6 +414,29 @@ public:
          answer = REPLAY_ACK;
        }
 #ifndef SENSOR_ONLY
+       else if (mtype == AS_MESSAGE_SWITCH_EVENT) {
+         uint8_t msg_type = msg.switchSim().msg_type();
+         RemoteEventMsg pm = msg.remoteEvent();
+
+         pm.length(9);
+         pm.type(msg_type);
+         pm.from(&msg.buffer()[9]);
+         pm.command(msg.buffer()[13]);
+         pm.flags(Message::BCAST);
+         pm.append(msg.buffer() + 13, 2);
+
+         DPRINT("X> "); pm.dump();
+
+         for (uint8_t cdx = 1; cdx <= this->channels(); ++cdx) {
+           ChannelType* c = &channel(cdx);
+           DPRINT("cnl: "); DPRINTLN(cdx);
+           if (c->inhibit() == false && c->has(pm.peer()) == true) {
+             DPRINTLN("we are in");
+             c->process(pm);
+           }
+         }
+         answer = REPLAY_ACK;
+       }
        else if (mtype == AS_MESSAGE_REMOTE_EVENT || mtype == AS_MESSAGE_SENSOR_EVENT) {
          answer = REPLAY_NACK;
          const RemoteEventMsg& pm = msg.remoteEvent();
@@ -457,8 +480,10 @@ public:
        }
      }
      else {
+#ifndef HIDE_IGNORE_MSG
        DPRINT(F("ignore "));
        msg.dump();
+#endif
        return false;
      }
      // send ack/nack
