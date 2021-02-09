@@ -814,18 +814,18 @@ public:
         dimmer.dimmerChannel(j).setLevel(0, 0, 0xffff);
 
         bool powerup = dimmer.dimmerChannel(j).getList1().powerUpAction();
-        Peer xwnID(1);
-        dimmer.getDeviceID(xwnID);
-        DimmerList3 l3 = dimmer.dimmerChannel(j).getList3(xwnID);
-        //DPRINT(F("init cnl ")); DPRINT(j);
+        Peer ownID(1);
+        dimmer.getDeviceID(ownID);
+        DimmerList3 l3 = dimmer.dimmerChannel(j).getList3(ownID);
+        DPRINT(F("init cnl ")); DPRINT(j);
 
         if (powerup == true && l3.valid() == true) {
-          //DPRINTLN(F(", powerup"));
+          DPRINTLN(F(", powerup"));
           typename DimmerList3::PeerList pl = l3.sh();
           //  pl.dump();
           dimmer.dimmerChannel(j).remote(pl, 1);
         } else {
-          //DPRINTLN(F(", set level 0"));
+          DPRINTLN(F(", set level 0"));
         }
       }
     }
