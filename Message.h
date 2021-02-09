@@ -511,10 +511,23 @@ protected:
   //    53			Zähler
 
 public:
-  HMID fromSim() const { return HMID(buffer()[9], buffer()[10], buffer()[11]); }
-  Peer peer() const { return Peer(fromSim(), buffer()[13] & 0x3f); }
-  uint8_t counter() const { return buffer()[14]; }
+  //HMID fromSim() const { return HMID(buffer()[9], buffer()[10], buffer()[11]); }
+  //Peer peer() const { return Peer(fromSim(), buffer()[13] & 0x3f); }
+  //uint8_t counter() const { return buffer()[14]; }
   uint8_t msg_type() const { return buffer()[12]; }
+
+  RemoteEventMsg& toEventMsg() const {
+    RemoteEventMsg& pm = *(RemoteEventMsg*)&pload[10]; // use last 20 byte for simulated message
+    pm.length(9);
+    pm.flags(Message::BCAST);
+    pm.type(msg_type());
+    pm.from((uint8_t*)buffer()+9);
+    pm.to((uint8_t*)buffer() + 6);
+    pm.append((uint8_t*)buffer() + 13, 2);
+    return pm;
+  }
+
+
 };
 
 

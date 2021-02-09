@@ -415,23 +415,13 @@ public:
        }
 #ifndef SENSOR_ONLY
        else if (mtype == AS_MESSAGE_SWITCH_EVENT) {
-         uint8_t msg_type = msg.switchSim().msg_type();
-         RemoteEventMsg pm = msg.remoteEvent();
-
-         pm.length(9);
-         pm.type(msg_type);
-         pm.from(&msg.buffer()[9]);
-         pm.command(msg.buffer()[13]);
-         pm.flags(Message::BCAST);
-         pm.append(msg.buffer() + 13, 2);
-
-         DPRINT("X> "); pm.dump();
+         RemoteEventMsg& pm = msg.switchSim().toEventMsg();
+         //DPRINT("X> "); pm.dump();
 
          for (uint8_t cdx = 1; cdx <= this->channels(); ++cdx) {
            ChannelType* c = &channel(cdx);
-           DPRINT("cnl: "); DPRINTLN(cdx);
+           //DPRINT("cnl: "); DPRINTLN(cdx);
            if (c->inhibit() == false && c->has(pm.peer()) == true) {
-             DPRINTLN("we are in");
              c->process(pm);
            }
          }
