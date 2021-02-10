@@ -116,6 +116,9 @@ namespace as {
       }
     }
 
+    void setFreq(uint8_t m) {
+    }
+
     void set(uint8_t value) {
       uint16_t pwm = 0;
       if (LINEAR) {

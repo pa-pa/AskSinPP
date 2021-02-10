@@ -29,6 +29,7 @@ namespace as {
 #define DREG_TRANSMITTRYMAX     0x14
 #define DREG_CONFBUTTONTIME     0x15
 #define DREG_LOCALRESETDISABLE 0x18
+#define DREG_SPEEDMULTIPLIER   0x1e
 #define DREG_TPARAMS           0x1b
 #define DREG_WAKEUPBEHAVIOUR   0x21
 #define DREG_BUTTON_MODE       0x32  // iButton Mode - Remote or State
@@ -377,6 +378,9 @@ public:
   bool localResetDisable (bool v) const { return this->writeBit(DREG_LOCALRESETDISABLE,0,v); }
   bool localResetDisable () const { return this->readBit(DREG_LOCALRESETDISABLE,0,false); }
 
+  uint8_t speedMultiplier() const { return this->readRegister(DREG_SPEEDMULTIPLIER, 0); }
+  bool speedMultiplier(uint8_t value) const { return this->writeRegister(DREG_SPEEDMULTIPLIER, value); }
+  
   uint8_t backOnTime () const { return this->readRegister(DREG_BACKONTIME,3); }
   bool backOnTime (uint8_t value) const { return this->writeRegister(DREG_BACKONTIME,value); }
 

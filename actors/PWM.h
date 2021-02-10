@@ -37,6 +37,10 @@ public:
     pin = p;
     PINTYPE::setPWM(pin);
   }
+
+  void setFreq(uint8_t m) {
+  }
+
   void set(uint8_t value) {
     uint8_t pwm = 0;
     if(LINEAR) {
@@ -105,6 +109,9 @@ public:
     set(0);
   }
 
+  void setFreq(uint8_t m) {
+  }
+
   void set(uint8_t value) {
     uint16_t duty = 0;
     if ( value == STEPS) {
@@ -136,10 +143,14 @@ public:
 
   void init(uint8_t p) {
     pin = p;
-    analogWriteResolution(16);
-    analogWriteFrequency(1000);
+    PINTYPE::setPWMRes(16);
     PINTYPE::setPWM(pin);
     set(0);
+  }
+  
+  void setFreq(uint8_t m) {
+    DPRINT(F("set freq: ")); DPRINT(m * 200); DPRINTLN(F("Hz"));
+    PINTYPE::setPWMFreq(m * 200);
   }
 
   void set(uint8_t value) {
@@ -157,8 +168,7 @@ public:
       //duty = exp(value/18.0) + 4;
     }
     DDEC(pin);DPRINT(" - ");DDECLN(duty);
-    analogWrite(pin, duty);
-    //pwmWrite(pin, duty);
+    PINTYPE::setPWM(pin, duty);
   }
 };
 #endif
