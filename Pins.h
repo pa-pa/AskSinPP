@@ -26,10 +26,10 @@ public:
   inline static void setPWM      (uint8_t pin) { pinMode(pin,PWM); }
   inline static void setPWM      (uint8_t pin,uint16_t value) { pwmWrite(pin,value); }
 #elif defined (ARDUINO_ARCH_STM32) && defined (STM32L1xx)
-  inline static void setPWM(uint8_t pin) { pinMode(pin, OUTPUT); }
-  inline static void setPWM(uint8_t pin, uint8_t value) { analogWrite(pin, value); }
-  inline static void setPWMFreq(uint16_t freq) { analogWriteFrequency(freq); }
-  inline static void setPWMRes(uint8_t res) { analogWriteResolution(res); }
+  inline static void setPWM      (uint8_t pin) { pinMode(pin, OUTPUT); }
+  inline static void setPWM      (uint8_t pin, uint16_t value) { analogWrite(pin, value); }
+  inline static void setPWMFreq  (uint16_t freq) { analogWriteFrequency(freq); }
+  inline static void setPWMRes   (uint8_t res) { analogWriteResolution(res); }
 #else
   inline static void setPWM      (uint8_t pin) { pinMode(pin,OUTPUT); }
   inline static void setPWM      (uint8_t pin,uint8_t value) { analogWrite(pin,value); }

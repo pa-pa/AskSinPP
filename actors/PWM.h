@@ -68,8 +68,12 @@ class ZC_Control {
 	void init(uint8_t p) {
     outpin = p;
     phaseCut.init(outpin);
-	phaseCut.Start();
+	  phaseCut.Start();
   }
+
+  void setFreq(uint8_t m) {
+  }
+  
   void set(double value){
 		uint8_t pwm = 0;
 		if ( value > 0 ) {
