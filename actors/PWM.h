@@ -126,7 +126,7 @@ public:
 
 #endif
 
-#if defined (ARDUINO_ARCH_STM32) && defined (STM32L1xx)
+#if defined ARDUINO_ARCH_STM32 && defined STM32L1xx
 template<uint8_t STEPS = 200, uint16_t FREQU = 65535, class PINTYPE = ArduinoPins>
 class PWM16 {
   uint8_t pin;
@@ -136,14 +136,10 @@ public:
 
   void init(uint8_t p) {
     pin = p;
-    PINTYPE::setPWMRes(16);
+    analogWriteResolution(16);
+    analogWriteFrequency(1000);
     PINTYPE::setPWM(pin);
     set(0);
-  }
-
-  void setFreq(uint8_t m) {
-    DPRINT(F("set freq: ")); DPRINT(m * 200); DPRINTLN(F("Hz"));
-    PINTYPE::setPWMFreq(m * 200);
   }
 
   void set(uint8_t value) {
@@ -161,7 +157,8 @@ public:
       //duty = exp(value/18.0) + 4;
     }
     DDEC(pin);DPRINT(" - ");DDECLN(duty);
-    PINTYPE::setPWM(pin, duty);
+    analogWrite(pin, duty);
+    //pwmWrite(pin, duty);
   }
 };
 #endif

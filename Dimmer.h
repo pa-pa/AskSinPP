@@ -38,21 +38,6 @@
 
 namespace as {
 
-DEFREGISTER(DimmerReg0, MASTERID_REGS, DREG_CONFBUTTONTIME, DREG_LOCALRESETDISABLE, 
-    DREG_SPEEDMULTIPLIER)
-
-class DimmerList0 : public RegList0<DimmerReg0> {
-public:
-  DimmerList0(uint16_t addr) : RegList0<DimmerReg0>(addr) {}
-
-  void defaults() {
-    clear();
-    confButtonTime(255);
-    localResetDisable(0);
-    speedMultiplier(5);
-  }
-};
-
 DEFREGISTER(DimmerReg1,CREG_AES_ACTIVE,CREG_TRANSMITTRYMAX,CREG_OVERTEMPLEVEL,
     CREG_REDUCETEMPLEVEL,CREG_REDUCELEVEL,CREG_POWERUPACTION,CREG_STATUSINFO,
     CREG_CHARACTERISTIC,CREG_LOGICCOMBINATION)
@@ -673,7 +658,7 @@ public:
   }
 };
 
-template <class HalType,int PeerCount,class List0Type= DimmerList0>
+template <class HalType,int PeerCount,class List0Type=List0>
 class DimmerChannel : public ActorChannel<HalType,DimmerList1,DimmerList3,PeerCount,List0Type,DimmerStateMachine> {
   uint8_t* phys;
 protected:
@@ -693,15 +678,9 @@ public:
       }
     }
   }
-
-  void configChanged() {
-    //this->getList0().dump();
-    //uint8_t m = this->getList0().speedMultiplier();
-    DPRINTLN("DimmerChannel");
-  }
 };
 
-template<class HalType,class ChannelType,int ChannelCount,int VirtualCount,class List0Type= DimmerList0>
+template<class HalType,class ChannelType,int ChannelCount,int VirtualCount,class List0Type=List0>
 class DimmerDevice : public MultiChannelDevice<HalType,ChannelType,ChannelCount,List0Type> {
 public:
   typedef MultiChannelDevice<HalType,ChannelType,ChannelCount,List0Type> DeviceType;
@@ -716,19 +695,10 @@ public:
   DimmerChannelType& dimmerChannel(uint8_t ch) {
     return this->channel(ch);
   }
-
-  uint8_t physicalCount() { return channelCount / virtualCount; }
-
-  void configChanged() {
-    //this->getList0().dump();
-    //uint8_t m = this->getList0().speedMultiplier();
-    DPRINTLN("DimmerDevice");
-  }
-
 };
 
 
-template<class HalType,class DimChannelType,class RmtChannelType,int DimChannelCount,int DimVirtualCount,int RmtChannelCount, class List0Type= DimmerList0>
+template<class HalType,class DimChannelType,class RmtChannelType,int DimChannelCount,int DimVirtualCount,int RmtChannelCount, class List0Type=List0>
 class DimmerAndRemoteDevice : public ChannelDevice<HalType, VirtBaseChannel<HalType, List0Type>, DimChannelCount + RmtChannelCount, List0Type> {
 
 public:
@@ -757,7 +727,6 @@ public:
 	RemoteChannelType& remoteChannel(uint8_t re){
 		return this->rmc[re-1];
 	}
-
 };
 
 template<class HalType,class DimmerType,class PWM>
@@ -835,7 +804,6 @@ public:
     cb.trigger(sysclock);
     return first;
   }
-  
 
   PWM& pwm (uint8_t num) { return pwms[num]; }
 

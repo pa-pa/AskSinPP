@@ -22,14 +22,9 @@ public:
   inline static void setHigh     (uint8_t pin) { digitalWrite(pin,HIGH); }
   inline static void setLow      (uint8_t pin) { digitalWrite(pin,LOW); }
   inline static uint8_t getState (uint8_t pin) { return digitalRead(pin); }
-#if defined (ARDUINO_ARCH_STM32F1)
+#ifdef ARDUINO_ARCH_STM32F1
   inline static void setPWM      (uint8_t pin) { pinMode(pin,PWM); }
   inline static void setPWM      (uint8_t pin,uint16_t value) { pwmWrite(pin,value); }
-#elif defined (ARDUINO_ARCH_STM32) && defined (STM32L1xx)
-  inline static void setPWM      (uint8_t pin) { pinMode(pin, OUTPUT); }
-  inline static void setPWM      (uint8_t pin, uint8_t value) { analogWrite(pin, value); }
-  inline static void setPWMFreq  (uint16_t freq) { analogWriteFrequency(freq); }
-  inline static void setPWMRes   (uint8_t res)   { analogWriteResolution(res); }
 #else
   inline static void setPWM      (uint8_t pin) { pinMode(pin,OUTPUT); }
   inline static void setPWM      (uint8_t pin,uint8_t value) { analogWrite(pin,value); }
