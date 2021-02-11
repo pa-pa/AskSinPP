@@ -38,7 +38,7 @@ public:
     PINTYPE::setPWM(pin);
   }
 
-  void setFreq(uint8_t m) {
+  void param(uint8_t m, uint8_t c) {
   }
 
   void set(uint8_t value) {
@@ -71,7 +71,7 @@ class ZC_Control {
 	  phaseCut.Start();
   }
 
-  void setFreq(uint8_t m) {
+  void param(uint8_t m, uint8_t c) {
   }
   
   void set(double value){
@@ -113,7 +113,7 @@ public:
     set(0);
   }
 
-  void setFreq(uint8_t m) {
+  void param(uint8_t m, uint8_t c) {
   }
 
   void set(uint8_t value) {
@@ -140,7 +140,7 @@ public:
 #if defined ARDUINO_ARCH_STM32 && defined STM32L1xx
 template<uint8_t STEPS = 200, uint16_t FREQU = 65535, class PINTYPE = ArduinoPins>
 class PWM16 {
-  uint8_t pin;
+  uint8_t pin, characteristic;
 public:
   PWM16() : pin(0) {}
   ~PWM16() {}
@@ -152,9 +152,10 @@ public:
     set(0);
   }
   
-  void setFreq(uint8_t m) {
-    DPRINT(F("set freq: ")); DPRINT(m * 200); DPRINTLN(F("Hz"));
+  void param(uint8_t m, uint8_t c) {
+    DPRINT("multiplier: "); DPRINT(m); DPRINT(", characteristic: "); DPRINTLN(c);
     PINTYPE::setPWMFreq(m * 200);
+    characteristic = c;
   }
 
   void set(uint8_t value) {
@@ -163,13 +164,20 @@ public:
       duty = FREQU;
     }
     else if (value > 0) {
-      // https://diarmuid.ie/blog/pwm-exponential-led-fading-on-arduino-or-other-platforms/
-      // duty = pow(2,(value/R)) + 4;
-      // duty = pow(2,(value/20.9)+6.5);
-      // duty = pow(1.37,(value/15.0)+22.0)-500;
-      duty = pow(1.28, (value / 13.0) + 29.65) - 1300;
-      // http://harald.studiokubota.com/wordpress/index.php/2010/09/05/linear-led-fading/index.html
-      //duty = exp(value/18.0) + 4;
+
+      if (characteristic == 0) {
+        duty = map(value, 0, STEPS, 0, 65534);
+
+      }
+      else {
+        // https://diarmuid.ie/blog/pwm-exponential-led-fading-on-arduino-or-other-platforms/
+        // duty = pow(2,(value/R)) + 4;
+        // duty = pow(2,(value/20.9)+6.5);
+        // duty = pow(1.37,(value/15.0)+22.0)-500;
+        duty = pow(1.28, (value / 13.0) + 29.65) - 1300;
+        // http://harald.studiokubota.com/wordpress/index.php/2010/09/05/linear-led-fading/index.html
+        //duty = exp(value/18.0) + 4;
+      }
     }
     DDEC(pin);DPRINT(" - ");DDECLN(duty);
     PINTYPE::setPWM(pin, duty);

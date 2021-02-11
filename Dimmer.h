@@ -38,6 +38,14 @@
 
 namespace as {
 
+bool changeparam = false;
+const void listChanged(bool c) { changeparam = c; }
+const bool listChanged() {
+  uint8_t ret = changeparam;
+  changeparam = false;
+  return ret;
+}
+
 DEFREGISTER(DimmerReg0, MASTERID_REGS, DREG_CONFBUTTONTIME, DREG_LOCALRESETDISABLE,
   DREG_SPEEDMULTIPLIER)
 
@@ -695,13 +703,14 @@ public:
   }
 
   void configChanged() {
-    DPRINTLN(F("DimmerChannel"));
+    listChanged(true);
   }
 };
 
 template<class HalType,class ChannelType,int ChannelCount,int VirtualCount,class List0Type= DimmerList0>
 class DimmerDevice : public MultiChannelDevice<HalType,ChannelType,ChannelCount,List0Type> {
 public:
+//  bool configHasChanged = false;
   typedef MultiChannelDevice<HalType,ChannelType,ChannelCount,List0Type> DeviceType;
 
   DimmerDevice (const DeviceInfo& info,uint16_t addr) : DeviceType(info,addr) {}
@@ -716,9 +725,8 @@ public:
   }
 
   void configChanged() {
-    DPRINTLN(F("DimmerDevice"));
+    listChanged(true);
   }
-
 };
 
 
@@ -802,11 +810,9 @@ public:
     }
     va_list argp;
     va_start(argp, hal);
-    uint8_t m = dimmer.getList0().speedMultiplier();
     for( uint8_t i=0; i<physicalCount(); ++i ) {
       uint8_t p =  va_arg(argp, int);
       pwms[i].init(p);
-      pwms[i].setFreq(m);
       physical[i] = 0;
       factor[i] = 200; // 100%
     }
@@ -821,10 +827,8 @@ public:
     if( first == true ) {
       firstinit();
     }
-    uint8_t m = dimmer.getList0().speedMultiplier();
     for( uint8_t i=0; i<physicalCount(); ++i ) {
       pwms[i].init(pins[i]);
-      pwms[i].setFreq(m);
       physical[i] = 0;
       factor[i] = 200; // 100%
     }
@@ -845,27 +849,33 @@ public:
         Peer ownID(1);
         dimmer.getDeviceID(ownID);
         DimmerList3 l3 = dimmer.dimmerChannel(j).getList3(ownID);
-        DPRINT(F("init cnl ")); DPRINT(j);
+        //DPRINT(F("init cnl ")); DPRINT(j);
 
         if (powerup == true && l3.valid() == true) {
-          DPRINTLN(F(", powerup"));
+          //DPRINTLN(F(", powerup"));
           typename DimmerList3::PeerList pl = l3.sh();
           //  pl.dump();
           dimmer.dimmerChannel(j).remote(pl, 1);
         } else {
-          DPRINTLN(F(", set level 0"));
+          //DPRINTLN(F(", set level 0"));
         }
       }
     }
   }
 
   virtual void updatePhysical () {
+    bool cc = listChanged();
     // DPRINT("Pin ");DHEX(pin);DPRINT("  Val ");DHEXLN(calcPwm());
     for( uint8_t i=0; i<physicalCount(); ++i ) {
       uint8_t value = (uint8_t)combineChannels(i+1);
       value = (((uint16_t)factor[i] * (uint16_t)value) / 200);
-      if( physical[i] != value ) {
-        // DPRINT("Ch: ");DDEC(i+1);DPRINT(" Phy: ");DDECLN(value);
+      if (cc == true) {
+        uint8_t speedMultiplier = dimmer.getList0().speedMultiplier();
+        uint8_t characteristic = dimmer.dimmerChannel(i+1).getList1().characteristic();
+        pwms[i].param(speedMultiplier, characteristic);
+      }
+      if (physical[i] != value) {
+        //DPRINT("Ch: "); DDEC(i + 1); DPRINT(" sm: "); DPRINT(dimmer.sm); DPRINT(" Phy: "); DDECLN(value);
         physical[i]  = value;
         pwms[i].set(physical[i]);
       }
@@ -1002,6 +1012,8 @@ public:
       }
     }
   }
+
+
 };
 
 

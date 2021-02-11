@@ -116,7 +116,7 @@ namespace as {
       }
     }
 
-    void setFreq(uint8_t m) {
+    void param(uint8_t m, uint8_t c) {
     }
 
     void set(uint8_t value) {
