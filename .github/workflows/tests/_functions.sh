@@ -37,10 +37,11 @@ function runTests {
       $FILE)
     if [ $? -ne 0 ]; then
       HAS_ERROR=1
+      echo "::error ::error ${FILE}: $OUT"
     else
       BYTES=$(( $BYTES + $(echo $OUT | grep -oP '(?<=Sketch uses )([0-9]+)') ))
+      echo "$OUT"
     fi
-    echo "$OUT"
     echo
   done
   if $AES ; then

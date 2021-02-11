@@ -3,6 +3,7 @@
 // 2020-01-23 papa Creative Commons - http://creativecommons.org/licenses/by-nc-sa/3.0/de/
 //
 // based on https://github.com/kc-GitHub/Wettersensor
+// ci-test=yes board=328p aes=no
 //- -----------------------------------------------------------------------------------------------------------------------
 
 // define this to read the device id, serial and device type from bootloader section
