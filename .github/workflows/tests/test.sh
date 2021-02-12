@@ -30,7 +30,15 @@ case "$BOARD" in
     ;;
   644p)
     CORE=MightyCore:avr
-    FQBN=MightyCore:avr:644:pinout=bobuino,variant=modelP,LTO=Os,clock=8MHz_internal
+    FQBN=MightyCore:avr:644:pinout=bobuino,variant=modelP,LTO=Os_flto,clock=8MHz_internal
+    ;;
+  1284pBOB)
+    CORE=MightyCore:avr
+    FQBN=MightyCore:avr:1284:pinout=bobuino,variant=modelP,LTO=Os_flto,clock=8MHz_internal
+    ;;
+  1284pSTD)
+    CORE=MightyCore:avr
+    FQBN=MightyCore:avr:1284:pinout=standard,variant=modelP,LTO=Os_flto,clock=8MHz_internal
     ;;
   bluepill)
     CORE=stm32duino:STM32F1
