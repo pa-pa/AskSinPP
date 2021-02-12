@@ -68,21 +68,13 @@ fi
 # Run tests without AES
 RES1=0
 if [ ${#SKETCHES[@]} -gt 0 ]; then
-  runTests "${FQBN}" false "${SKETCHES[@]}"
+  runTests "${FQBN}" "${SKETCHES[@]}"
   RES1=$?
   echo "::warning ::warning Compiled ${#SKETCHES[@]} Sketches for ${BOARD}. Average space consumption ${AVG_BYTES} Bytes"
 fi
 
-# Run tests with AES
-RES2=0
-if [ ${#SKETCHES_AES[@]} -gt 0 ]; then
-  runTests "${FQBN}" true "${SKETCHES_AES[@]}"
-  RES2=$?
-  echo "::warning ::warning Compiled ${#SKETCHES_AES[@]} Sketches with AES supprt for ${BOARD}. Average space consumption ${AVG_BYTES_AES} Bytes"
-fi
-
 # Return error
-if [ $RES1 -gt 0 ] || [ $RES2 -gt 0 ]; then
+if [ $RES1 -gt 0 ] ; then
   >&2 echo "Errors occurred!"
   exit 1
 fi
