@@ -12,6 +12,7 @@
 #include "PhaseCut.h"
 namespace as {
 
+#ifndef SENSOR_ONLY
 #if defined(ARDUINO_ARCH_AVR) && ! (defined(ARDUINO_AVR_ATmega32) ||defined(__AVR_ATmega128__))
 	PhaseCut phaseCut;
 
@@ -128,5 +129,6 @@ namespace as {
 			SetTimer();
 			_valid_zero_crossing = true;
 	}
+#endif
 #endif
 }

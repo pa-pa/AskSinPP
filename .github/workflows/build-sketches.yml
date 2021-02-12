@@ -1,0 +1,38 @@
+on:
+  - push
+  - pull_request
+
+defaults:
+  run:
+    working-directory: .github/workflows/tests
+
+jobs:
+  build-sketches:
+    runs-on: ubuntu-20.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - board: 168p
+          - board: 328p
+          - board: 644p
+          - board: 1284pBOB
+          - board: 1284pSTD
+          - board: bluepill
+          - board: maplemini
+
+    steps:
+      # GIT Checkout
+      - uses: actions/checkout@v2
+
+      - name: Setup Arduino CLI
+        uses: arduino/setup-arduino-cli@v1.1.1
+
+      - name: Install Libs and Cores
+        run: ./install-deps.sh
+
+      - name: Download sketches
+        run: ./download-sketches.sh
+
+      - name: Compile Sketches
+        run: ./test.sh ${{ matrix.board }}

@@ -1,0 +1,19 @@
+board_manager:
+  additional_urls:
+    - http://dan.drown.org/stm32duino/package_STM32duino_index.json
+    - https://mcudude.github.io/MightyCore/package_MCUdude_MightyCore_index.json
+directories:
+  data: .arduino15
+  downloads: .arduino15/staging
+  user: Arduino
+library:
+  enable_unsafe_install: true
+logging:
+  file: ""
+  format: text
+  level: warn
+metrics:
+  addr: :9090
+  enabled: false
+sketch:
+  always_export_binaries: false

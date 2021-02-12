@@ -1,5 +1,5 @@
 
-# AskSin++  [![Build Status](https://travis-ci.com/pa-pa/AskSinPP.svg?branch=master)](https://travis-ci.com/pa-pa/AskSinPP)
+# AskSin++  ![.github/workflows/build-sketches.yml](https://github.com/pa-pa/AskSinPP/workflows/.github/workflows/build-sketches.yml/badge.svg)
 
 C++ implementation of the AskSin protocol
 
