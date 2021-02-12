@@ -6,7 +6,6 @@ uname -a
 SKETCH_PATHES=(
   $BASEDIR/examples
   sketches
-  $BASEDIR/Sketch
 )
 
 # First argument specifies the board
@@ -28,6 +27,7 @@ case "$BOARD" in
     # arduino:avr is the default core and gets always installed
     CORE=""
     FQBN=arduino:avr:pro:cpu=8MHzatmega168
+    BUILD_PROPERTY="upload.maximum_size=16384"
     ;;
   644p)
     CORE=MightyCore:avr

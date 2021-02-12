@@ -11,6 +11,7 @@ AES_FLAGS="-DUSE_AES -DHM_DEF_KEY=0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0
 #   - boolean: compile with AES
 #   - ...Sketches
 # globals:
+#   - BUILD_PROPERTY
 #   - AVG_BYTES
 #   - AVG_BYTES_AES
 ####################################
@@ -33,7 +34,8 @@ function runTests {
       --clean \
       --quiet \
       -b "${BOARD}" \
-      --build-property "compiler.cpp.extra_flags=${FLAGS}" \
+      --build-property="${BUILD_PROPERTY}" \
+      --build-property="compiler.cpp.extra_flags=${FLAGS}" \
       $FILE)
     if [ $? -ne 0 ]; then
       HAS_ERROR=1
