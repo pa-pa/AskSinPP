@@ -30,6 +30,7 @@ GIT_LIBS=(
   "https://github.com/DFRobot/DFRobotDFPlayerMini.git"
   "https://github.com/miguelbalboa/rfid.git"
   "https://github.com/jayjayuk/Si7021-Humidity-And-Temperature-Sensor-Library"
+  "https://github.com/adafruit/Adafruit-ST7735-Library"
 )
 
 # Install Libs
