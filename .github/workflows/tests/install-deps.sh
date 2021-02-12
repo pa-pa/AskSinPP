@@ -31,6 +31,7 @@ GIT_LIBS=(
   "https://github.com/miguelbalboa/rfid.git"
   "https://github.com/jayjayuk/Si7021-Humidity-And-Temperature-Sensor-Library"
   "https://github.com/adafruit/Adafruit-ST7735-Library"
+  "https://github.com/milesburton/Arduino-Temperature-Control-Library"
 )
 
 # Install Libs
