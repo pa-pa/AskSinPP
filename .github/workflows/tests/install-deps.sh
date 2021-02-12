@@ -29,6 +29,7 @@ GIT_LIBS=(
   "https://github.com/PaulStoffregen/SoftwareSerial.git"
   "https://github.com/DFRobot/DFRobotDFPlayerMini.git"
   "https://github.com/miguelbalboa/rfid.git"
+  "https://github.com/jayjayuk/Si7021-Humidity-And-Temperature-Sensor-Library"
 )
 
 # Install Libs
