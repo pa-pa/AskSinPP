@@ -26,6 +26,9 @@ GIT_REPOS=(
 
   # TomMajor
   "https://github.com/TomMajor/SmartHome.git"
+  
+  # Papa
+  "https://github.com/pa-pa/HB-Sec-RHS-3.git"
 )
 
 # Clone / update Repos in parallel
