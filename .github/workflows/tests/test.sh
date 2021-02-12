@@ -23,6 +23,11 @@ case "$BOARD" in
     CORE=""
     FQBN=arduino:avr:pro:cpu=8MHzatmega328
     ;;
+  168p)
+    # arduino:avr is the default core and gets always installed
+    CORE=""
+    FQBN=arduino:avr:pro:cpu=8MHzatmega168
+    ;;
   644p)
     CORE=MightyCore:avr
     FQBN=MightyCore:avr:644:pinout=bobuino,variant=modelP,LTO=Os,clock=8MHz_internal
