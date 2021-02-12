@@ -6,6 +6,7 @@ uname -a
 SKETCH_PATHES=(
   $BASEDIR/examples
   sketches
+  Sketch
 )
 
 # First argument specifies the board
