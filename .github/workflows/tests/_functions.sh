@@ -8,32 +8,34 @@ AES_FLAGS="-DUSE_AES -DHM_DEF_KEY=0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0
 # exec test-runners
 # params:
 #   - Board FQDN
-#   - boolean: compile with AES
 #   - ...Sketches
 # globals:
+#   - BUILD_PROPERTY
 #   - AVG_BYTES
 #   - AVG_BYTES_AES
 ####################################
 function runTests {
   [ -z "AVG_BYTES" ] && AVG_BYTES=0
-  [ -z "AVG_BYTES_AES" ] && AVG_BYTES_AES=0
   local BOARD=$1
-  shift
-  local AES=${1:-false}
   shift
   local SKETCHES=("$@")
   local HAS_ERROR=0
-  $AES && local FLAGS="${AES_FLAGS}"
-  local FILE
   local OUT
   local BYTES=0
-  for FILE in "${SKETCHES[@]}"; do
-    echo "Compiling $(basename $FILE)"
+  local SKETCH
+  for SKETCH in "${SKETCHES[@]}"; do
+    local FILE=$(echo $SKETCH | cut -d\; -f1)
+    local LINE=$(echo $SKETCH | cut -d\; -f2)
+    local AES=$(echo $LINE | grep -qF 'aes=yes' && echo true || echo false)
+    $AES && local USE_AES_FLAGS="${AES_FLAGS}" || local USE_AES_FLAGS=""
+    local SKETCH_FLAGS="$(echo $LINE | grep -oP '(?<=flags=")([^"]+)')"
+    echo "Compiling $(basename $FILE)    $($AES && echo "aes=yes ")${SKETCH_FLAGS}"
     OUT=$(arduino-cli compile \
       --clean \
       --quiet \
       -b "${BOARD}" \
-      --build-property "compiler.cpp.extra_flags=${FLAGS}" \
+      --build-property="${BUILD_PROPERTY}" \
+      --build-property="compiler.cpp.extra_flags=${USE_AES_FLAGS} $SKETCH_FLAGS" \
       $FILE)
     if [ $? -ne 0 ]; then
       HAS_ERROR=1
@@ -44,11 +46,7 @@ function runTests {
     fi
     echo
   done
-  if $AES ; then
-    AVG_BYTES_AES=$(( $BYTES / ${#SKETCHES[@]} ))
-  else
-    AVG_BYTES=$(( $BYTES / ${#SKETCHES[@]} ))
-  fi
+  AVG_BYTES=$(( $BYTES / ${#SKETCHES[@]} ))
   return $HAS_ERROR
 }
 
@@ -60,12 +58,10 @@ function runTests {
 #   - board name
 # globals:
 #   - SKETCHES
-#   - SKETCHES_AES
 #   - SKETCH_PATHES
 ####################################
 function findSketches {
   SKETCHES=()
-  SKETCHES_AES=()
   local BOARD=$1
   local DEFAULT_IFS=$IFS
   local FILE
@@ -74,8 +70,7 @@ function findSketches {
   for FILE in $(find "${SKETCH_PATHES[@]}" -type f -name *.ino); do
     LINE=$(grep -E "^// ci-test=yes.*board=${BOARD}" "${FILE}")
     [ $? -gt 0 ] && continue
-    AES=$(echo $LINE | grep -qF 'aes=yes' && echo true || echo false)
-    $AES && SKETCHES_AES+=($FILE) || SKETCHES+=($FILE)
+    SKETCHES+=("${FILE};${LINE}")
   done
   IFS=$DEFAULT_IFS
 }
