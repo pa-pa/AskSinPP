@@ -27,8 +27,8 @@ function runTests {
     local FILE=$(echo $SKETCH | cut -d\; -f1)
     local LINE=$(echo $SKETCH | cut -d\; -f2)
     local AES=$(echo $LINE | grep -qF 'aes=yes' && echo true || echo false)
-    $AES && local USE_AES_FLAGS="${AES_FLAGS}"
-    local SKETCH_FLAGS=$(echo $LINE | grep -oP '(?<=flags=")([^"]+)')
+    $AES && local USE_AES_FLAGS="${AES_FLAGS}" || local USE_AES_FLAGS=""
+    local SKETCH_FLAGS="$(echo $LINE | grep -oP '(?<=flags=")([^"]+)')"
     echo "Compiling $(basename $FILE)    $($AES && echo "aes=yes ")${SKETCH_FLAGS}"
     OUT=$(arduino-cli compile \
       --clean \
