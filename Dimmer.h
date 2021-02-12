@@ -38,13 +38,6 @@
 
 namespace as {
 
-bool changeparam = false;
-const void listChanged(bool c) { changeparam = c; }
-const bool listChanged() {
-  uint8_t ret = changeparam;
-  changeparam = false;
-  return ret;
-}
 
 DEFREGISTER(DimmerReg0, MASTERID_REGS, DREG_CONFBUTTONTIME, DREG_LOCALRESETDISABLE,
   DREG_SPEEDMULTIPLIER)
@@ -702,9 +695,6 @@ public:
     }
   }
 
-  void configChanged() {
-    listChanged(true);
-  }
 };
 
 template<class HalType,class ChannelType,int ChannelCount,int VirtualCount,class List0Type= DimmerList0>
@@ -724,9 +714,6 @@ public:
     return this->channel(ch);
   }
 
-  void configChanged() {
-    listChanged(true);
-  }
 };
 
 
@@ -864,7 +851,7 @@ public:
   }
 
   virtual void updatePhysical () {
-    bool cc = listChanged();
+    bool cc = dimmer.hasConfigChanged();
     // DPRINT("Pin ");DHEX(pin);DPRINT("  Val ");DHEXLN(calcPwm());
     for( uint8_t i=0; i<physicalCount(); ++i ) {
       uint8_t value = (uint8_t)combineChannels(i+1);

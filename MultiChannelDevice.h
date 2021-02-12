@@ -130,7 +130,7 @@ public:
 
   void initDone () {
     // trigger initial config changed - to allow scan/caching of list data
-    cfgChannel = true;
+    this->hasConfigChanged(true);
     this->configChanged();
     for( uint8_t cdx=1; cdx<=channels(); ++cdx ) {
       channel(cdx).configChanged();
@@ -263,7 +263,7 @@ public:
              }
            }
            if( success == true ) {
-             cfgChannel=true;
+             this->hasConfigChanged(true);
              ch->configChanged();
              storage().store();
              answer = REPLAY_ACK;
@@ -286,7 +286,7 @@ public:
              }
            }
            if( success == true ) {
-             cfgChannel=true;
+             this->hasConfigChanged(true);
              ch->configChanged();
              storage().store();
              answer = REPLAY_ACK;
@@ -333,7 +333,7 @@ public:
          }
          // CONFIG_END
          else if( msubc == AS_CONFIG_END ) {
-           cfgChannel=true;
+           this->hasConfigChanged(true);
            if( cfgList.address() == list0.address() ) {
              this->led().set(LedStates::nothing);
              this->configChanged();

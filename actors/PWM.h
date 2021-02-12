@@ -15,6 +15,8 @@
 
 namespace as {
 
+enum DimCurve { linear, quadratic };
+
 #if ARDUINO_ARCH_AVR
 // we use this table for the dimmer levels
 static const uint8_t pwmtable[32] PROGMEM = {
@@ -28,9 +30,9 @@ static const uint8_t zctable[45] PROGMEM = {
 };
 template<uint8_t STEPS=200, bool LINEAR=false, bool INVERSE=false,class PINTYPE=ArduinoPins>
 class PWM8 {
-  uint8_t  pin;
+  uint8_t pin, dimCurve;
 public:
-  PWM8 () : pin(0) {}
+  PWM8 () : pin(0), dimCurve((LINEAR)?linear:quadratic) {}
   ~PWM8 () {}
 
   void init(uint8_t p) {
@@ -39,11 +41,12 @@ public:
   }
 
   void param(uint8_t m, uint8_t c) {
+    dimCurve = c;
   }
 
   void set(uint8_t value) {
     uint8_t pwm = 0;
-    if(LINEAR) {
+    if(dimCurve == linear) {
       if(INVERSE) {
         pwm = map(value, 0, STEPS, 255, 0); // https://www.arduino.cc/reference/en/language/functions/math/map/
       } else {
@@ -138,9 +141,9 @@ public:
 #endif
 
 #if defined ARDUINO_ARCH_STM32 && defined STM32L1xx
-template<uint8_t STEPS = 200, uint16_t FREQU = 65535, class PINTYPE = ArduinoPins>
+template<uint8_t STEPS = 200, class PINTYPE = ArduinoPins>
 class PWM16 {
-  uint8_t pin, characteristic;
+  uint8_t pin, dimCurve;
 public:
   PWM16() : pin(0) {}
   ~PWM16() {}
@@ -153,35 +156,30 @@ public:
   }
   
   void param(uint8_t m, uint8_t c) {
-    DPRINT("multiplier: "); DPRINT(m); DPRINT(", characteristic: "); DPRINTLN(c);
+    //DPRINT("multiplier: "); DPRINT(m); DPRINT(", dimCurve: "); DPRINTLN(c);
     PINTYPE::setPWMFreq(m * 200);
-    characteristic = c;
+    dimCurve = c;
   }
 
   void set(uint8_t value) {
     uint16_t duty = 0;
-    if (value == STEPS) {
-      duty = FREQU;
+
+    if (dimCurve == linear) {
+      duty = map(value, 0, STEPS, 0, 65534);
     }
-    else if (value > 0) {
-
-      if (characteristic == 0) {
-        duty = map(value, 0, STEPS, 0, 65534);
-
-      }
-      else {
-        // https://diarmuid.ie/blog/pwm-exponential-led-fading-on-arduino-or-other-platforms/
-        // duty = pow(2,(value/R)) + 4;
-        // duty = pow(2,(value/20.9)+6.5);
-        // duty = pow(1.37,(value/15.0)+22.0)-500;
-        duty = pow(1.28, (value / 13.0) + 29.65) - 1300;
-        // http://harald.studiokubota.com/wordpress/index.php/2010/09/05/linear-led-fading/index.html
-        //duty = exp(value/18.0) + 4;
-      }
+    else {
+      // https://diarmuid.ie/blog/pwm-exponential-led-fading-on-arduino-or-other-platforms/
+      // duty = pow(2,(value/R)) + 4;
+      // duty = pow(2,(value/20.9)+6.5);
+      // duty = pow(1.37,(value/15.0)+22.0)-500;
+      duty = pow(1.28, (value / 13.0) + 29.65) - 1300;
+      // http://harald.studiokubota.com/wordpress/index.php/2010/09/05/linear-led-fading/index.html
+      //duty = exp(value/18.0) + 4;
     }
     DDEC(pin);DPRINT(" - ");DDECLN(duty);
     PINTYPE::setPWM(pin, duty);
   }
+
 };
 #endif
 

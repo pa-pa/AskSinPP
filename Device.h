@@ -104,8 +104,8 @@ protected:
   KeyStore    kstore;
 
   const DeviceInfo& info;
-  bool         cfgChanged:1;
-  uint8_t      numChannels:7;
+  bool         cfgChanged;  // :1; take ~60byte more flash
+  uint8_t      numChannels; // :7;
 
 public:
   Device (const DeviceInfo& i,uint16_t addr,List0Type& l,uint8_t ch) : hal(0), list0(l), msgcount(0), lastmsg(0), kstore(addr), info(i), cfgChanged(false), numChannels(ch) {
@@ -129,6 +129,10 @@ public:
     bool value = cfgChanged;
     cfgChanged = false;
     return value;
+  }
+
+  void hasConfigChanged(bool c) {
+    cfgChanged = c;
   }
 
   void channels (uint8_t num) {
