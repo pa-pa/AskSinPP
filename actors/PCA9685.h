@@ -116,6 +116,9 @@ namespace as {
       }
     }
 
+    void param(uint8_t m, uint8_t c) {
+    }
+
     void set(uint8_t value) {
       uint16_t pwm = 0;
       if (LINEAR) {

@@ -38,9 +38,25 @@
 
 namespace as {
 
+
+DEFREGISTER(DimmerReg0, MASTERID_REGS, DREG_CONFBUTTONTIME, DREG_LOCALRESETDISABLE,
+  DREG_SPEEDMULTIPLIER)
+
+class DimmerList0 : public RegList0<DimmerReg0> {
+public:
+  DimmerList0(uint16_t addr) : RegList0<DimmerReg0>(addr) {}
+
+  void defaults() {
+    clear();
+    confButtonTime(255);
+    localResetDisable(0);
+    speedMultiplier(5);
+  }
+}; 
+  
 DEFREGISTER(DimmerReg1,CREG_AES_ACTIVE,CREG_TRANSMITTRYMAX,CREG_OVERTEMPLEVEL,
-    CREG_REDUCETEMPLEVEL,CREG_REDUCELEVEL,CREG_POWERUPACTION,CREG_STATUSINFO,
-    CREG_CHARACTERISTIC,CREG_LOGICCOMBINATION)
+  CREG_REDUCETEMPLEVEL,CREG_REDUCELEVEL,CREG_POWERUPACTION,CREG_STATUSINFO,
+  CREG_CHARACTERISTIC,CREG_LOGICCOMBINATION)
 
 class DimmerList1 : public RegList1<DimmerReg1> {
 public:
@@ -658,7 +674,7 @@ public:
   }
 };
 
-template <class HalType,int PeerCount,class List0Type=List0>
+template <class HalType,int PeerCount,class List0Type= DimmerList0>
 class DimmerChannel : public ActorChannel<HalType,DimmerList1,DimmerList3,PeerCount,List0Type,DimmerStateMachine> {
   uint8_t* phys;
 protected:
@@ -678,11 +694,13 @@ public:
       }
     }
   }
+
 };
 
-template<class HalType,class ChannelType,int ChannelCount,int VirtualCount,class List0Type=List0>
+template<class HalType,class ChannelType,int ChannelCount,int VirtualCount,class List0Type= DimmerList0>
 class DimmerDevice : public MultiChannelDevice<HalType,ChannelType,ChannelCount,List0Type> {
 public:
+//  bool configHasChanged = false;
   typedef MultiChannelDevice<HalType,ChannelType,ChannelCount,List0Type> DeviceType;
 
   DimmerDevice (const DeviceInfo& info,uint16_t addr) : DeviceType(info,addr) {}
@@ -695,10 +713,11 @@ public:
   DimmerChannelType& dimmerChannel(uint8_t ch) {
     return this->channel(ch);
   }
+
 };
 
 
-template<class HalType,class DimChannelType,class RmtChannelType,int DimChannelCount,int DimVirtualCount,int RmtChannelCount, class List0Type=List0>
+template<class HalType,class DimChannelType,class RmtChannelType,int DimChannelCount,int DimVirtualCount,int RmtChannelCount, class List0Type= DimmerList0>
 class DimmerAndRemoteDevice : public ChannelDevice<HalType, VirtBaseChannel<HalType, List0Type>, DimChannelCount + RmtChannelCount, List0Type> {
 
 public:
@@ -817,27 +836,33 @@ public:
         Peer ownID(1);
         dimmer.getDeviceID(ownID);
         DimmerList3 l3 = dimmer.dimmerChannel(j).getList3(ownID);
-        DPRINT(F("init cnl ")); DPRINT(j);
+        //DPRINT(F("init cnl ")); DPRINT(j);
 
         if (powerup == true && l3.valid() == true) {
-          DPRINTLN(F(", powerup"));
+          //DPRINTLN(F(", powerup"));
           typename DimmerList3::PeerList pl = l3.sh();
           //  pl.dump();
           dimmer.dimmerChannel(j).remote(pl, 1);
         } else {
-          DPRINTLN(F(", set level 0"));
+          //DPRINTLN(F(", set level 0"));
         }
       }
     }
   }
 
   virtual void updatePhysical () {
+    bool cc = dimmer.hasConfigChanged();
     // DPRINT("Pin ");DHEX(pin);DPRINT("  Val ");DHEXLN(calcPwm());
     for( uint8_t i=0; i<physicalCount(); ++i ) {
       uint8_t value = (uint8_t)combineChannels(i+1);
       value = (((uint16_t)factor[i] * (uint16_t)value) / 200);
-      if( physical[i] != value ) {
-        // DPRINT("Ch: ");DDEC(i+1);DPRINT(" Phy: ");DDECLN(value);
+      if (cc == true) {
+        uint8_t speedMultiplier = dimmer.getList0().speedMultiplier();
+        uint8_t characteristic = dimmer.dimmerChannel(i+1).getList1().characteristic();
+        pwms[i].param(speedMultiplier, characteristic);
+      }
+      if (physical[i] != value) {
+        //DPRINT("Ch: "); DDEC(i + 1); DPRINT(" sm: "); DPRINT(dimmer.sm); DPRINT(" Phy: "); DDECLN(value);
         physical[i]  = value;
         pwms[i].set(physical[i]);
       }
@@ -974,6 +999,8 @@ public:
       }
     }
   }
+
+
 };
 
 

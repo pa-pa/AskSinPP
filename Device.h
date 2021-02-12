@@ -104,10 +104,11 @@ protected:
   KeyStore    kstore;
 
   const DeviceInfo& info;
-  uint8_t      numChannels;
+  bool         cfgChanged;  // :1; take ~60byte more flash
+  uint8_t      numChannels; // :7;
 
 public:
-  Device (const DeviceInfo& i,uint16_t addr,List0Type& l,uint8_t ch) : hal(0), list0(l), msgcount(0), lastmsg(0), kstore(addr), info(i), numChannels(ch) {
+  Device (const DeviceInfo& i,uint16_t addr,List0Type& l,uint8_t ch) : hal(0), list0(l), msgcount(0), lastmsg(0), kstore(addr), info(i), cfgChanged(false), numChannels(ch) {
 #ifdef USE_HW_SERIAL
     device_id[0]=0x00;
 #endif
@@ -123,6 +124,16 @@ public:
   Activity& activity () { return hal->activity; }
 
   Message& message () { return msg; }
+
+  bool hasConfigChanged () {
+    bool value = cfgChanged;
+    cfgChanged = false;
+    return value;
+  }
+
+  void hasConfigChanged(bool c) {
+    cfgChanged = c;
+  }
 
   void channels (uint8_t num) {
     numChannels = num;
