@@ -32,4 +32,5 @@ GIT_REPOS=(
 )
 
 # Clone / update Repos in parallel
-downloadGitRepos $GIT_REPOS
+# downloadGitRepos $GIT_REPOS
+downloadGitRepos "${GIT_REPOS[@]}"
