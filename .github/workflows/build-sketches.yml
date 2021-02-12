@@ -13,8 +13,11 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - board: 168p
           - board: 328p
           - board: 644p
+          - board: 1284pBOB
+          - board: 1284pSTD
           - board: bluepill
           - board: maplemini
 
