@@ -116,8 +116,7 @@ public:
     set(0);
   }
 
-  void param(uint8_t m, uint8_t c) {
-  }
+  void param(__attribute__((unused)) uint8_t m,__attribute__((unused)) uint8_t c) {}
 
   void set(uint8_t value) {
     uint16_t duty = 0;

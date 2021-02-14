@@ -382,7 +382,6 @@ public:
 
   const RemoteEventMsg& remoteEvent () const { return *(RemoteEventMsg*)this; }
   const SensorEventMsg& sensorEvent() const { return *(SensorEventMsg*)this; }
-  const SwitchSimMsg& switchSim () const { return *(SwitchSimMsg*)this; }
   const ActionMsg& action () const { return *(ActionMsg*)this; }
   const ActionSetMsg& actionSet () const { return *(ActionSetMsg*)this; }
   const ActionCommandMsg& actionCommand () const { return *(ActionCommandMsg*)this; }
@@ -396,6 +395,7 @@ public:
   AesChallengeMsg& aesChallenge () { return *(AesChallengeMsg*)this; }
   AesResponseMsg& aesResponse () { return *(AesResponseMsg*)this; }
   AesExchangeMsg& aesExchange () { return *(AesExchangeMsg*)this; }
+  SwitchSimMsg& switchSim () { return *(SwitchSimMsg*)this; }
 
   InfoActuatorStatusMsg& infoActuatorStatus () { return *(InfoActuatorStatusMsg*)this; }
   InfoParamResponsePairsMsg& infoParamResponsePairs () { return *(InfoParamResponsePairsMsg*)this; }
@@ -516,8 +516,8 @@ public:
   //uint8_t counter() const { return buffer()[14]; }
   uint8_t msg_type() const { return buffer()[12]; }
 
-  RemoteEventMsg& toEventMsg() const {
-    RemoteEventMsg& pm = *(RemoteEventMsg*)&pload[10]; // use last 20 byte for simulated message
+  RemoteEventMsg& toEventMsg() {
+    RemoteEventMsg& pm = *((RemoteEventMsg*)(data()+10)); // use last 20 byte for simulated message
     pm.length(9);
     pm.flags(Message::BCAST);
     pm.type(msg_type());
