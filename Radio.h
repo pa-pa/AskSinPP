@@ -829,14 +829,16 @@ class Radio : public HWRADIO {
     }
 
     void setTimeout (uint16_t millis=SENDDELAY) {
-      // cancel possible old timeout
-      sysclock.cancel(*this);
-      // set to 100ms
-      set(millis2ticks(millis));
-      // signal new wait cycle
-      wait = true;
-      // add to system clock
-      sysclock.add(*this);
+      if( millis > 0 ) {
+        // cancel possible old timeout
+        sysclock.cancel(*this);
+        // set to 100ms
+        set(millis2ticks(millis));
+        // signal new wait cycle
+        wait = true;
+        // add to system clock
+        sysclock.add(*this);
+      }
     }
 
     virtual void trigger(__attribute__ ((unused)) AlarmClock& clock) {
