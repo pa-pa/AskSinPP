@@ -978,8 +978,8 @@ public:
         }
     }
 
-  void setTemperature (uint16_t temp) {
-    uint8_t t = temp/10;
+  void setTemperature (int16_t temp) {
+    int16_t t = temp/10;
     for( uint8_t i=1; i<=physicalCount(); ++i ) {
       typename DimmerType::DimmerChannelType& c = dimmer.dimmerChannel(i);
       if( c.getList1().overTempLevel() <= t ) {
