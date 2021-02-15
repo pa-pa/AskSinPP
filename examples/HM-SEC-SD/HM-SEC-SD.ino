@@ -112,8 +112,7 @@ public:
     if( state != newstate ) {
       state = newstate;
       // get team leader - peer 0
-      uint8_t idx = 0;
-      Peer leader = peer(idx);
+      Peer leader = peerat(0);
       if( leader.valid() == true ) {
         SensorEventMsg& msg = (SensorEventMsg&)device().message();
         msg.init(device().nextcount(),number(),count++,state,device().battery().low());

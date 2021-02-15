@@ -71,7 +71,7 @@ public:
 
   bool has (const Peer& p) const {
     for( uint8_t i=0; i<peers(); ++i ) {
-      if( p == peer(i) ) {
+      if( p == peerat(i) ) {
         return true;
       }
     }
@@ -80,14 +80,14 @@ public:
 
   uint8_t peerfor (const HMID& hmid) const {
     for( uint8_t i=0; i<peers(); ++i ) {
-      if( hmid == peer(i) ) {
+      if( hmid == peerat(i) ) {
         return i;
       }
     }
     return 0xff;
   }
 
-  Peer peer (uint8_t idx) const {
+  Peer peerat (uint8_t idx) const {
     Peer result;
     uint16_t paddr = peerAddress(idx);
     if( paddr != 0 ) {
@@ -145,7 +145,7 @@ public:
 
   uint8_t findpeer () const {
     for( int i=0; i<peers(); ++i ) {
-      if( peer(i).valid()==false ) {
+      if( peerat(i).valid()==false ) {
         return i;
       }
     }
@@ -154,7 +154,7 @@ public:
 
   bool deletepeer (const Peer& p) const {
     for( uint8_t i=0; i<peers(); ++i ) {
-      if( peer(i) == p ) {
+      if( peerat(i) == p ) {
         deletepeer(i);
       }
     }
@@ -184,7 +184,7 @@ public:
     uint16_t liststart = 0x00;
     if( hasList3() == true ) {
       for( uint8_t i=0; i<peers(); ++i ) {
-        if( peer(i) == p ) {
+        if( peerat(i) == p ) {
           liststart = peerAddress(i) + sizeof(Peer);
           break;
         }
@@ -197,7 +197,7 @@ public:
     uint16_t liststart = 0x00;
     if( hasList4() == true ) {
       for( uint8_t i=0; i<peers(); ++i ) {
-        if( peer(i) == p ) {
+        if( peerat(i) == p ) {
           liststart = peerAddress(i) + sizeof(Peer) + List3::size();
           break;
         }
@@ -374,7 +374,7 @@ public:
   virtual bool inhibit () const = 0;
   virtual bool aesActive () const = 0;
   virtual bool has (const Peer& p) const = 0;
-  virtual Peer peer (uint8_t idx) const = 0;
+  virtual Peer peerat (uint8_t idx) const = 0;
   virtual bool peer (const Peer& p) = 0;
   virtual bool peer (const Peer& p1,const Peer& p2) = 0;
   virtual bool deletepeer (const Peer& p) = 0;
@@ -423,7 +423,7 @@ public:
   virtual bool inhibit () const { return ch.inhibit(); }
   virtual bool aesActive () const { return ch.aesActive(); }
   virtual bool has (const Peer& p) const { return ch.has(p); };
-  virtual Peer peer (uint8_t idx) const { return ch.peer(idx); }
+  virtual Peer peerat (uint8_t idx) const { return ch.peerat(idx); }
   virtual bool peer (const Peer& p) { return ch.peer(p); }
   virtual bool peer (const Peer& p1,const Peer& p2) { return ch.peer(p1,p2); }
   virtual bool deletepeer (const Peer& p) { return ch.deletepeer(p); }

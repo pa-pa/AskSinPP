@@ -447,7 +447,7 @@ public:
     uint8_t  current=0;
     uint8_t* buf=pm.data();
     for( uint8_t i=0; i<channel.peers(); ++i ) {
-      Peer p = channel.peer(i);
+      Peer p = channel.peerat(i);
       if( p.valid() == true ) {
         memcpy(buf,&p,sizeof(Peer));
         buf+=sizeof(Peer);
@@ -479,7 +479,7 @@ public:
   void sendPeerEvent (Message& msg,const ChannelType& ch) {
     bool sendtopeer=false;
     for( int i=0; i<ch.peers(); ++i ){
-      Peer p = ch.peer(i);
+      Peer p = ch.peerat(i);
       if( p.valid() == true ) {
         // skip if this is not the first peer of that device
         if( ch.peerfor(p) < i ) {
@@ -530,7 +530,7 @@ public:
     // go over all peers, get first external device
     // check if one of the peers needs a burst to wakeup
     for( uint8_t i=0; i<ch.peers(); ++i ) {
-      Peer p = ch.peer(i);
+      Peer p = ch.peerat(i);
       if( p.valid() == true ) {
         if( msg.from() != p ) {
           if( todev.valid() == false ) {
