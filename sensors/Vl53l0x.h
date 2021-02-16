@@ -31,6 +31,7 @@ class Vl53l0x : public Sensor {
 public:
   Vl53l0x () {}
   void init() {
+    Wire.begin();
     _vl53l0x.setAddress(ADDR);
 
     _present = _vl53l0x.init();
