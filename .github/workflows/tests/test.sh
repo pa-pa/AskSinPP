@@ -31,7 +31,7 @@ case "$BOARD" in
     ;;
   mega128)
     CORE=MegaCore:avr
-    FQBN=MegaCore:avr:128:pinout=avr_pinout,BOD=disabled,LTO=flto,clock=16MHz_external
+    FQBN=MegaCore:avr:128:pinout=avr_pinout,BOD=disabled,LTO=Os_flto,clock=16MHz_external
     ;;
   644p)
     CORE=MightyCore:avr
