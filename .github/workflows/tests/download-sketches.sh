@@ -8,6 +8,8 @@ cd sketches
 GIT_REPOS=(
   # Jerome
   "https://github.com/jp112sdl/Beispiel_AskSinPP.git"
+  "https://github.com/jp112sdl/HB-UNI-Sen-PF-SC.git"
+  "https://github.com/jp112sdl/HB-UNI-Sen-PC-WM.git"
   "https://github.com/jp112sdl/HB-UNI-Sen-LEV-US.git"
   "https://github.com/jp112sdl/HB-UNI-Sen-DIST-US.git"
   "https://github.com/jp112sdl/HB-UNI-Sen-LEV-TOF.git"

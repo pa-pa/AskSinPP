@@ -29,6 +29,10 @@ case "$BOARD" in
     FQBN=arduino:avr:pro:cpu=8MHzatmega168
     BUILD_PROPERTY="upload.maximum_size=16384"
     ;;
+  mega128)
+    CORE=MegaCore:avr
+    FQBN=MegaCore:avr:128:pinout=avr_pinout,BOD=disabled,LTO=flto,clock=16MHz_external
+    ;;
   644p)
     CORE=MightyCore:avr
     FQBN=MightyCore:avr:644:pinout=bobuino,variant=modelP,LTO=Os_flto,clock=8MHz_internal
