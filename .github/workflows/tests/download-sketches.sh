@@ -31,11 +31,12 @@ GIT_REPOS=(
   "https://github.com/jp112sdl/HB-OU-MOT-FAN.git"
   "https://github.com/jp112sdl/HB-UNI-Sen-RFID-RC.git"
   "https://github.com/jp112sdl/HB-UNI-Sen-TEMP-MAX6675.git"
-  "https://github.com/jp112sdl/HM-SEC-RHS-ATmega168.git"
   "https://github.com/jp112sdl/HB-UNI-Sen-DUST.git"
   "https://github.com/jp112sdl/HB-UNI-Sen-DUMMY-BEACON-V2.git"
   "https://github.com/jp112sdl/HB-UNI-Sen-DUMMY-BEACON.git"
-
+  "https://github.com/jp112sdl/HM-SEC-RHS-ATmega168.git"
+  "https://github.com/jp112sdl/HM-RC-4-ATmega168.git"
+  
   # TomMajor
   "https://github.com/TomMajor/SmartHome.git"
   
