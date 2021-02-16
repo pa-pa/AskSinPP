@@ -36,7 +36,7 @@ GIT_LIBS=(
   "https://github.com/lewapek/sds-dust-sensors-arduino-library"
   "https://github.com/adafruit/Adafruit_ADS1X15"
   "https://github.com/marcoschwartz/LiquidCrystal_I2C.git"
-  "https://github.com/olikraus/u8g2.git"
+  "https://github.com/olikraus/U8g2_Arduino.git"
 )
 
 # Install Libs
