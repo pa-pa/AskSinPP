@@ -16,6 +16,7 @@ GIT_REPOS=(
   "https://github.com/jp112sdl/HB-UNI-Sen-CURRENT.git"
   "https://github.com/jp112sdl/HB-UNI-Sen-CAP-MOIST.git"
   "https://github.com/jp112sdl/HB-RC-2-PBU-LED.git"
+  "https://github.com/jp112sdl/HB-UNI-RGB-LED-CTRL.git"
   "https://github.com/jp112sdl/HB-UNI-SenAct-4-4.git"
   "https://github.com/jp112sdl/HB-UNI-DMX-MASTER.git"
   "https://github.com/jp112sdl/HB-UNI-Sen-PRESS.git"
