@@ -10,7 +10,12 @@ GIT_REPOS=(
   "https://github.com/jp112sdl/Beispiel_AskSinPP.git"
   "https://github.com/jp112sdl/HB-UNI-Sen-LEV-US.git"
   "https://github.com/jp112sdl/HB-UNI-Sen-DIST-US.git"
+  "https://github.com/jp112sdl/HB-UNI-Sen-LEV-TOF.git"
+  "https://github.com/jp112sdl/HB-UNI-Sen-DIST-TOF.git"
+  "https://github.com/jp112sdl/HB-UNI-Sen-VOLT.git"
+  "https://github.com/jp112sdl/HB-UNI-Sen-CURRENT.git"
   "https://github.com/jp112sdl/HB-UNI-Sen-CAP-MOIST.git"
+  "https://github.com/jp112sdl/HB-RC-2-PBU-LED.git"
   "https://github.com/jp112sdl/HB-UNI-SenAct-4-4.git"
   "https://github.com/jp112sdl/HB-UNI-DMX-MASTER.git"
   "https://github.com/jp112sdl/HB-UNI-Sen-PRESS.git"
@@ -23,6 +28,7 @@ GIT_REPOS=(
   "https://github.com/jp112sdl/HB-UNI-Sen-RFID-RC.git"
   "https://github.com/jp112sdl/HB-UNI-Sen-TEMP-MAX6675.git"
   "https://github.com/jp112sdl/HM-SEC-RHS-ATmega168.git"
+  "https://github.com/jp112sdl/HB-UNI-Sen-DUST.git"
 
   # TomMajor
   "https://github.com/TomMajor/SmartHome.git"

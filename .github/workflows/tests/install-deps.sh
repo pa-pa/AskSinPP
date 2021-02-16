@@ -32,6 +32,10 @@ GIT_LIBS=(
   "https://github.com/jayjayuk/Si7021-Humidity-And-Temperature-Sensor-Library"
   "https://github.com/adafruit/Adafruit-ST7735-Library"
   "https://github.com/milesburton/Arduino-Temperature-Control-Library"
+  "https://github.com/pololu/vl53l0x-arduino"
+  "https://github.com/lewapek/sds-dust-sensors-arduino-library"
+  "https://github.com/adafruit/Adafruit_ADS1X15"
+  "https://github.com/marcoschwartz/LiquidCrystal_I2C.git"
 )
 
 # Install Libs
