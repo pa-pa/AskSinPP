@@ -121,6 +121,8 @@ public:
     //PINTYPE::setPWMFreq(m * 200);
     dimCurve = c;
   }
+  //void param(__attribute__((unused)) uint8_t m,__attribute__((unused)) uint8_t c) {}
+
 
   void set(uint8_t value) {
     uint16_t duty = 0;

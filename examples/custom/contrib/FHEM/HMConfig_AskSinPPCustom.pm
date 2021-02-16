@@ -597,6 +597,7 @@ $customMsg{"HB-UNI-Sen-WEA"} = sub {
   if( defined($channel) ) {
 	if( $msg->isWeather ) {
 		my $temp = $msg->payloadWord(0) & 0x7fff;
+        $temp = -1 - ($temp ^ 0x7FFF) if ($temp & 0x4000);
 		my $pressure = $msg->payloadWord(2);
 		my $humidity = $msg->payloadByte(4);
 		my $lux = $msg->payload3Byte(5);
