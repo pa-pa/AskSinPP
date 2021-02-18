@@ -664,6 +664,8 @@ public:
     pload[1] = ch.flags();
     pload[2] = rssi;
   }
+  uint8_t status () { return pload[0]; }
+  uint8_t flags ()  { return pload[1]; }
 };
 
 class InfoParamResponsePairsMsg : public Message {

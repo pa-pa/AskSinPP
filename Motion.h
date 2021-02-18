@@ -81,6 +81,7 @@ class MotionChannel : public Channel<HalType,MotionList1,EmptyList,DefList4,Peer
       case 1: return seconds2ticks(30);
       case 2: return seconds2ticks(60);
       case 3: return seconds2ticks(120);
+      default: break;
     }
     return seconds2ticks(240);
   }
