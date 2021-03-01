@@ -81,7 +81,7 @@ public:
     //DPRINT("longpressTime = ");DDECLN(_longpressTime);
     uint16_t _doublepressTime = this->getList1().doublePressTime() * 100;
     setLongPressTime(millis2ticks(_longpressTime));
-    setDoublePressTime(millis2ticks(_doublepressTime);
+    setDoublePressTime(millis2ticks(_doublepressTime));
     return true;
   }
 };
