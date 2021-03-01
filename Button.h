@@ -40,22 +40,44 @@ public:
     }
   };
 
+  class DoublePressAlarm : public Alarm {
+  public:
+    StateButton& sb;
+    DoublePressAlarm (StateButton& _sb) : Alarm(0), sb(_sb) {}
+    ~DoublePressAlarm () {}
+    virtual void trigger(__attribute__((unused)) AlarmClock& clock) {
+      sb.unlockButtonPress(true);
+    }
+  };
+
 protected:
   uint8_t  stat     : 3;
   uint8_t  pinstate : 1;
   uint8_t  pin;
   uint16_t longpresstime;
+  uint16_t doublepresstime;
+  bool allowButtonPress;
   CheckAlarm ca;
+  DoublePressAlarm dbl;
 
 public:
   StateButton() :
-      Alarm(0), stat(none), pinstate(OFFSTATE), pin(0), longpresstime(millis2ticks(400)), ca(*this)  {
+      Alarm(0), stat(none), pinstate(OFFSTATE), pin(0), longpresstime(millis2ticks(400)), doublepresstime(0), allowButtonPress(true), ca(*this), dbl(*this)  {
   }
   virtual ~StateButton() {
   }
 
   void setLongPressTime(uint16_t t) {
     longpresstime = t;
+  }
+
+  void setDoublePressTime(uint16_t t) {
+    doublepresstime = t;
+  }
+
+
+  void unlockButtonPress(bool b) {
+    allowButtonPress = b;
   }
 
   uint8_t getPin () {
@@ -69,6 +91,10 @@ public:
     case released:
     case longreleased:
       nextstate = none;
+      allowButtonPress = false;
+      sysclock.cancel(dbl);
+      dbl.set(millis2ticks(doublepresstime));
+      sysclock.add(dbl);
       break;
 
     case debounce:
@@ -118,9 +144,11 @@ public:
   }
 
   void irq () {
-    sysclock.cancel(ca);
-    // use alarm to run code outside of interrupt
-    sysclock.add(ca);
+    if (allowButtonPress == true) {
+      sysclock.cancel(ca);
+      // use alarm to run code outside of interrupt
+      sysclock.add(ca);
+    }
   }
 
   void check() {
