@@ -58,7 +58,10 @@ namespace as {
 #define CREG_REDUCELEVEL 0x35
 #define CREG_POWERUPACTION 0x56
 #define CREG_STATUSINFO 0x57
-#define CREG_CHARACTERISTIC 0x58
+#define CREG_CHARACTERISTIC 0x58                 // index="88" size="0.1"
+#define CREG_CHARACTERISTIC_LEVELLIMIT 0x58      // index="88.1" size="0.1"
+#define CREG_HARACTERISTIC_COLOURASSIGNMENT 0x58 // index="88.2" size="0.1"
+#define CREG_CHARACTERISTIC_BASETYPE 0x58        // index="88.4" size="0.4"
 #define CREG_LOGICCOMBINATION 0x59
 #define CREG_TX_MINDELAY 0x7b
 #define CREG_TX_THRESHOLD_PERCENT 0xac
@@ -494,8 +497,21 @@ public:
   uint8_t reduceLevel () const { return this->readRegister(CREG_REDUCELEVEL,80); }
   bool reduceLevel (uint8_t v) const { return this->writeRegister(CREG_REDUCELEVEL,v); }
 
-  bool characteristic () const { return this->readBit(CREG_CHARACTERISTIC,0,true); }
-  bool characteristic (bool v) const { return this->writeBit(CREG_CHARACTERISTIC,0,v); }
+  bool characteristic() const { return this->readBit(CREG_CHARACTERISTIC, 0, true); }
+  bool characteristic(bool v) const { return this->writeBit(CREG_CHARACTERISTIC, 0, v); }
+  bool characteristicLevelLimit() const { return this->readBit(CREG_CHARACTERISTIC, 1, true); }
+  bool characteristicLevelLimit(bool v) const { return this->writeBit(CREG_CHARACTERISTIC, 1, v); }
+  bool characteristicColourAssignment() const { return this->readBit(CREG_CHARACTERISTIC, 2, true); }
+  bool characteristicColourAssignment(bool v) const { return this->writeBit(CREG_CHARACTERISTIC, 2, v); }
+  uint8_t characteristicBasetype() const { return this->readRegister(CREG_CHARACTERISTIC, 0x0f, 4, 0); }
+  bool characteristicBasetype(uint8_t v) { return this->writeRegister(CREG_CHARACTERISTIC, 0x0f, 4, v); }
+
+//#define CREG_CHARACTERISTIC 0x58                 // index="88" size="0.1"
+//#define CREG_CHARACTERISTIC_LEVELLIMIT 0x58      // index="88.1" size="0.1"
+//#define CREG_HARACTERISTIC_COLOURASSIGNMENT 0x58 // index="88.2" size="0.1"
+//#define CREG_CHARACTERISTIC_BASETYPE 0x58        // index="88.4" size="0.4"
+
+
   uint8_t logicCombination () const { return this->readRegister(CREG_LOGICCOMBINATION,0x1f,0,1); }
   bool logicCombination (uint8_t v) { return this->writeRegister(CREG_LOGICCOMBINATION,0x1f,0,v); }
 
