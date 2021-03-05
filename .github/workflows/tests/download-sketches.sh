@@ -35,6 +35,8 @@ GIT_REPOS=(
   "https://github.com/jp112sdl/HB-OU-AF-SEN-TEMP.git"
   "https://github.com/jp112sdl/HB-UNI-Sen-RFID-RC.git"
   "https://github.com/jp112sdl/HB-UNI-Sen-TEMP-MAX6675.git"
+  "https://github.com/jp112sdl/HB-UNI-Sen-TEMP-IR.git"
+  "https://github.com/jp112sdl/HB-UNI-Sen-TEMP-DS18B20.git"
   "https://github.com/jp112sdl/HB-UNI-Sen-DUST.git"
   "https://github.com/jp112sdl/HB-UNI-Sen-DUMMY-BEACON-V2.git"
   "https://github.com/jp112sdl/HB-UNI-Sen-DUMMY-BEACON.git"
