@@ -38,6 +38,7 @@ GIT_LIBS=(
   "https://github.com/marcoschwartz/LiquidCrystal_I2C.git"
   "https://github.com/olikraus/U8g2_Arduino.git"
   "https://github.com/laurb9/StepperDriver.git"
+  "https://github.com/milesburton/Arduino-Temperature-Control-Library.git"
 )
 
 # Install Libs
