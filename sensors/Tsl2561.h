@@ -8,21 +8,21 @@
 
 #include <Sensors.h>
 #include <Wire.h>
-#include <TSL2561.h>
+#include <Adafruit_TSL2561_U.h>
 
 namespace as {
 
-// https://github.com/adafruit/TSL2561-Arduino-Library
+// https://github.com/adafruit/Adafruit_TSL2561
 template <int ADDRESS=TSL2561_ADDR_LOW>
 class Tsl2561 : public Brightness {
-  ::TSL2561   _tsl;
-  bool        _x16;
+  ::Adafruit_TSL2561_Unified   _tsl;
+  bool                         _x16;
 public:
   Tsl2561 () : _tsl(ADDRESS), _x16(true) {}
   void init () {
     if( (_present = _tsl.begin()) == true ) {
       _tsl.setGain(TSL2561_GAIN_16X);
-      _tsl.setTiming(TSL2561_INTEGRATIONTIME_101MS);
+      _tsl.setIntegrationTime(TSL2561_INTEGRATIONTIME_101MS);
       DPRINT("TSL2561 found at 0x");DHEXLN((uint8_t)ADDRESS);
     }
     else {
@@ -31,16 +31,17 @@ public:
   }
   void measure (__attribute__((unused)) bool async=false) {
     if( present() == true ) {
-      uint16_t b = _tsl.getLuminosity(TSL2561_VISIBLE);
+      uint16_t b = 0;
+      _tsl.getLuminosity(&b, NULL);
       if( b > 63000 && _x16 == true ) {
         _x16 = false;
-        _tsl.setGain(TSL2561_GAIN_0X);
-        b = _tsl.getLuminosity(TSL2561_VISIBLE);
+        _tsl.setGain(TSL2561_GAIN_1X);
+        _tsl.getLuminosity(&b, NULL);
       }
       else if ( b < 500 && _x16 == false ) {
         _x16 = true;
         _tsl.setGain(TSL2561_GAIN_16X);
-        b = _tsl.getLuminosity(TSL2561_VISIBLE);
+        _tsl.getLuminosity(&b, NULL);
       }
       DPRINT("Brightness: ");DDECLN(b);
       _brightness = b;
