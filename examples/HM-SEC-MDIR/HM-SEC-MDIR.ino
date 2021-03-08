@@ -29,6 +29,15 @@
 // A0 == PIN 14 on Pro Mini
 #define PIR_PIN 14
 
+// === Battery measurement ===
+#define BAT_VOLT_LOW        21  // 2.1V low voltage threshold
+#define BAT_VOLT_CRITICAL   19  // 1.9V critical voltage threshold, puts AVR into sleep-forever mode
+// Internal measuring: AVR voltage
+#define BAT_SENSOR BatterySensor
+// External measuring: Potential devider on GPIO; required if a StepUp converter is used
+// one can consider lower thresholds (low=20; cri=13)
+//#define BAT_SENSOR BatterySensorUni<A3,7,3000> // <SensPIN, ActivationPIN, RefVcc>
+
 // number of available peers per channel
 #define PEERS_PER_CHANNEL 6
 
@@ -51,18 +60,7 @@ const struct DeviceInfo PROGMEM devinfo = {
 typedef AvrSPI<10,11,12,13> SPIType;
 typedef Radio<SPIType,2> RadioType;
 typedef StatusLed<LED_PIN> LedType;
-typedef AskSin<LedType,BatterySensor,RadioType> BaseHal;
-class Hal : public BaseHal {
-public:
-  void init (const HMID& id) {
-    BaseHal::init(id);
-    // set low voltage to 2.2V
-    // measure battery every 1h
-    battery.init(seconds2ticks(60UL*60),sysclock);
-    battery.low(22);
-    battery.critical(19);
-  }
-} hal;
+typedef AskSin<LedType,BAT_SENSOR,RadioType> Hal;
 
 #ifdef _TSL2561_H_
 typedef MotionChannel<Hal,PEERS_PER_CHANNEL,List0,Tsl2561<TSL2561_ADDR_LOW> > MChannel;
@@ -71,8 +69,9 @@ typedef MotionChannel<Hal,PEERS_PER_CHANNEL,List0> MChannel;
 #endif
 
 typedef MultiChannelDevice<Hal,MChannel,1> MotionType;
-MotionType sdev(devinfo,0x20);
 
+Hal hal;
+MotionType sdev(devinfo,0x20);
 ConfigButton<MotionType> cfgBtn(sdev);
 
 void setup () {
@@ -80,6 +79,7 @@ void setup () {
   sdev.init(hal);
   buttonISR(cfgBtn,CONFIG_BUTTON_PIN);
   motionISR(sdev,1,PIR_PIN);
+  hal.initBattery(60UL*60,BAT_VOLT_LOW,BAT_VOLT_CRITICAL); // Measure Battery every 1h
   sdev.initDone();
 }
 
