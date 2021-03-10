@@ -1043,7 +1043,7 @@ public:
   // CHARACTERISTIC, list="1" index="88" size="0.1"
   // "CHARACTERISTIC_LINEAR", "CHARACTERISTIC_SQUARE" default = "true"
 
-  virtual void updatePhysical () {
+  void updatePhysical () { 
     this->checkParam();
     uint16_t bright = this->combineChannels(1);
     uint16_t adjust = this->combineChannels(2);
@@ -1090,7 +1090,7 @@ public:
     }
   }
 
-  virtual void checkParam() {
+  void checkParam() {
     bool cc = this->dimmer.hasConfigChanged();
     if (cc == false) return;
 
