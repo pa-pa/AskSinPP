@@ -851,7 +851,7 @@ public:
     }
   }
 
-  virtual void updatePhysical () {
+  void updatePhysical () {
     checkParam();
     // DPRINT("Pin ");DHEX(pin);DPRINT("  Val ");DHEXLN(calcPwm());
     for( uint8_t i=0; i<physicalCount(); ++i ) {
@@ -996,7 +996,7 @@ public:
     }
   }
 
-  virtual void checkParam() {
+  void checkParam() {
     bool cc = this->dimmer.hasConfigChanged();
     if (cc == false) return;
     for (uint8_t i = 0; i < physicalCount(); ++i) {
