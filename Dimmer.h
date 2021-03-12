@@ -851,7 +851,7 @@ public:
     }
   }
 
-  void updatePhysical () {
+  virtual void updatePhysical () {
     checkParam();
     // DPRINT("Pin ");DHEX(pin);DPRINT("  Val ");DHEXLN(calcPwm());
     for( uint8_t i=0; i<physicalCount(); ++i ) {
