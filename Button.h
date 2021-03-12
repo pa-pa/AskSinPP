@@ -41,12 +41,33 @@ public:
   };
 
   class DoublePressAlarm : public Alarm {
+  private:
+    bool isNewPressAllowed;
+    uint16_t doublepresstime;
   public:
     StateButton& sb;
-    DoublePressAlarm (StateButton& _sb) : Alarm(0), sb(_sb) {}
-    ~DoublePressAlarm () {}
+    DoublePressAlarm (StateButton& _sb) : Alarm(0), isNewPressAllowed(true), doublepresstime(0), sb(_sb) {}
+    virtual ~DoublePressAlarm () {}
+
+    bool newPressAllowed() {
+      return isNewPressAllowed;
+    }
+
+    void newPressAllowed(bool b) {
+      isNewPressAllowed = b;
+      if (b == false) {
+        sysclock.cancel(*this);
+        set(millis2ticks(doublepresstime));
+        sysclock.add(*this);
+      }
+    }
+
     virtual void trigger(__attribute__((unused)) AlarmClock& clock) {
-      sb.unlockButtonPress(true);
+      isNewPressAllowed = true;
+    }
+
+    void setDoublePressTime(uint16_t t) {
+      doublepresstime = t;
     }
   };
 
@@ -55,14 +76,12 @@ protected:
   uint8_t  pinstate : 1;
   uint8_t  pin;
   uint16_t longpresstime;
-  uint16_t doublepresstime;
-  bool allowButtonPress;
   CheckAlarm ca;
   DoublePressAlarm dbl;
 
 public:
   StateButton() :
-      Alarm(0), stat(none), pinstate(OFFSTATE), pin(0), longpresstime(millis2ticks(400)), doublepresstime(0), allowButtonPress(true), ca(*this), dbl(*this)  {
+      Alarm(0), stat(none), pinstate(OFFSTATE), pin(0), longpresstime(millis2ticks(400)), ca(*this), dbl(*this)  {
   }
   virtual ~StateButton() {
   }
@@ -72,12 +91,7 @@ public:
   }
 
   void setDoublePressTime(uint16_t t) {
-    doublepresstime = t;
-  }
-
-
-  void unlockButtonPress(bool b) {
-    allowButtonPress = b;
+    dbl.setDoublePressTime(t);
   }
 
   uint8_t getPin () {
@@ -91,10 +105,7 @@ public:
     case released:
     case longreleased:
       nextstate = none;
-      allowButtonPress = false;
-      sysclock.cancel(dbl);
-      dbl.set(millis2ticks(doublepresstime));
-      sysclock.add(dbl);
+      dbl.newPressAllowed(false);
       break;
 
     case debounce:
@@ -144,7 +155,7 @@ public:
   }
 
   void irq () {
-    if (allowButtonPress == true) {
+    if (dbl.newPressAllowed() == true) {
       sysclock.cancel(ca);
       // use alarm to run code outside of interrupt
       sysclock.add(ca);
