@@ -14,7 +14,47 @@
 
 namespace as {
 
-template <uint8_t OFFSTATE=HIGH,uint8_t ONSTATE=LOW,WiringPinMode MODE=INPUT_PULLUP>
+class DoublePressAlarm : public Alarm {
+private:
+  bool isNewPressAllowed;
+  uint16_t doublepresstime;
+public:
+  DoublePressAlarm () : Alarm(0), isNewPressAllowed(true), doublepresstime(0) {}
+  virtual ~DoublePressAlarm () {}
+
+  bool newPressAllowed() {
+    return isNewPressAllowed;
+  }
+
+  void newPressAllowed(bool b) {
+    isNewPressAllowed = b;
+    if (b == false) {
+      sysclock.cancel(*this);
+      set(millis2ticks(doublepresstime));
+      sysclock.add(*this);
+    }
+  }
+
+  virtual void trigger(__attribute__((unused)) AlarmClock& clock) {
+    isNewPressAllowed = true;
+  }
+
+  void setDoublePressTime(uint16_t t) {
+    doublepresstime = t;
+  }
+};
+
+class NoDoublePressAlarm {
+public:
+  NoDoublePressAlarm () {}
+  virtual ~NoDoublePressAlarm () {}
+  bool newPressAllowed() { return true;  }
+  void newPressAllowed(__attribute__((unused)) bool b) { }
+  void setDoublePressTime(__attribute__((unused)) uint16_t t) {
+  }
+};
+
+template <uint8_t OFFSTATE=HIGH,uint8_t ONSTATE=LOW,WiringPinMode MODE=INPUT_PULLUP, class DBLPRESS=NoDoublePressAlarm>
 class StateButton: public Alarm {
 
 #define DEBOUNCETIME millis2ticks(50)
@@ -40,48 +80,17 @@ public:
     }
   };
 
-  class DoublePressAlarm : public Alarm {
-  private:
-    bool isNewPressAllowed;
-    uint16_t doublepresstime;
-  public:
-    StateButton& sb;
-    DoublePressAlarm (StateButton& _sb) : Alarm(0), isNewPressAllowed(true), doublepresstime(0), sb(_sb) {}
-    virtual ~DoublePressAlarm () {}
-
-    bool newPressAllowed() {
-      return isNewPressAllowed;
-    }
-
-    void newPressAllowed(bool b) {
-      isNewPressAllowed = b;
-      if (b == false) {
-        sysclock.cancel(*this);
-        set(millis2ticks(doublepresstime));
-        sysclock.add(*this);
-      }
-    }
-
-    virtual void trigger(__attribute__((unused)) AlarmClock& clock) {
-      isNewPressAllowed = true;
-    }
-
-    void setDoublePressTime(uint16_t t) {
-      doublepresstime = t;
-    }
-  };
-
 protected:
   uint8_t  stat     : 3;
   uint8_t  pinstate : 1;
   uint8_t  pin;
   uint16_t longpresstime;
   CheckAlarm ca;
-  DoublePressAlarm dbl;
+  DBLPRESS dbl;
 
 public:
   StateButton() :
-      Alarm(0), stat(none), pinstate(OFFSTATE), pin(0), longpresstime(millis2ticks(400)), ca(*this), dbl(*this)  {
+      Alarm(0), stat(none), pinstate(OFFSTATE), pin(0), longpresstime(millis2ticks(400)), ca(*this)  {
   }
   virtual ~StateButton() {
   }
