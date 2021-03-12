@@ -1043,7 +1043,7 @@ public:
   // CHARACTERISTIC, list="1" index="88" size="0.1"
   // "CHARACTERISTIC_LINEAR", "CHARACTERISTIC_SQUARE" default = "true"
 
-  void updatePhysical () { 
+  virtual void updatePhysical () {
     this->checkParam();
     uint16_t bright = this->combineChannels(1);
     uint16_t adjust = this->combineChannels(2);
