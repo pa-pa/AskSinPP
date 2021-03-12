@@ -193,7 +193,7 @@ public:
       // http://harald.studiokubota.com/wordpress/index.php/2010/09/05/linear-led-fading/index.html
       //duty = exp(value/18.0) + 4;
     }
-    //DDEC(pin); DPRINT(" ("); DDEC(value); DPRINT(") "); DDECLN(duty);
+    //DDEC(pin); DPRINT("\t("); DDEC(value); DPRINT(")\t"); DDECLN(duty);
     PINTYPE::setPWM(pin, duty);
   }
 

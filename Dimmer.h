@@ -1011,6 +1011,9 @@ public:
 
 template<class HalType,class DimmerType,class PWM>
 class DualWhiteControl : public DimmerControl<HalType,DimmerType,PWM> {
+  uint8_t charLevelLimit;       // 1="CHARACTERISTIC_HALF_CONSTANT" default="true", 2="CHARACTERISTIC_MAXIMUM"
+  uint8_t charColourAssignment; // "CHARACTERISTIC_LOW_IS_WARM" default="true", "CHARACTERISTIC_LOW_IS_COLD"
+  uint8_t charBaseType;         // "CHARACTERISTIC_CROSSFADE" default="true", "CHARACTERISTIC_DIM2WARM", "CHARACTERISTIC_DIM2HOT"
 public:
   typedef DimmerControl<HalType,DimmerType,PWM> BaseControl;
   DualWhiteControl (DimmerType& dim) : BaseControl(dim) {
@@ -1022,29 +1025,86 @@ public:
   }
   virtual ~DualWhiteControl () {}
 
-  virtual void updatePhysical () {
+  // adjust to calculate bright per channel (cold/warm white)
+ 
+  // farbmischverhalten: crossfade, dim2warm, dim2hot
+  // CHARACTERISTIC_BASETYPE, list="1" index="88.4" size="0.4"
+  // "CHARACTERISTIC_CROSSFADE" default="true", "CHARACTERISTIC_DIM2WARM", "CHARACTERISTIC_DIM2HOT" / >
+
+  // farbzuweisung: niedrig ist warmweiss, niedrig ist kaltweiss
+  // CHARACTERISTIC_COLOURASSIGNMENT, list="1" index="88.2" size="0.1"
+  // "CHARACTERISTIC_LOW_IS_WARM" default="true", "CHARACTERISTIC_LOW_IS_COLD"
+
+  // pegelbegrenzung: halbe/konstante leistung, maximale leistung
+  // CHARACTERISTIC_LEVELLIMIT, list="1" index="88.1" size="0.1"
+  // "CHARACTERISTIC_HALF_CONSTANT" default="true", "CHARACTERISTIC_MAXIMUM" 
+
+  // ausgangskennlinie: linear, quadratic
+  // CHARACTERISTIC, list="1" index="88" size="0.1"
+  // "CHARACTERISTIC_LINEAR", "CHARACTERISTIC_SQUARE" default = "true"
+
+  void updatePhysical () { 
     this->checkParam();
     uint16_t bright = this->combineChannels(1);
     uint16_t adjust = this->combineChannels(2);
     // set the values
-    if( this->physical[0] != bright || this->physical[1] != adjust) {
-      this->physical[0]  = bright;
-      this->physical[1]  = adjust;
+    if (this->physical[0] != bright || this->physical[1] != adjust) {
+      this->physical[0] = bright;
+      this->physical[1] = adjust;
+
       // adjust the color temp
-//      uint8_t pwm0 = (bright * (200-adjust)) / 200;
-//      uint8_t pwm1 = (bright * adjust) / 200;
-      uint8_t pwm0 = bright;
-      uint8_t pwm1 = bright;
-      if( adjust < 100 ) {
-        pwm1 = (bright * adjust) / 100;
+      uint16_t pwmCold, pwmWarm; 
+
+      if (charBaseType == 0) {      // CHARACTERISTIC_CROSSFADE
+        pwmCold = uint32_t((bright * charLevelLimit * adjust) / 200);
+        pwmWarm = uint32_t((bright * charLevelLimit * (200 - adjust)) / 200);
+        //DPRINT("cf  c: "); DPRINT(pwmCold); DPRINT(", w: "); DPRINTLN(pwmWarm);
       }
-      else {
-        pwm0 = (bright * (200-adjust)) / 100;
+      else if (charBaseType == 1) { // CHARACTERISTIC_DIM2WARM
+        pwmCold = uint32_t((bright * adjust * adjust) / 40000);
+        uint8_t t_adj = 200 - adjust;
+        if (charLevelLimit == 1) {
+          t_adj = (adjust > 100) ? adjust - 100 : 100 - adjust;
+          t_adj *= 2;
+        }
+        pwmWarm = int32_t((-1 * bright * t_adj * t_adj) / 40000) + bright;
+        //DPRINT("d2w b: "); DPRINT(bright); DPRINT(", c: "); DPRINT(pwmCold); DPRINT(", w: "); DPRINTLN(pwmWarm);
       }
-      this->pwms[0].set(pwm0);
-      this->pwms[1].set(pwm1);
+      else if (charBaseType == 2) { // CHARACTERISTIC_DIM2HOT
+        uint8_t t_adj = (adjust < 100) ? 0 : adjust - 100;
+        pwmCold = uint32_t((bright * t_adj) / 100);
+        t_adj = adjust;
+        if (charLevelLimit == 1) {
+          t_adj = (adjust > 100) ? 200 - adjust : adjust;
+          t_adj /= 2;
+        }
+        pwmWarm = uint32_t((bright * t_adj) / 100);
+        //DPRINT("d2h b: "); DPRINT(bright); DPRINT(", c: "); DPRINT(pwmCold); DPRINT(", w: "); DPRINTLN(pwmWarm);
+      }
+
+      if (pwmCold > 200) pwmCold = 200;
+      if (pwmWarm > 200) pwmWarm = 200;
+
+      this->pwms[0 ^ charColourAssignment].set(pwmCold);
+      this->pwms[1 ^ charColourAssignment].set(pwmWarm);
     }
   }
+
+  void checkParam() {
+    bool cc = this->dimmer.hasConfigChanged();
+    if (cc == false) return;
+
+    uint8_t speedMultiplier = this->dimmer.getList0().speedMultiplier();
+    uint8_t characteristic = this->dimmer.dimmerChannel(2).getList1().characteristic();
+    this->pwms[0].param(speedMultiplier, characteristic);
+    this->pwms[1].param(speedMultiplier, characteristic);
+
+    charLevelLimit = this->dimmer.dimmerChannel(2).getList1().characteristicLevelLimit() + 1;
+    charColourAssignment = this->dimmer.dimmerChannel(2).getList1().characteristicColourAssignment();
+    charBaseType = this->dimmer.dimmerChannel(2).getList1().characteristicBasetype();
+    //DPRINT("ll: "); DPRINT(charLevelLimit); DPRINT(", ca: "); DPRINT(charColourAssignment); DPRINT(", bt: "); DPRINTLN(charBaseType);
+  }
+
 };
 
 }
