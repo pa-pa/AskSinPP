@@ -79,10 +79,10 @@ public:
     //we have to add 300ms to the value set in CCU!
     uint16_t _longpressTime = 300 + (this->getList1().longPressTime() * 100);
     //DPRINT("longpressTime = ");DDECLN(_longpressTime);
-    setLongPressTime(millis2ticks(_longpressTime));
-    if( canDoublePress() == true ) {
+    this->setLongPressTime(millis2ticks(_longpressTime));
+    if( this->canDoublePress() == true ) {
       uint16_t _doublepressTime = this->getList1().doublePressTime() * 100;
-      setDoublePressTime(millis2ticks(_doublepressTime));
+      this->setDoublePressTime(millis2ticks(_doublepressTime));
     }
     return true;
   }
