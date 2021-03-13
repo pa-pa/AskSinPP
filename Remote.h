@@ -26,8 +26,8 @@ public:
   }
 };
 
-template<class HALTYPE,int PEERCOUNT,class List0Type=List0,class List1Type=RemoteList1>
-class RemoteChannel : public Channel<HALTYPE,List1Type,EmptyList,DefList4,PEERCOUNT,List0Type>, public Button {
+template<class HALTYPE,int PEERCOUNT,class List0Type=List0,class List1Type=RemoteList1,class ButtonType=Button>
+class RemoteChannel : public Channel<HALTYPE,List1Type,EmptyList,DefList4,PEERCOUNT,List0Type>, public ButtonType {
 
 private:
   uint8_t       repeatcnt;
@@ -54,13 +54,13 @@ public:
     DHEX(BaseChannel::number());
     Button::state(s);
     RemoteEventMsg& msg = (RemoteEventMsg&)this->device().message();
-    msg.init(this->device().nextcount(),this->number(),repeatcnt,(s==longreleased || s==longpressed),this->device().battery().low());
-    if( s == released || s == longreleased) {
+    msg.init(this->device().nextcount(),this->number(),repeatcnt,(s==ButtonType::longreleased || s==ButtonType::longpressed),this->device().battery().low());
+    if( s == ButtonType::released || s == ButtonType::longreleased) {
       // send the message to every peer
       this->device().sendPeerEvent(msg,*this);
       repeatcnt++;
     }
-    else if (s == longpressed) {
+    else if (s == ButtonType::longpressed) {
       // broadcast the message
       this->device().broadcastPeerEvent(msg,*this);
     }
@@ -79,9 +79,11 @@ public:
     //we have to add 300ms to the value set in CCU!
     uint16_t _longpressTime = 300 + (this->getList1().longPressTime() * 100);
     //DPRINT("longpressTime = ");DDECLN(_longpressTime);
-    uint16_t _doublepressTime = this->getList1().doublePressTime() * 100;
     setLongPressTime(millis2ticks(_longpressTime));
-    setDoublePressTime(millis2ticks(_doublepressTime));
+    if( canDoublePress() == true ) {
+      uint16_t _doublepressTime = this->getList1().doublePressTime() * 100;
+      setDoublePressTime(millis2ticks(_doublepressTime));
+    }
     return true;
   }
 };
