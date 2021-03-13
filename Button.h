@@ -47,7 +47,7 @@ public:
 class NoDoublePressAlarm {
 public:
   NoDoublePressAlarm () {}
-  virtual ~NoDoublePressAlarm () {}
+  ~NoDoublePressAlarm () {}
   bool newPressAllowed() { return true;  }
   void newPressAllowed(__attribute__((unused)) bool b) { }
   void setDoublePressTime(__attribute__((unused)) uint16_t t) {
