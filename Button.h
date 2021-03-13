@@ -14,7 +14,47 @@
 
 namespace as {
 
-template <uint8_t OFFSTATE=HIGH,uint8_t ONSTATE=LOW,WiringPinMode MODE=INPUT_PULLUP>
+class DoublePressAlarm : public Alarm {
+private:
+  bool isNewPressAllowed;
+  uint16_t doublepresstime;
+public:
+  DoublePressAlarm () : Alarm(0), isNewPressAllowed(true), doublepresstime(0) {}
+  virtual ~DoublePressAlarm () {}
+
+  bool newPressAllowed() {
+    return isNewPressAllowed;
+  }
+
+  void newPressAllowed(bool b) {
+    isNewPressAllowed = b;
+    if (b == false) {
+      sysclock.cancel(*this);
+      set(millis2ticks(doublepresstime));
+      sysclock.add(*this);
+    }
+  }
+
+  virtual void trigger(__attribute__((unused)) AlarmClock& clock) {
+    isNewPressAllowed = true;
+  }
+
+  void setDoublePressTime(uint16_t t) {
+    doublepresstime = t;
+  }
+};
+
+class NoDoublePressAlarm {
+public:
+  NoDoublePressAlarm () {}
+  ~NoDoublePressAlarm () {}
+  bool newPressAllowed() { return true;  }
+  void newPressAllowed(__attribute__((unused)) bool b) { }
+  void setDoublePressTime(__attribute__((unused)) uint16_t t) {
+  }
+};
+
+template <uint8_t OFFSTATE=HIGH,uint8_t ONSTATE=LOW,WiringPinMode MODE=INPUT_PULLUP, class DBLPRESS=NoDoublePressAlarm>
 class StateButton: public Alarm {
 
 #define DEBOUNCETIME millis2ticks(50)
@@ -46,6 +86,7 @@ protected:
   uint8_t  pin;
   uint16_t longpresstime;
   CheckAlarm ca;
+  DBLPRESS dbl;
 
 public:
   StateButton() :
@@ -56,6 +97,10 @@ public:
 
   void setLongPressTime(uint16_t t) {
     longpresstime = t;
+  }
+
+  void setDoublePressTime(uint16_t t) {
+    dbl.setDoublePressTime(t);
   }
 
   uint8_t getPin () {
@@ -69,6 +114,7 @@ public:
     case released:
     case longreleased:
       nextstate = none;
+      dbl.newPressAllowed(false);
       break;
 
     case debounce:
@@ -118,9 +164,11 @@ public:
   }
 
   void irq () {
-    sysclock.cancel(ca);
-    // use alarm to run code outside of interrupt
-    sysclock.add(ca);
+    if (dbl.newPressAllowed() == true) {
+      sysclock.cancel(ca);
+      // use alarm to run code outside of interrupt
+      sysclock.add(ca);
+    }
   }
 
   void check() {
