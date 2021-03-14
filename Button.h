@@ -30,7 +30,7 @@ public:
     isNewPressAllowed = b;
     if (b == false) {
       sysclock.cancel(*this);
-      set(millis2ticks(doublepresstime));
+      set(doublepresstime);
       sysclock.add(*this);
     }
   }

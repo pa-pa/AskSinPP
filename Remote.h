@@ -40,7 +40,7 @@ public:
   RemoteChannel () : BaseChannel(), repeatcnt(0), isr(false) {}
   virtual ~RemoteChannel () {}
 
-  Button& button () { return *(Button*)this; }
+  ButtonType& button () { return *(ButtonType*)this; }
 
   uint8_t status () const {
     return 0;
@@ -52,7 +52,7 @@ public:
 
   virtual void state(uint8_t s) {
     DHEX(BaseChannel::number());
-    Button::state(s);
+    ButtonType::state(s);
     RemoteEventMsg& msg = (RemoteEventMsg&)this->device().message();
     msg.init(this->device().nextcount(),this->number(),repeatcnt,(s==ButtonType::longreleased || s==ButtonType::longpressed),this->device().battery().low());
     if( s == ButtonType::released || s == ButtonType::longreleased) {
