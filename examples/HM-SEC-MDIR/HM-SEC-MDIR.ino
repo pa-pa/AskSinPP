@@ -7,13 +7,22 @@
 // define this to read the device id, serial and device type from bootloader section
 // #define USE_OTA_BOOTLOADER
 
+// define this if you have a TSL2561 connected at address 0x29
+// #define USE_TSL2561
+
+// define this if you have a BH1750 connected at address 0x23
+// #define USE_BH1750
+
 #define EI_NOTEXTERNAL
 #include <EnableInterrupt.h>
 #include <AskSinPP.h>
 #include <LowPower.h>
-// uncomment the following 2 lines if you have a TSL2561 connected at address 0x29
-//#include <Wire.h>
-//#include <sensors/Tsl2561.h>
+
+#if defined(USE_TSL2561)
+#include <sensors/Tsl2561.h>
+#elif defined(USE_BH1750)
+#include <sensors/Bh1750.h>
+#endif
 
 #include <MultiChannelDevice.h>
 #include <Motion.h>
@@ -62,8 +71,10 @@ typedef Radio<SPIType,2> RadioType;
 typedef StatusLed<LED_PIN> LedType;
 typedef AskSin<LedType,BAT_SENSOR,RadioType> Hal;
 
-#ifdef _TSL2561_H_
+#if defined(USE_TSL2561)
 typedef MotionChannel<Hal,PEERS_PER_CHANNEL,List0,Tsl2561<TSL2561_ADDR_LOW> > MChannel;
+#elif defined(USE_BH1750)
+typedef MotionChannel<Hal,PEERS_PER_CHANNEL,List0,Bh1750<0x23> > MChannel;
 #else
 typedef MotionChannel<Hal,PEERS_PER_CHANNEL,List0> MChannel;
 #endif
