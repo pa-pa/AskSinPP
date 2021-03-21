@@ -13,17 +13,63 @@
 namespace as {
 
 // https://github.com/claws/BH1750
-template <byte ADDRESS=0x23,::BH1750::Mode MODE=::BH1750::Mode::CONTINUOUS_HIGH_RES_MODE>
+template <byte ADDRESS=0x23,::BH1750::Mode MODE=::BH1750::Mode::ONE_TIME_HIGH_RES_MODE>
 class Bh1750 : public Brightness {
   ::BH1750   _bh;
+private:
+  uint8_t numRetry;
+
+  #ifdef BH1750_AUTOCALIBRATE
+  bool waitForMeasurementReady() {
+    for (int i=0; i<360; i++) {
+      if (_bh.measurementReady())
+        return true;
+      delay(1);
+    }
+    return false;
+  }
+
+  float doMeasurement()
+  {
+    waitForMeasurementReady();
+    float lux = _bh.readLightLevel();
+
+    if (lux < 0)
+    {
+      if (numRetry == 10)
+        return 0.0;
+
+       numRetry++;
+      doMeasurement();
+    }
+
+    numRetry = 0;
+    return lux;
+  }
+  #endif
+
 public:
   Bh1750 () : _bh(ADDRESS) {}
   void init () {
       _present = _bh.begin(MODE);
+      numRetry = 0;
   }
+
   void measure (__attribute__((unused)) bool async=false) {
-    if( present() == true ) {
-      _brightness = _bh.readLightLevel();
+    if( present() ) {
+      #ifdef BH1750_AUTOCALIBRATE
+      float lux = doMeasurement();
+      if (lux > 40000.0 )
+        _bh.setMTreg(32);
+      else if (lux > 10.0)
+        _bh.setMTreg(69);
+      else if (lux <= 10.0)
+        _bh.setMTreg(138);
+
+      _brightness = (uint32_t)doMeasurement();
+      #else
+      _brightness = (uint32_t)_bh.readLightLevel();
+      #endif
     }
   }
 };
