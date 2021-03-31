@@ -30,6 +30,8 @@ jobs:
 
       - name: Setup Arduino CLI
         uses: arduino/setup-arduino-cli@v1.1.1
+        with:
+          version: "0.17.0"
 
       - name: Install Libs and Cores
         run: ./install-deps.sh
