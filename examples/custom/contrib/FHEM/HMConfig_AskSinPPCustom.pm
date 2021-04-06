@@ -14,7 +14,7 @@ $HMConfig::culHmSubTypeSets{"Values"}  = { };
 # iButton Channels
 $HMConfig::culHmRegDefine{"addressHi"}  = {a=>224,s=>4,l=>1,min=>0,max=>0xffffffff,c=>'hex',p=>'n',f=>'',u=>'',d=>1,t=>"address high"};
 $HMConfig::culHmRegDefine{"addressLo"}  = {a=>228,s=>4,l=>1,min=>0,max=>0xffffffff,c=>'hex',p=>'n',f=>'',u=>'',d=>1,t=>"address low"};
-$HMConfig::culHmRegDefine{"buttonMode"} = {a=>50 ,s=>1,l=>0,min=>0,max=>1,         c=>'lit',p=>'n',f=>'',u=>'',d=>1,t=>"button mode",lit=>{remote=>0,state=>1}};
+$HMConfig::culHmRegDefine{"buttonMode"} = {a=>50 ,s=>1,l=>0,min=>0,max=>1,         c=>'lit',p=>'n',f=>'',u=>'',d=>1,t=>"button mode",lit=>{remote=>0,state=>1},litInv=>{0=>'remote',1=>'state'}};
 
 # HB-UNI-Sen-TEMP-DS18B20
 $HMConfig::culHmRegDefine{"lowBattLimit"}   = {a=>18 ,s=>1,l=>0,min=>19, max=>33,  c=>'',   p=>'n',f=>10,u=>'V',d=>1,t=>"low batterie limit, step .1V"};
@@ -22,15 +22,15 @@ $HMConfig::culHmRegDefine{"lowBattLimit"}   = {a=>18 ,s=>1,l=>0,min=>19, max=>33
 # HB-UNI-Sen-LEV-US
 $HMConfig::culHmRegDefine{"sendInterval"}   = {a=>32, s=>2,l=>0,min=>10,max=>3600, c=>'',   p=>'n',f=>'',u=>'s', d=>1,t=>"send interval"};
 $HMConfig::culHmRegDefine{"distanceOffset"} = {a=>1 , s=>2,l=>1,min=>0, max=>600,  c=>'',   p=>'n',f=>'',u=>'cm',d=>1,t=>"distance offset"};
-$HMConfig::culHmRegDefine{"sensorType"}     = {a=>3 , s=>1,l=>1,min=>0, max=>1,    c=>'lit',p=>'n',f=>'',u=>'',  d=>1,t=>"sensor type",lit=>{jsn=>0,maxsonar=>1}};
-$HMConfig::culHmRegDefine{"caseDesign"}     = {a=>90, s=>1,l=>1,min=>0, max=>2,    c=>'lit',p=>'n',f=>'',u=>'',  d=>1,t=>"case design",lit=>{vertical=>0,horizontal=>1,rectangle=>2}};
+$HMConfig::culHmRegDefine{"sensorType"}     = {a=>3 , s=>1,l=>1,min=>0, max=>1,    c=>'lit',p=>'n',f=>'',u=>'',  d=>1,t=>"sensor type",lit=>{jsn=>0,maxsonar=>1},litInv=>{0=>'jsn',1=>'maxsonar'}};
+$HMConfig::culHmRegDefine{"caseDesign"}     = {a=>90, s=>1,l=>1,min=>0, max=>2,    c=>'lit',p=>'n',f=>'',u=>'',  d=>1,t=>"case design",lit=>{vertical=>0,horizontal=>1,rectangle=>2},litInv=>{0=>'vertical',1=>'horizontal',2=>'rectangle'}};
 $HMConfig::culHmRegDefine{"caseHeight"}     = {a=>94, s=>2,l=>1,min=>30,max=>10000,c=>'',   p=>'n',f=>'',u=>'cm',d=>1,t=>"case height"};
 $HMConfig::culHmRegDefine{"caseWidth"}      = {a=>102,s=>2,l=>1,min=>30,max=>10000,c=>'',   p=>'n',f=>'',u=>'cm',d=>1,t=>"case width"};
 $HMConfig::culHmRegDefine{"caseLength"}     = {a=>106,s=>2,l=>1,min=>30,max=>10000,c=>'',   p=>'n',f=>'',u=>'cm',d=>1,t=>"case length"};
 
 # HB-UNI-Sen-PRESS
 $HMConfig::culHmRegDefine{"sendIntervalPress"}   = {a=>33, s=>2,l=>0,min=>20,max=>600, c=>'',   p=>'n',f=>'',u=>'s', d=>1,t=>"send interval"};
-$HMConfig::culHmRegDefine{"sensorTypePress"}     = {a=>39 ,s=>1,l=>1,min=>0,max=>1,    c=>'lit',p=>'n',f=>'',u=>'',  d=>1,t=>"sensor type",lit=>{type12MPa=>0,type05MPa=>1}};
+$HMConfig::culHmRegDefine{"sensorTypePress"}     = {a=>39 ,s=>1,l=>1,min=>0,max=>1,    c=>'lit',p=>'n',f=>'',u=>'',  d=>1,t=>"sensor type",lit=>{type12MPa=>0,type05MPa=>1},litInv=>{0=>'type12MPa',1=>'type05MPa'}};
 
 # HB-UNI-Sen-CAP-MOIST-T
 $HMConfig::culHmRegDefine{"tempOffset"}         = {a=>1,  s=>4,l=>1,min=>-50,max=>50, c=>'',   p=>'n',f=>10,u=>'K', d=>1,t=>"temperature offset"};
@@ -50,7 +50,7 @@ $HMConfig::culHmRegDefine{"ldWdthreshold"}               = {a=>19.0,s=>1,l=>1,mi
 $HMConfig::culHmRegDefine{"ldNoisefloorlevel"}           = {a=>20.0,s=>1,l=>1,min=>0,max=>7,   c=>'',   p=>'n',f=>'',  u=>'',    d=>1,t=>"Light Detector Noisefloorlevel"};
 $HMConfig::culHmRegDefine{"ldSpikerejection"}            = {a=>21.0,s=>1,l=>1,min=>0,max=>7,   c=>'',   p=>'n',f=>'',  u=>'',    d=>1,t=>"Light Detector Spikerejection"};
 $HMConfig::culHmRegDefine{"gustThresholdExtraMessage"}   = {a=>6.0, s=>1,l=>1,min=>0,max=>255, c=>'',   p=>'n',f=>'',  u=>'km/h',d=>1,t=>"Gust Threshold Extra Message"};
-$HMConfig::culHmRegDefine{"rdSensorType"}                = {a=>17.0,s=>1,l=>1,min=>0,max=>0,   c=>'lit',p=>'n',f=>'',  u=>'',    d=>1,t=>"Rain Detector Sensor Type",lit=>{generic=>0,stallbiz=>1}};
+$HMConfig::culHmRegDefine{"rdSensorType"}                = {a=>17.0,s=>1,l=>1,min=>0,max=>0,   c=>'lit',p=>'n',f=>'',  u=>'',    d=>1,t=>"Rain Detector Sensor Type",lit=>{generic=>0,stallbiz=>1},litInv=>{0=>'generic',1=>'stallbiz'}};
 $HMConfig::culHmRegDefine{"rdStallbizHiThresholdRain"}   = {a=>9.0, s=>2,l=>1,min=>0,max=>1023,c=>'',   p=>'n',f=>'',  u=>'',    d=>1,t=>"Rain Detector Stallbiz Hi Threshold Rain"};
 $HMConfig::culHmRegDefine{"rdStallbizLoThresholdRain"}   = {a=>11.0,s=>2,l=>1,min=>0,max=>1023,c=>'',   p=>'n',f=>'',  u=>'',    d=>1,t=>"Rain Detector Stallbiz Threshold Rain"};
 $HMConfig::culHmRegDefine{"rdStallbizHiThresholdHeater"} = {a=>13.0,s=>2,l=>1,min=>0,max=>1023,c=>'',   p=>'n',f=>'',  u=>'',    d=>1,t=>"Rain Detector Stallbiz Hi Threshold Heater"};
@@ -411,6 +411,32 @@ $customMsg{"HB-LC-SW1-MDIR"} = sub {
   my $channel = $msg->channel;
   return $msg->processValues if $msg->isValues;
   return $msg->processMotion($target) if $channel == 2;
+  return $msg->processSwitchStatus($target) if $msg->isStatus;
+  return ();
+};
+
+# pool controler
+$HMConfig::culHmModel{"F20C"} = {name=>"HB-LC-SW6-POOL",st=>'custom',cyc=>'',rxt=>'',lst=>'1,3:1p.2p.3p.4p.5p.6p,4:7p',chn=>"Sw:1:6,Value:7:7"};
+$HMConfig::culHmChanSets{"HB-LC-SW6-POOL00"}{fwUpdate} = "<filename>";
+$HMConfig::culHmChanSets{"HB-LC-SW6-POOL01"} = $HMConfig::culHmSubTypeSets{"switch"};
+$HMConfig::culHmChanSets{"HB-LC-SW6-POOL02"} = $HMConfig::culHmSubTypeSets{"switch"};
+$HMConfig::culHmChanSets{"HB-LC-SW6-POOL03"} = $HMConfig::culHmSubTypeSets{"switch"};
+$HMConfig::culHmChanSets{"HB-LC-SW6-POOL04"} = $HMConfig::culHmSubTypeSets{"switch"};
+$HMConfig::culHmChanSets{"HB-LC-SW6-POOL05"} = $HMConfig::culHmSubTypeSets{"switch"};
+$HMConfig::culHmChanSets{"HB-LC-SW6-POOL06"} = $HMConfig::culHmSubTypeSets{"switch"};
+$HMConfig::culHmChanSets{"HB-LC-SW6-POOL07"} = $HMConfig::culHmSubTypeSets{"Values"};
+#$HMConfig::culHmRegModel{"HB-LC-SW6-POOL"}   = {};
+$HMConfig::culHmRegChan {"HB-LC-SW6-POOL01"} = $HMConfig::culHmRegType{switch};
+$HMConfig::culHmRegChan {"HB-LC-SW6-POOL02"} = $HMConfig::culHmRegType{switch};
+$HMConfig::culHmRegChan {"HB-LC-SW6-POOL03"} = $HMConfig::culHmRegType{switch};
+$HMConfig::culHmRegChan {"HB-LC-SW6-POOL04"} = $HMConfig::culHmRegType{switch};
+$HMConfig::culHmRegChan {"HB-LC-SW6-POOL05"} = $HMConfig::culHmRegType{switch};
+$HMConfig::culHmRegChan {"HB-LC-SW6-POOL06"} = $HMConfig::culHmRegType{switch};
+$HMConfig::culHmRegChan {"HB-LC-SW6-POOL07"} = $HMConfig::culHmRegType{values};
+$customMsg{"HB-LC-SW6-POOL"} = sub {
+  my ($msg,$target) = @_;
+  my $channel = $msg->channel;
+  return $msg->processValues if $msg->isValues;
   return $msg->processSwitchStatus($target) if $msg->isStatus;
   return ();
 };
