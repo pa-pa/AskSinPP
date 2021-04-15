@@ -180,6 +180,8 @@ public:
         // measurement is done, loop here forever
         while(1);
 #else
+        DPRINTLN("Going to sleep...");
+        Serial.flush();
         activity().savePower<Sleep<> >(this->getHal());
 #endif
       }
