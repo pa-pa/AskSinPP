@@ -154,10 +154,15 @@ public:
         // store frequency
         DPRINT("Store into config area: ");DHEX((uint8_t)(freq>>8));DHEX((uint8_t)(freq&0xff));
         StorageConfig sc = getConfigArea();
+
 #if defined ARDUINO_ARCH_STM32F1
         Wire.begin();
         DPRINT(".");
 #endif
+        // read old frequency
+        uint8_t oldF1 = sc.getByte(CONFIG_FREQ1);
+        uint8_t oldF2 = sc.getByte(CONFIG_FREQ2);
+
         sc.clear();
         DPRINT(".");
         sc.setByte(CONFIG_FREQ1, freq>>8);
@@ -167,6 +172,10 @@ public:
         sc.validate();
 
         DPRINTLN("stored!");
+
+        DPRINT("\nOld Config Freq was: 0x21");DHEX(oldF1);DHEX(oldF2);
+        printFreq(0x210000 + oldF1*256 + oldF2);
+
 #if defined ARDUINO_ARCH_STM32F1
         // measurement is done, loop here forever
         while(1);
