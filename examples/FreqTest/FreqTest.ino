@@ -193,9 +193,14 @@ public:
   virtual bool process(Message& msg) {
     msg.from().dump(); DPRINT(".");
     rssi = max(rssi,radio().rssi());
-    received++;
-    if( received > 0 ) {
-      trigger(sysclock);
+#ifdef ACTIVE_PING
+    if (msg.from() == PING_TO)
+#endif
+    {
+      received++;
+      if( received > 0 ) {
+        trigger(sysclock);
+      }
     }
     return true;
   }
@@ -205,6 +210,12 @@ public:
     this->getDeviceID(id);
     hal.init(id);
 
+#ifdef ACTIVE_PING
+    DPRINT("Active ping is enabled, looking for telegrams only from ");
+    PING_TO.dump(); DPRINTLN("!");
+#else
+    DPRINTLN("Active ping is NOT enabled, looking for any telegram");
+#endif
     DPRINTLN("Start searching ...");
     setFreq(STARTFREQ);
     return false;
