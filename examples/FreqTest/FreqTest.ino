@@ -173,9 +173,11 @@ public:
 
         DPRINTLN("stored!");
 
-        DPRINT("\nOld Config Freq was: 0x21");DHEX(oldF1);DHEX(oldF2);
-        printFreq(0x210000 + oldF1*256 + oldF2);
-
+        if ((oldF1 >= 0x60) && (oldF1 <= 0x6A)) {
+          DPRINT("\nOld Config Freq was: 0x21");DHEX(oldF1);DHEX(oldF2);
+          printFreq(0x210000 + oldF1*256 + oldF2);
+        }
+        
 #if defined ARDUINO_ARCH_STM32F1
         // measurement is done, loop here forever
         while(1);
