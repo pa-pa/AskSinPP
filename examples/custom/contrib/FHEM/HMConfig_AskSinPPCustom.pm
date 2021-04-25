@@ -562,6 +562,33 @@ $customMsg{"HB-UNI-Sen-CAP-MOIST-T"} = sub {
   return @evtEt;
 };
 
+$HMConfig::culHmModel{"F331"} = {name=>"HB-UNI-SenAct-4-4-SC",st=>'custom',cyc=>'',rxt=>'',lst=>'1,3:1p.2p.3p.4p,4:5p.6p.7p.8p',chn=>"Sw:1:4,Btn:5:8"};
+$HMConfig::culHmChanSets{"HB-UNI-SenAct-4-4-SC00"}{fwUpdate} = "<filename>";
+$HMConfig::culHmChanSets{"HB-UNI-SenAct-4-4-SC01"} = $HMConfig::culHmSubTypeSets{"switch"};
+$HMConfig::culHmChanSets{"HB-UNI-SenAct-4-4-SC02"} = $HMConfig::culHmSubTypeSets{"switch"};
+$HMConfig::culHmChanSets{"HB-UNI-SenAct-4-4-SC03"} = $HMConfig::culHmSubTypeSets{"switch"};
+$HMConfig::culHmChanSets{"HB-UNI-SenAct-4-4-SC04"} = $HMConfig::culHmSubTypeSets{"switch"};
+$HMConfig::culHmChanSets{"HB-UNI-SenAct-4-4-SC05"} = $HMConfig::culHmSubTypeSets{"THSensor"};
+$HMConfig::culHmChanSets{"HB-UNI-SenAct-4-4-SC06"} = $HMConfig::culHmSubTypeSets{"THSensor"};
+$HMConfig::culHmChanSets{"HB-UNI-SenAct-4-4-SC07"} = $HMConfig::culHmSubTypeSets{"THSensor"};
+$HMConfig::culHmChanSets{"HB-UNI-SenAct-4-4-SC08"} = $HMConfig::culHmSubTypeSets{"THSensor"};
+$HMConfig::culHmRegModel{"HB-UNI-SenAct-4-4-SC"}   = { intKeyVisib=>1, cyclicInfoMsg=>1, sabotageMsg=>1 };
+$HMConfig::culHmRegChan {"HB-UNI-SenAct-4-4-SC01"} = $HMConfig::culHmRegType{switch};
+$HMConfig::culHmRegChan {"HB-UNI-SenAct-4-4-SC02"} = $HMConfig::culHmRegType{switch};
+$HMConfig::culHmRegChan {"HB-UNI-SenAct-4-4-SC03"} = $HMConfig::culHmRegType{switch};
+$HMConfig::culHmRegChan {"HB-UNI-SenAct-4-4-SC04"} = $HMConfig::culHmRegType{switch};
+$HMConfig::culHmRegChan {"HB-UNI-SenAct-4-4-SC05"} = $HMConfig::culHmRegType{threeStateSensor};
+$HMConfig::culHmRegChan {"HB-UNI-SenAct-4-4-SC06"} = $HMConfig::culHmRegType{threeStateSensor};
+$HMConfig::culHmRegChan {"HB-UNI-SenAct-4-4-SC07"} = $HMConfig::culHmRegType{threeStateSensor};
+$HMConfig::culHmRegChan {"HB-UNI-SenAct-4-4-SC08"} = $HMConfig::culHmRegType{threeStateSensor};
+$customMsg{"HB-UNI-SenAct-4-4-SC"} = sub {
+  my ($msg,$target) = @_;
+  my $channel = $msg->channel;
+  return $msg->processThreeState($target) if $channel > 4;
+  return $msg->processSwitchStatus($target) if $msg->isStatus;
+  return ();
+};
+
 $HMConfig::culHmModel{"F33A"} = {name=>"HB-UNI-SenAct-8-8-SC",st=>'custom',cyc=>'',rxt=>'c:l',lst=>'1,3:1p.2p.3p.4p.5p.6p.7p.8p,4:9p.10p.11p.12p.13p.14p.15p.16p',chn=>"Sw:1:8,Sen:9:16"};
 $HMConfig::culHmChanSets{"HB-UNI-SenAct-8-8-SC00"}{fwUpdate} = "<filename>";
 $HMConfig::culHmChanSets{"HB-UNI-SenAct-8-8-SC01"} = $HMConfig::culHmSubTypeSets{"switch"};
