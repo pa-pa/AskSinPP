@@ -149,6 +149,10 @@ sub processBlindStatus {
   }
   if( defined($channel) ) {
     my $value = $self->payloadByte(2)/2;
+    # invert value if requested
+    if (main::AttrVal($channel->{NAME},"param","") =~ m/levelInverse/) {
+        $value = 100-$value;
+    }
     my $flags = $self->payloadByte(3);
     my $valuestr = "$value %";
     $valuestr = "on"  if $value==100;
