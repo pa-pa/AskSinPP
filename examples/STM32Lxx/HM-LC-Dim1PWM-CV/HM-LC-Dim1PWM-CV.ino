@@ -6,19 +6,14 @@
 
 #define HIDE_IGNORE_MSG
 
-// as we have no defined HW in STM32duino yet, we are working on base of the RAK811 board
+// as we have no defined HW in STM32duino yet, we are working on base of the default STM32L152CB board
 // which has a different pin map. deviances are handled for the moment in a local header file. 
 // This might change when an own HW for AskSin is defined
-#include "stm32l1-variant.h"
+#include "AskSin32Duino.h"
 
 // Derive ID and Serial from the device UUID
 //#define USE_HW_SERIAL
 
-// when we include SPI.h - we can use LibSPI class, we want to use SPI2
-// defines are not required if an own AskSin HW is available in STM32 core
-#define PIN_SPI_MOSI PB15
-#define PIN_SPI_MISO PB14
-#define PIN_SPI_SCK  PB13
 #include <SPI.h>
 #include <Onewire.h>
 
@@ -27,15 +22,12 @@
 #include <Sensors.h>
 #include <sensors/Ds18b20.h>
 
-#define CC1101_GDO0_PIN     PA8
-#define CC1101_CS_PIN       PB10
-#define CC1101_EN_PIN       PA15
 
 // Pin definition of the specific device
-#define CONFIG_BUTTON_PIN   PA11
-#define LED_PIN             PC13
-#define DIMMER1_PIN         PB3
-#define ONE_WIRE_PIN        PB12
+#define CONFIG_BUTTON_PIN   PC15
+#define LED_PIN             PC14
+#define DIMMER1_PIN         PA2
+#define ONE_WIRE_PIN        PB9
 
 // number of available peers per channel
 #define PEERS_PER_CHANNEL 6
@@ -46,8 +38,8 @@ using namespace as;
 
 // define all device properties
 const struct DeviceInfo PROGMEM devinfo = {
-  {0x75, 0x2C, 0x74},     // Device ID
-  "HB55893420",           // Device Serial
+  {0x95, 0x2A, 0x73},     // Device ID
+  "HB55892020",           // Device Serial
   {0x00,0x67},            // Device Model
   0x25,                   // Firmware Version
   as::DeviceType::Dimmer, // Device Type
@@ -109,7 +101,7 @@ TempSens tempsensor;
 void setup () {
   // start cc1101 module
   pinMode(CC1101_EN_PIN, OUTPUT);
-  digitalWrite(CC1101_EN_PIN, HIGH);
+  digitalWrite(CC1101_EN_PIN, LOW);
 
   delay(1000);
   DINIT(57600,ASKSIN_PLUS_PLUS_IDENTIFIER);
