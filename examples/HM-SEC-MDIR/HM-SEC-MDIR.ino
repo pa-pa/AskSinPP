@@ -7,13 +7,22 @@
 // define this to read the device id, serial and device type from bootloader section
 // #define USE_OTA_BOOTLOADER
 
+// define this if you have a TSL2561 connected at address 0x29
+// #define USE_TSL2561
+
+// define this if you have a BH1750 connected at address 0x23
+// #define USE_BH1750
+
 #define EI_NOTEXTERNAL
 #include <EnableInterrupt.h>
 #include <AskSinPP.h>
 #include <LowPower.h>
-// uncomment the following 2 lines if you have a TSL2561 connected at address 0x29
-//#include <Wire.h>
-//#include <sensors/Tsl2561.h>
+
+#if defined(USE_TSL2561)
+#include <sensors/Tsl2561.h>
+#elif defined(USE_BH1750)
+#include <sensors/Bh1750.h>
+#endif
 
 #include <MultiChannelDevice.h>
 #include <Motion.h>
@@ -28,6 +37,15 @@
 // Arduino pin for the PIR
 // A0 == PIN 14 on Pro Mini
 #define PIR_PIN 14
+
+// === Battery measurement ===
+#define BAT_VOLT_LOW        21  // 2.1V low voltage threshold
+#define BAT_VOLT_CRITICAL   19  // 1.9V critical voltage threshold, puts AVR into sleep-forever mode
+// Internal measuring: AVR voltage
+#define BAT_SENSOR BatterySensor
+// External measuring: Potential devider on GPIO; required if a StepUp converter is used
+// one can consider lower thresholds (low=20; cri=13)
+//#define BAT_SENSOR BatterySensorUni<A3,7,3000> // <SensPIN, ActivationPIN, RefVcc>
 
 // number of available peers per channel
 #define PEERS_PER_CHANNEL 6
@@ -51,28 +69,20 @@ const struct DeviceInfo PROGMEM devinfo = {
 typedef AvrSPI<10,11,12,13> SPIType;
 typedef Radio<SPIType,2> RadioType;
 typedef StatusLed<LED_PIN> LedType;
-typedef AskSin<LedType,BatterySensor,RadioType> BaseHal;
-class Hal : public BaseHal {
-public:
-  void init (const HMID& id) {
-    BaseHal::init(id);
-    // set low voltage to 2.2V
-    // measure battery every 1h
-    battery.init(seconds2ticks(60UL*60),sysclock);
-    battery.low(22);
-    battery.critical(19);
-  }
-} hal;
+typedef AskSin<LedType,BAT_SENSOR,RadioType> Hal;
 
-#ifdef _TSL2561_H_
+#if defined(USE_TSL2561)
 typedef MotionChannel<Hal,PEERS_PER_CHANNEL,List0,Tsl2561<TSL2561_ADDR_LOW> > MChannel;
+#elif defined(USE_BH1750)
+typedef MotionChannel<Hal,PEERS_PER_CHANNEL,List0,Bh1750<0x23> > MChannel;
 #else
 typedef MotionChannel<Hal,PEERS_PER_CHANNEL,List0> MChannel;
 #endif
 
 typedef MultiChannelDevice<Hal,MChannel,1> MotionType;
-MotionType sdev(devinfo,0x20);
 
+Hal hal;
+MotionType sdev(devinfo,0x20);
 ConfigButton<MotionType> cfgBtn(sdev);
 
 void setup () {
@@ -80,6 +90,7 @@ void setup () {
   sdev.init(hal);
   buttonISR(cfgBtn,CONFIG_BUTTON_PIN);
   motionISR(sdev,1,PIR_PIN);
+  hal.initBattery(60UL*60,BAT_VOLT_LOW,BAT_VOLT_CRITICAL); // Measure Battery every 1h
   sdev.initDone();
 }
 

@@ -37,6 +37,8 @@ GIT_LIBS=(
   "https://github.com/adafruit/Adafruit_ADS1X15"
   "https://github.com/marcoschwartz/LiquidCrystal_I2C.git"
   "https://github.com/olikraus/U8g2_Arduino.git"
+  "https://github.com/laurb9/StepperDriver.git"
+  "https://github.com/jp112sdl/INA219_WE"
 )
 
 # Install Libs

@@ -13,18 +13,36 @@
 namespace as {
 
 // https://github.com/claws/BH1750
-template <byte ADDRESS=0x23,::BH1750::Mode MODE=::BH1750::Mode::CONTINUOUS_HIGH_RES_MODE>
+template <byte ADDRESS=0x23,::BH1750::Mode MODE=::BH1750::Mode::CONTINUOUS_HIGH_RES_MODE,bool AUTOCALIBRATE=false>
 class Bh1750 : public Brightness {
   ::BH1750   _bh;
 public:
   Bh1750 () : _bh(ADDRESS) {}
   void init () {
-      _present = _bh.begin(MODE);
+    _present = _bh.begin(MODE);
   }
   void measure (__attribute__((unused)) bool async=false) {
-    if( present() == true ) {
-      _brightness = _bh.readLightLevel();
+    if( present() == true && waitReady() == true ) {
+      if( AUTOCALIBRATE == true ) {
+        float lux = _bh.readLightLevel();
+        if (lux > 40000.0 )   _bh.setMTreg(32);
+        else if (lux > 10.0)  _bh.setMTreg(69);
+        else if (lux <= 10.0) _bh.setMTreg(138);
+        _brightness = _bh.readLightLevel();
+      }
+      else {
+        _brightness = _bh.readLightLevel();
+      }
     }
+  }
+  bool waitReady() {
+    for (int i=0; i<360; i++) {
+      if (_bh.measurementReady()) {
+        return true;
+      }
+      _delay_ms(1);
+    }
+    return false;
   }
 };
 

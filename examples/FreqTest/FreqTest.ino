@@ -154,10 +154,15 @@ public:
         // store frequency
         DPRINT("Store into config area: ");DHEX((uint8_t)(freq>>8));DHEX((uint8_t)(freq&0xff));
         StorageConfig sc = getConfigArea();
+
 #if defined ARDUINO_ARCH_STM32F1
         Wire.begin();
         DPRINT(".");
 #endif
+        // read old frequency
+        uint8_t oldF1 = sc.getByte(CONFIG_FREQ1);
+        uint8_t oldF2 = sc.getByte(CONFIG_FREQ2);
+
         sc.clear();
         DPRINT(".");
         sc.setByte(CONFIG_FREQ1, freq>>8);
@@ -167,10 +172,18 @@ public:
         sc.validate();
 
         DPRINTLN("stored!");
+
+        if ((oldF1 >= 0x60) && (oldF1 <= 0x6A)) {
+          DPRINT("\nOld Config Freq was: 0x21");DHEX(oldF1);DHEX(oldF2);
+          printFreq(0x210000 + oldF1*256 + oldF2);
+        }
+        
 #if defined ARDUINO_ARCH_STM32F1
         // measurement is done, loop here forever
         while(1);
 #else
+        DPRINTLN("Going to sleep...");
+        Serial.flush();
         activity().savePower<Sleep<> >(this->getHal());
 #endif
       }
@@ -180,9 +193,14 @@ public:
   virtual bool process(Message& msg) {
     msg.from().dump(); DPRINT(".");
     rssi = max(rssi,radio().rssi());
-    received++;
-    if( received > 0 ) {
-      trigger(sysclock);
+#ifdef ACTIVE_PING
+    if (msg.from() == PING_TO)
+#endif
+    {
+      received++;
+      if( received > 0 ) {
+        trigger(sysclock);
+      }
     }
     return true;
   }
@@ -192,6 +210,12 @@ public:
     this->getDeviceID(id);
     hal.init(id);
 
+#ifdef ACTIVE_PING
+    DPRINT("Active ping is enabled, looking for telegrams only from ");
+    PING_TO.dump(); DPRINTLN("!");
+#else
+    DPRINTLN("Active ping is NOT enabled, looking for any telegram");
+#endif
     DPRINTLN("Start searching ...");
     setFreq(STARTFREQ);
     return false;
