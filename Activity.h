@@ -14,6 +14,7 @@
 #endif
 #if defined ARDUINO_ARCH_STM32 && defined STM32L1xx
 #include "low_power.h"
+#include "rtc.h"
 #include <time.h>
 
 typedef void (*voidFuncPtrVoid)(void);

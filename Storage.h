@@ -12,6 +12,7 @@
   #include "flash_stm32.h"
 #endif
 
+
 namespace as {
 
 class InternalEprom {
@@ -49,6 +50,7 @@ class InternalEprom {
   // this works for STM32L151C8, todo: check for other variants with more flash
   #define EEADDR_EEPROM_START  0x08080000
   #define EEINFO_EEPROM_SIZE   4096
+  #define E2END EEINFO_EEPROM_SIZE
 
   void eeprom_read_block(void* buf, const void* addr, size_t size) {
     // check if address is within our eeprom

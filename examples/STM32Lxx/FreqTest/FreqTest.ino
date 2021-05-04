@@ -2,39 +2,29 @@
 // AskSin++
 // 2016-10-31 papa Creative Commons - http://creativecommons.org/licenses/by-nc-sa/3.0/de/
 // 2019-11-16 stan23 Creative Commons - http://creativecommons.org/licenses/by-nc-sa/3.0/de/
-// 2021-03-25 modified for the STM32L1xx CPU by trilu
+// 2021-03-25 trilu Creative Commons - http://creativecommons.org/licenses/by-nc-sa/3.0/de/ (STM32L151 adaption)
 //- -----------------------------------------------------------------------------------------------------------------------
 
 #define HIDE_IGNORE_MSG
 
-// as we have no defined HW in STM32duino yet, we are working on base of the RAK811 board,
+// as we have no defined HW in STM32duino yet, we are working on base of the default STM32L152CB board,
 // which has a different pin map. deviances are handled for the moment in a local header file. 
 // This might change when an own HW for AskSin is defined
-#include "stm32l1-variant.h"
+#include "AskSin32Duino.h"
 
 // Derive ID and Serial from the device UUID
 //#define USE_HW_SERIAL
 
-// when we include SPI.h - we can use LibSPI class, we want to use SPI2
-// defines are not required if an own AskSin HW is available in STM32 core
-#define PIN_SPI_MOSI PB15
-#define PIN_SPI_MISO PB14
-#define PIN_SPI_SCK  PB13
+
 #include <SPI.h>
 
 #include <AskSinPP.h>
 #include <Device.h>
 #include <Register.h>
 
-#define CC1101_GDO0_PIN     PA8
-#define CC1101_CS_PIN       PB12
-#define CC1101_EN_PIN       PA15
-
 // Pin definition of the specific device
-#define CONFIG_BUTTON_PIN   PA11
-#define LED_PIN             PC13
-
-
+#define CONFIG_BUTTON_PIN   PC15
+#define LED_PIN             PC14
 
 
 // all library classes are placed in the namespace 'as'
@@ -66,11 +56,11 @@ typedef AskSin<LedType,NoBattery,RadioType> HalType;
 #define BOUNDSTEP 0x10               // step width during upper/lower bound analysis
 
 
-
-// see https://github.com/AskSinPP/asksinpp.de/blob/master/Grundlagen/FAQ/Fehlerhafte_CC1101.md
-// #define ACTIVE_PING
-HMID PING_FROM(0x12,0x34,0x56);      // from address for status message e.g. switch
-HMID PING_TO(0x99,0x66,0x99);        // to address for status message / central / CCU
+#define ACTIVE_PING
+//376FF8 
+HMID PING_FROM(0x26,0x6D,0xC4);      // from address for status message e.g. switch
+//45FBFA 
+HMID PING_TO(0x45,0xFB,0xFA);        // to address for status message / central / CCU
 #ifdef ACTIVE_PING
   #define SCANTIME seconds2ticks(5)  // maximal time to wait for a valid message
 #else
@@ -250,7 +240,7 @@ public:
 void setup () {
   // start cc1101 module
   pinMode(CC1101_EN_PIN, OUTPUT);
-  digitalWrite(CC1101_EN_PIN, HIGH);
+  digitalWrite(CC1101_EN_PIN, LOW);
 
   delay(1000);
 
