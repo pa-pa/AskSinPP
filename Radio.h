@@ -14,6 +14,13 @@
 #ifndef _CC_H
 #define _CC_H
 
+#ifdef ARDUINO_ARCH_ESP32
+  #define _delay_us(us) delayMicroseconds(us)
+  #define _delay_ms(ms) delayMicroseconds(ms)
+  #include <SPI.h>
+  typedef uint8_t BitOrder;
+#endif
+
 #include "Message.h"
 #include "AlarmClock.h"
 

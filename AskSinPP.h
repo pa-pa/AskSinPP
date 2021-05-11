@@ -25,7 +25,7 @@
 #define CONFIG_FREQ2     1
 #define CONFIG_BOOTSTATE 2  //location of current boot state for ResetOnBoot
 
-#include <Debug.h>
+#include "Debug.h"
 #include <stdint.h>
 
 #ifdef ARDUINO_ARCH_STM32F1
@@ -59,7 +59,7 @@
 
 #include <Storage.h>
 #include <Pins.h>
-#include <Debug.h>
+#include "Debug.h"
 #include <Activity.h>
 #include <Led.h>
 #include <Buzzer.h>

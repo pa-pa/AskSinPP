@@ -12,6 +12,9 @@
   #include "flash_stm32.h"
 #endif
 
+#ifdef ARDUINO_ARCH_ESP32
+  #define _delay_ms(ms) delayMicroseconds(ms)
+#endif
 
 namespace as {
 
@@ -82,7 +85,7 @@ class InternalEprom {
 }
 
 #endif
-#ifndef ARDUINO
+#if not defined ARDUINO || defined ARDUINO_ARCH_ESP32
   // we mirror 1 Flash Page into RAM
   uint8_t data[1024];
 
@@ -125,7 +128,7 @@ public:
   }
 
   uint16_t size () {
-#ifdef ARDUINO_ARCH_STM32F1
+#if defined ARDUINO_ARCH_STM32F1 || defined ARDUINO_ARCH_ESP32
     return 1024;
 #else
     return E2END + 1; // last EEPROM address + 1

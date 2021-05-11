@@ -6,7 +6,7 @@
 #ifndef __ACTIVITY_H__
 #define __ACTIVITY_H__
 
-#include <Debug.h>
+#include "Debug.h"
 #include <AlarmClock.h>
 #include <Radio.h>
 #if defined(ARDUINO_ARCH_AVR) && ! ( defined(ARDUINO_AVR_ATmega32) || defined(__AVR_ATmega644__) || defined(__AVR_ATmega128__))
@@ -83,6 +83,9 @@ private:
 } LowPower;
 #endif
 
+#ifdef ARDUINO_ARCH_ESP32
+#include "esp_deep_sleep.h"
+#endif
 
 namespace as {
 
@@ -375,6 +378,44 @@ public:
     clock.add(*this);
   }
 };
+
+#ifdef ARDUINO_ARCH_ESP32
+class Sleep {
+public:
+  static uint32_t doSleep (uint32_t ticks) {
+  uint32_t sleeptime = ticks2millis(ticks);
+
+  esp_sleep_enable_timer_wakeup(sleeptime * 100000);
+  esp_light_sleep_start();
+
+  return ticks;
+  }
+
+  static void waitSerial() {}; // dummy method, not required for ESP32
+
+  template <class Hal>
+  static void powerSave (Hal& hal) {
+    sysclock.disable();
+    uint32_t ticks = sysclock.next();
+    if( sysclock.isready() == false ) {
+      if( ticks == 0 || ticks > millis2ticks(15) ) {
+        hal.radio.setIdle();
+        uint32_t offset = doSleep(ticks);
+        sysclock.correct(offset);
+        sysclock.enable();
+      }
+      else{
+        sysclock.enable();
+//        Idle<ENABLETIMER2>::powerSave(hal);
+        powerSave(hal);
+      }
+    }
+    else {
+      sysclock.enable();
+    }
+  }
+};
+#endif
 
 }
 #endif

@@ -23,7 +23,11 @@
 #include "aes.h"
 #include "aes_invsbox.h"
 #include "aes_dec.h"
+#ifdef ARDUINO_ARCH_ESP32
+#include <pgmspace.h>
+#else
 #include <avr/pgmspace.h>
+#endif
 
 void aes_invshiftrow(void *data, uint8_t shift){
 	uint8_t tmp[4];
