@@ -177,7 +177,8 @@ public:
     Timer->pause();
   #endif
   #ifdef ARDUINO_ARCH_ESP32
-    timerAlarmDisable(Timer);
+    if (Timer != NULL)
+      timerAlarmDisable(Timer);
   #endif
   }
 
@@ -192,7 +193,8 @@ public:
     Timer->resume();
   #endif
   #ifdef ARDUINO_ARCH_ESP32
-    timerAlarmEnable(Timer);
+    if (Timer != NULL)
+      timerAlarmEnable(Timer);
   #endif
   }
 
