@@ -55,7 +55,7 @@ using namespace as;
 
 // define all device properties
 const struct DeviceInfo PROGMEM devinfo = {
-    {0x12,0x34,0x56},       // Device ID
+    {0x43,0x43,0x65},       // Device ID
     "papa000000",           // Device Serial
     {HM_LC_SW4_SM},         // Device Model
     0x16,                   // Firmware Version
@@ -88,7 +88,7 @@ ConfigToggleButton<SwitchType> cfgBtn(sdev);
 // we use LOW for ON and HIGH for OFF
 bool checkLowActive () {
   pinMode(17,OUTPUT);
-  pinMode(17,INPUT_PULLUP); 
+  pinMode(17,INPUT_PULLUP);
   digitalWrite(34,HIGH);
   digitalWrite(17,LOW);
   bool result = digitalRead(34) == LOW;
