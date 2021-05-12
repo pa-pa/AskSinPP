@@ -15,7 +15,6 @@
 #ifdef ARDUINO_ARCH_ESP32
   #include "AlarmClock.h"
   #include <EEPROM.h>
-  #define _delay_ms(ms) delayMicroseconds(ms)
 #endif
 
 namespace as {
