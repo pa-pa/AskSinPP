@@ -383,15 +383,15 @@ public:
 class Sleep {
 public:
   static uint32_t doSleep (uint32_t ticks) {
-  uint32_t sleeptime = ticks2millis(ticks);
+    uint32_t sleeptime = ticks2millis(ticks);
 
-  esp_sleep_enable_timer_wakeup(sleeptime * 100000);
-  esp_light_sleep_start();
+    esp_sleep_enable_timer_wakeup(sleeptime * 100000);
+    esp_light_sleep_start();
 
-  return ticks;
+    return ticks;
   }
 
-  static void waitSerial() {}; // dummy method, not required for ESP32
+  static void waitSerial() {Serial.flush();};
 
   template <class Hal>
   static void powerSave (Hal& hal) {
