@@ -90,21 +90,23 @@ class InternalEprom {
   #define EEINFO_EEPROM_SIZE  4096
   #define E2END EEINFO_EEPROM_SIZE
 
-  unsigned char eeprom_read_byte(unsigned char * pos)  {
+  unsigned char ICACHE_RAM_ATTR eeprom_read_byte(unsigned char * pos)  {
     uint8_t result = EEPROM.read(int(pos));
     //DPRINT("eeprom_read_byte (");DDEC(int(pos));DPRINT(") ");DHEXLN(result);
     return result;
   }
 
-  void eeprom_read_block(void * __dst, const void * __src, size_t __n) {
+  void ICACHE_RAM_ATTR eeprom_read_block(void * __dst, const void * __src, size_t __n) {
+    sysclock.disable();
     EEPROM.begin(EEINFO_EEPROM_SIZE);
     for (int i = 0; i < __n; i++) {
       *((char *)__dst + i) = eeprom_read_byte((uint8_t *)__src + i);
     }
     EEPROM.end();
+    sysclock.enable();
   }
 
-  void eeprom_write_block( const void * src, const void * dst,  size_t __n) {
+  void ICACHE_RAM_ATTR eeprom_write_block( const void * src, const void * dst,  size_t __n) {
     EEPROM.begin(EEINFO_EEPROM_SIZE);
     int pos = int(dst);
     for (int i = 0; i < __n; i++) {
