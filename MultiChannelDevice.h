@@ -158,6 +158,8 @@ public:
       nvic_sys_reset();
   #elif defined (ARDUINO_ARCH_STM32) && defined (STM32L1xx) 
       NVIC_SystemReset();
+  #elif ARDUINO_ARCH_ESP32
+      ESP.restart();
   #endif
     }
   }
