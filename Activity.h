@@ -84,7 +84,7 @@ private:
 #endif
 
 #ifdef ARDUINO_ARCH_ESP32
-#include "esp_deep_sleep.h"
+#include "esp_sleep.h"
 #endif
 
 namespace as {
