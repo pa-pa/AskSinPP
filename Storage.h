@@ -168,7 +168,7 @@ public:
   }
 
   uint16_t size () {
-#if defined ARDUINO_ARCH_STM32F1
+#ifdef ARDUINO_ARCH_STM32F1
     return 1024;
 #else
     return E2END + 1; // last EEPROM address + 1
