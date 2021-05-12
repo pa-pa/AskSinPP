@@ -13,6 +13,8 @@
 #endif
 
 #ifdef ARDUINO_ARCH_ESP32
+  #include "AlarmClock.h"
+  #include <EEPROM.h>
   #define _delay_ms(ms) delayMicroseconds(ms)
 #endif
 
@@ -84,8 +86,45 @@ class InternalEprom {
     HAL_FLASHEx_DATAEEPROM_Lock();
 }
 
+#elif defined ARDUINO_ARCH_ESP32
+  //ESP32 Arduino libraries emulate EEPROM using a sector (4 kilobytes) of flash memory.
+  #define EEINFO_EEPROM_SIZE  4096
+  #define E2END EEINFO_EEPROM_SIZE
+
+  unsigned char eeprom_read_byte(unsigned char * pos)  {
+    uint8_t result = EEPROM.read(int(pos));
+    //DPRINT("eeprom_read_byte (");DDEC(int(pos));DPRINT(") ");DHEXLN(result);
+    return result;
+  }
+
+  void eeprom_read_block(void * __dst, const void * __src, size_t __n) {
+    EEPROM.begin(EEINFO_EEPROM_SIZE);
+    for (int i = 0; i < __n; i++) {
+      *((char *)__dst + i) = eeprom_read_byte((uint8_t *)__src + i);
+    }
+    EEPROM.end();
+  }
+
+  void eeprom_write_block( const void * src, const void * dst,  size_t __n) {
+    EEPROM.begin(EEINFO_EEPROM_SIZE);
+    int pos = int(dst);
+    for (int i = 0; i < __n; i++) {
+      byte data = *((unsigned  char*)src + i);
+      EEPROM.write(pos + i, data);
+    }
+
+    //https://esp32.com/viewtopic.php?t=13861
+    //due to a bug, we have to disable the timer before committing to the EEPROM
+    sysclock.disable();
+    EEPROM.commit();
+    sysclock.enable();
+    EEPROM.end();
+  }
+
 #endif
-#if not defined ARDUINO || defined ARDUINO_ARCH_ESP32
+
+
+#if not defined ARDUINO
   // we mirror 1 Flash Page into RAM
   uint8_t data[1024];
 
@@ -128,7 +167,7 @@ public:
   }
 
   uint16_t size () {
-#if defined ARDUINO_ARCH_STM32F1 || defined ARDUINO_ARCH_ESP32
+#if defined ARDUINO_ARCH_STM32F1
     return 1024;
 #else
     return E2END + 1; // last EEPROM address + 1
