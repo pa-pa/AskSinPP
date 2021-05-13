@@ -94,7 +94,7 @@ class InternalEprom {
     static bool initDone = false;
     if (initDone == false) {
       initDone = true;
-      DPRINTLN("Init ESP32 EEPROM...");
+      DPRINTLN("Init ESP32 EEPROM.");
       EEPROM.begin(EEINFO_EEPROM_SIZE);
     }
   }
@@ -117,15 +117,15 @@ class InternalEprom {
 
   void IRAM_ATTR eeprom_write_block( const void * src, const void * dst,  size_t __n) {
     initEEPROM();
+
+    //https://esp32.com/viewtopic.php?t=13861
+    //due to a bug, we have to disable the timer before committing to the EEPROM
     sysclock.disable();
     int pos = int(dst);
     for (int i = 0; i < __n; i++) {
       byte data = *((unsigned  char*)src + i);
       EEPROM.write(pos + i, data);
     }
-
-    //https://esp32.com/viewtopic.php?t=13861
-    //due to a bug, we have to disable the timer before committing to the EEPROM
     EEPROM.commit();
     sysclock.enable();
   }
