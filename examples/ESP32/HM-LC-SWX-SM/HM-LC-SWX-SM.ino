@@ -18,6 +18,9 @@
 
 #define DEVICE_CONFIG CFG_LOWACTIVE_OFF
 
+//#define STORAGEDRIVER at24cX<0x50,128,32>
+//#include <Wire.h>
+
 // #define HM_SENSOR_RELAY
 #include <SPI.h>
 #include <AskSinPP.h>
