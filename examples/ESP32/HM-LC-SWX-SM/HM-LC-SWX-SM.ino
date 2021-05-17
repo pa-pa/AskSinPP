@@ -16,6 +16,7 @@
 #define CFG_LOWACTIVE_ON   0x01
 #define CFG_LOWACTIVE_OFF  0x00
 
+#define USE_HW_SERIAL
 #define DEVICE_CONFIG CFG_LOWACTIVE_OFF
 
 //#define STORAGEDRIVER at24cX<0x50,128,32>
@@ -152,6 +153,7 @@ void setup () {
   initModelType();
   initPeerings(first);
   sdev.initDone();
+  DDEVINFO(sdev);
 }
 
 void loop() {
