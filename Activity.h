@@ -92,7 +92,7 @@ namespace as {
 #if defined(ARDUINO_ARCH_AVR) && ! (defined(ARDUINO_AVR_ATmega32) || defined(__AVR_ATmega644__) || defined(__AVR_ATmega128__))
 
 
-template <bool ENABLETIMER2=false, bool ENABLEADC=false>
+template <bool ENABLETIMER2=false, bool ENABLEADC=false, bool ENABLETWI=false>
 class Idle {
 public:
 
@@ -108,12 +108,12 @@ public:
   template <class Hal>
   static void powerSave (__attribute__((unused)) Hal& hal) {
 #if defined __AVR_ATmega644P__ || defined (__AVR_ATmega1284P__)
-    LowPower.idle(SLEEP_FOREVER,ENABLEADC==true?ADC_ON:ADC_OFF,ENABLETIMER2==false?TIMER2_OFF:TIMER2_ON,TIMER1_ON,TIMER0_OFF,SPI_ON,USART1_OFF,USART0_ON,TWI_OFF);
+    LowPower.idle(SLEEP_FOREVER,ENABLEADC==true?ADC_ON:ADC_OFF,ENABLETIMER2==false?TIMER2_OFF:TIMER2_ON,TIMER1_ON,TIMER0_OFF,SPI_ON,USART1_OFF,USART0_ON,ENABLETWI==true?TWI_ON:TWI_OFF);
 #elif defined __AVR_ATmega2560__
     //there is an issue, so you have to manual change something in Low-Power.cpp: https://github.com/rocketscream/Low-Power/issues/30#issuecomment-336801240
-    LowPower.idle(SLEEP_FOREVER,ENABLEADC==true?ADC_ON:ADC_OFF, TIMER5_OFF, TIMER4_OFF, TIMER3_OFF,ENABLETIMER2==false?TIMER2_OFF:TIMER2_ON, TIMER1_ON, TIMER0_OFF, SPI_ON, USART3_OFF,USART2_OFF, USART1_OFF, USART0_ON, TWI_OFF);
+    LowPower.idle(SLEEP_FOREVER,ENABLEADC==true?ADC_ON:ADC_OFF, TIMER5_OFF, TIMER4_OFF, TIMER3_OFF,ENABLETIMER2==false?TIMER2_OFF:TIMER2_ON, TIMER1_ON, TIMER0_OFF, SPI_ON, USART3_OFF,USART2_OFF, USART1_OFF, USART0_ON, ENABLETWI==true?TWI_ON:TWI_OFF);
 #else
-    LowPower.idle(SLEEP_FOREVER,ENABLEADC==true?ADC_ON:ADC_OFF,ENABLETIMER2==false?TIMER2_OFF:TIMER2_ON,TIMER1_ON,TIMER0_OFF,SPI_ON,USART0_ON,TWI_OFF);
+    LowPower.idle(SLEEP_FOREVER,ENABLEADC==true?ADC_ON:ADC_OFF,ENABLETIMER2==false?TIMER2_OFF:TIMER2_ON,TIMER1_ON,TIMER0_OFF,SPI_ON,USART0_ON,ENABLETWI==true?TWI_ON:TWI_OFF);
 #endif
   }
 
