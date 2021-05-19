@@ -3,6 +3,7 @@ board_manager:
     - http://dan.drown.org/stm32duino/package_STM32duino_index.json
     - https://mcudude.github.io/MightyCore/package_MCUdude_MightyCore_index.json
     - https://mcudude.github.io/MegaCore/package_MCUdude_MegaCore_index.json
+    - https://dl.espressif.com/dl/package_esp32_index.json
 directories:
   data: .arduino15
   downloads: .arduino15/staging

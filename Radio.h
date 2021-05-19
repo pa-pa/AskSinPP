@@ -14,6 +14,11 @@
 #ifndef _CC_H
 #define _CC_H
 
+#ifdef ARDUINO_ARCH_ESP32
+  #include <SPI.h>
+  typedef uint8_t BitOrder;
+#endif
+
 #include "Message.h"
 #include "AlarmClock.h"
 

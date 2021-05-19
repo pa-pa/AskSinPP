@@ -31,7 +31,11 @@
 #include "gf256mul.h"
 #include "aes_sbox.h"
 #include "aes_enc.h"
+#ifdef ARDUINO_ARCH_ESP32
+#include <pgmspace.h>
+#else
 #include <avr/pgmspace.h>
+#endif
 
 void aes_shiftcol(void *data, uint8_t shift){
 	uint8_t tmp[4];

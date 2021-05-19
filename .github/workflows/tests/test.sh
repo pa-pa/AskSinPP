@@ -53,6 +53,10 @@ case "$BOARD" in
     CORE=stm32duino:STM32F1
     FQBN=stm32duino:STM32F1:mapleMini
     ;;
+  esp32)
+    CORE=esp32:esp32
+    FQBN=esp32:esp32:esp32
+    ;;
   *)
     >&2 echo "ERROR: Unknown board \"${BOARD}\""
     exit 1

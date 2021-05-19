@@ -32,7 +32,11 @@ public:
   inline static void setPWMRes   (uint8_t res) { analogWriteResolution(res); }
 #else
   inline static void setPWM      (uint8_t pin) { pinMode(pin,OUTPUT); }
+#ifdef ARDUINO_ARCH_ESP32
+  inline static void setPWM      (uint8_t pin,uint8_t value) { ledcWrite(pin,value); }
+#else
   inline static void setPWM      (uint8_t pin,uint8_t value) { analogWrite(pin,value); }
+#endif
 #endif
 };
 
