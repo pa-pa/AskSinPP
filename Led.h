@@ -40,10 +40,10 @@ private:
     memcpy_P(&current,patt+stat,sizeof(BlinkPattern));
   }
 
-  void next (AlarmClock& clock) {
+  bool next (AlarmClock& clock) {
     tick = decis2ticks(current.pattern[step++]);
-    ((step & 0x01) == 0x01) ? ledOn() : ledOff();
     clock.add(*this);
+    return ((step & 0x01) == 0x01);
   }
 
 public:
@@ -74,6 +74,7 @@ public:
       step = 0;
       repeat = 0;
       next(sysclock);
+      ledOn();
     }
   }
 
@@ -104,27 +105,31 @@ public:
       // start the pattern
       step = repeat = 0;
       next(sysclock);
+      ledOn();
     }
   }
 
   bool active () const { return current.length != 0; }
 
   virtual void trigger (AlarmClock& clock) {
+    bool switchOn = false;
     ATOMIC_BLOCK( ATOMIC_RESTORESTATE ) {
       if( step < current.length ) {
-        next(clock);
+        switchOn = next(clock);
       }
       else {
         step = 0;
         if( current.duration == 0 || ++repeat < current.duration ) {
-          next(clock);
+          switchOn = next(clock);
         }
         else {
-          ledOff();
+          // off is default
           copyPattern(nothing,single);
         }
       }
     }
+    if( switchOn == true ) ledOn();
+    else ledOff();
   }
 };
 
