@@ -148,6 +148,7 @@ namespace as {
 #define PREG_ACTCOLOR_G 0x2D
 #define PREG_ACTCOLOR_B 0x2E
 #define PREG_ACTCOLOR_W 0x2F
+#define PREG_ACTOPTIONS 0x30
 
 // Peer Registers used in List4
 #define PREG_BURST_AES 0x01
@@ -837,6 +838,9 @@ public:
   bool actColorB(uint8_t v) const { return this->writeRegister(PREG_ACTCOLOR_B,v); }
   uint8_t actColorW() const { return this->readRegister(PREG_ACTCOLOR_W,0x00); }
   bool actColorW(uint8_t v) const { return this->writeRegister(PREG_ACTCOLOR_W,v); }
+
+  uint8_t actOptions() const { return this->readRegister(PREG_ACTOPTIONS,0x00); }
+  bool actOptions(uint8_t v) const { return this->writeRegister(PREG_ACTOPTIONS,v); }
 };
 
 
