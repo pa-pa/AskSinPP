@@ -114,12 +114,17 @@ public:
 
   uint8_t status () {
     brightsens.measure();
+  #if defined(__SENSORS_OPT3001_h__)  
+    uint8_t bright = brightsens.bright2mdir();
+    return (uint8_t)bright;
+  #else
     uint32_t bright = brightsens.brightness();
     if( bright > maxbright ) {
       maxbright = bright;
     }
     // scale to value between 0 - 255s
     return (uint8_t)(bright * 255UL / maxbright);
+  #endif
   }
 
   uint8_t flags () const {
