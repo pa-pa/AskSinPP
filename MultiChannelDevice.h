@@ -206,7 +206,7 @@ public:
     return false;
   }
 
-  bool validSignature(Message& msg) {
+  bool validSignature(__attribute__((unused)) Message& msg) {
 #ifdef USE_AES
     if( aesActive() == true ) {
       return this->requestSignature(msg);
@@ -215,7 +215,7 @@ public:
     return true;
   }
 
-  bool validSignature(uint8_t ch,Message& msg) {
+  bool validSignature(__attribute__((unused)) uint8_t ch, __attribute__((unused)) Message& msg) {
 #ifdef USE_AES
     if( (ch==0 && aesActive()) || (this->hasChannel(ch)==true && channel(ch).aesActive()==true) ) {
       return this->requestSignature(msg);

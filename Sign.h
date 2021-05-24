@@ -152,7 +152,7 @@ public:
 
   void init () {}
 
-  void addAuth (Message& msg) {}
+  void addAuth (__attribute__((unused)) Message& msg) {}
 
 };
 
