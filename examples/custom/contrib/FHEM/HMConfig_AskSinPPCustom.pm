@@ -72,6 +72,12 @@ $HMConfig::culHmRegDefine{"longActNum"}                   = {a=>0xA5,s=>1.0,l=>3
 $HMConfig::culHmRegDefine{"longActIntens"}                = {a=>0xAB,s=>1.0,l=>3,min=>0,max=>255,c=>'',p=>'y',f=>'',u=>'',d=>1,t=>"Volume or Led Brightness"};
 # Volume0=0, Volume10=20, Volume20=40, Volume40=60, .... Volume100=200
 
+# HB-UNI-Sensor-THPD-BME280
+$HMConfig::culHmRegDefine{"transmitTimeInterval"} = {a=>32,s=>2,l=>0,min=>60,max=>43200,c=>'',p=>'n',f=>'',u=>'s',d=>1,t=>"transmiti time interval"};
+$HMConfig::culHmRegDefine{"altitudeAboveSeaLevel"} = {a=>34,s=>2,l=>0,min=>0,max=>10000,c=>'',p=>'n',f=>'',u=>'m',d=>1,t=>"altitude above sea level"};
+$HMConfig::culHmRegDefine{"temperatureOffset"} = {a=>1,s=>1,l=>1,min=>-5,max=>5,c=>'',p=>'n',f=>'10',u=>'K',d=>1,t=>"temperature offset"};
+$HMConfig::culHmRegDefine{"humidityOffset"} = {a=>2,s=>1,l=>1,min=>-5,max=>5,c=>'',p=>'n',f=>'10',u=>'%',d=>1,t=>"humidity offset"};
+$HMConfig::culHmRegDefine{"pressureOffset"} = {a=>3,s=>1,l=>1,min=>-10,max=>10,c=>'',p=>'n',f=>'10',u=>'hPa',d=>1,t=>"pressure offset"};
 
 $HMConfig::culHmRegType{ibutton}   = { peerNeedsBurst=>1, expectAES=>1, addressHi=>1, addressLo=>1 };
 $HMConfig::culHmRegType{values}    = { eventDlyTime=>1 };
@@ -731,6 +737,39 @@ $customMsg{"HB-OU-MP3-LED"} = sub {
   return ();
 };
 
+# HB-UNI-Sensor-THPD-BME280
+$HMConfig::culHmModel{"F604"} = {name=>"HB-UNI-Sensor-THPD-BME280",st=>'custom',cyc=>'00:10',rxt=>'l:c:w',lst=>'1',chn=>""};
+$HMConfig::culHmChanSets{"HB-UNI-Sensor-THPD-BME280"}{fwUpdate} = "<filename>";
+$HMConfig::culHmChanSets{"HB-UNI-Sensor-THPD-BME280"} = $HMConfig::culHmSubTypeSets{"THSensor"};
+# list of available register
+$HMConfig::culHmRegModel{"HB-UNI-Sensor-THPD-BME280"} = { ledMode => 1, lowBatLimit => 1, transmDevTryMax => 1, transmitTimeInterval => 1, altitudeAboveSeaLevel => 1, temperatureOffset => 1, humidityOffset => 1, pressureOffset => 1 };
+
+# process custom message
+$customMsg{"HB-UNI-Sensor-THPD-BME280"} = sub {
+  my ($msg,$target) = @_;
+  my $device = main::CUL_HM_id2Hash($msg->from);
+  my @evtEt=();
+      if( $msg->isWeather ) {
+      my $temp = $msg->payloadWord(0) & 0x7fff;
+      my $battery = "ok";
+      $battery = "low" if (($msg->payloadByte(0) & 0x80)==0x80);
+      my $humidity = $msg->payloadWord(2);
+      my $pressure = $msg->payloadWord(4);
+      my $dewpoint = $msg->payloadWord(6);
+      my $vapor = $msg->payloadWord(8);
+      my $voltage = $msg->payloadWord(10);
+      push @evtEt,[$device,1,"temperature:".$temp/10];
+      push @evtEt,[$device,1,"battery:".$battery];
+      push @evtEt,[$device,1,"humidity:".$humidity/10];
+      push @evtEt,[$device,1,"pressure:".$pressure/10];
+      push @evtEt,[$device,1,"dewpoint:".$dewpoint/10];
+      push @evtEt,[$device,1,"vapor:".$vapor/100];
+      push @evtEt,[$device,1,"voltage:".$voltage/1000];
+      push @evtEt,[$device,1,"state:T: ".($temp/10)." P: ".($pressure/10)." H: ".($humidity/10)];
+   return @evtEt;
+    }
+    return ();
+};
 
 #Custom registers for HB-LC-Dim1PBU-FM
 for my $reading0 (keys %{$HMConfig::culHmRegType{dimmer}}) {
