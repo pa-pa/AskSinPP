@@ -49,6 +49,14 @@ public:
   uint8_t flags () const {
     return 0;
   }
+  
+  void repeatCount (uint8_t cnt) {
+    repeatcnt = cnt;
+  }
+  
+  uint8_t repeatCount () const {
+    return repeatcnt;
+  }
 
   virtual void state(uint8_t s) {
     DHEX(BaseChannel::number());
