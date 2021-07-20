@@ -76,7 +76,7 @@ class Opt3001 : public Brightness {
   OPT3001_ERROR writeData(OPT3001_COMMANDS command) {
     Wire.beginTransmission(ADDRESS);
     Wire.write(command);
-    return (-10 * Wire.endTransmission());
+    return (OPT3001_ERROR)(-10 * Wire.endTransmission());
   }
 
   OPT3001_ERROR writeConfig(OPT3001_CONFIG config) {
@@ -84,7 +84,7 @@ class Opt3001 : public Brightness {
     Wire.write(CONFIG);
     Wire.write(config.raw >> 8);
     Wire.write(config.raw & 0x00FF);
-    return (-10 * Wire.endTransmission());
+    return (OPT3001_ERROR)(-10 * Wire.endTransmission());
   }
 
   OPT3001_ERROR readData(uint16_t* data) {
@@ -136,7 +136,7 @@ public:
     //conf.Latch = B1;                        
     conf.ModeOfConversionOperation = B11;   // always on
     error = writeConfig(conf);
-    if (error) DPRINT(F("config error opt3001: ")); DPRINTLN(error);
+    if (error) { DPRINT(F("config error opt3001: ")); DPRINTLN(error); }
 
     // read config
     /*error = readRegister(CONFIG, &conf.raw);
