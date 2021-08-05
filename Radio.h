@@ -450,8 +450,6 @@ public:
 
   void wakeup (bool flush) {
     if (PWRPIN < 0xff) {
-      digitalWrite(PWRPIN, LOW);
-      _delay_ms(10);
       init();
     }
 
@@ -501,7 +499,7 @@ public:
     if (PWRPIN < 0xff) {
       pinMode(PWRPIN, OUTPUT);
       digitalWrite(PWRPIN, LOW);
-      _delay_ms(10);
+      _delay_ms(2);
     }
     spi.init();                 // init the hardware to get access to the RF modul
 
