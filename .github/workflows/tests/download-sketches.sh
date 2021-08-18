@@ -45,6 +45,9 @@ GIT_REPOS=(
   "https://github.com/jp112sdl/HM-SEC-RHS-ATmega168.git"
   "https://github.com/jp112sdl/HM-RC-4-ATmega168.git"
   "https://github.com/jp112sdl/HB-ES-PMSw1-USB.git"
+  "https://github.com/jp112sdl/HB-UNI-Sen-POOL.git"
+  "https://github.com/jp112sdl/HB-LC-SwX-TP.git"
+  "https://github.com/jp112sdl/HB-OU-RGBW-LED-FX.git"
   
   # TomMajor
   "https://github.com/TomMajor/SmartHome.git"
