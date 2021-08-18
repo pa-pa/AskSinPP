@@ -39,6 +39,7 @@ GIT_LIBS=(
   "https://github.com/olikraus/U8g2_Arduino.git"
   "https://github.com/laurb9/StepperDriver.git"
   "https://github.com/jp112sdl/INA219_WE"
+  "https://github.com/kitesurfer1404/WS2812FX"
 )
 
 # Install Libs
