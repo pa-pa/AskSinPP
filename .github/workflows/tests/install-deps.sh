@@ -40,6 +40,7 @@ GIT_LIBS=(
   "https://github.com/laurb9/StepperDriver.git"
   "https://github.com/jp112sdl/INA219_WE"
   "https://github.com/kitesurfer1404/WS2812FX"
+  "https://github.com/PaulStoffregen/Time"
 )
 
 # Install Libs
