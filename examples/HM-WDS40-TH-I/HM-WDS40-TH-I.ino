@@ -26,6 +26,7 @@
 //#define SENSOR_SHT21
 //#define SENSOR_SHT31
 //#define SENSOR_SI7021
+//#define SENSOR_AM2301
 
 // === Define the clock ===
 // Remove comment if you have an external oscillator like a 32kHz crystal
@@ -88,7 +89,10 @@ typedef Sht31<> SensorType; // I2C
 #include <sensors/Si7021.h>
 typedef Si7021 SensorType; // I2C
 #endif
-
+#ifdef SENSOR_AM2301
+#include <sensors/Dht.h>
+typedef Dht<3,AM2301> SensorType; // <DataPin, Type>
+#endif
 
 // Configure the used hardware
 typedef AvrSPI<10,11,12,13> SPIType;
