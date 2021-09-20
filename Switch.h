@@ -124,6 +124,21 @@ class SwitchStateMachine {
 #define DELAY_NO 0x00
 #define DELAY_INFINITE 0xffffffff
 
+  class ChangedAlarm : public Alarm {
+    SwitchStateMachine&  sm;
+  public:
+    ChangedAlarm (SwitchStateMachine& s) : Alarm(0), sm(s) {}
+    virtual ~ChangedAlarm () {}
+    void set (uint32_t t,AlarmClock& clock) {
+      clock.cancel(*this);
+      Alarm::set(t);
+      clock.add(*this);
+    }
+    virtual void trigger (__attribute__((unused)) AlarmClock& clock) {
+      sm.change = true;
+    }
+  };
+
   class StateAlarm : public Alarm {
     SwitchStateMachine& sm;
     SwitchPeerList      lst;
@@ -136,6 +151,10 @@ class SwitchStateMachine {
       sm.setState(next,dly,lst);
     }
   };
+
+  void triggerChanged () {
+    calarm.set(decis2ticks(list1.statusInfoMinDly()*5),sysclock);
+  }
 
   void setState (uint8_t next,uint32_t delay,const SwitchPeerList& lst=SwitchPeerList(0),uint8_t deep=0) {
     // check deep to prevent infinite recursion
@@ -165,9 +184,11 @@ protected:
   uint8_t      state : 4;
   bool         change : 1;
   StateAlarm alarm;
+  ChangedAlarm calarm;
+  SwitchList1  list1;
 
 public:
-  SwitchStateMachine() : state(AS_CM_JT_NONE), change(false), alarm(*this) {}
+  SwitchStateMachine() : state(AS_CM_JT_NONE), change(false), alarm(*this), calarm(*this), list1(0) {}
   virtual ~SwitchStateMachine () {}
 
   bool changed () const { return change; }
@@ -311,6 +332,9 @@ public:
 
   void status (uint8_t stat, uint16_t delay) {
     setState( stat == 0 ? AS_CM_JT_OFF : AS_CM_JT_ON, AskSinBase::intTimeCvt(delay) );
+    if ( state == AS_CM_JT_ON || state == AS_CM_JT_OFF ) {
+      triggerChanged();
+    }
   }
 
   uint8_t status () const {
@@ -361,7 +385,7 @@ public:
       if( lowact == true ) IODriver::setHigh(pin);
       else IODriver::setLow(pin);
     }
-    this->changed(true);
+   // this->changed(true);
   }
 };
 
