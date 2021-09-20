@@ -27,6 +27,8 @@
 //#define SENSOR_SHT31
 //#define SENSOR_SI7021
 //#define SENSOR_AM2301
+// === Choose DataPin for DHT22 or AM2301
+//#define SENSOR_DATA_PIN 4
 
 // === Define the clock ===
 // Remove comment if you have an external oscillator like a 32kHz crystal
@@ -71,7 +73,7 @@ typedef Bme280 SensorType; // I2C
 #endif
 #ifdef SENSOR_DHT22
 #include <sensors/Dht.h>
-typedef Dht<4,DHT22> SensorType; // <DataPin, Type>
+typedef Dht<SENSOR_DATA_PIN,DHT22> SensorType; // <DataPin, Type>
 #endif
 #ifdef SENSOR_SHT10
 #include <sensors/Sht10.h>
@@ -91,7 +93,7 @@ typedef Si7021 SensorType; // I2C
 #endif
 #ifdef SENSOR_AM2301
 #include <sensors/Dht.h>
-typedef Dht<3,AM2301> SensorType; // <DataPin, Type>
+typedef Dht<SENSOR_DATA_PIN,AM2301> SensorType; // <DataPin, Type>
 #endif
 
 // Configure the used hardware
