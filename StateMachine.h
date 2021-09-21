@@ -14,9 +14,9 @@ template <class PeerList>
 class StateMachine : public Alarm {
 
   class ChangedAlarm : public Alarm {
-    StateMachine<PeerList>&  sm;
+    enum { CHANGED=0x04 };
   public:
-    ChangedAlarm (StateMachine<PeerList>& s) : Alarm(0), sm(s) {}
+    ChangedAlarm () : Alarm(0) {}
     virtual ~ChangedAlarm () {}
     void set (uint32_t t,AlarmClock& clock) {
       clock.cancel(*this);
@@ -24,19 +24,20 @@ class StateMachine : public Alarm {
       clock.add(*this);
     }
     virtual void trigger (__attribute__((unused)) AlarmClock& clock) {
-      sm.changed(true);
+      setflag(0x04);
     }
+    bool changed () const { return hasflag(CHANGED); }
+    void changed (bool c) { setflag(c,CHANGED); }
   };
 
 protected:
   enum { DELAY_NO=0x00, DELAY_INFINITE=0xffffffff };
 
-  uint8_t       state : 4;
-  bool          change : 1;
+  uint8_t       state;
   ChangedAlarm  calarm;
   PeerList      actlst;
 
-  StateMachine () : Alarm(0), state(AS_CM_JT_NONE), change(false), calarm(*this), actlst(0) {}
+  StateMachine () : Alarm(0), state(AS_CM_JT_NONE), calarm(), actlst(0) {}
   virtual ~StateMachine () {}
 
   virtual void trigger (__attribute__((unused)) AlarmClock& clock) {
@@ -45,8 +46,8 @@ protected:
     setState(next,dly,actlst);
   }
 
-  bool changed () const { return change; }
-  void changed (bool c) { change=c; }
+  bool changed () const { return calarm.changed(); }
+  void changed (bool c) { calarm.changed(c); }
 
   void setState (uint8_t next,uint32_t delay,const PeerList& lst=PeerList(0)) {
     actlst = lst;

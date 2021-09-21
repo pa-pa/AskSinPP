@@ -13,39 +13,43 @@ namespace as {
 class AlarmClock;
 
 class Alarm: public Link {
+
+  enum { ASYNC=0x01, ACTIVE=0x02 };
+
 protected:
   ~Alarm() {}
 
-  bool m_Async : 4;
-  bool m_Active : 4;
+  uint8_t flags;
+
+  void setflag(bool c,uint8_t mask) { c ? flags |= mask : flags &= ~mask; }
+  void setflag(uint8_t mask) { flags |= mask; }
+  void remflag(uint8_t mask) { flags &= ~mask; }
+  bool hasflag(uint8_t mask) const { return (flags & mask) == mask; }
+
 public:
   uint32_t tick : 24;
 
   virtual void trigger(AlarmClock&) = 0;
 
-  Alarm () :
-    m_Async(false), m_Active(0), tick(0) {
-}
-  Alarm(uint32_t t) :
-      m_Async(false), m_Active(0), tick(t) {
-  }
-  Alarm(uint32_t t,bool asynch) :
-      m_Async(asynch), m_Active(0), tick(t) {
+  Alarm () : flags(0), tick(0) {}
+  Alarm(uint32_t t) : flags(0), tick(t) {}
+  Alarm(uint32_t t,bool asynch) : flags(0), tick(t) {
+    async(asynch);
   }
   void set(uint32_t t) {
     tick = t;
   }
   void async(bool value) {
-    m_Async = value;
+    setflag(value, ASYNC);
   }
   bool async() const {
-    return m_Async;
+    return hasflag(ASYNC);
   }
   void active(bool value) {
-    m_Active = value;
+    setflag(value,ACTIVE);
   }
   bool active () const {
-    return m_Active;
+    return hasflag(ACTIVE);
   }
 };
 
