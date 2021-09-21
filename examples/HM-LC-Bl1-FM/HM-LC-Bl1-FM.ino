@@ -23,8 +23,17 @@
 // B0 == PIN 8 on Pro Mini
 #define CONFIG_BUTTON_PIN 8
 
-#define ON_RELAY_PIN 15
-#define DIR_RELAY_PIN 14
+// define L298N when using a H-Bridge motor driver
+// #define L298N
+#ifdef L298N
+  // define up and down pins for L298N driver
+  #define UP_PIN 16
+  #define DOWN_PIN 17
+#else
+  // define relay pins
+  #define ON_RELAY_PIN 15
+  #define DIR_RELAY_PIN 14
+#endif
 
 #define UP_BUTTON_PIN 6
 #define DOWN_BUTTON_PIN 3
@@ -86,23 +95,43 @@ public:
   }
 
   void motorUp () {
+#ifdef L298N
+    digitalWrite(DOWN_PIN,LOW);
+    digitalWrite(UP_PIN,HIGH);
+#else
     digitalWrite(DIR_RELAY_PIN,HIGH);
     digitalWrite(ON_RELAY_PIN,HIGH);
+#endif
   }
 
   void motorDown () {
+#ifdef L298N
+    digitalWrite(UP_PIN,LOW);
+    digitalWrite(DOWN_PIN,HIGH);
+#else
     digitalWrite(DIR_RELAY_PIN,LOW);
     digitalWrite(ON_RELAY_PIN,HIGH);
+#endif
   }
 
   void motorStop () {
+#ifdef L298N
+    digitalWrite(UP_PIN,LOW);
+    digitalWrite(DOWN_PIN,LOW);
+#else
     digitalWrite(DIR_RELAY_PIN,LOW);
     digitalWrite(ON_RELAY_PIN,LOW);
+#endif
   }
 
   void init () {
+#ifdef L298N
+    pinMode(UP_PIN,OUTPUT);
+    pinMode(DOWN_PIN,OUTPUT);
+#else
     pinMode(ON_RELAY_PIN,OUTPUT);
     pinMode(DIR_RELAY_PIN,OUTPUT);
+#endif
     motorStop();
     BaseChannel::init();
   }
