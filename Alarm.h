@@ -21,6 +21,7 @@ protected:
 
   uint8_t flags;
 
+public:
   void setflag(bool c,uint8_t mask) { c ? flags |= mask : flags &= ~mask; }
   void setflag(uint8_t mask) { flags |= mask; }
   void remflag(uint8_t mask) { flags &= ~mask; }
