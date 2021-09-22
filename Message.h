@@ -12,7 +12,7 @@
 #include "Debug.h"
 
 //#define MaxDataLen   60						// maximum length of received bytes
-#define MaxDataLen   30
+#define MaxDataLen   17
 
 namespace as {
 
@@ -517,17 +517,18 @@ public:
   uint8_t msg_type() const { return buffer()[12]; }
 
   RemoteEventMsg& toEventMsg() {
-    RemoteEventMsg& pm = *((RemoteEventMsg*)(data()+10)); // use last 20 byte for simulated message
+    RemoteEventMsg& pm = *((RemoteEventMsg*)(data()+(MaxDataLen-10))); // use last 10 byte for simulated message
     pm.length(9);
+    pm.count(count());
     pm.flags(Message::BCAST);
     pm.type(msg_type());
     pm.from((uint8_t*)buffer()+9);
     pm.to((uint8_t*)buffer() + 6);
     pm.append((uint8_t*)buffer() + 13, 2);
+    // DPRINT(F("   "));
+    // pm.dump();
     return pm;
   }
-
-
 };
 
 

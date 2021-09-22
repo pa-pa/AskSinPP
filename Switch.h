@@ -119,29 +119,41 @@ public:
 // define the standard list3 for switch devices
 typedef SwitchList3Tmpl<SwitchPeerList> SwitchList3;
 
-class SwitchStateMachine {
+class SwitchStateMachine : public Alarm {
 
 #define DELAY_NO 0x00
 #define DELAY_INFINITE 0xffffffff
 
-  class StateAlarm : public Alarm {
-    SwitchStateMachine& sm;
-    SwitchPeerList      lst;
+  class ChangedAlarm : public Alarm {
+    enum { CHANGED=0x04 };
   public:
-    StateAlarm(SwitchStateMachine& m) : Alarm(0), sm(m), lst(0) {}
-    void list(SwitchPeerList l) {lst=l;}
-    virtual void trigger (__attribute__((unused)) AlarmClock& clock) {
-      uint8_t next = sm.getNextState();
-      uint32_t dly = sm.getDelayForState(next,lst);
-      sm.setState(next,dly,lst);
+    ChangedAlarm () : Alarm(0) {}
+    virtual ~ChangedAlarm () {}
+    void set (uint32_t t,AlarmClock& clock) {
+      clock.cancel(*this);
+      Alarm::set(t);
+      clock.add(*this);
     }
+    virtual void trigger (__attribute__((unused)) AlarmClock& clock) {
+      setflag(CHANGED);
+    }
+    bool changed () const { return hasflag(CHANGED); }
+    void changed (bool c) { setflag(c,CHANGED); }
   };
 
+  virtual void trigger (__attribute__((unused)) AlarmClock& clock) {
+    uint8_t next = getNextState();
+    uint32_t dly = getDelayForState(next,actlst);
+    setState(next,dly,actlst);
+  }
+
+
   void setState (uint8_t next,uint32_t delay,const SwitchPeerList& lst=SwitchPeerList(0),uint8_t deep=0) {
+    actlst = lst;
     // check deep to prevent infinite recursion
     if( next != AS_CM_JT_NONE && deep < 4) {
       // first cancel possible running alarm
-      sysclock.cancel(alarm);
+      sysclock.cancel(*this);
       // if state is different
       if (state != next) {
         switchState(state, next,delay);
@@ -154,24 +166,23 @@ class SwitchStateMachine {
         setState(next, delay, lst, ++deep);
       }
       else if (delay != DELAY_INFINITE) {
-        alarm.list(lst);
-        alarm.set(delay);
-        sysclock.add(alarm);
+        Alarm::set(delay);
+        sysclock.add(*this);
       }
     }
   }
 
 protected:
-  uint8_t      state : 4;
-  bool         change : 1;
-  StateAlarm alarm;
+  uint8_t      state;
+  ChangedAlarm  calarm;
+  SwitchPeerList      actlst;
 
 public:
-  SwitchStateMachine() : state(AS_CM_JT_NONE), change(false), alarm(*this) {}
+  SwitchStateMachine() : Alarm(0), state(AS_CM_JT_NONE), calarm(), actlst(0) {}
   virtual ~SwitchStateMachine () {}
 
-  bool changed () const { return change; }
-  void changed (bool c) { change=c; }
+  bool changed () const { return calarm.changed(); }
+  void changed (bool c) { calarm.changed(c); }
 
   void setup(__attribute__ ((unused)) BaseList l1) {}
 
@@ -188,7 +199,7 @@ public:
         // if minimal is set - we jump out if the new delay is shorter
         if( minimal == true ) {
           // DPRINT("Minimal");DDECLN(dly);
-          uint32_t curdly = sysclock.get(alarm); // 0 means DELAY_INFINITE
+          uint32_t curdly = sysclock.get(*this); // 0 means DELAY_INFINITE
           if( curdly == 0 || curdly > dly ) {
             // DPRINTLN(F("Skip short Delay"));
             return;
@@ -257,7 +268,7 @@ public:
     return DELAY_NO;
   }
 
-  bool delayActive () const { return sysclock.get(alarm) > 0; }
+  bool delayActive () const { return sysclock.get(*this) > 0; }
 
   bool set (uint8_t value,__attribute__ ((unused)) uint16_t ramp,uint16_t delay) {
     status(value, delay);
