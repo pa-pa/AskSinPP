@@ -42,6 +42,7 @@ GIT_LIBS=(
   "https://github.com/kitesurfer1404/WS2812FX"
   "https://github.com/PaulStoffregen/Time"
   "https://github.com/adafruit/Adafruit_NeoPixel"
+  "https://github.com/sparkfun/BMP180_Breakout_Arduino_Library"
 )
 
 # Install Libs
