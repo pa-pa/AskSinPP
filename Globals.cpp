@@ -1,6 +1,7 @@
-
+#if defined(ARDUINO_ARCH_AVR) && ! defined(__AVR_ATmega644A__)
 #include <AskSinPP.h>
 #include <BatterySensor.h>
+#endif
 
 namespace as {
 

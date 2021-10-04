@@ -224,9 +224,9 @@ class DimmerStateMachine {
 #define DELAY_INFINITE 0xffffffff
 
   class ChangedAlarm : public Alarm {
-    DimmerStateMachine&  sm;
+    enum { CHANGED=0x04 };
   public:
-    ChangedAlarm (DimmerStateMachine& s) : Alarm(0), sm(s) {}
+    ChangedAlarm () : Alarm(0) {}
     virtual ~ChangedAlarm () {}
     void set (uint32_t t,AlarmClock& clock) {
       clock.cancel(*this);
@@ -234,8 +234,10 @@ class DimmerStateMachine {
       clock.add(*this);
     }
     virtual void trigger (__attribute__((unused)) AlarmClock& clock) {
-      sm.change = true;
+      setflag(CHANGED);
     }
+    bool changed () const { return hasflag(CHANGED); }
+    void changed (bool c) { setflag(c,CHANGED); }
   };
 
 
@@ -397,12 +399,9 @@ class DimmerStateMachine {
   }
 
 protected:
-  uint8_t      state : 4;
-  bool         change : 1;
-  bool         toggledimup : 1;
-  bool         erroverheat : 1;
-  bool 		   erroroverload : 1;
-  bool         errreduced : 1;
+  enum { TOGGLEDIMUP=0x08,ERROROVERHEAT=0x10,ERROROVERLOAD=0x20,ERRORREDUCED=0x40 };
+
+  uint8_t      state;
   uint8_t      level, lastonlevel;
   RampAlarm    alarm;
   BlinkAlarm   blink;
@@ -410,25 +409,24 @@ protected:
   DimmerList1  list1;
 
 public:
-  DimmerStateMachine() : state(AS_CM_JT_NONE), change(false), toggledimup(true), erroverheat(false), erroroverload(false), errreduced(false),
-    level(0), lastonlevel(200), alarm(*this), blink(*this), calarm(*this), list1(0) {}
+  DimmerStateMachine() : state(AS_CM_JT_NONE),
+    level(0), lastonlevel(200), alarm(*this), blink(*this), calarm(), list1(0) { calarm.setflag(TOGGLEDIMUP); }
   virtual ~DimmerStateMachine () {}
 
-  bool changed () const { return change; }
-  void changed (bool c) { change=c; }
+  bool changed () const { return calarm.changed(); }
+  void changed (bool c) { calarm.changed(c); }
 
   void overheat(bool value) {
-    erroverheat = value;
+    calarm.setflag(value,ERROROVERHEAT);
   }
-
   void overload(bool value){
-	 erroroverload = value;
-  }
-  bool getoverload(){
-	  return erroroverload;
+    calarm.setflag(value,ERROROVERLOAD);
   }
   void reduced (bool value) {
-    errreduced = value;
+    calarm.setflag(value,ERRORREDUCED);
+  }
+  bool getoverload(){
+	  return calarm.hasflag(ERROROVERLOAD);
   }
 
   void setup(DimmerList1 l1) {
@@ -483,6 +481,7 @@ public:
       case AS_CM_JT_OFFDELAY: return AS_CM_JT_RAMPOFF;
       case AS_CM_JT_RAMPOFF:  return AS_CM_JT_OFF;
       case AS_CM_JT_OFF:      return AS_CM_JT_ONDELAY;
+      default: break;
     }
     return AS_CM_JT_NONE;
   }
@@ -495,6 +494,7 @@ public:
       case AS_CM_JT_OFFDELAY: return lst.jtDlyOff();
       case AS_CM_JT_RAMPOFF:  return lst.jtRampOff();
       case AS_CM_JT_OFF:      return lst.jtOff();
+      default: break;
     }
     return AS_CM_JT_NONE;
   }
@@ -507,6 +507,7 @@ public:
       case AS_CM_JT_OFFDELAY: return lst.ctDlyOff();
       case AS_CM_JT_RAMPOFF:  return lst.ctRampOff();
       case AS_CM_JT_OFF:      return lst.ctOff();
+      default: break;
     }
     return AS_CM_CT_X_GE_COND_VALUE_LO;
   }
@@ -523,6 +524,7 @@ public:
       case AS_CM_JT_OFFDELAY: value = lst.offDly(); break;
       case AS_CM_JT_RAMPOFF:  value = lst.rampOffTime(); break;
       case AS_CM_JT_OFF:      value = lst.offTime(); break;
+      default: break;
     }
     return AskSinBase::byteTimeCvt(value);
   }
@@ -535,6 +537,7 @@ public:
       case AS_CM_JT_RAMPON:
       case AS_CM_JT_RAMPOFF:
         return decis2ticks(5);
+      default: break;
     }
     return DELAY_NO;
   }
@@ -589,9 +592,14 @@ public:
       dimDown(lst);
       break;
     case AS_CM_ACTIONTYPE_TOGGLEDIM:
-      if( toggledimup == true ) dimUp(lst);
-      else dimDown(lst);
-      toggledimup = ! toggledimup;
+      if( calarm.hasflag(TOGGLEDIMUP) ) {
+        dimUp(lst);
+        calarm.remflag(TOGGLEDIMUP);
+      }
+      else {
+        dimDown(lst);
+        calarm.setflag(TOGGLEDIMUP);
+      }
       break;
     case AS_CM_ACTIONTYPE_TOGGLEDIM_TO_COUNTER:
       (counter & 0x01) == 0x01 ? dimUp(lst) : dimDown(lst);
@@ -599,6 +607,7 @@ public:
     case AS_CM_ACTIONTYPE_TOGGLEDIM_TO_COUNTER_INVERSE:
       (counter & 0x01) == 0x00 ? dimUp(lst) : dimDown(lst);
       break;
+    default: break;
     }
 
   }
@@ -625,6 +634,7 @@ public:
     case AS_CM_CT_X_LT_COND_VALUE_LO_OR_X_GE_COND_VALUE_HI:
       doit =((value < lst.ctValLo()) || (value >= lst.ctValHi()));
       break;
+    default: break;
     }
     if( doit == true ) {
       remote(lst,counter);
@@ -656,13 +666,13 @@ public:
 
   uint8_t flags () const {
     uint8_t f = delayActive() ? 0x40 : 0x00;
-    if( erroverheat == true ) {
+    if( calarm.hasflag(ERROROVERHEAT) == true ) {
       f |= AS_CM_EXTSTATE_OVERHEAT;
     }
-	if( erroroverload == true) {
+	if( calarm.hasflag(ERROROVERLOAD) == true ) {
 	  f |= AS_CM_EXTSTATE_OVERLOAD;
 	}
-    if( errreduced == true ) {
+    if( calarm.hasflag(ERRORREDUCED) == true ) {
       f |= AS_CM_EXTSTATE_REDUCED;
     }
     if( alarm.destlevel < level) {

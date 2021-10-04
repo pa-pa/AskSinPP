@@ -97,6 +97,12 @@ extern void rtccallback(void);
 
 
 class SysClock : public AlarmClock {
+
+#ifdef ARDUINO_ARCH_ESP32
+  hw_timer_t * Timer = NULL;
+  portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
+#endif
+
 #if defined ARDUINO_ARCH_STM32 && defined STM32L1xx
   HardwareTimer* Timer = new HardwareTimer(TIM6);
 #endif
@@ -151,6 +157,12 @@ public:
     Timer->setOverflow(1000000 / TICKS_PER_SECOND, MICROSEC_FORMAT);
     Timer->attachInterrupt(callback);
   #endif
+  #ifdef ARDUINO_ARCH_ESP32
+    // https://techtutorialsx.com/2017/10/07/esp32-arduino-timer-interrupts/
+    Timer = timerBegin(0, 80, true);
+    timerAlarmWrite(Timer, 1000000 / TICKS_PER_SECOND, true);
+    timerAttachInterrupt(Timer, &callback, true);
+  #endif
     enable();
   }
 
@@ -164,6 +176,10 @@ public:
   #elif defined ARDUINO_ARCH_STM32 && defined STM32L1xx
     Timer->pause();
   #endif
+  #ifdef ARDUINO_ARCH_ESP32
+    if (Timer != NULL)
+      timerAlarmDisable(Timer);
+  #endif
   }
 
   void enable () {
@@ -175,6 +191,10 @@ public:
     Timer2.attachInterrupt(TIMER_CH2,callback);
   #elif defined ARDUINO_ARCH_STM32 && defined STM32L1xx
     Timer->resume();
+  #endif
+  #ifdef ARDUINO_ARCH_ESP32
+    if (Timer != NULL)
+      timerAlarmEnable(Timer);
   #endif
   }
 

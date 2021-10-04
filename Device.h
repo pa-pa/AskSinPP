@@ -22,9 +22,51 @@
     #include <avr/boot.h>
 #elif defined (ARDUINO_ARCH_STM32F1)
 #elif defined (ARDUINO_ARCH_STM32) && defined (STM32L1xx)
+#elif defined (ARDUINO_ARCH_ESP32)
 #else
     #error Using Hardware serial is not supported on MCU type currently used
   #endif
+#endif
+
+#ifdef ARDUINO_ARCH_ESP32
+uint8_t boot_signature_byte_get(byte addr) {
+  uint8_t idByteLen = 6;
+  uint64_t chipId = ESP.getEfuseMac();
+  uint8_t *chipIdArray = *reinterpret_cast<uint8_t(*)[sizeof(uint64_t)]>(&chipId);
+  std::reverse(&chipIdArray[0], &chipIdArray[idByteLen]);
+  //DPRINT("ESP32 ChipID is ");for (uint8_t i = 0; i < idByteLen; i++) DHEX(chipIdArray[i]);DPRINTLN("");
+
+  //we have only 6 bytes for unique identification
+  //so let's reuse 4 bytes for the missing
+  byte idx = 0;
+  switch (addr) {
+    case 14:
+    case 20:
+      idx = 0;
+    break;
+    case 15:
+    case 21:
+      idx = 1;
+    break;
+    case 16:
+    case 22:
+      idx = 2;
+    break;
+    case 17:
+    case 23:
+      idx = 3;
+    break;
+    case 18:
+      idx = 4;
+    break;
+    case 19:
+      idx = 5;
+    break;
+
+  }
+
+  return chipIdArray[idx];
+}
 #endif
 
 #if defined(__AVR_ATmega644__) || defined(__AVR_ATmega644P__) || defined(__AVR_ATmega644PA__) || defined(__AVR_ATmega1284__) || defined(__AVR_ATmega1284P__)
@@ -615,27 +657,29 @@ public:
     // signing only possible if sender requests ACK
     if( msg.ackRequired() == true ) {
       AesChallengeMsg signmsg;
+      aes128_ctx_t ctx;
       signmsg.init(msg,kstore.getIndex());
-      kstore.challengeKey(signmsg.challenge(),kstore.getIndex());
+      kstore.challengeKey(signmsg.challenge(),kstore.getIndex(),ctx);
       // TODO re-send message handling
       DPRINT(F("<- ")); signmsg.dump();
       radio().write(signmsg,signmsg.burstRequired());
       // read answer
       if( waitForAesResponse(msg.from(),signmsg,60) == true ) {
         AesResponseMsg& response = signmsg.aesResponse();
+        uint8_t      initvector[16];
         // DPRINT("AES ");DHEX(response.data(),16);
         // fill initial vector with message to sign
-        kstore.fillInitVector(msg);
+        kstore.fillInitVector(msg,initvector);
         // DPRINT("IV ");DHEX(iv,16);
         // decrypt response
         uint8_t* data = response.data();
-        aes128_dec(data,&kstore.ctx);
+        aes128_dec(data,&ctx);
         // xor encrypted data with initial vector
-        kstore.applyVector(data);
+        kstore.applyVector(data,initvector);
         // store data for sending ack
         kstore.storeAuth(response.count(),data);
         // decrypt response
-        aes128_dec(data,&kstore.ctx);
+        aes128_dec(data,&ctx);
         // DPRINT("r "); DHEX(response.data()+6,10);
         // DPRINT("s "); DHEX(msg.buffer(),10);
         // compare decrypted message with original message
@@ -655,20 +699,24 @@ public:
   }
 
   bool processChallenge(const Message& msg,const uint8_t* challenge,uint8_t keyidx) {
-    if( kstore.challengeKey(challenge,keyidx) == true ) {
+    aes128_ctx_t ctx;
+    if( kstore.challengeKey(challenge,keyidx,ctx) == true ) {
       DPRINT(F("Process Challenge - Key: "));DHEXLN(keyidx);
       AesResponseMsg answer;
       answer.init(msg);
-      // fill initial vector with message to sign
-      kstore.fillInitVector(msg);
       uint8_t* data = answer.data();
-      for( uint8_t i=0; i<6; ++i ) {
-        data[i] = (uint8_t)rand();
+      {
+        uint8_t      initvector[16];
+        // fill initial vector with message to sign
+        kstore.fillInitVector(msg,initvector);
+        for( uint8_t i=0; i<6; ++i ) {
+          data[i] = (uint8_t)rand();
+        }
+        memcpy(data+6,msg.buffer(),10); // TODO - check message to short possible
+        aes128_enc(data,&ctx);
+        kstore.applyVector(data,initvector);
+        aes128_enc(data,&ctx);
       }
-      memcpy(data+6,msg.buffer(),10); // TODO - check message to short possible
-      aes128_enc(data,&kstore.ctx);
-      kstore.applyVector(data);
-      aes128_enc(data,&kstore.ctx);
       return send(answer,msg.to());
     }
     return false;

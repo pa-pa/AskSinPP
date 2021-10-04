@@ -14,6 +14,11 @@
 #ifndef _CC_H
 #define _CC_H
 
+#ifdef ARDUINO_ARCH_ESP32
+  #include <SPI.h>
+  typedef uint8_t BitOrder;
+#endif
+
 #include "Message.h"
 #include "AlarmClock.h"
 
@@ -445,8 +450,6 @@ public:
 
   void wakeup (bool flush) {
     if (PWRPIN < 0xff) {
-      digitalWrite(PWRPIN, LOW);
-      _delay_ms(10);
       init();
     }
 
@@ -496,7 +499,7 @@ public:
     if (PWRPIN < 0xff) {
       pinMode(PWRPIN, OUTPUT);
       digitalWrite(PWRPIN, LOW);
-      _delay_ms(10);
+      _delay_ms(2);
     }
     spi.init();                 // init the hardware to get access to the RF modul
 

@@ -30,7 +30,11 @@
 #include "aes_keyschedule.h"
 #include "aes_sbox.h"
 #include <string.h>
+#ifdef ARDUINO_ARCH_ESP32
+#include <pgmspace.h>
+#else
 #include <avr/pgmspace.h>
+#endif
 
 static
 void aes_rotword(void *a){

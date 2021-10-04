@@ -39,6 +39,10 @@ GIT_LIBS=(
   "https://github.com/olikraus/U8g2_Arduino.git"
   "https://github.com/laurb9/StepperDriver.git"
   "https://github.com/jp112sdl/INA219_WE"
+  "https://github.com/kitesurfer1404/WS2812FX"
+  "https://github.com/PaulStoffregen/Time"
+  "https://github.com/adafruit/Adafruit_NeoPixel"
+  "https://github.com/sparkfun/BMP180_Breakout_Arduino_Library"
 )
 
 # Install Libs

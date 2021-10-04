@@ -144,6 +144,11 @@ namespace as {
 #define PREG_ACTTYPE 0x24
 #define PREG_ACTNUM 0x25
 #define PREG_ACTINTENS 0x2B
+#define PREG_ACTCOLOR_R 0x2C
+#define PREG_ACTCOLOR_G 0x2D
+#define PREG_ACTCOLOR_B 0x2E
+#define PREG_ACTCOLOR_W 0x2F
+#define PREG_ACTOPTIONS 0x30
 
 // Peer Registers used in List4
 #define PREG_BURST_AES 0x01
@@ -825,6 +830,17 @@ public:
   uint8_t actIntens() const { return this->readRegister(PREG_ACTINTENS,0x00); }
   bool actIntens(uint8_t v) const { return this->writeRegister(PREG_ACTINTENS,v); }
 
+  uint8_t actColorR() const { return this->readRegister(PREG_ACTCOLOR_R,0x00); }
+  bool actColorR(uint8_t v) const { return this->writeRegister(PREG_ACTCOLOR_R,v); }
+  uint8_t actColorG() const { return this->readRegister(PREG_ACTCOLOR_G,0x00); }
+  bool actColorG(uint8_t v) const { return this->writeRegister(PREG_ACTCOLOR_G,v); }
+  uint8_t actColorB() const { return this->readRegister(PREG_ACTCOLOR_B,0x00); }
+  bool actColorB(uint8_t v) const { return this->writeRegister(PREG_ACTCOLOR_B,v); }
+  uint8_t actColorW() const { return this->readRegister(PREG_ACTCOLOR_W,0x00); }
+  bool actColorW(uint8_t v) const { return this->writeRegister(PREG_ACTCOLOR_W,v); }
+
+  uint8_t actOptions() const { return this->readRegister(PREG_ACTOPTIONS,0x00); }
+  bool actOptions(uint8_t v) const { return this->writeRegister(PREG_ACTOPTIONS,v); }
 };
 
 

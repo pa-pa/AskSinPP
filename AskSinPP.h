@@ -25,7 +25,7 @@
 #define CONFIG_FREQ2     1
 #define CONFIG_BOOTSTATE 2  //location of current boot state for ResetOnBoot
 
-#include <Debug.h>
+#include "Debug.h"
 #include <stdint.h>
 
 #ifdef ARDUINO_ARCH_STM32F1
@@ -37,7 +37,7 @@
   #define enableInterrupt(pin,handler,mode) attachInterrupt(pin,handler,mode)
   #define disableInterrupt(pin) detachInterrupt(pin)
   #define memcmp_P(src,dst,count) memcmp((src),(dst),(count))
-#elif defined (ARDUINO_ARCH_STM32) && defined (STM32L1xx)
+#elif (defined (ARDUINO_ARCH_STM32) && defined (STM32L1xx)) || (defined ARDUINO_ARCH_ESP32)
   #define _delay_us(us) delayMicroseconds(us)
   inline void _delay_ms(uint32_t ms) { do { delayMicroseconds(1000); } while ((--ms) > 0); }
 
@@ -59,7 +59,7 @@
 
 #include <Storage.h>
 #include <Pins.h>
-#include <Debug.h>
+#include "Debug.h"
 #include <Activity.h>
 #include <Led.h>
 #include <Buzzer.h>

@@ -6,7 +6,7 @@
 #ifndef __BATTERYSENSOR_H__
 #define __BATTERYSENSOR_H__
 
-#include <Debug.h>
+#include "Debug.h"
 #include <AlarmClock.h>
 
 #ifdef ARDUINO_ARCH_AVR
