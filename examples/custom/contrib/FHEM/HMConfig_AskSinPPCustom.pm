@@ -447,6 +447,23 @@ $customMsg{"HB-LC-SW6-POOL"} = sub {
   return ();
 };
 
+$HMConfig::culHmModel{"F20D"} = {name=>"HB-DoorBellSmall",st=>'custom',cyc=>'',rxt=>'',lst=>'1,3:2p.3p,4:1p',chn=>"Bell:1:1,Sw:2:2,Ir:3:3"};
+$HMConfig::culHmChanSets{"HB-DoorBellSmall00"}{fwUpdate} = "<filename>";
+$HMConfig::culHmChanSets{"HB-DoorBellSmall01"} = $HMConfig::culHmSubTypeSets{"THSensor"};
+$HMConfig::culHmChanSets{"HB-DoorBellSmall02"} = $HMConfig::culHmSubTypeSets{"switch"};
+$HMConfig::culHmChanSets{"HB-DoorBellSmall03"} = $HMConfig::culHmSubTypeSets{"switch"};
+$HMConfig::culHmRegModel{"HB-DoorBellSmall"}   = { backOnTime=>1 };
+$HMConfig::culHmRegChan {"HB-DoorBellSmall01"} = $HMConfig::culHmRegType{remote};
+$HMConfig::culHmRegChan {"HB-DoorBellSmall02"} = $HMConfig::culHmRegType{switch};
+$HMConfig::culHmRegChan {"HB-DoorBellSmall03"} = $HMConfig::culHmRegType{switch};
+$customMsg{"HB-DoorBellSmall"} = sub {
+  my ($msg,$target) = @_;
+  my $channel = $msg->channel;
+  return $msg->processSwitchStatus($target) if $msg->isStatus && ($channel == 2 || $channel == 3);
+  return $msg->processRemote if $msg->isRemote;
+  return ();
+};
+
 $HMConfig::culHmModel{"F9D2"} = {name=>"HB-UNI-Sen-LEV-US",st=>'custom',cyc=>'',rxt=>'c:l',lst=>'1',chn=>"Level:1:1"};
 $HMConfig::culHmChanSets{"HB-UNI-Sen-LEV-US00"}{fwUpdate} = "<filename>";
 $HMConfig::culHmChanSets{"HB-UNI-Sen-LEV-US01"} = {};

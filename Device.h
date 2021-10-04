@@ -657,27 +657,29 @@ public:
     // signing only possible if sender requests ACK
     if( msg.ackRequired() == true ) {
       AesChallengeMsg signmsg;
+      aes128_ctx_t ctx;
       signmsg.init(msg,kstore.getIndex());
-      kstore.challengeKey(signmsg.challenge(),kstore.getIndex());
+      kstore.challengeKey(signmsg.challenge(),kstore.getIndex(),ctx);
       // TODO re-send message handling
       DPRINT(F("<- ")); signmsg.dump();
       radio().write(signmsg,signmsg.burstRequired());
       // read answer
       if( waitForAesResponse(msg.from(),signmsg,60) == true ) {
         AesResponseMsg& response = signmsg.aesResponse();
+        uint8_t      initvector[16];
         // DPRINT("AES ");DHEX(response.data(),16);
         // fill initial vector with message to sign
-        kstore.fillInitVector(msg);
+        kstore.fillInitVector(msg,initvector);
         // DPRINT("IV ");DHEX(iv,16);
         // decrypt response
         uint8_t* data = response.data();
-        aes128_dec(data,&kstore.ctx);
+        aes128_dec(data,&ctx);
         // xor encrypted data with initial vector
-        kstore.applyVector(data);
+        kstore.applyVector(data,initvector);
         // store data for sending ack
         kstore.storeAuth(response.count(),data);
         // decrypt response
-        aes128_dec(data,&kstore.ctx);
+        aes128_dec(data,&ctx);
         // DPRINT("r "); DHEX(response.data()+6,10);
         // DPRINT("s "); DHEX(msg.buffer(),10);
         // compare decrypted message with original message
@@ -697,20 +699,24 @@ public:
   }
 
   bool processChallenge(const Message& msg,const uint8_t* challenge,uint8_t keyidx) {
-    if( kstore.challengeKey(challenge,keyidx) == true ) {
+    aes128_ctx_t ctx;
+    if( kstore.challengeKey(challenge,keyidx,ctx) == true ) {
       DPRINT(F("Process Challenge - Key: "));DHEXLN(keyidx);
       AesResponseMsg answer;
       answer.init(msg);
-      // fill initial vector with message to sign
-      kstore.fillInitVector(msg);
       uint8_t* data = answer.data();
-      for( uint8_t i=0; i<6; ++i ) {
-        data[i] = (uint8_t)rand();
+      {
+        uint8_t      initvector[16];
+        // fill initial vector with message to sign
+        kstore.fillInitVector(msg,initvector);
+        for( uint8_t i=0; i<6; ++i ) {
+          data[i] = (uint8_t)rand();
+        }
+        memcpy(data+6,msg.buffer(),10); // TODO - check message to short possible
+        aes128_enc(data,&ctx);
+        kstore.applyVector(data,initvector);
+        aes128_enc(data,&ctx);
       }
-      memcpy(data+6,msg.buffer(),10); // TODO - check message to short possible
-      aes128_enc(data,&kstore.ctx);
-      kstore.applyVector(data);
-      aes128_enc(data,&kstore.ctx);
       return send(answer,msg.to());
     }
     return false;

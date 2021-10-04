@@ -33,8 +33,6 @@ class KeyStore : public BaseList {
 public:
   uint8_t      count;
   uint8_t      auth[4];
-  aes128_ctx_t ctx;
-  uint8_t      initvector[16];
   uint8_t      keytmp[8];
 
   KeyStore(uint16_t a) : BaseList(a), count(0) {}
@@ -80,19 +78,19 @@ public:
     }
   }
 
-  void fillInitVector (const Message& msg) {
+  void fillInitVector (const Message& msg,uint8_t* initvector) {
     uint8_t n = msg.length()-10;
     memcpy(initvector,msg.buffer()+10,n);
     memset(initvector+n,0x00,16-n);
   }
 
-  void applyVector (uint8_t* data) {
+  void applyVector (uint8_t* data,uint8_t* initvector) {
     for( uint8_t i=0; i<16; i++ ) {
       data[i] ^= initvector[i];
     }
   }
 
-  bool challengeKey (const uint8_t* challenge,uint8_t index) {
+  bool challengeKey (const uint8_t* challenge,uint8_t index,aes128_ctx_t& ctx) {
     if( hasKey(index) == true ) {
       uint8_t key[AES_KEY_SIZE];
       readKey(key);
@@ -111,6 +109,7 @@ public:
 
   bool exchange (AesExchangeMsg& msg) {
     uint8_t key[AES_KEY_SIZE];
+    aes128_ctx_t ctx;
     readKey(key);
     aes128_init(key,&ctx);
     uint8_t* data = msg.data();
