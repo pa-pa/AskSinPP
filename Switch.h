@@ -106,13 +106,17 @@ public:
     PeerRegisterListType ssl = this->sh();
     ssl.jtOn(AS_CM_JT_OFFDELAY);
     ssl.jtOff(AS_CM_JT_ONDELAY);
+//    ssl.writeRegister(PREG_JTONOFF, (AS_CM_JT_ONDELAY<<4) | AS_CM_JT_OFFDELAY);
     ssl.jtDlyOn(AS_CM_JT_ON);
     ssl.jtDlyOff(AS_CM_JT_OFF);
+//    ssl.writeRegister(PREG_JTDELAYONOFF, (AS_CM_JT_OFF<<4) | AS_CM_JT_ON);
     ssl = this->lg();
     ssl.jtOn(AS_CM_JT_OFFDELAY);
     ssl.jtOff(AS_CM_JT_ONDELAY);
+//    ssl.writeRegister(PREG_JTONOFF, (AS_CM_JT_ONDELAY<<4) | AS_CM_JT_OFFDELAY);
     ssl.jtDlyOn(AS_CM_JT_ON);
     ssl.jtDlyOff(AS_CM_JT_OFF);
+//    ssl.writeRegister(PREG_JTDELAYONOFF, (AS_CM_JT_OFF<<4) | AS_CM_JT_ON);
     ssl.multiExec(false);
   }
 };
@@ -121,25 +125,10 @@ typedef SwitchList3Tmpl<SwitchPeerList> SwitchList3;
 
 class SwitchStateMachine : public Alarm {
 
+  enum { CHANGED=0x04 };
+
 #define DELAY_NO 0x00
 #define DELAY_INFINITE 0xffffffff
-
-  class ChangedAlarm : public Alarm {
-    enum { CHANGED=0x04 };
-  public:
-    ChangedAlarm () : Alarm(0) {}
-    virtual ~ChangedAlarm () {}
-    void set (uint32_t t,AlarmClock& clock) {
-      clock.cancel(*this);
-      Alarm::set(t);
-      clock.add(*this);
-    }
-    virtual void trigger (__attribute__((unused)) AlarmClock& clock) {
-      setflag(CHANGED);
-    }
-    bool changed () const { return hasflag(CHANGED); }
-    void changed (bool c) { setflag(c,CHANGED); }
-  };
 
   virtual void trigger (__attribute__((unused)) AlarmClock& clock) {
     uint8_t next = getNextState();
@@ -173,16 +162,15 @@ class SwitchStateMachine : public Alarm {
   }
 
 protected:
-  uint8_t      state;
-  ChangedAlarm  calarm;
-  SwitchPeerList      actlst;
+  uint8_t          state;
+  SwitchPeerList   actlst;
 
 public:
-  SwitchStateMachine() : Alarm(0), state(AS_CM_JT_NONE), calarm(), actlst(0) {}
+  SwitchStateMachine() : Alarm(0), state(AS_CM_JT_NONE), actlst(0) {}
   virtual ~SwitchStateMachine () {}
 
-  bool changed () const { return calarm.changed(); }
-  void changed (bool c) { calarm.changed(c); }
+  bool changed () const { return hasflag(CHANGED); }
+  void changed (bool c) { setflag(c,CHANGED); }
 
   void setup(__attribute__ ((unused)) BaseList l1) {}
 
@@ -221,6 +209,7 @@ public:
       case AS_CM_JT_ON:       return AS_CM_JT_OFFDELAY;
       case AS_CM_JT_OFFDELAY: return AS_CM_JT_OFF;
       case AS_CM_JT_OFF:      return AS_CM_JT_ONDELAY;
+      default: break;
     }
     return AS_CM_JT_NONE;
   }
@@ -231,6 +220,7 @@ public:
       case AS_CM_JT_ON:       return lst.jtOn();
       case AS_CM_JT_OFFDELAY: return lst.jtDlyOff();
       case AS_CM_JT_OFF:      return lst.jtOff();
+      default: break;
     }
     return AS_CM_JT_NONE;
   }
@@ -241,6 +231,7 @@ public:
       case AS_CM_JT_ON:       return lst.ctOn();
       case AS_CM_JT_OFFDELAY: return lst.ctDlyOff();
       case AS_CM_JT_OFF:      return lst.ctOff();
+      default: break;
     }
     return AS_CM_CT_X_GE_COND_VALUE_LO;
   }
@@ -255,6 +246,7 @@ public:
       case AS_CM_JT_ON:       value = lst.onTime(); break;
       case AS_CM_JT_OFFDELAY: value = lst.offDly(); break;
       case AS_CM_JT_OFF:      value = lst.offTime(); break;
+      default: break;
     }
     return AskSinBase::byteTimeCvt(value);
   }
@@ -264,6 +256,7 @@ public:
       case AS_CM_JT_ON:
       case AS_CM_JT_OFF:
         return DELAY_INFINITE;
+      default: break;
     }
     return DELAY_NO;
   }
@@ -287,6 +280,7 @@ public:
     case AS_CM_ACTIONTYPE_TOGGLE_INVERSE_TO_COUNTER:
       setState((counter & 0x01) == 0x00 ? AS_CM_JT_ON : AS_CM_JT_OFF, DELAY_INFINITE);
       break;
+    default: break;
     }
   }
 
@@ -312,6 +306,7 @@ public:
     case AS_CM_CT_X_LT_COND_VALUE_LO_OR_X_GE_COND_VALUE_HI:
       doit =((value < lst.ctValLo()) || (value >= lst.ctValHi()));
       break;
+    default: break;
     }
     if( doit == true ) {
       remote(lst,counter);
@@ -336,19 +331,20 @@ public:
 template <class HalType,int PeerCount,class List0Type,class IODriver=ArduinoPins>
 class SwitchChannel : public ActorChannel<HalType,SwitchList1,SwitchList3,PeerCount,List0Type,SwitchStateMachine> {
 
+  enum { LOWACTIVE=0x08 };
+
 protected:
   typedef ActorChannel<HalType,SwitchList1,SwitchList3,PeerCount,List0Type,SwitchStateMachine> BaseChannel;
-  uint8_t lowact;
   uint8_t pin;
 
 public:
-  SwitchChannel () : BaseChannel(), lowact(false), pin(0) {}
+  SwitchChannel () : BaseChannel(), pin(0) {}
   virtual ~SwitchChannel() {}
 
   void init (uint8_t p,bool value=false) {
     pin=p;
     IODriver::setOutput(pin);
-    lowact = value;
+    this->setflag(value,LOWACTIVE);
     typename BaseChannel::List1 l1 = BaseChannel::getList1();
     this->set(l1.powerUpAction() == true ? 200 : 0, 0, 0xffff );
     this->changed(true);
@@ -365,11 +361,11 @@ public:
 
   virtual void switchState(__attribute__((unused)) uint8_t oldstate,uint8_t newstate,__attribute__((unused)) uint32_t delay) {
     if( newstate == AS_CM_JT_ON ) {
-      if( lowact == true ) IODriver::setLow(pin);
+      if( this->hasflag(LOWACTIVE) == true ) IODriver::setLow(pin);
       else IODriver::setHigh(pin);
     }
     else if ( newstate == AS_CM_JT_OFF ) {
-      if( lowact == true ) IODriver::setHigh(pin);
+      if( this->hasflag(LOWACTIVE) == true ) IODriver::setHigh(pin);
       else IODriver::setLow(pin);
     }
     this->changed(true);
