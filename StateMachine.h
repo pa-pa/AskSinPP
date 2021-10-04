@@ -24,7 +24,7 @@ class StateMachine : public Alarm {
       clock.add(*this);
     }
     virtual void trigger (__attribute__((unused)) AlarmClock& clock) {
-      setflag(0x04);
+      setflag(CHANGED);
     }
     bool changed () const { return hasflag(CHANGED); }
     void changed (bool c) { setflag(c,CHANGED); }
