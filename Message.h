@@ -11,8 +11,10 @@
 #include "Defines.h"
 #include "Debug.h"
 
-//#define MaxDataLen   60						// maximum length of received bytes
-#define MaxDataLen   17
+#ifndef MaxDataLen
+  //#define MaxDataLen   60						// maximum length of received bytes
+  #define MaxDataLen   17
+#endif
 
 namespace as {
 

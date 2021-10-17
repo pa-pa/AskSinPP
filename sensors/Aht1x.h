@@ -125,6 +125,7 @@ public:
 
   void init () {
     Wire.begin();
+    Wire.setWireTimeout(25000, true); //fixes 'not responding' problems using other i2c devices simultaneously (i.e. BME280)
     //Wire.setClock(100000);
     _delay_ms(AHT1X_POWER_ON_DELAY);
     initNormalMode();
