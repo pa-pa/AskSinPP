@@ -27,6 +27,7 @@ class Sht10 : public Temperature, public Humidity {
   }
 
   void startWire () {
+    digitalWrite(CLOCKPIN,HIGH);
 #if defined(TwoWire_h) || defined(_WIRE_H_)
     if( DATAPIN == A4 && CLOCKPIN==A5 ) {
       Wire.begin();
