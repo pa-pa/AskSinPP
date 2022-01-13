@@ -202,8 +202,11 @@ public:
       }
     }
     value = digitalRead(pinnr);
-    pinMode(pinnr,OUTPUT);
-    digitalWrite(pinnr,LOW);
+    // pinMode(pinnr,OUTPUT);
+    // digitalWrite(pinnr,LOW);
+    // 01/2022 TM: Ruhezustand des Eingangs ist nicht mehr Output/Low sondern High-Z
+    // https://homematic-forum.de/forum/viewtopic.php?f=76&t=71854
+    pinMode(pinnr,INPUT);
     if( enablenr != 0 && enablenr != 0xff) {
       digitalWrite(enablenr,LOW);
     }
