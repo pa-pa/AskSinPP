@@ -112,7 +112,7 @@ void setup () {
   delay(5000);
   DINIT(57600,ASKSIN_PLUS_PLUS_IDENTIFIER);
   Wire.begin();
-  bool first = control.init(hal,DIMMER1_PIN,DIMMER2_PIN,PA2,PA9,PA8);
+  bool first = control.init(hal,DIMMER1_PIN,DIMMER2_PIN);
   buttonISR(cfgBtn,CONFIG_BUTTON_PIN);
   buttonISR(enc1,ENCODER1_SWITCH);
   encoderISR(enc1,ENCODER1_CLOCK,ENCODER1_DATA);
@@ -132,11 +132,6 @@ void setup () {
   tempsensor.init();
 
   sdev.initDone();
-
-  // Adjust CC1101 frequency
-  // hal.radio.initReg(CC1101_FREQ2, 0x21);
-  // hal.radio.initReg(CC1101_FREQ1, 0x65);
-  // hal.radio.initReg(CC1101_FREQ0, 0xE2);
 
   sdev.led().invert(true);
   DDEVINFO(sdev);
