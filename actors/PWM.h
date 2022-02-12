@@ -12,7 +12,6 @@
 
 
 
-
 namespace as {
 
 enum DimCurve { linear, quadratic };
@@ -154,47 +153,47 @@ public:
 #if defined ARDUINO_ARCH_STM32 && defined STM32L1xx
 template<uint8_t STEPS = 200, class PINTYPE = ArduinoPins>
 class PWM16 {
-  uint8_t pin, dimCurve;
+  uint8_t pin, curve;
 public:
   PWM16() : pin(0) {}
   ~PWM16() {}
 
   void init(uint8_t p) {
+    //DPRINT(F("init: ")); DPRINTLN(p);
     pin = p;
-    PINTYPE::setPWMRes(16);
     PINTYPE::setPWM(pin);
-    set(0);
+    PINTYPE::setPWMRes(16);
   }
   
   void param(uint8_t m, uint8_t c) {
-    //DPRINT("multiplier: "); DPRINT(m); DPRINT(", dimCurve: "); DPRINTLN(c);
     PINTYPE::setPWMFreq(m * 200);
-    dimCurve = c;
+    curve = c;
+    //DPRINT(F("multiplier: ")); DPRINT(m); DPRINT(F(", curve: ")); DPRINTLN(curve);
   }
 
   void set(uint8_t value) {
-    uint16_t duty = 0;
+    uint16_t ret = 0;
 
-    if (value == 0) {
-      duty = value;
-    } 
-    else if (value == STEPS) {
-      duty = 0xFFFF;
-    }
-    else if (dimCurve == linear) {
-      duty = map(value, 0, STEPS, 0, 65535);
+    if (curve == linear) {
+      //ret = map(value, 0, STEPS, 0, 65535);
+      ret = ((uint32_t)value * (uint32_t)13107) / 40;  // same as above but 60 byte less
     }
     else {
       // https://diarmuid.ie/blog/pwm-exponential-led-fading-on-arduino-or-other-platforms/
-      // duty = pow(2,(value/R)) + 4;
-      // duty = pow(2,(value/20.9)+6.5);
-      // duty = pow(1.37,(value/15.0)+22.0)-500;
-      duty = pow(1.28, (value / 13.0) + 29.65) - 1300;
+      // ret = pow(2,(value/R)) + 4;
+      // ret = pow(2,(value/20.9)+6.5);
+      // ret = pow(1.37,(value/15.0)+22.0)-500;
+      //ret = pow(1.28, (value / 13.0) + 29.65) - 1300;
       // http://harald.studiokubota.com/wordpress/index.php/2010/09/05/linear-led-fading/index.html
-      //duty = exp(value/18.0) + 4;
+      //ret = exp(value/18.0) + 4;
+      
+      // 734 seems the best factor to calculate from quadratic step 200 to 0xFF, 0xFFF or 0xFFFF
+      // divisor 16 bit: 448, 12 bit: 7168, 8 bit: 114688
+      ret = ((uint32_t)value * (uint32_t)value * 734) / 448;
     }
-    //DDEC(pin); DPRINT("\t("); DDEC(value); DPRINT(")\t"); DDECLN(duty);
-    PINTYPE::setPWM(pin, duty);
+
+    DDEC(pin); DPRINT(F(":c")); DPRINT(curve); DPRINT(F("\t(")); DDEC(value); DPRINT(F(")\t")); DDECLN(ret);
+    PINTYPE::setPWM(pin, ret);
   }
 
 };

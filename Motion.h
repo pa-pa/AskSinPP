@@ -161,7 +161,10 @@ public:
       sysclock.add(quiet);
       // blink led
       if( this->device().led().active() == false ) {
-        this->device().led().ledOn( centis2ticks(this->getList1().ledOntime()) / 2);
+        //this->device().led().ledOn(centis2ticks(this->getList1().ledOntime()) / 2);
+        uint16_t ledontime = this->getList1().ledOntime();
+        DPRINT(F("ledontime: ")); DPRINTLN(ledontime);
+        this->device().led().ledOn(centis2ticks(ledontime) / 2);
       }
       MotionEventMsg& msg = (MotionEventMsg&)this->device().message();
       msg.init(this->device().nextcount(),this->number(),++counter,status(),this->getList1().minInterval());
