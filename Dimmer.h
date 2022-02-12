@@ -426,7 +426,7 @@ public:
     calarm.setflag(value,ERRORREDUCED);
   }
   bool getoverload(){
-	  return calarm.hasflag(ERROROVERLOAD);
+    return calarm.hasflag(ERROROVERLOAD);
   }
 
   void setup(DimmerList1 l1) {
@@ -669,17 +669,19 @@ public:
     if( calarm.hasflag(ERROROVERHEAT) == true ) {
       f |= AS_CM_EXTSTATE_OVERHEAT;
     }
-	if( calarm.hasflag(ERROROVERLOAD) == true ) {
-	  f |= AS_CM_EXTSTATE_OVERLOAD;
-	}
+    if( calarm.hasflag(ERROROVERLOAD) == true ) {
+      f |= AS_CM_EXTSTATE_OVERLOAD;
+    }
     if( calarm.hasflag(ERRORREDUCED) == true ) {
       f |= AS_CM_EXTSTATE_REDUCED;
     }
-    if( alarm.destlevel < level) {
-      f |= AS_CM_EXTSTATE_DOWN;
-    }
-    else if( alarm.destlevel > level) {
-      f |= AS_CM_EXTSTATE_UP;
+    if( alarm.active()) {
+      if( alarm.destlevel < level) {
+        f |= AS_CM_EXTSTATE_DOWN;
+      }
+      else if( alarm.destlevel > level) {
+        f |= AS_CM_EXTSTATE_UP;
+      }
     }
     return f;
   }

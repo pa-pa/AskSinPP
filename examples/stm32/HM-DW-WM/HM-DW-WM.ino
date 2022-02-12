@@ -66,6 +66,7 @@ const struct DeviceInfo PROGMEM devinfo = {
 typedef LibSPI<PA4> RadioSPI;
 typedef AskSin<StatusLed<LED_BUILTIN>,NoBattery,Radio<RadioSPI,PB0> > HalType;
 typedef DimmerChannel<HalType,PEERS_PER_CHANNEL> ChannelType;
+/* 6 channels in total: 2 physical * 3 virtual */
 typedef DimmerDevice<HalType,ChannelType,6,3> DimmerType;
 
 HalType hal;
@@ -112,7 +113,7 @@ void setup () {
   delay(5000);
   DINIT(57600,ASKSIN_PLUS_PLUS_IDENTIFIER);
   Wire.begin();
-  bool first = control.init(hal,DIMMER1_PIN,DIMMER2_PIN,PA2,PA9,PA8);
+  bool first = control.init(hal,DIMMER1_PIN,DIMMER2_PIN);
   buttonISR(cfgBtn,CONFIG_BUTTON_PIN);
   buttonISR(enc1,ENCODER1_SWITCH);
   encoderISR(enc1,ENCODER1_CLOCK,ENCODER1_DATA);
@@ -120,23 +121,36 @@ void setup () {
   encoderISR(enc2,ENCODER2_CLOCK,ENCODER2_DATA);
 
   if( first == true ) {
+    /* Channel 1, 3 and 5 are combined into the first physical channel and peered with first encoder */
     sdev.channel(1).peer(enc1.peer());
     DimmerList3 l3 = sdev.channel(1).getList3(enc1.peer());
     l3.lg().actionType(AS_CM_ACTIONTYPE_INACTIVE);
 
+    sdev.channel(3).peer(enc1.peer());
+    l3 = sdev.channel(3).getList3(enc1.peer());
+    l3.lg().actionType(AS_CM_ACTIONTYPE_INACTIVE);
+
+    sdev.channel(5).peer(enc1.peer());
+    l3 = sdev.channel(5).getList3(enc1.peer());
+    l3.lg().actionType(AS_CM_ACTIONTYPE_INACTIVE);
+
+    /* Channel 2, 4 and 6 are combined into the second physical channel and peered with second encoder */
     sdev.channel(2).peer(enc2.peer());
     l3 = sdev.channel(2).getList3(enc2.peer());
     l3.lg().actionType(AS_CM_ACTIONTYPE_INACTIVE);
-  }
+
+    sdev.channel(4).peer(enc2.peer());
+    l3 = sdev.channel(4).getList3(enc2.peer());
+    l3.lg().actionType(AS_CM_ACTIONTYPE_INACTIVE);
+
+    sdev.channel(6).peer(enc2.peer());
+    l3 = sdev.channel(6).getList3(enc2.peer());
+    l3.lg().actionType(AS_CM_ACTIONTYPE_INACTIVE);
+}
 
   tempsensor.init();
 
   sdev.initDone();
-
-  // Adjust CC1101 frequency
-  // hal.radio.initReg(CC1101_FREQ2, 0x21);
-  // hal.radio.initReg(CC1101_FREQ1, 0x65);
-  // hal.radio.initReg(CC1101_FREQ0, 0xE2);
 
   sdev.led().invert(true);
   DDEVINFO(sdev);
@@ -152,4 +166,3 @@ void loop () {
 //    hal.activity.savePower<Idle<true> >(hal);
   }
 }
-
