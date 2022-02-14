@@ -426,7 +426,6 @@ public:
 
          for (uint8_t cdx = 1; cdx <= this->channels(); ++cdx) {
            ChannelType* c = &channel(cdx);
-           DPRINT(F("3E:")); DPRINTLN(cdx);
            if (c->inhibit() == false && c->has(pm.peer()) == true) {
              c->process(pm);
            }
