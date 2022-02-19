@@ -845,20 +845,17 @@ public:
         dimmer.dimmerChannel(j).setPhysical(physical[i - 1]);
         dimmer.dimmerChannel(j).setLevel(0, 0, 0xffff);
 
-        bool powerup = dimmer.dimmerChannel(j).getList1().powerUpAction();
+        uint8_t powerup = dimmer.dimmerChannel(j).getList1().powerUpAction();
+        //DPRINT(F("init_cnl:")); DPRINT(j); DPRINT(F(", pwrup:")); DPRINTLN(powerup);
         Peer ownID(1);
         dimmer.getDeviceID(ownID);
         DimmerList3 l3 = dimmer.dimmerChannel(j).getList3(ownID);
-        //DPRINT(F("init cnl ")); DPRINT(j);
+        //ownID.dump(); DPRINT('\n');
 
         if (powerup == true && l3.valid() == true) {
-          //DPRINTLN(F(", powerup"));
           typename DimmerList3::PeerList pl = l3.sh();
-          //  pl.dump();
           dimmer.dimmerChannel(j).remote(pl, 1);
-        } else {
-          //DPRINTLN(F(", set level 0"));
-        }
+        } 
       }
     }
   }
@@ -1023,98 +1020,136 @@ public:
 
 template<class HalType,class DimmerType,class PWM>
 class DualWhiteControl : public DimmerControl<HalType,DimmerType,PWM> {
-  uint8_t charLevelLimit;       // 1="CHARACTERISTIC_HALF_CONSTANT" default="true", 2="CHARACTERISTIC_MAXIMUM"
-  uint8_t charColourAssignment; // "CHARACTERISTIC_LOW_IS_WARM" default="true", "CHARACTERISTIC_LOW_IS_COLD"
-  uint8_t charBaseType;         // "CHARACTERISTIC_CROSSFADE" default="true", "CHARACTERISTIC_DIM2WARM", "CHARACTERISTIC_DIM2HOT"
 public:
+  uint8_t cBaseType;         // "CHARACTERISTIC_CROSSFADE" default="true", "CHARACTERISTIC_DIM2WARM", "CHARACTERISTIC_DIM2HOT"
+  uint8_t cLevelLimit;       // 1="CHARACTERISTIC_HALF_CONSTANT" default="true", 2="CHARACTERISTIC_MAXIMUM"
+  uint8_t cCurve;            // linear or quadratic for dimmerchannel 2
+  uint8_t cColourAssignment; // "CHARACTERISTIC_LOW_IS_WARM" default="true", "CHARACTERISTIC_LOW_IS_COLD"
+
   typedef DimmerControl<HalType,DimmerType,PWM> BaseControl;
   DualWhiteControl (DimmerType& dim) : BaseControl(dim) {
-#ifndef NDEBUG
+  #ifndef NDEBUG
     if( this->physicalCount() != 2 ) {
       DPRINTLN(F("DualWhiteControl needs physical count == 2"));
     }
-#endif
+  #endif
   }
   virtual ~DualWhiteControl () {}
 
-  // adjust to calculate bright per channel (cold/warm white)
- 
-  // farbmischverhalten: crossfade, dim2warm, dim2hot
-  // CHARACTERISTIC_BASETYPE, list="1" index="88.4" size="0.4"
-  // "CHARACTERISTIC_CROSSFADE" default="true", "CHARACTERISTIC_DIM2WARM", "CHARACTERISTIC_DIM2HOT" / >
-
-  // farbzuweisung: niedrig ist warmweiss, niedrig ist kaltweiss
-  // CHARACTERISTIC_COLOURASSIGNMENT, list="1" index="88.2" size="0.1"
-  // "CHARACTERISTIC_LOW_IS_WARM" default="true", "CHARACTERISTIC_LOW_IS_COLD"
-
-  // pegelbegrenzung: halbe/konstante leistung, maximale leistung
-  // CHARACTERISTIC_LEVELLIMIT, list="1" index="88.1" size="0.1"
-  // "CHARACTERISTIC_HALF_CONSTANT" default="true", "CHARACTERISTIC_MAXIMUM" 
-
-  // ausgangskennlinie: linear, quadratic
-  // CHARACTERISTIC, list="1" index="88" size="0.1"
-  // "CHARACTERISTIC_LINEAR", "CHARACTERISTIC_SQUARE" default = "true"
-
-  virtual void updatePhysical () {
-    this->checkParam();
-    uint16_t bright = this->combineChannels(1);
-    uint16_t adjust = this->combineChannels(2);
-    // set the values
-    if (this->physical[0] != bright || this->physical[1] != adjust) {
-      this->physical[0] = bright;
-      this->physical[1] = adjust;
-
-      // adjust the color temp
-      uint16_t pwmCold, pwmWarm; 
-
-      if (charBaseType == 0) {      // CHARACTERISTIC_CROSSFADE
-        pwmCold = uint32_t((bright * charLevelLimit * adjust) / 200);
-        pwmWarm = uint32_t((bright * charLevelLimit * (200 - adjust)) / 200);
-        //DPRINT("cf  c: "); DPRINT(pwmCold); DPRINT(", w: "); DPRINTLN(pwmWarm);
-      }
-      else if (charBaseType == 1) { // CHARACTERISTIC_DIM2WARM
-        pwmCold = uint32_t((bright * adjust * adjust) / 40000);
-        uint8_t t_adj = 200 - adjust;
-        if (charLevelLimit == 1) {
-          t_adj = (adjust > 100) ? adjust - 100 : 100 - adjust;
-          t_adj *= 2;
-        }
-        pwmWarm = int32_t((-1 * bright * t_adj * t_adj) / 40000) + bright;
-        //DPRINT("d2w b: "); DPRINT(bright); DPRINT(", c: "); DPRINT(pwmCold); DPRINT(", w: "); DPRINTLN(pwmWarm);
-      }
-      else if (charBaseType == 2) { // CHARACTERISTIC_DIM2HOT
-        uint8_t t_adj = (adjust < 100) ? 0 : adjust - 100;
-        pwmCold = uint32_t((bright * t_adj) / 100);
-        t_adj = adjust;
-        if (charLevelLimit == 1) {
-          t_adj = (adjust > 100) ? 200 - adjust : adjust;
-          t_adj /= 2;
-        }
-        pwmWarm = uint32_t((bright * t_adj) / 100);
-        //DPRINT("d2h b: "); DPRINT(bright); DPRINT(", c: "); DPRINT(pwmCold); DPRINT(", w: "); DPRINTLN(pwmWarm);
-      }
-
-      if (pwmCold > 200) pwmCold = 200;
-      if (pwmWarm > 200) pwmWarm = 200;
-
-      this->pwms[0 ^ charColourAssignment].set(pwmCold);
-      this->pwms[1 ^ charColourAssignment].set(pwmWarm);
-    }
+  virtual void updatePhysical() {
+    updatePhysical(this->checkParam(), this->combineChannels(1), this->combineChannels(2));
   }
 
-  void checkParam() {
+  virtual void updatePhysical(uint8_t param, uint8_t bright, uint8_t adjust) {
+
+    if (param == 0 && this->physical[0] == bright && this->physical[1] == adjust) return;
+    this->physical[0] = bright;
+    this->physical[1] = adjust;
+
+    uint8_t pwmCold, pwmWarm;
+    uint8_t _adjust = 200 - adjust;
+
+
+    if (cBaseType == 0) {      // CHARACTERISTIC_CROSSFADE 
+
+      if ((cLevelLimit == 0) && (cCurve == 0)) {
+        pwmCold = adjust;
+        pwmWarm = _adjust;
+      }
+      else if ((cLevelLimit == 1) && (cCurve == 0)) {
+        pwmCold = (adjust > 100) ? 200 : adjust * 2;
+        pwmWarm = (_adjust > 100) ? 200 : _adjust * 2;
+      }
+      else if ((cLevelLimit == 0) && (cCurve == 1)) {
+        pwmCold = (adjust > 100) ? ((int32_t)_adjust * (int32_t)_adjust / -100) + 200 : (uint16_t)adjust * (uint16_t)adjust / 100;
+        pwmWarm = (adjust > 100) ? (uint16_t)_adjust * (uint16_t)_adjust / 100 : ((int32_t)adjust * (int32_t)adjust / -100) + 200;
+      }
+      else if ((cLevelLimit == 1) && (cCurve == 1)) {
+        pwmCold = (adjust > 100) ? 200 : (uint16_t)adjust * (uint16_t)adjust / 50;
+        pwmWarm = (_adjust > 100) ? 200 : (uint16_t)_adjust * (uint16_t)_adjust / 50;
+      }
+
+    }
+    else if (cBaseType == 1) { // CHARACTERISTIC_DIM2WARM
+
+      pwmCold = (uint16_t)adjust * (uint16_t)adjust / 200;
+      if (cCurve == 1) {
+        pwmCold = (uint16_t)pwmCold * (uint16_t)pwmCold / 200;
+      }
+
+      if (cLevelLimit == 0) {
+        uint8_t _xw = (adjust > 100) ? adjust - 100 : 100 - adjust;
+        pwmWarm = ((int32_t)_xw * (int32_t)_xw / -200) + 50;
+      }
+      else if (cLevelLimit == 1) {
+        pwmWarm = ((int32_t)_adjust * (int32_t)_adjust / -200) + 200;
+      }
+
+      if ((cLevelLimit == 0) && (cCurve == 1)) {
+        pwmWarm = (uint16_t)pwmWarm * (uint16_t)adjust / 120;
+      }
+      else if ((cLevelLimit == 1) && (cCurve == 1)) {
+        pwmWarm = (uint16_t)pwmWarm * (uint16_t)pwmWarm / 200;
+      }
+
+    }
+    else if (cBaseType == 2) { // CHARACTERISTIC_DIM2HOT
+
+      if (cCurve == 0) {
+        pwmCold = (adjust < 100) ? 0 : (adjust - 100) * 2;
+      }
+      else if (cCurve == 1) {
+        pwmCold = (adjust < 140) ? 0 : (adjust - 140) * 10 / 3;
+      }
+
+      if ((cLevelLimit == 0) && (cCurve == 0)) {
+        pwmWarm = (adjust > 100) ? _adjust : adjust;
+      }
+      else if ((cLevelLimit == 1) && (cCurve == 0)) {
+        pwmWarm = (adjust > 100) ? 200 : adjust * 2;
+      }
+      else if ((cLevelLimit == 0) && (cCurve == 1)) {
+        uint8_t _xw = (adjust > 140) ? (uint16_t)_adjust * 5 / 3 : (uint16_t)adjust * 5 / 7;
+        pwmWarm = (adjust > 140) ? ((int32_t)adjust * (int32_t)(100 - _xw) / -200) + 100 : (uint16_t)_xw * (uint16_t)_xw / 100;
+      }
+      else if ((cLevelLimit == 1) && (cCurve == 1)) {
+        pwmWarm = (adjust > 140) ? 200 : (uint16_t)adjust * (uint16_t)adjust / 98;
+      }
+    }
+
+    pwmCold = (uint16_t)pwmCold * (uint16_t)bright / (uint16_t)200;
+    pwmWarm = (uint16_t)pwmWarm * (uint16_t)bright / (uint16_t)200;
+
+    //printParam();
+    //DPRINT(F("adjust ")); DPRINT(adjust); DPRINT(F(", bright ")); DPRINT(bright); DPRINT(F(", pwmCold ")); DPRINT(pwmCold); DPRINT(F(", pwmWarm ")); DPRINTLN(pwmWarm);
+
+    // 0 xor 0 = 0; 0 xor 1 = 1; 1 xor 0 = 1; 1 xor 1 = 0
+    this->pwms[0 ^ cColourAssignment].set(pwmCold);
+    this->pwms[1 ^ cColourAssignment].set(pwmWarm);
+  }
+  
+  uint8_t checkParam() {
     bool cc = this->dimmer.hasConfigChanged();
-    if (cc == false) return;
+    if (cc == false) return 0;
 
+    // speed multiplier and characteristic from channel 1 is needed in the pwm channels
+    uint8_t charCurve = this->dimmer.dimmerChannel(1).getList1().characteristic();
     uint8_t speedMultiplier = this->dimmer.getList0().speedMultiplier();
-    uint8_t characteristic = this->dimmer.dimmerChannel(2).getList1().characteristic();
-    this->pwms[0].param(speedMultiplier, characteristic);
-    this->pwms[1].param(speedMultiplier, characteristic);
+    this->pwms[0].param(speedMultiplier, charCurve);
+    this->pwms[1].param(speedMultiplier, charCurve);
 
-    charLevelLimit = this->dimmer.dimmerChannel(2).getList1().characteristicLevelLimit() + 1;
-    charColourAssignment = this->dimmer.dimmerChannel(2).getList1().characteristicColourAssignment();
-    charBaseType = this->dimmer.dimmerChannel(2).getList1().characteristicBasetype();
-    //DPRINT("ll: "); DPRINT(charLevelLimit); DPRINT(", ca: "); DPRINT(charColourAssignment); DPRINT(", bt: "); DPRINTLN(charBaseType);
+    // charcteristic of channel 2 is needed within the dualwhite instance 
+    cBaseType = this->dimmer.dimmerChannel(2).getList1().characteristicBasetype();
+    cLevelLimit = this->dimmer.dimmerChannel(2).getList1().characteristicLevelLimit();
+    cCurve = this->dimmer.dimmerChannel(2).getList1().characteristic();
+    cColourAssignment = this->dimmer.dimmerChannel(2).getList1().characteristicColourAssignment();
+    //printParam();
+    return 1;
+  }
+
+  void printParam() {
+    char* str_charBaseType[3] = { "CROSSFADE", "DIM2WARM ", "DIM2HOT  " };
+    DPRINT(str_charBaseType[cBaseType]); DPRINT(F(": cLevelLimit ")); DPRINT(cLevelLimit); DPRINT(F(", cCurve ")); DPRINT(cCurve); DPRINT(F(", cColour ")); DPRINTLN(cColourAssignment);
   }
 
 };
