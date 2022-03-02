@@ -10,6 +10,7 @@
 #include "Alarm.h"
 
 #ifdef ARDUINO_ARCH_RP2040
+  https://github.com/khoih-prog/RPI_PICO_TimerInterrupt
   #include "RPi_Pico_TimerInterrupt.h"
 #endif
 
