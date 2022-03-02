@@ -12,7 +12,7 @@
   #include "flash_stm32.h"
 #endif
 
-#ifdef ARDUINO_ARCH_ESP32
+#if defined ARDUINO_ARCH_ESP32 || defined ARDUINO_ARCH_RP2040
   #include "AlarmClock.h"
   #include <EEPROM.h>
 #endif
@@ -129,7 +129,50 @@ class InternalEprom {
     EEPROM.commit();
     sysclock.enable();
   }
+#elif defined ARDUINO_ARCH_RP2040
+  //ESP32 Arduino libraries emulate EEPROM using a sector (4 kilobytes) of flash memory.
+  #define EEINFO_EEPROM_SIZE  4096
+  #define E2END EEINFO_EEPROM_SIZE
 
+  void initEEPROM() {
+    static bool initDone = false;
+    if (initDone == false) {
+      initDone = true;
+      DPRINTLN("Init RP2040 EEPROM.");
+      EEPROM.begin(EEINFO_EEPROM_SIZE);
+    }
+  }
+
+  unsigned char eeprom_read_byte(unsigned char * pos)  {
+    initEEPROM();
+    uint8_t result = EEPROM.read(int(pos));
+    //DPRINT("eeprom_read_byte (");DDEC(int(pos));DPRINT(") ");DHEXLN(result);
+    return result;
+  }
+
+  void eeprom_read_block(void * __dst, const void * __src, size_t __n) {
+    initEEPROM();
+    sysclock.disable();
+    for (size_t i = 0; i < __n; i++) {
+      *((char *)__dst + i) = eeprom_read_byte((uint8_t *)__src + i);
+    }
+    sysclock.enable();
+  }
+
+  void  eeprom_write_block( const void * src, const void * dst,  size_t __n) {
+    initEEPROM();
+
+    //https://esp32.com/viewtopic.php?t=13861
+    //due to a bug, we have to disable the timer before committing to the EEPROM
+    sysclock.disable();
+    int pos = int(dst);
+    for (size_t i = 0; i < __n; i++) {
+      byte data = *((unsigned  char*)src + i);
+      EEPROM.write(pos + i, data);
+    }
+    EEPROM.commit();
+    sysclock.enable();
+  }
 #endif
 
 

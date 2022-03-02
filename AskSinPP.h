@@ -88,7 +88,7 @@ public:
    */
   static void pgm_read(uint8_t* dest,uint16_t adr,uint8_t size) {
     for( int i=0; i<size; ++i, ++dest ) {
-      *dest = pgm_read_byte(adr + i);
+      *dest = pgm_read_byte((uint16_t*)(adr + i));
     }
   }
   /**
