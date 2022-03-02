@@ -61,7 +61,7 @@ const struct DeviceInfo PROGMEM devinfo = {
 typedef LibSPI<PA4> RadioSPI;
 typedef AskSin<StatusLed<LED_BUILTIN>,NoBattery,Radio<RadioSPI,PB0> > HalType;
 typedef DimmerChannel<HalType,PEERS_PER_CHANNEL> ChannelType;
-typedef DimmerDevice<HalType,ChannelType,6,3> DimmerType;
+typedef DimmerDevice<HalType,ChannelType,3,3> DimmerType;
 
 HalType hal;
 DimmerType sdev(devinfo,0x20);

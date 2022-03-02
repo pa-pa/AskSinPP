@@ -422,11 +422,10 @@ public:
 #ifndef SENSOR_ONLY
        else if (mtype == AS_MESSAGE_SWITCH_EVENT) {
          RemoteEventMsg& pm = msg.switchSim().toEventMsg();
-         //DPRINT("X> "); pm.dump();
+         //DPRINT(F("X> ")); pm.dump();
 
          for (uint8_t cdx = 1; cdx <= this->channels(); ++cdx) {
            ChannelType* c = &channel(cdx);
-           //DPRINT("cnl: "); DPRINTLN(cdx);
            if (c->inhibit() == false && c->has(pm.peer()) == true) {
              c->process(pm);
            }
