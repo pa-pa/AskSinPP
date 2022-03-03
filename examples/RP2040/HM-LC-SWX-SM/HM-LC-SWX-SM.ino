@@ -1,7 +1,7 @@
 //- -----------------------------------------------------------------------------------------------------------------------
 // AskSin++
 // 2016-10-31 papa Creative Commons - http://creativecommons.org/licenses/by-nc-sa/3.0/de/
-// ci-test=yes board=esp32 aes=no
+// ci-test=yes board=rp2040 aes=no
 //- -----------------------------------------------------------------------------------------------------------------------
 
 // define this to read the device id, serial and device type from bootloader section
