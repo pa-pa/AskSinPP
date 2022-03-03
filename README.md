@@ -9,15 +9,20 @@ C++ implementation of the AskSin protocol
 - Supported MCU:
   - ATMega328
   - [ATMega32](https://github.com/MCUdude/MightyCore) (Standard Pinout)
+  - [ATMega128](https://github.com/MCUdude/MegaCore) (Standard Pinout)
   - [ATMega644](https://github.com/MCUdude/MightyCore) (Bobuino Pinout is highly suggested)
   - [ATMega1284](https://github.com/MCUdude/MightyCore) (No OTA Bootloader support, yet)
   - [STM32F1](http://dan.drown.org/stm32duino/package_STM32duino_index.json)
+  - [ESP32](https://github.com/espressif/arduino-esp32) (not fully implemented)
+  - [RP2040](https://github.com/earlephilhower/arduino-pico) (not fully implemented)
 
 ## Required additional Arduino libraries:
 - [EnableInterrupt](https://github.com/GreyGnome/EnableInterrupt)
   - For ATMega644 and ATMega1284 the PR #49 needs to be included
 - [Low-Power](https://github.com/rocketscream/Low-Power.git)
   - For ATMega644 and ATMega1284 the PR #57 needs to be included
+- [RPI_PICO_TimerInterrupt](https://github.com/khoih-prog/RPI_PICO_TimerInterrupt)
+  - For RP2040 (i.e. Raspberry Pi Pico)
 
 ## Optional required Sensor Libraries
 - [Sensor Base Library](https://github.com/adafruit/Adafruit_Sensor)
