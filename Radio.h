@@ -21,7 +21,6 @@
 
 #if defined ARDUINO_ARCH_RP2040
   #define SPI_MODE0     0
-  #define _delay_ms(X)  delay(X)
 #endif
 
 #include "Message.h"
