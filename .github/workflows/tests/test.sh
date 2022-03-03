@@ -58,7 +58,7 @@ case "$BOARD" in
     FQBN=esp32:esp32:esp32
     ;;
   rp2040)
-    CORE=rp2040:rpipico
+    CORE=rp2040
     FQBN=rp2040:rp2040:rpipico:flash=2097152_65536,freq=100,opt=Small,rtti=Disabled,dbgport=Serial,dbglvl=None,usbstack=picosdk
     ;;
   *)
