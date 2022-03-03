@@ -16,6 +16,7 @@
 #include "Led.h"
 #include "Buzzer.h"
 #include "Activity.h"
+#include "pico/unique_id.h"
 
 #ifdef USE_HW_SERIAL
   #if defined(__AVR_ATmega644__) || defined(__AVR_ATmega644P__) || defined(__AVR_ATmega644PA__) || defined(__AVR_ATmega1284__) || defined(__AVR_ATmega1284P__) || defined(__AVR_ATmega328PB__)
@@ -23,6 +24,7 @@
 #elif defined (ARDUINO_ARCH_STM32F1)
 #elif defined (ARDUINO_ARCH_STM32) && defined (STM32L1xx)
 #elif defined (ARDUINO_ARCH_ESP32)
+#elif defined (ARDUINO_ARCH_RP2040)
 #else
     #error Using Hardware serial is not supported on MCU type currently used
   #endif
@@ -66,6 +68,41 @@ uint8_t boot_signature_byte_get(byte addr) {
   }
 
   return chipIdArray[idx];
+}
+#endif
+
+#ifdef ARDUINO_ARCH_RP2040
+uint8_t boot_signature_byte_get(byte addr) {
+  pico_unique_board_id_t id_out;
+  pico_get_unique_board_id(&id_out);
+
+  byte idx = 0;
+  switch (addr) {
+    case 14:
+    case 20:
+      idx = 0;
+    break;
+    case 15:
+    case 21:
+      idx = 1;
+    break;
+    case 16:
+    case 22:
+      idx = 2;
+    break;
+    case 17:
+    case 23:
+      idx = 3;
+    break;
+    case 18:
+      idx = 4;
+    break;
+    case 19:
+      idx = 5;
+    break;
+  }
+
+  return id_out.id[idx];
 }
 #endif
 
