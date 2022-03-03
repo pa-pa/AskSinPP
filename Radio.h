@@ -21,7 +21,6 @@
 
 #if defined ARDUINO_ARCH_RP2040
   #define SPI_MODE0     0
-  #define _delay_us(X)  delayMicroseconds(X)
   #define _delay_ms(X)  delay(X)
 #endif
 

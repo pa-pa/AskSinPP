@@ -37,7 +37,7 @@
   #define enableInterrupt(pin,handler,mode) attachInterrupt(pin,handler,mode)
   #define disableInterrupt(pin) detachInterrupt(pin)
   #define memcmp_P(src,dst,count) memcmp((src),(dst),(count))
-#elif (defined (ARDUINO_ARCH_STM32) && defined (STM32L1xx)) || (defined ARDUINO_ARCH_ESP32)
+#elif (defined (ARDUINO_ARCH_STM32) && defined (STM32L1xx)) || (defined ARDUINO_ARCH_ESP32) || (defined ARDUINO_ARCH_RP2040)
   #define _delay_us(us) delayMicroseconds(us)
   inline void _delay_ms(uint32_t ms) { do { delayMicroseconds(1000); } while ((--ms) > 0); }
 
