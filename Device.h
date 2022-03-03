@@ -16,7 +16,6 @@
 #include "Led.h"
 #include "Buzzer.h"
 #include "Activity.h"
-#include "pico/unique_id.h"
 
 #ifdef USE_HW_SERIAL
   #if defined(__AVR_ATmega644__) || defined(__AVR_ATmega644P__) || defined(__AVR_ATmega644PA__) || defined(__AVR_ATmega1284__) || defined(__AVR_ATmega1284P__) || defined(__AVR_ATmega328PB__)
@@ -72,6 +71,7 @@ uint8_t boot_signature_byte_get(byte addr) {
 #endif
 
 #ifdef ARDUINO_ARCH_RP2040
+#include "pico/unique_id.h"
 uint8_t boot_signature_byte_get(byte addr) {
   pico_unique_board_id_t id_out;
   pico_get_unique_board_id(&id_out);
