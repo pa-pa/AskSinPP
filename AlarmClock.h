@@ -10,8 +10,6 @@
 #include "Alarm.h"
 
 #ifdef ARDUINO_ARCH_RP2040
-  //https://github.com/khoih-prog/RPI_PICO_TimerInterrupt
-  #include "RPi_Pico_TimerInterrupt.h"
 #endif
 
 namespace as {
@@ -112,9 +110,9 @@ class SysClock : public AlarmClock {
 #endif
 
 #ifdef ARDUINO_ARCH_RP2040
-  RPI_PICO_Timer ITimer0 = 0;
 private:
-  static bool TimerHandler0(__attribute__((unused)) struct repeating_timer *t) { callback(); return true; }
+  struct repeating_timer  rp2040_timer;
+  static bool TimerHandler(__attribute__((unused)) struct repeating_timer *t) { callback(); return true; }
 #endif
 public:
   static SysClock& instance();
@@ -191,7 +189,7 @@ public:
       timerAlarmDisable(Timer);
   #endif
   #ifdef ARDUINO_ARCH_RP2040
-    ITimer0.detachInterrupt();
+    cancel_repeating_timer(&rp2040_timer);
   #endif
   }
 
@@ -210,7 +208,8 @@ public:
       timerAlarmEnable(Timer);
   #endif
   #ifdef ARDUINO_ARCH_RP2040
-    ITimer0.attachInterruptInterval(10000UL, TimerHandler0);
+    cancel_repeating_timer(&rp2040_timer);
+    add_repeating_timer_us(10000UL, TimerHandler, NULL, &rp2040_timer);
   #endif
   }
 
