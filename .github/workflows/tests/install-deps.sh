@@ -43,6 +43,7 @@ GIT_LIBS=(
   "https://github.com/PaulStoffregen/Time"
   "https://github.com/adafruit/Adafruit_NeoPixel"
   "https://github.com/sparkfun/BMP180_Breakout_Arduino_Library"
+  "https://github.com/khoih-prog/RPI_PICO_TimerInterrupt"
 )
 
 # Install Libs
