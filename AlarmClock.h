@@ -10,6 +10,9 @@
 #include "Alarm.h"
 
 #ifdef ARDUINO_ARCH_RP2040
+  #include "hardware/rtc.h"
+  #include "pico/stdlib.h"
+  #include "pico/util/datetime.h"
 #endif
 
 namespace as {
@@ -268,6 +271,13 @@ public:
 #elif defined(ARDUINO_ARCH_STM32F1) && defined(_RTCLOCK_H_)
     rt = RTClock(RTCSEL_LSE);
     rt.attachSecondsInterrupt(rtccallback);
+#elif defined(ARDUINO_ARCH_RP2040)
+    datetime_t alarmT;
+    rtc_init();
+    rtc_get_datetime(&alarmT);
+    alarmT.min = alarmT.hour = alarmT.day = alarmT.dotw = alarmT.month = alarmT.year = -1;
+    alarmT.sec =  1;
+    rtc_set_alarm(&alarmT, rtccallback); // https://raspberrypi.github.io/pico-sdk-doxygen/group__hardware__rtc.html
 #else
   #warning "RTC not supported"
 #endif
