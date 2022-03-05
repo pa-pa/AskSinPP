@@ -211,8 +211,9 @@ public:
       timerAlarmEnable(Timer);
   #endif
   #ifdef ARDUINO_ARCH_RP2040
-    cancel_repeating_timer(&rp2040_timer);
-    add_repeating_timer_us(10000UL, TimerHandler, NULL, &rp2040_timer);
+    if (rp2040_timer.alarm_id < 1) {
+      add_repeating_timer_us(10000UL, TimerHandler, NULL, &rp2040_timer);
+    }
   #endif
   }
 
