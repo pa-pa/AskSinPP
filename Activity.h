@@ -382,7 +382,7 @@ public:
 #if defined(ARDUINO_ARCH_ESP32) || defined(ARDUINO_ARCH_RP2040)
 class Sleep {
 public:
-  static uint32_t doSleep (uint32_t ticks) {
+  static void doSleep (uint32_t ticks) {
     uint32_t sleeptime = ticks2millis(ticks);
 
 #ifdef ARDUINO_ARCH_RP2040
@@ -392,33 +392,25 @@ public:
     esp_light_sleep_start();
 #endif
 
-    return ticks;
   }
 
   static void waitSerial() {Serial.flush();};
 
   template <class Hal>
   static void powerSave (Hal& hal) {
-    sysclock.disable();
     uint32_t ticks = sysclock.next();
     if( sysclock.isready() == false ) {
       if( ticks == 0 || ticks > millis2ticks(15) ) {
         hal.radio.setIdle();
-        uint32_t offset = doSleep(ticks);
-        sysclock.correct(offset);
-        sysclock.enable();
+        doSleep(ticks);
       }
       else{
-        sysclock.enable();
-//        Idle<ENABLETIMER2>::powerSave(hal);
         powerSave(hal);
       }
     }
-    else {
-      sysclock.enable();
-    }
   }
 };
+
 #endif
 
 }
