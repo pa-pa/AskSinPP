@@ -305,6 +305,9 @@ public:
 
   void sleepForever () { activity.sleepForever(*this); }
 #endif
+#if defined(ARDUINO_ARCH_RP2040)
+  void sleep () { activity.savePower<Sleep>(*this); }
+#endif
 };
 
 #ifndef NORTC
