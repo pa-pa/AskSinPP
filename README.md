@@ -21,8 +21,6 @@ C++ implementation of the AskSin protocol
   - For ATMega644 and ATMega1284 the PR #49 needs to be included
 - [Low-Power](https://github.com/rocketscream/Low-Power.git)
   - For ATMega644 and ATMega1284 the PR #57 needs to be included
-- [RPI_PICO_TimerInterrupt](https://github.com/khoih-prog/RPI_PICO_TimerInterrupt)
-  - For RP2040 (i.e. Raspberry Pi Pico)
 
 ## Optional required Sensor Libraries
 - [Sensor Base Library](https://github.com/adafruit/Adafruit_Sensor)
