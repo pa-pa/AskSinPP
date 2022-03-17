@@ -19,7 +19,7 @@
   typedef uint8_t BitOrder;
 #endif
 
-#if defined ARDUINO_ARCH_RP2040
+#if (defined ARDUINO_ARCH_RP2040) && (defined _HARDWARE_SPI_H)
   #define SPI_MODE0     0
 #endif
 
