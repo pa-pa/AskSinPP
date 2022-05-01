@@ -60,7 +60,7 @@ namespace as {
 #define CREG_STATUSINFO 0x57
 #define CREG_CHARACTERISTIC 0x58                 // index="88" size="0.1"
 #define CREG_CHARACTERISTIC_LEVELLIMIT 0x58      // index="88.1" size="0.1"
-#define CREG_HARACTERISTIC_COLOURASSIGNMENT 0x58 // index="88.2" size="0.1"
+#define CREG_CHARACTERISTIC_COLOURASSIGNMENT 0x58// index="88.2" size="0.1"
 #define CREG_CHARACTERISTIC_BASETYPE 0x58        // index="88.4" size="0.4"
 #define CREG_LOGICCOMBINATION 0x59
 #define CREG_TX_MINDELAY 0x7b
@@ -513,7 +513,7 @@ public:
 
 //#define CREG_CHARACTERISTIC 0x58                 // index="88" size="0.1"
 //#define CREG_CHARACTERISTIC_LEVELLIMIT 0x58      // index="88.1" size="0.1"
-//#define CREG_HARACTERISTIC_COLOURASSIGNMENT 0x58 // index="88.2" size="0.1"
+//#define CREG_CHARACTERISTIC_COLOURASSIGNMENT 0x58// index="88.2" size="0.1"
 //#define CREG_CHARACTERISTIC_BASETYPE 0x58        // index="88.4" size="0.4"
 
 

@@ -19,6 +19,10 @@
   typedef uint8_t BitOrder;
 #endif
 
+#if defined ARDUINO_ARCH_RP2040
+  #define SPI_MODE0     0
+#endif
+
 #include "Message.h"
 #include "AlarmClock.h"
 

@@ -24,6 +24,7 @@ jobs:
           - board: bluepill
           - board: maplemini
           - board: esp32
+          - board: rp2040
 
     steps:
       # GIT Checkout

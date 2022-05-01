@@ -12,7 +12,7 @@
   #include "flash_stm32.h"
 #endif
 
-#ifdef ARDUINO_ARCH_ESP32
+#if defined ARDUINO_ARCH_ESP32 || defined ARDUINO_ARCH_RP2040
   #include "AlarmClock.h"
   #include <EEPROM.h>
 #endif
@@ -85,17 +85,21 @@ class InternalEprom {
     HAL_FLASHEx_DATAEEPROM_Lock();
 }
 
-#elif defined ARDUINO_ARCH_ESP32
+#elif defined ARDUINO_ARCH_ESP32 || defined ARDUINO_ARCH_RP2040
   //ESP32 Arduino libraries emulate EEPROM using a sector (4 kilobytes) of flash memory.
   #define EEINFO_EEPROM_SIZE  4096
   #define E2END EEINFO_EEPROM_SIZE
+#ifdef ARDUINO_ARCH_RP2040
+  #define IRAM_ATTR
+#endif
 
   void IRAM_ATTR initEEPROM() {
     static bool initDone = false;
     if (initDone == false) {
       initDone = true;
-      DPRINTLN("Init ESP32 EEPROM.");
+      DPRINT(F("Init EEPROM - "));
       EEPROM.begin(EEINFO_EEPROM_SIZE);
+      DPRINTLN(F("DONE"));
     }
   }
 
@@ -129,7 +133,6 @@ class InternalEprom {
     EEPROM.commit();
     sysclock.enable();
   }
-
 #endif
 
 
