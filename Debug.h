@@ -113,6 +113,24 @@
   inline void DDECLN(TYPE b) { DDEC(b); DPRINT(F("\r\n")); }
   inline void DHEXLN(const uint8_t* b,uint8_t l) { DHEX(b,l); DPRINT(F("\r\n")); }
 
+  #define DDEVLISTS(dev) \
+    uint8_t cnls = dev.channels(); \
+    DPRINT(F("channels: ")); DPRINTLN(cnls); \
+    GenericList l = dev.getList0(); \
+    DPRINT(F("cnl0, lst0: ")); l.dump(); DPRINT(F("\r\n")); \
+    for (uint8_t i = 1; i <= cnls; ++i) { \
+      l = dev.channel(i).getList1(); \
+      DPRINT(F("cnl")); DPRINT(i); DPRINT(F(", lst1: ")); l.dump(); \
+      uint8_t peers = dev.channel(i).peers(); \
+      DPRINT(F("peers: ")); DPRINTLN(peers); \
+      for (uint8_t j = 0; j < peers; ++j) { \
+        Peer p = dev.channel(i).peerat(j); \
+        GenericList l = dev.channel(i).getList3(j); \
+        DPRINT(j); DPRINT(F(": ")); p.dump(); DPRINT(F(": ")); l.dump(); DPRINT(F("\r\n")); \
+      } \
+    } \
+
+
 #endif
 
 #endif
