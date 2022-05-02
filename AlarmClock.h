@@ -10,8 +10,9 @@
 #include "Alarm.h"
 
 #ifdef ARDUINO_ARCH_RP2040
-  //https://github.com/khoih-prog/RPI_PICO_TimerInterrupt
-  #include "RPi_Pico_TimerInterrupt.h"
+  #include "hardware/rtc.h"
+  #include "pico/stdlib.h"
+  #include "pico/util/datetime.h"
 #endif
 
 namespace as {
@@ -112,9 +113,9 @@ class SysClock : public AlarmClock {
 #endif
 
 #ifdef ARDUINO_ARCH_RP2040
-  RPI_PICO_Timer ITimer0 = 0;
 private:
-  static bool TimerHandler0(__attribute__((unused)) struct repeating_timer *t) { callback(); return true; }
+  struct repeating_timer  rp2040_timer;
+  static bool TimerHandler(__attribute__((unused)) struct repeating_timer *t) { callback(); return true; }
 #endif
 public:
   static SysClock& instance();
@@ -191,7 +192,7 @@ public:
       timerAlarmDisable(Timer);
   #endif
   #ifdef ARDUINO_ARCH_RP2040
-    ITimer0.detachInterrupt();
+    cancel_repeating_timer(&rp2040_timer);
   #endif
   }
 
@@ -210,7 +211,9 @@ public:
       timerAlarmEnable(Timer);
   #endif
   #ifdef ARDUINO_ARCH_RP2040
-    ITimer0.attachInterruptInterval(10000UL, TimerHandler0);
+    if (rp2040_timer.alarm_id < 1) {
+      add_repeating_timer_us(10000UL, TimerHandler, NULL, &rp2040_timer);
+    }
   #endif
   }
 
@@ -269,6 +272,13 @@ public:
 #elif defined(ARDUINO_ARCH_STM32F1) && defined(_RTCLOCK_H_)
     rt = RTClock(RTCSEL_LSE);
     rt.attachSecondsInterrupt(rtccallback);
+#elif defined(ARDUINO_ARCH_RP2040)
+    datetime_t alarmT;
+    rtc_init();
+    rtc_get_datetime(&alarmT);
+    alarmT.min = alarmT.hour = alarmT.day = alarmT.dotw = alarmT.month = alarmT.year = -1;
+    alarmT.sec =  1;
+    rtc_set_alarm(&alarmT, rtccallback); // https://raspberrypi.github.io/pico-sdk-doxygen/group__hardware__rtc.html
 #else
   #warning "RTC not supported"
 #endif

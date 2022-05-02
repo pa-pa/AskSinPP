@@ -379,14 +379,18 @@ public:
   }
 };
 
-#ifdef ARDUINO_ARCH_ESP32
+#if defined(ARDUINO_ARCH_ESP32) || defined(ARDUINO_ARCH_RP2040)
 class Sleep {
 public:
   static uint32_t doSleep (uint32_t ticks) {
     uint32_t sleeptime = ticks2millis(ticks);
 
+#ifdef ARDUINO_ARCH_RP2040
+    sleep_ms(sleeptime); // https://raspberrypi.github.io/pico-sdk-doxygen/group__sleep.html
+#else
     esp_sleep_enable_timer_wakeup(sleeptime * 100000);
     esp_light_sleep_start();
+#endif
 
     return ticks;
   }
