@@ -34,7 +34,8 @@ private:
   uint8_t step;   // current step in pattern
   uint8_t repeat; // current repeat of the pattern
   uint8_t pin;
-  uint8_t inv;
+  bool inv:4; 
+  bool silent:4; 
 
   void copyPattern (Mode stat,const BlinkPattern* patt) {
     memcpy_P(&current,patt+stat,sizeof(BlinkPattern));
@@ -47,7 +48,7 @@ private:
   }
 
 public:
-  Led () : Alarm(0), step(0), repeat(0), pin(0), inv(false) {
+  Led () : Alarm(0), step(0), repeat(0), pin(0), inv(false), silent(0) {
     async(true);
   }
   virtual ~Led() {}
@@ -58,7 +59,11 @@ public:
     ledOff();
   }
 
-  void invert (bool value) {
+  void stealth(bool value) {
+    silent = value;
+  }
+
+  void invert(bool value) {
     inv = value;
   }
 
@@ -88,6 +93,7 @@ public:
   }
 
   void ledOn () {
+    if (silent) return;
     if( invert() == true ) {
       PINTYPE::setLow(pin);
     }
@@ -141,7 +147,8 @@ class StatusLed : public LedStates {
 public:
   StatusLed () {}
 
-  void init () {  led1.init(LEDPIN1); }
+  void init() { led1.init(LEDPIN1); }
+  void stealth(bool value) { led1.stealth(value); }
   bool active () const { return led1.active(); }
   void ledOn (uint32_t ticks) { led1.ledOn(ticks); }
   void ledOn (uint32_t ticks,__attribute__((unused)) uint32_t tacks) { led1.ledOn(ticks); }
@@ -159,6 +166,7 @@ private:
 public:
   DualStatusLed () {}
   void init () { led1.init(LEDPIN1); led2.init(LEDPIN2); }
+  void stealth(bool value) { led1.stealth(value); led2.stealth(value); }
   bool active () const { return led1.active() || led2.active(); }
   void ledOn (uint32_t ticks) { led1.ledOn(ticks); led2.ledOn(ticks); }
   void ledOn (uint32_t ticks,uint32_t tacks) { led1.ledOn(ticks); led2.ledOn(tacks); }
@@ -171,7 +179,8 @@ public:
 class NoLed {
 public:
   NoLed () {}
-  void init () {}
+  void init() {}
+  void stealth(__attribute__((unused)) bool value) {}
   bool active () const { return false; }
   void ledOn (__attribute__((unused)) uint32_t ticks) {}
   void ledOn (__attribute__((unused)) uint32_t ticks,__attribute__((unused)) uint32_t tacks) {}

@@ -93,6 +93,7 @@ private:
   volatile bool    isrenabled : 1;
   BrightnessSensor brightsens;
   uint32_t         maxbright;
+  uint16_t         ledontime;
 
 public:
   typedef Channel<HalType,MotionList1,EmptyList,DefList4,PeerCount,List0Type> ChannelType;
@@ -161,9 +162,6 @@ public:
       sysclock.add(quiet);
       // blink led
       if( this->device().led().active() == false ) {
-        //this->device().led().ledOn(centis2ticks(this->getList1().ledOntime()) / 2);
-        uint16_t ledontime = this->getList1().ledOntime();
-        DPRINT(F("ledontime: ")); DPRINTLN(ledontime);
         this->device().led().ledOn(centis2ticks(ledontime) / 2);
       }
       MotionEventMsg& msg = (MotionEventMsg&)this->device().message();
@@ -192,6 +190,13 @@ public:
   // we are in quiet mode - means we have a motion detected
   bool isMotion () const {
     return quiet.enabled == true;
+  }
+
+  void configChanged () {
+    uint16_t ledontime = this->getList1().ledOntime();
+    //DPRINT(F("cc ledontime: ")); DPRINTLN(ledontime);
+    if (ledontime) this->device().led().stealth(0);
+    else this->device().led().stealth(1);
   }
 
 };
