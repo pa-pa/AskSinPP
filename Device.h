@@ -24,9 +24,54 @@
 #elif defined (ARDUINO_ARCH_STM32) && defined (STM32L1xx)
 #elif defined (ARDUINO_ARCH_ESP32)
 #elif defined (ARDUINO_ARCH_RP2040)
+#elif defined (ARDUINO_ARCH_EFM32)
 #else
     #error Using Hardware serial is not supported on MCU type currently used
   #endif
+#endif
+
+#ifdef ARDUINO_ARCH_EFM32
+//void swap(char *a, char *b) {
+//    char temp = *a;
+//    *a = *b;
+//    *b = temp;
+//}
+
+uint8_t boot_signature_byte_get(byte addr) {
+  uint64_t chipId = SYSTEM_GetUnique();
+  uint8_t *chipIdArray = *reinterpret_cast<uint8_t(*)[sizeof(uint64_t)]>(&chipId);
+  //for (int i = 0, j = idByteLen; i < j; i++, j--) {
+  //  swap(&chipIdArray[i], &chipIdArray[j]);
+  //}
+  //std::reverse(&chipIdArray[0], &chipIdArray[6]);
+  byte idx = 0;
+    switch (addr) {
+      case 14:
+      case 20:
+        idx = 0;
+      break;
+      case 15:
+      case 21:
+        idx = 1;
+      break;
+      case 16:
+      case 22:
+        idx = 2;
+      break;
+      case 17:
+      case 23:
+        idx = 3;
+      break;
+      case 18:
+        idx = 4;
+      break;
+      case 19:
+        idx = 5;
+      break;
+
+    }
+    return chipIdArray[idx];
+ }
 #endif
 
 #ifdef ARDUINO_ARCH_ESP32
