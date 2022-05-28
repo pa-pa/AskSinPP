@@ -17,6 +17,11 @@
   #include <EEPROM.h>
 #endif
 
+#ifdef ARDUINO_ARCH_EFM32
+  #include "AlarmClock.h"
+  #include "eeprom_emulation.h"
+#endif
+
 namespace as {
 
 class InternalEprom {
@@ -132,6 +137,55 @@ class InternalEprom {
     }
     EEPROM.commit();
     sysclock.enable();
+  }
+#elif defined ARDUINO_ARCH_EFM32
+  #define EEINFO_EEPROM_SIZE  1024
+  #define E2END EEINFO_EEPROM_SIZE
+
+  EE_Variable_TypeDef eeprom_var;
+  uint16_t readValue = 0xFFFF;
+
+  void  initEEPROM() {
+    static bool initDone = false;
+    if (initDone == false) {
+      initDone = true;
+      DPRINT(F("Init EEPROM - Pages:")); DDEC(EEINFO_EEPROM_SIZE / PAGE_SIZE);
+      MSC_Init();
+      EE_Init(EEINFO_EEPROM_SIZE / PAGE_SIZE);
+      EE_DeclareVariable(&eeprom_var);
+      DPRINTLN(F(" DONE"));
+    }
+  }
+
+  unsigned char eeprom_read_byte(unsigned char * pos)  {
+   // DPRINT("eeprom_read_byte pos:");DDECLN(pos);
+    initEEPROM();
+    uint16_t result;
+    eeprom_var.virtualAddress = pos+1;
+    EE_Read(&eeprom_var, &result);
+    //DPRINT("eeprom_read_byte (");DDEC(int(pos));DPRINT(") ");DHEXLN(result);
+    return result;
+  }
+
+  void  eeprom_read_block(void * __dst, const void * __src, size_t __n) {
+    initEEPROM();
+    for (unsigned int i = 0; i < __n; i++) {
+      uint16_t result;
+      eeprom_var.virtualAddress = (uint8_t *)__src + i + 1;
+      EE_Read(&eeprom_var, &result);
+      //DPRINT("virtualAddress: ");DHEXLN(eeprom_var.virtualAddress);DPRINT("result: ");DHEXLN(result);
+      *((char *)__dst + i) = result;
+    }
+  }
+
+  void  eeprom_write_block( const void * src, const void * dst,  size_t __n) {
+    initEEPROM();
+    int pos = int(dst);
+    for (unsigned int i = 0; i < __n; i++) {
+      byte data = *((unsigned  char*)src + i);
+      eeprom_var.virtualAddress = pos + i +1 ;
+      EE_Write(&eeprom_var, (uint16_t) data & 0xffff);
+    }
   }
 #endif
 
