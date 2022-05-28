@@ -12,6 +12,10 @@
   typedef uint8_t WiringPinMode;
 #endif
 
+#if defined ARDUINO_ARCH_EFM32
+  typedef unsigned long WiringPinMode;
+#endif
+
 namespace as {
 
 class DoublePressAlarm : public Alarm {
@@ -391,6 +395,22 @@ public:
   }
 };
 
+#ifdef ARDUINO_ARCH_EFM32
+#define buttonISR(btn,pin) class btn##ISRHandler { \
+  public: \
+  static void isr () { btn.irq(); } \
+}; \
+btn.init(pin); \
+  attachInterrupt(pin,btn##ISRHandler::isr,CHANGE);
+
+#define encoderISR(enc,clkpin,datapin) class enc##ENCISRHandler { \
+  public: \
+  static void isr () { enc.encirq(); } \
+}; \
+enc.init(clkpin,datapin); \
+  attachInterrupt(clkpin,enc##ENCISRHandler::isr,FALLING);
+}
+#else
 #define buttonISR(btn,pin) class btn##ISRHandler { \
   public: \
   static void isr () { btn.irq(); } \
@@ -412,5 +432,6 @@ else \
   attachInterrupt(digitalPinToInterrupt(clkpin),enc##ENCISRHandler::isr,FALLING);
 
 }
+#endif
 
 #endif
