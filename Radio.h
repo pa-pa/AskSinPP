@@ -19,7 +19,7 @@
   typedef uint8_t BitOrder;
 #endif
 
-#if (defined ARDUINO_ARCH_RP2040) && (defined _HARDWARE_SPI_H)
+#if (defined ARDUINO_ARCH_EFM32) || ((defined ARDUINO_ARCH_RP2040) && (defined _HARDWARE_SPI_H))
   #define SPI_MODE0     0
 #endif
 
@@ -277,6 +277,9 @@ public:
 template <uint8_t CS,uint32_t CLOCK=2000000, BitOrder BITORDER=SPI_BITORDER_MSBFIRST, uint8_t MODE=SPI_MODE0>
 class LibSPI {
 public:
+#ifdef ARDUINO_ARCH_EFM32
+  SoftSPI<MOSI,MISO,SCK> SPI;
+#endif
   LibSPI () {}
   void init () {
 #if defined ARDUINO_ARCH_STM32 && defined STM32L1xx
