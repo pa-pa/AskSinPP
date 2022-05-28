@@ -9,6 +9,10 @@
 #include "Debug.h"
 #include "Alarm.h"
 
+#ifdef ARDUINO_ARCH_EFM32
+#include "rtcdriver.h"
+#endif
+
 #ifdef ARDUINO_ARCH_RP2040
   #include "hardware/rtc.h"
   #include "pico/stdlib.h"
@@ -97,8 +101,13 @@ public:
 };
 
 
+#ifdef ARDUINO_ARCH_EFM32
+extern void callback(RTCDRV_TimerID_t id , void *user);
+extern void rtccallback(RTCDRV_TimerID_t id , void *user);
+#else
 extern void callback(void);
 extern void rtccallback(void);
+#endif
 
 
 class SysClock : public AlarmClock {
@@ -117,6 +126,11 @@ private:
   struct repeating_timer  rp2040_timer;
   static bool TimerHandler(__attribute__((unused)) struct repeating_timer *t) { callback(); return true; }
 #endif
+
+#ifdef ARDUINO_ARCH_EFM32
+  RTCDRV_TimerID_t id;
+#endif
+
 public:
   static SysClock& instance();
 
@@ -174,6 +188,11 @@ public:
     timerAlarmWrite(Timer, 1000000 / TICKS_PER_SECOND, true);
     timerAttachInterrupt(Timer, &callback, true);
   #endif
+  #ifdef ARDUINO_ARCH_EFM32
+    RTCDRV_Init();
+    RTCDRV_AllocateTimer( &id );
+    //RTCDRV_StartTimer( id, rtcdrvTimerTypePeriodic, 10, callback , 0  );
+ #endif
     enable();
   }
 
@@ -194,6 +213,15 @@ public:
   #ifdef ARDUINO_ARCH_RP2040
     cancel_repeating_timer(&rp2040_timer);
   #endif
+  #ifdef ARDUINO_ARCH_EFM32
+    bool timerIsRunning;
+    RTCDRV_IsRunning(id, &timerIsRunning);
+    if (timerIsRunning)
+    {
+      DPRINTLN("stopTimer");
+      RTCDRV_StopTimer(id);
+    }
+  #endif
   }
 
   void enable () {
@@ -213,6 +241,14 @@ public:
   #ifdef ARDUINO_ARCH_RP2040
     if (rp2040_timer.alarm_id < 1) {
       add_repeating_timer_us(10000UL, TimerHandler, NULL, &rp2040_timer);
+    }
+  #endif
+  #ifdef ARDUINO_ARCH_EFM32
+    bool timerIsRunning;
+    RTCDRV_IsRunning(id, &timerIsRunning);
+    if (!timerIsRunning) {
+      DPRINTLN("startTimer");
+      RTCDRV_StartTimer( id, rtcdrvTimerTypePeriodic, 10, callback , 0  );
     }
   #endif
   }
@@ -237,6 +273,11 @@ class RealTimeClock : public AlarmClock {
 #if defined(ARDUINO_ARCH_STM32F1) && defined(_RTCLOCK_H_)
   RTClock rt;
 #endif
+
+#ifdef ARDUINO_ARCH_EFM32
+  RTCDRV_TimerID_t id;
+#endif
+
 public:
 
   RealTimeClock() : ovrfl(0) {}
@@ -279,6 +320,10 @@ public:
     alarmT.min = alarmT.hour = alarmT.day = alarmT.dotw = alarmT.month = alarmT.year = -1;
     alarmT.sec =  1;
     rtc_set_alarm(&alarmT, rtccallback); // https://raspberrypi.github.io/pico-sdk-doxygen/group__hardware__rtc.html
+#elif defined(ARDUINO_ARCH_EFM32)
+    RTCDRV_Init();
+    RTCDRV_AllocateTimer( &id );
+    RTCDRV_StartTimer( id, rtcdrvTimerTypePeriodic, 1000, rtccallback , 0  );
 #else
   #warning "RTC not supported"
 #endif
@@ -338,7 +383,7 @@ public:
 };
 
 // backward compatibility
-#ifndef ARDUINO_ARCH_STM32 
+#if not defined(ARDUINO_ARCH_STM32) && not defined(ARDUINO_ARCH_EFM32)
 typedef RealTimeClock RTC;
 #endif
 extern RealTimeClock rtc;

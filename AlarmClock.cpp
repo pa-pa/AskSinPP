@@ -9,14 +9,22 @@ namespace as {
 
 SysClock sysclock;
 
+#ifdef ARDUINO_ARCH_EFM32
+void callback(__attribute__((unused)) RTCDRV_TimerID_t id , __attribute__((unused)) void *user) {
+#else
 void callback(void) {
+#endif
   --sysclock;
     //DPRINT(".");
 }
 
 #ifndef NORTC
 RealTimeClock rtc;
+#ifdef ARDUINO_ARCH_EFM32
+void rtccallback(__attribute__((unused)) RTCDRV_TimerID_t id , __attribute__((unused)) void *user) {
+#else
 void rtccallback () {
+#endif
   //  DPRINT(".");
     rtc.overflow();
   //  rtc.debug();
