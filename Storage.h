@@ -303,8 +303,8 @@ public:
 
   bool present () {
     Wire.beginTransmission(ID);
-    Wire.write(0);  //high addr byte
-    Wire.write(0);  //low addr byte
+    Wire.write((uint8_t)0);  //high addr byte
+    Wire.write((uint8_t)0);  //low addr byte
     return Wire.endTransmission() == 0;
   }
 
@@ -411,7 +411,7 @@ public:
       uint8_t done = 0;
       while( done < towrite ) {
         done++;
-        Wire.write(0);
+        Wire.write((uint8_t)0);
       }
       success = Wire.endTransmission() == 0;
       // wait for write operation finished
