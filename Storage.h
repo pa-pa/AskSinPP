@@ -442,6 +442,102 @@ public:
 
 };
 
+
+template <uint8 ID,uint16_t EEPROM_NUM_PAGES,uint16_t EEPROM_PAGESIZE>
+class m24mXX {
+public:
+  m24mXX () {}
+
+  bool present () {
+    Wire.beginTransmission(ID);
+    Wire.write((uint8_t)0);  //high addr byte
+    Wire.write((uint8_t)0);  //low addr byte
+    return Wire.endTransmission() == 0;
+  }
+
+  size_t size () {
+    return EEPROM_NUM_PAGES * EEPROM_PAGESIZE;
+  }
+
+  void store () {}
+
+  uint8_t getBusyStatus(void) {
+    uint8_t retVal = 0;
+    Wire.beginTransmission((uint8_t)((ID << 3) ));
+    retVal = Wire.endTransmission();
+    return retVal;
+  }
+
+  uint8 getByte (uint16_t addr) {
+    uint8_t b = 0;
+
+    Wire.beginTransmission((uint8_t)((ID << 3) | ((addr >> 16) & 0x01)));
+    Wire.write((uint8_t)((addr >> 8) & 0xFF));
+    Wire.write((uint8_t)(addr & 0xFF));
+
+    if ( Wire.endTransmission() == 0 ) {
+      Wire.requestFrom(((ID << 3)  | ((addr >> 16) & 0x01)), 1);
+      if (Wire.available()) {
+        b = Wire.read();
+      }
+    }
+    return b;
+  }
+
+  bool setByte (uint16_t addr, uint8 d) {
+    bool success = false;
+    Wire.beginTransmission((uint8_t)((ID << 3)  | ((addr >> 16) & 0x01)));
+    Wire.write((uint8_t)((addr >> 8) & 0xFF));
+    Wire.write((uint8_t)(addr & 0xFF));
+    Wire.write(d);
+    success = Wire.endTransmission();
+    while (getBusyStatus() != 0) {
+      _delay_ms(2);
+    }
+    return success;
+  }
+
+  bool setData (uint16_t addr,uint8* buf,size_t size) {
+    Wire.beginTransmission((uint8_t)((ID << 3)  | ((addr >> 16) & 0x01)));
+    Wire.write((uint8_t)((addr >> 8) & 0xFF));
+    Wire.write((uint8_t)(addr & 0xFF));
+    size_t bytesWritten = Wire.write(buf, size);
+    Wire.endTransmission();
+    while (getBusyStatus() != 0) {
+      _delay_ms(2);
+    }
+    return bytesWritten == size;
+  }
+
+  bool getData (uint16_t addr,uint8* buf,uint16_t size) {
+    Wire.beginTransmission((uint8_t)((ID << 3) | ((addr >> 16) & 0x01)));
+    Wire.write((uint8_t)((addr >> 8) & 0xFF));
+    Wire.write((uint8_t)(addr & 0xFF));
+
+    Wire.endTransmission(0);
+    Wire.requestFrom(((ID << 3)  | ((addr >> 16) & 0x01)), size);
+
+    uint32_t index;
+    for (index = 0; index < size; index++ ) {
+      if (Wire.available()) {
+        buf[index] = Wire.read();
+      }
+    }
+
+    return index + 1 == size;
+  }
+
+  bool clearData (uint16_t addr, size_t size) {
+    DPRINT("clearData");//DPRINT(": ");DHEX(addr);DPRINT(" ");DDEC(size);DPRINT("...");
+    bool success = true;
+    for (uint16_t i = 0; i < size; i++) {
+      setData(addr+i,0,1);
+    }
+    DPRINTLN(" - done");
+    return success;
+  }
+};
+
 template <uint8_t ID,uint16_t PAGES,uint8_t EEPROM_PAGESIZE>
 class CachedAt24cX : public at24cX<ID,PAGES, EEPROM_PAGESIZE> {
   uint8_t  pagecache[EEPROM_PAGESIZE];
