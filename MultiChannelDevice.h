@@ -160,6 +160,8 @@ public:
       NVIC_SystemReset();
   #elif ARDUINO_ARCH_ESP32
       ESP.restart();
+  #elif ARDUINO_ARCH_EFM32
+      NVIC_SystemReset();
   #endif
     }
   }
