@@ -139,7 +139,7 @@ class InternalEprom {
     sysclock.enable();
   }
 #elif defined ARDUINO_ARCH_EFM32
-  #define EEINFO_EEPROM_SIZE  1024
+  #define EEINFO_EEPROM_SIZE  1536  // allocate at least 3 pages, see https://www.silabs.com/documents/public/application-notes/AN0019.pdf
   #define E2END EEINFO_EEPROM_SIZE
 
   EE_Variable_TypeDef eeprom_var;
