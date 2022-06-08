@@ -31,9 +31,8 @@
   typedef uint8_t BitOrder;
 #endif
 
-#ifndef Adafruit_SPIDevice_h
+#ifndef SPI_BITORDER_MSBFIRST
   #define SPI_BITORDER_MSBFIRST MSBFIRST
-  #define SPI_BITORDER_LSBFIRST LSBFIRST
 #endif
 
 // #define USE_CCA
