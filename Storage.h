@@ -451,6 +451,7 @@ public:
 };
 
 
+#if defined ARDUINO_ARCH_EFM32
 template <uint8 ID,uint16_t EEPROM_NUM_PAGES,uint16_t EEPROM_PAGESIZE>
 class m24mXX {
 public:
@@ -545,6 +546,7 @@ public:
     return success;
   }
 };
+#endif
 
 template <uint8_t ID,uint16_t PAGES,uint8_t EEPROM_PAGESIZE>
 class CachedAt24cX : public at24cX<ID,PAGES, EEPROM_PAGESIZE> {
