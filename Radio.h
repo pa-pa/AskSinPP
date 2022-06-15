@@ -26,15 +26,15 @@
 #include "Message.h"
 #include "AlarmClock.h"
 
-#if defined ARDUINO_ARCH_AVR && !defined Adafruit_SPIDevice_h
+#if defined ARDUINO_ARCH_AVR // && !defined Adafruit_SPIDevice_h
   #include <util/delay.h>
   typedef uint8_t BitOrder;
 #endif
 
-#ifndef Adafruit_SPIDevice_h
+//#ifndef Adafruit_SPIDevice_h
   #define SPI_BITORDER_MSBFIRST MSBFIRST
   #define SPI_BITORDER_LSBFIRST LSBFIRST
-#endif
+//#endif
 
 // #define USE_CCA
 
