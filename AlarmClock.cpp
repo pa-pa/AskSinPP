@@ -16,6 +16,7 @@ void callback(void) {
 #endif
   --sysclock;
     //DPRINT(".");
+  RTCDRV_StartTimer( id, rtcdrvTimerTypeOneshot, SysClock::instance().getTimeout(), callback , 0);
 }
 
 #ifndef NORTC

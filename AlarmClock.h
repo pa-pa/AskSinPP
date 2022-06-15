@@ -104,6 +104,7 @@ public:
 #ifdef ARDUINO_ARCH_EFM32
 extern void callback(RTCDRV_TimerID_t id , void *user);
 extern void rtccallback(RTCDRV_TimerID_t id , void *user);
+extern uint32_t getTimeout();
 #else
 extern void callback(void);
 extern void rtccallback(void);
@@ -129,6 +130,7 @@ private:
 
 #ifdef ARDUINO_ARCH_EFM32
   RTCDRV_TimerID_t id;
+  uint32_t timerTimeout;
 #endif
 
 public:
@@ -191,7 +193,7 @@ public:
   #ifdef ARDUINO_ARCH_EFM32
     RTCDRV_Init();
     RTCDRV_AllocateTimer( &id );
-    //RTCDRV_StartTimer( id, rtcdrvTimerTypePeriodic, 10, callback , 0  );
+    timerTimeout = 10;
  #endif
     enable();
   }
@@ -218,10 +220,25 @@ public:
     RTCDRV_IsRunning(id, &timerIsRunning);
     if (timerIsRunning)
     {
-      DPRINTLN("stopTimer");
+      //DPRINTLN("stopTimer");
       RTCDRV_StopTimer(id);
     }
   #endif
+  }
+
+  uint32_t getTimeout() {
+    return timerTimeout;
+  }
+
+  void enable(uint32_t ms) {
+    timerTimeout=ms < 10 ? 10 : ms;
+    //DPRINT("enable ");DDECLN(ms);
+    bool timerIsRunning;
+    RTCDRV_IsRunning(id, &timerIsRunning);
+    if (!timerIsRunning) {
+      RTCDRV_StopTimer(id);
+    }
+    RTCDRV_StartTimer( id, rtcdrvTimerTypeOneshot, timerTimeout, callback , 0  );
   }
 
   void enable () {
@@ -244,14 +261,16 @@ public:
     }
   #endif
   #ifdef ARDUINO_ARCH_EFM32
-    bool timerIsRunning;
-    RTCDRV_IsRunning(id, &timerIsRunning);
-    if (!timerIsRunning) {
-      DPRINTLN("startTimer");
-      RTCDRV_StartTimer( id, rtcdrvTimerTypePeriodic, 10, callback , 0  );
-    }
+    timerTimeout = 10;
+    RTCDRV_StartTimer( id, rtcdrvTimerTypeOneshot, timerTimeout, callback , 0  );
   #endif
   }
+
+#ifdef ARDUINO_ARCH_EFM32
+  RTCDRV_TimerID_t getTimerID() {
+    return id;
+  }
+#endif
 
   void add(Alarm& item) {
     AlarmClock::add(item);
