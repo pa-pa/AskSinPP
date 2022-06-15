@@ -11,13 +11,17 @@ SysClock sysclock;
 
 #ifdef ARDUINO_ARCH_EFM32
 void callback(__attribute__((unused)) RTCDRV_TimerID_t id , __attribute__((unused)) void *user) {
-#else
-void callback(void) {
-#endif
   --sysclock;
     //DPRINT(".");
   RTCDRV_StartTimer( id, rtcdrvTimerTypeOneshot, SysClock::instance().getTimeout(), callback , 0);
 }
+#else
+void callback(void) {
+  --sysclock;
+    //DPRINT(".");
+}
+#endif
+
 
 #ifndef NORTC
 RealTimeClock rtc;

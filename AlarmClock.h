@@ -226,6 +226,7 @@ public:
   #endif
   }
 
+#ifdef ARDUINO_ARCH_EFM32
   uint32_t getTimeout() {
     return timerTimeout;
   }
@@ -240,6 +241,7 @@ public:
     }
     RTCDRV_StartTimer( id, rtcdrvTimerTypeOneshot, timerTimeout, callback , 0  );
   }
+#endif
 
   void enable () {
   #if defined ARDUINO_AVR_ATmega32|| defined(__AVR_ATmega128__)
