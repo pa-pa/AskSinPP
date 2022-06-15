@@ -139,52 +139,60 @@ class InternalEprom {
     sysclock.enable();
   }
 #elif defined ARDUINO_ARCH_EFM32
-  #define EEINFO_EEPROM_SIZE  1536  // allocate at least 3 pages, see https://www.silabs.com/documents/public/application-notes/AN0019.pdf
-  #define E2END EEINFO_EEPROM_SIZE
-
-  EE_Variable_TypeDef eeprom_var;
-  uint16_t readValue = 0xFFFF;
+  #define EEPROM_PAGES  3  // allocate at least 3 pages
+  #define E2END         1024
+  #define VECTOR_SIZE (16+30)
+  EE_Variable_TypeDef eeprom_var[(E2END >> 1)];
+  uint32_t vectorTable[VECTOR_SIZE] __attribute__ ((aligned(256)));
+  __attribute__ ((section(".ram")))
+  inline void moveInterruptVectorToRam(void) {
+    memcpy(vectorTable, (uint32_t*)SCB->VTOR, sizeof(uint32_t) * VECTOR_SIZE);
+    SCB->VTOR = (uint32_t)vectorTable;
+  }
 
   void  initEEPROM() {
     static bool initDone = false;
     if (initDone == false) {
       initDone = true;
-      DPRINT(F("Init EEPROM - Pages:")); DDEC(EEINFO_EEPROM_SIZE / PAGE_SIZE);
+      DPRINT(F("Init EEPROM - Pages:")); DDEC(EEPROM_PAGES);
+      moveInterruptVectorToRam();
       MSC_Init();
-      EE_Init(EEINFO_EEPROM_SIZE / PAGE_SIZE);
-      EE_DeclareVariable(&eeprom_var);
+      EE_Init(EEPROM_PAGES);
+      for (uint16_t i = 0; i< (E2END >> 1);i++) EE_DeclareVariable(&eeprom_var[i]);
       DPRINTLN(F(" DONE"));
     }
   }
 
-  unsigned char eeprom_read_byte(unsigned char * pos)  {
-   // DPRINT("eeprom_read_byte pos:");DDECLN(pos);
-    initEEPROM();
-    uint16_t result;
-    eeprom_var.virtualAddress = pos+1;
-    EE_Read(&eeprom_var, &result);
-    //DPRINT("eeprom_read_byte (");DDEC(int(pos));DPRINT(") ");DHEXLN(result);
-    return result;
+  void eeprom_write_byte(uint16_t addr, byte dat) {
+    uint16_t readValue;
+    EE_Read(&eeprom_var[addr >> 1], &readValue);
+    //DPRINT("eeprom_write_byte ");DHEX(addr); DPRINT(" : ");DHEXLN(dat);
+    noInterrupts();
+    EE_Write(&eeprom_var[addr >> 1], (addr % 2 == 0) ? ((readValue >> 8) << 8) + dat :  (dat << 8 ) + (readValue & 0xFF));
+    interrupts();
+  }
+
+  byte eeprom_read_byte(unsigned char * pos)  {
+    uint16_t readValue;
+    EE_Read(&eeprom_var[(int)pos >> 1], &readValue);
+    byte val = ((int)pos % 2 == 0) ? readValue & 0xFF : readValue >> 8;
+    //DPRINT("eeprom_read_byte ");DHEX((uint8_t)pos); DPRINT(" : ");DHEXLN(val);
+    return val;
   }
 
   void  eeprom_read_block(void * __dst, const void * __src, size_t __n) {
     initEEPROM();
-    for (unsigned int i = 0; i < __n; i++) {
-      uint16_t result;
-      eeprom_var.virtualAddress = (uint8_t *)__src + i + 1;
-      EE_Read(&eeprom_var, &result);
-      //DPRINT("virtualAddress: ");DHEXLN(eeprom_var.virtualAddress);DPRINT("result: ");DHEXLN(result);
-      *((char *)__dst + i) = result;
+    for (size_t i = 0; i < __n; i++) {
+      *((char *)__dst + i) = eeprom_read_byte((uint8_t *)__src + i);
     }
   }
 
   void  eeprom_write_block( const void * src, const void * dst,  size_t __n) {
     initEEPROM();
     int pos = int(dst);
-    for (unsigned int i = 0; i < __n; i++) {
+    for (size_t i = 0; i < __n; i++) {
       byte data = *((unsigned  char*)src + i);
-      eeprom_var.virtualAddress = pos + i +1 ;
-      EE_Write(&eeprom_var, (uint16_t) data & 0xffff);
+      eeprom_write_byte(pos + i, data);
     }
   }
 #endif
@@ -631,6 +639,12 @@ public:
       DPRINT(F("Init Storage: "));
       DHEXLN(magic);
       // init eeprom
+      _delay_ms(200);
+#ifdef ARDUINO_ARCH_EFM32
+      if ( !EE_Init(EEPROM_PAGES) ) {
+        EE_Format(EEPROM_PAGES);
+      }
+#endif
       DRIVER::setData(0x0,(uint8_t*)&magic,4);
       firststart = true;
     }
