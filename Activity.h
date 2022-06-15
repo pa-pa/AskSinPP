@@ -277,94 +277,21 @@ public:
 #endif
 
 #if defined ARDUINO_ARCH_EFM32
-WDOG_Init_TypeDef initWdog =
-{
-  .enable     = false,            /* Do not start watchdog when init done */
-  .debugRun   = false,            /* WDOG not counting during debug halt */
-  .em2Run     = true,             /* WDOG counting when in EM2 */
-  .em3Run     = false,             /* WDOG counting when in EM3 */
-  .em4Block   = false,            /* EM4 can be entered */
-  .swoscBlock = true,             /* Block disabling LFRCO/LFXO in CMU */
-  .lock       = false,            /* Do not lock WDOG configuration (if locked, reset needed to unlock) */
-  .clkSel     = wdogClkSelLFRCO,   /* Select the 32.768kHZ LFRCO oscillator */
-  .perSel     = wdogPeriod_64k,   /* Set the watchdog period to 65537 clock periods (ie ~2 seconds)*/
-};
-
-template <bool ENABLETIMER2 = false, bool ENABLEADC = false>
-class Idle {
+class Sleep {
 public:
-
-  template <class Hal>
-  static void powerSave(__attribute__((unused)) Hal& hal) {
-   // LowPower.idle();
-  }
-
-};
-template <bool ENABLETIMER2 = false>
-class Sleep : public Idle<ENABLETIMER2> {
-public:
-  static uint32_t doSleep(uint32_t ticks) {
-   //  DPRINTLN("doSleep");
-
-    uint32_t sleeptime = 0;
-
-    // limit the max sleeptime to 8 seconds
-    if (ticks > seconds2ticks(8)) ticks = seconds2ticks(8);
-    sleeptime = ticks2millis(ticks);
-/*
-  unsigned long resetCause = RMU_ResetCauseGet();
-  RMU_ResetCauseClear();
-  uint32_t rtcCountBetweenWakeup = ((SystemLFRCOClockGet() * 50) / 1000);
-  RTC_CompareSet(0, rtcCountBetweenWakeup);
-  RTC_IntEnable(RTC_IF_COMP0);
-  NVIC_EnableIRQ(RTC_IRQn);
-  RTC_Enable(true);
-
-  CMU_OscillatorEnable(cmuOsc_LFRCO, true, false);
-  while (!(CMU->STATUS & CMU_STATUS_LFRCORDY))
-  {
-    EMU_EnterEM2(false);
-  }
-  if (resetCause & RMU_RSTCAUSE_WDOGRST)
-  {
-    Serial.println("WDOG");
-    while (1)
-    {
-      EMU_EnterEM2(false);
-    }
-  }
-  WDOG_Init(&initWdog);
-  WDOG_Enable(true);
-  WDOG_Lock();
-  CMU_OscillatorEnable(cmuOsc_LFRCO, false, false);
-  while (!(CMU->STATUS & CMU_STATUS_LFRCOENS)) ;
-  while (WDOG->SYNCBUSY & WDOG_SYNCBUSY_CTRL) ;
-  WDOG->CTRL |= WDOG_CTRL_EM3RUN;
-  while (WDOG->CTRL & WDOG_CTRL_EM3RUN) ;
-  //   EMU_EnterEM2(false);
-*/
-
-    return millis2ticks(sleeptime-1);
-  }
-
   template <class Hal>
   static void powerSave(Hal& hal) {
-   // sysclock.disable();
+    EMU_EnterEM2(false);
     uint32_t ticks = sysclock.next();
     if (sysclock.isready() == false) {
-      if (ticks == 0 || ticks > millis2ticks(15)) {
-        hal.setIdle();
-        uint32_t offset = doSleep(ticks);
-        hal.unsetIdle();
-        sysclock.correct(offset);
-        sysclock.enable();
-      } else {
-        sysclock.enable();
-      }
+      sysclock.disable();
+      hal.setIdle();
+      sysclock.enable(ticks2millis(ticks));
+      hal.unsetIdle();
+      sysclock.correct(ticks == 0 ? 0 : ticks -1);
     } else {
       sysclock.enable();
     }
-
   }
 };
 #endif
@@ -412,8 +339,8 @@ public:
 
   template <class Hal>
   void sleepForever (Hal& hal) {
-  //  hal.setIdle();
-  //  while( true ) {
+    hal.setIdle();
+    while( true ) {
 #if defined(ARDUINO_ARCH_AVR) && ! (defined(ARDUINO_AVR_ATmega32) || defined(__AVR_ATmega644__) || defined(__AVR_ATmega128__))
   #ifndef NDEBUG
       Idle<>::waitSerial();
@@ -427,8 +354,10 @@ public:
       //DPRINTLN("shutdown");
       LowPower.shutdown(0);
 #endif
-
- //   }
+#if defined(ARDUINO_ARCH_EFM32)
+      EMU_EnterEM4();
+#endif
+    }
   }
 
 };
