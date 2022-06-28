@@ -23,6 +23,22 @@
   #define SPI_MODE0     0
 #endif
 
+#ifdef ARDUINO_ARCH_EFM32
+
+#define SPIDRV_MASTER_USART0_LOC0 {                                                                         \
+    USART0,                       /* USART port                       */    \
+    _USART_ROUTE_LOCATION_LOC0,   /* USART pins location number       */    \
+    CLOCK,                        /* Bitrate                          */    \
+    8,                            /* Frame length                     */    \
+    0,                            /* Dummy tx value for rx only funcs */    \
+    spidrvMaster,                 /* SPI mode                         */    \
+    spidrvBitOrderMsbFirst,       /* Bit order on bus                 */    \
+    spidrvClockMode0,             /* SPI clock/phase mode             */    \
+    spidrvCsControlApplication,   /* CS controlled by the driver      */    \
+    spidrvSlaveStartImmediate     /* Slave start transfers immediately*/    \
+  }
+#endif
+
 #include "Message.h"
 #include "AlarmClock.h"
 
@@ -278,7 +294,7 @@ template <uint8_t CS,uint32_t CLOCK=2000000, BitOrder BITORDER=SPI_BITORDER_MSBF
 class LibSPI {
 public:
 #ifdef ARDUINO_ARCH_EFM32
-  SoftSPI<MOSI,MISO,SCK> SPI;
+  SPIClass SPI;
 #endif
   LibSPI () {}
   void init () {
@@ -288,7 +304,13 @@ public:
     SPI.setSCLK(PIN_SPI_SCK);
 #endif
     pinMode(CS, OUTPUT);
+
+#if defined ARDUINO_ARCH_EFM32
+    SPIDRV_Init_t spiInitData = SPIDRV_MASTER_USART0_LOC0;
+    SPI.begin(&spiInitData);
+#else
     SPI.begin();
+#endif
   }
 
   void shutdown () {
