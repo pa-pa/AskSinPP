@@ -194,10 +194,10 @@ public:
   }
 
   void setIdle () {
-    DPRINTLN("Si4431 enter powerdown");
+    //DPRINTLN("Si4431 enter powerdown");
 
 #ifdef USE_WOR
-    #error WOR is not implemented
+    //#error WOR is not implemented
 #else
     // enter power down state
     (void)spi.readReg(SI4431_REG_INTERRUPT_STATUS_1);
