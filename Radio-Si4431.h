@@ -200,6 +200,8 @@ public:
     #error WOR is not implemented
 #else
     // enter power down state
+    (void)spi.readReg(SI4431_REG_INTERRUPT_STATUS_1);
+    (void)spi.readReg(SI4431_REG_INTERRUPT_STATUS_2);
     writeReg(SI4431_REG_OP_FUNC_CONTROL_1, SI4431_OFC1_NONE);
 #endif
 
