@@ -212,7 +212,7 @@ public:
   }
 
   void wakeup (bool flush) {
-    DPRINTLN("Si4431 wakeup");
+    // DPRINTLN("Si4431 wakeup");
     if (PWRPIN < 0xff) {
       init();
     }
@@ -224,7 +224,7 @@ public:
   }
   
   uint8_t reset() {
-    DPRINTLN("Si4431 reset");
+    // DPRINTLN("Si4431 reset");
     // read & clear any IRQ
     (void)spi.readReg(SI4431_REG_INTERRUPT_STATUS_1);
     (void)spi.readReg(SI4431_REG_INTERRUPT_STATUS_2);
@@ -377,14 +377,14 @@ public:
   }
 
   bool detectBurst () {
-    DPRINTLN("Si4431 detectBurst");
+   // DPRINTLN("Si4431 detectBurst");
     // TODO: how to detect a burst?
     // Si4431 datasheet does not mention any "burst"
     return 0;
   }
 
   void pollRSSI() {
-    DPRINTLN("Si4431 pollRSSI");
+   // DPRINTLN("Si4431 pollRSSI");
     calculateRSSI(spi.readReg(SI4431_REG_RSSI, 0));         // read RSSI from STATUS register
   }
 
