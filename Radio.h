@@ -520,6 +520,12 @@ void disable () {
 
 };
 
+template <class SPIType ,uint8_t GDO0, uint8_t PWRPIN=0xff, int SENDDELAY=100>
+class CC1101Radio : public Radio<SPIType,GDO0, PWRPIN,SENDDELAY,CC1101<SPIType,PWRPIN>> {};
+
+template <class SPIType ,uint8_t GDO0, uint8_t PWRPIN=0xff, int SENDDELAY=100>
+class Si4431Radio : public Radio<SPIType,GDO0, PWRPIN,SENDDELAY,Si4431<SPIType,PWRPIN,GDO0>> {};
+
 }
 
 #endif
