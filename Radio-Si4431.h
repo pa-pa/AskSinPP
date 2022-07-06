@@ -189,19 +189,23 @@ public:
   Si4431 () : rss(0)
     {}
 
+  void writeReg(uint8_t regAddr, uint8_t val) {
+    spi.writeReg(regAddr | WRITE_REG, val);
+  }
+
   void setIdle () {
     DPRINTLN("Si4431 enter powerdown");
 
 #ifdef USE_WOR
     // init
-    spi.writeReg(CC1101_PKTCTRL1 | WRITE_REG, 0x4C);    // preamble quality estimator threshold=2
-    spi.writeReg(CC1101_MCSM2 | WRITE_REG, 0x1c);       // RX_TIME_RSSI=1, RX_TIME_QUAL=1, RX_TIME=4
+    writeReg(CC1101_PKTCTRL1, 0x4C);    // preamble quality estimator threshold=2
+    writeReg(CC1101_MCSM2, 0x1c);       // RX_TIME_RSSI=1, RX_TIME_QUAL=1, RX_TIME=4
     //start
     spi.strobe(CC1101_SWORRST);
     spi.strobe(CC1101_SWOR);
 #else
     // enter power down state
-    spi.writeReg(SI4431_REG_OP_FUNC_CONTROL_1 | WRITE_REG, SI4431_OFC1_NONE);
+    writeReg(SI4431_REG_OP_FUNC_CONTROL_1, SI4431_OFC1_NONE);
 #endif
 
     if (PWRPIN < 0xff) {
@@ -216,7 +220,7 @@ public:
       init();
     }
 
-    spi.writeReg(SI4431_REG_OP_FUNC_CONTROL_1 | WRITE_REG, SI4431_OFC1_RXON | SI4431_OFC1_XTALON);
+    writeReg(SI4431_REG_OP_FUNC_CONTROL_1, SI4431_OFC1_RXON | SI4431_OFC1_XTALON);
     if( flush==true ) {
       flushRx();
     }
@@ -229,7 +233,7 @@ public:
     (void)spi.readReg(SI4431_REG_INTERRUPT_STATUS_2);
 
     // write SWRES | XTON
-    spi.writeReg(SI4431_REG_OP_FUNC_CONTROL_1 | WRITE_REG, SI4431_OFC1_SWRES | SI4431_OFC1_XTALON);
+    writeReg(SI4431_REG_OP_FUNC_CONTROL_1, SI4431_OFC1_SWRES | SI4431_OFC1_XTALON);
 
     // wait for IRQ
     DPRINT("wait for Si4431 being reset");
@@ -242,10 +246,10 @@ public:
     (void)spi.readReg(SI4431_REG_INTERRUPT_STATUS_2);
 
     // enable only XTAL IRQ (chip ready)
-    //spi.writeReg(SI4431_REG_INTERRUPT_ENABLE_2 | WRITE_REG, SI4431_IRQ2_CHIP_READY);
-    spi.writeReg(SI4431_REG_INTERRUPT_ENABLE_1 | WRITE_REG, SI4431_IRQ1_VALID_PACKET_RECEIVED);
-    spi.writeReg(SI4431_REG_INTERRUPT_ENABLE_2 | WRITE_REG, 0);
-    //spi.writeReg(SI4431_REG_INTERRUPT_ENABLE_2 | WRITE_REG, SI4431_IRQ2_SYNC_WORD_DETECTED);
+    //writeReg(SI4431_REG_INTERRUPT_ENABLE_2, SI4431_IRQ2_CHIP_READY);
+    writeReg(SI4431_REG_INTERRUPT_ENABLE_1, SI4431_IRQ1_VALID_PACKET_RECEIVED);
+    writeReg(SI4431_REG_INTERRUPT_ENABLE_2, 0);
+    //writeReg(SI4431_REG_INTERRUPT_ENABLE_2, SI4431_IRQ2_SYNC_WORD_DETECTED);
 
     // TODO: return value is never used, neither for CC1101 nor Si4431
     return 0;
@@ -341,13 +345,13 @@ public:
 
     DPRINTLN(F(" - ready"));
 
-    spi.writeReg(SI4431_REG_OP_FUNC_CONTROL_1 | WRITE_REG, SI4431_OFC1_RXON | SI4431_OFC1_XTALON);
+    writeReg(SI4431_REG_OP_FUNC_CONTROL_1, SI4431_OFC1_RXON | SI4431_OFC1_XTALON);
     
     return initOK;
   }
 
   bool initReg (uint8_t regAddr, uint8_t val, uint8_t retries=3) {
-    spi.writeReg(regAddr | WRITE_REG, val);
+    writeReg(regAddr, val);
     uint8_t val_read = spi.readReg(regAddr);
     bool initResult = true;
     if( val_read != val ) {
@@ -371,8 +375,8 @@ public:
   void flushRx () {
 //    DPRINTLN("Radio.h flushRx");
     // set and clear bit FIFO Clear RX
-    spi.writeReg(SI4431_REG_OP_FUNC_CONTROL_2 | WRITE_REG, SI4431_OFC2_FFCLRRX);
-    spi.writeReg(SI4431_REG_OP_FUNC_CONTROL_2 | WRITE_REG, 0);
+    writeReg(SI4431_REG_OP_FUNC_CONTROL_2, SI4431_OFC2_FFCLRRX);
+    writeReg(SI4431_REG_OP_FUNC_CONTROL_2, 0);
   }
 
   bool detectBurst () {
@@ -467,8 +471,8 @@ protected:
     uint8_t replayBuf[] = {0xf3, 0x94, 0xea, 0x08, 0xd8, 0x72, 0x00, 0x06, 0x69, 0xf0, 0xb5, 0x79, 0x1e, 0x1b, 0x0b};
 
     // set and clear bit FIFO Clear TX
-    spi.writeReg(SI4431_REG_OP_FUNC_CONTROL_2 | WRITE_REG, SI4431_OFC2_FFCLRTX);
-    spi.writeReg(SI4431_REG_OP_FUNC_CONTROL_2 | WRITE_REG, 0);
+    writeReg(SI4431_REG_OP_FUNC_CONTROL_2, SI4431_OFC2_FFCLRTX);
+    writeReg(SI4431_REG_OP_FUNC_CONTROL_2, 0);
 
     // clear interrupts
     (void)spi.readReg(SI4431_REG_INTERRUPT_STATUS_1);
@@ -479,58 +483,58 @@ protected:
 
 #if defined REPLAY
     // TODO: why would HM-Sec-SCo do that?
-    spi.writeReg(SI4431_REG_DATA_ACCESS_CONTROL | WRITE_REG, 0);
-    spi.writeReg(SI4431_REG_TRANSMIT_PACKET_LENGTH | WRITE_REG, 0x0D);
-    spi.writeBurst(SI4431_REG_FIFO_ACCESS | WRITE_REG, preamble, sizeof(preamble));
+    writeReg(SI4431_REG_DATA_ACCESS_CONTROL, 0);
+    writeReg(SI4431_REG_TRANSMIT_PACKET_LENGTH, 0x0D);
+    spi.writeBurst(SI4431_REG_FIFO_ACCESS, preamble, sizeof(preamble));
     DPRINT("  preamble: ");DHEX(preamble, sizeof(preamble));DPRINTLN("");
-    spi.writeBurst(SI4431_REG_FIFO_ACCESS | WRITE_REG, syncword, sizeof(syncword));
+    spi.writeBurst(SI4431_REG_FIFO_ACCESS, syncword, sizeof(syncword));
     DPRINT("  syncword: ");DHEX(syncword, sizeof(syncword));DPRINTLN("");
-    spi.writeBurst(SI4431_REG_FIFO_ACCESS | WRITE_REG, replayBuf, sizeof(replayBuf));
+    spi.writeBurst(SI4431_REG_FIFO_ACCESS, replayBuf, sizeof(replayBuf));
     DPRINT("  buf: ");DHEX(replayBuf, sizeof(replayBuf));DPRINTLN("");
 #elif defined NO_TX_PKT
     // no packet handling
-    spi.writeReg(SI4431_REG_DATA_ACCESS_CONTROL | WRITE_REG, 0);
+    writeReg(SI4431_REG_DATA_ACCESS_CONTROL, 0);
     // TODO: is the transmit size necessary if packet mode is not used?
-    spi.writeReg(SI4431_REG_TRANSMIT_PACKET_LENGTH | WRITE_REG, size + 1);
-    //spi.writeReg(SI4431_REG_TRANSMIT_PACKET_LENGTH | WRITE_REG, sizeof(preamble) + sizeof(syncword) + 1 + size);
+    writeReg(SI4431_REG_TRANSMIT_PACKET_LENGTH, size + 1);
+    //writeReg(SI4431_REG_TRANSMIT_PACKET_LENGTH, sizeof(preamble) + sizeof(syncword) + 1 + size);
     //DPRINT("  sending ");DDEC(sizeof(preamble) + sizeof(syncword) + 1 + size);DPRINTLN(" bytes");
-    //spi.writeReg(SI4431_REG_TRANSMIT_PACKET_LENGTH | WRITE_REG, sizeof(preamble) + sizeof(syncword) + 1 + sizeof(replayBuf));
+    //writeReg(SI4431_REG_TRANSMIT_PACKET_LENGTH, sizeof(preamble) + sizeof(syncword) + 1 + sizeof(replayBuf));
     //DPRINT("  sending ");DDEC(sizeof(preamble) + sizeof(syncword) + 1 + sizeof(replayBuf));DPRINTLN(" bytes");
     // size of buffer + length byte
     DPRINT("  sending ");DDEC(size+1);DPRINTLN(" bytes");
     // no TX packet handling, therefore preamble & syncwords have to be sent manually
-    spi.writeBurst(SI4431_REG_FIFO_ACCESS | WRITE_REG, preamble, sizeof(preamble));
+    spi.writeBurst(SI4431_REG_FIFO_ACCESS, preamble, sizeof(preamble));
     DPRINT("  preamble: ");DHEX(preamble, sizeof(preamble));DPRINTLN("");
-    spi.writeBurst(SI4431_REG_FIFO_ACCESS | WRITE_REG, syncword, sizeof(syncword));
+    spi.writeBurst(SI4431_REG_FIFO_ACCESS, syncword, sizeof(syncword));
     DPRINT("  syncword: ");DHEX(syncword, sizeof(syncword));DPRINTLN("");
-    spi.writeBurst(SI4431_REG_FIFO_ACCESS | WRITE_REG, packetBuffer, size+3);
+    spi.writeBurst(SI4431_REG_FIFO_ACCESS, packetBuffer, size+3);
     DPRINT("  buf: ");DHEX(replayBuf, sizeof(replayBuf));DPRINTLN("");
 #else
     // RX&TX packet handling, no CRC
-    spi.writeReg(SI4431_REG_DATA_ACCESS_CONTROL | WRITE_REG, 0x88);
+    writeReg(SI4431_REG_DATA_ACCESS_CONTROL, 0x88);
     // disable data whitening 
-     spi.writeReg(SI4431_REG_MODULATION_MODE_CONTROL_1 | WRITE_REG, 0x2C);
+     writeReg(SI4431_REG_MODULATION_MODE_CONTROL_1, 0x2C);
     // fixed length
-    spi.writeReg(SI4431_REG_HEADER_CONTROL_2 | WRITE_REG, 0x0E);
-    spi.writeReg(SI4431_REG_TRANSMIT_PACKET_LENGTH | WRITE_REG, size + 3);
-    //spi.writeReg(SI4431_REG_TRANSMIT_PACKET_LENGTH | WRITE_REG, sizeof(preamble) + sizeof(syncword) + 1 + size);
+    writeReg(SI4431_REG_HEADER_CONTROL_2, 0x0E);
+    writeReg(SI4431_REG_TRANSMIT_PACKET_LENGTH, size + 3);
+    //writeReg(SI4431_REG_TRANSMIT_PACKET_LENGTH, sizeof(preamble) + sizeof(syncword) + 1 + size);
     //DPRINT("  sending ");DDEC(sizeof(preamble) + sizeof(syncword) + 1 + size);DPRINTLN(" bytes");
-    //spi.writeReg(SI4431_REG_TRANSMIT_PACKET_LENGTH | WRITE_REG, sizeof(preamble) + sizeof(syncword) + 1 + sizeof(replayBuf));
+    //writeReg(SI4431_REG_TRANSMIT_PACKET_LENGTH, sizeof(preamble) + sizeof(syncword) + 1 + sizeof(replayBuf));
     //DPRINT("  sending ");DDEC(sizeof(preamble) + sizeof(syncword) + 1 + sizeof(replayBuf));DPRINTLN(" bytes");
     // size of buffer + length byte
 //    DPRINT("  sending ");DDEC(size+3);DPRINTLN(" bytes");
-    spi.writeBurst(SI4431_REG_FIFO_ACCESS | WRITE_REG, packetBuffer, size+3);
+    spi.writeBurst(SI4431_REG_FIFO_ACCESS, packetBuffer, size+3);
 //    DPRINT("  buf: ");DHEX(replayBuf, sizeof(replayBuf));DPRINTLN("");
 #endif
 
     // TODO: shall we enable the IRQ for "packet sent" and wait for it?
     // TODO: writing to status register makes no sense!
-    //spi.writeReg(SI4431_REG_INTERRUPT_STATUS_1 | WRITE_REG, SI4431_IRQ1_PACKET_SENT);
-    //spi.writeReg(SI4431_REG_INTERRUPT_STATUS_2 | WRITE_REG, 0);
+    //writeReg(SI4431_REG_INTERRUPT_STATUS_1, SI4431_IRQ1_PACKET_SENT);
+    //writeReg(SI4431_REG_INTERRUPT_STATUS_2, 0);
 
     // set mode to transmit
     // TODO: set RXON so that Si4431 returns to Rx once the packet is sent?
-    spi.writeReg(SI4431_REG_OP_FUNC_CONTROL_1 | WRITE_REG, SI4431_OFC1_TXON | SI4431_OFC1_XTALON);
+    writeReg(SI4431_REG_OP_FUNC_CONTROL_1, SI4431_OFC1_TXON | SI4431_OFC1_XTALON);
 
     // wait until packet is almost sent
     for(uint8_t i = 0; i < 200; i++) {
@@ -551,15 +555,15 @@ protected:
     }
 
     // TODO: why is 0x40 used? max expected packet size?
-    spi.writeReg(SI4431_REG_TRANSMIT_PACKET_LENGTH | WRITE_REG, 0x40);
+    writeReg(SI4431_REG_TRANSMIT_PACKET_LENGTH, 0x40);
     
     // enable data whitening 
-    //spi.writeReg(SI4431_REG_MODULATION_MODE_CONTROL_1, 0x2C);
+    //writeReg(SI4431_REG_MODULATION_MODE_CONTROL_1, 0x2C);
     // dynamic length
-    //spi.writeReg(SI4431_REG_HEADER_CONTROL_2, 0x06);
+    //writeReg(SI4431_REG_HEADER_CONTROL_2, 0x06);
 
     // enable Rx
-    spi.writeReg(SI4431_REG_OP_FUNC_CONTROL_1, SI4431_OFC1_RXON | SI4431_OFC1_XTALON);
+    writeReg(SI4431_REG_OP_FUNC_CONTROL_1, SI4431_OFC1_RXON | SI4431_OFC1_XTALON);
     return true;
   }
 
@@ -567,7 +571,7 @@ protected:
 //    DPRINTLN("Radio.h rcvData -----------------------------------");
 
     // disable receiver
-    spi.writeReg(SI4431_REG_OP_FUNC_CONTROL_1, SI4431_OFC1_XTALON);
+    writeReg(SI4431_REG_OP_FUNC_CONTROL_1, SI4431_OFC1_XTALON);
     // clear interrupts
     (void)spi.readReg(SI4431_REG_INTERRUPT_STATUS_1);
     (void)spi.readReg(SI4431_REG_INTERRUPT_STATUS_2);
@@ -620,7 +624,7 @@ protected:
     flushRx();
 
     // enable Rx
-    spi.writeReg(SI4431_REG_OP_FUNC_CONTROL_1, SI4431_OFC1_RXON | SI4431_OFC1_XTALON);
+    writeReg(SI4431_REG_OP_FUNC_CONTROL_1, SI4431_OFC1_RXON | SI4431_OFC1_XTALON);
 
     return rxBytes; // return number of byte in buffer
   }
