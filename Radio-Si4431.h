@@ -178,7 +178,7 @@ namespace as {
 // SPI protocol definitions
 #define WRITE_REG               0x80              // write access
 
-template <class SPIType, uint8_t PWRPIN>
+template <class SPIType, uint8_t PWRPIN, uint8_t GDO0PIN>
 class Si4431 {
 protected:
   SPIType spi;
@@ -233,7 +233,7 @@ public:
 
     // wait for IRQ
     DPRINT("wait for Si4431 being reset");
-    while(digitalRead(TRX_GDO0))
+    while(digitalRead(GDO0PIN))
       DPRINT(".");
     DPRINTLN("");
     // TODO: use correct function and pin definition
