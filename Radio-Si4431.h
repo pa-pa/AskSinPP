@@ -189,7 +189,7 @@ public:
   Si4431 () : rss(0)
     {}
 
-  void writeReg(uint8_t regAddr, uint8_t val) {
+  inline void writeReg(uint8_t regAddr, uint8_t val) {
     spi.writeReg(regAddr | WRITE_REG, val);
   }
 
