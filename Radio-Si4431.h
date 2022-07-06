@@ -197,12 +197,7 @@ public:
     DPRINTLN("Si4431 enter powerdown");
 
 #ifdef USE_WOR
-    // init
-    writeReg(CC1101_PKTCTRL1, 0x4C);    // preamble quality estimator threshold=2
-    writeReg(CC1101_MCSM2, 0x1c);       // RX_TIME_RSSI=1, RX_TIME_QUAL=1, RX_TIME=4
-    //start
-    spi.strobe(CC1101_SWORRST);
-    spi.strobe(CC1101_SWOR);
+    #error WOR is not implemented
 #else
     // enter power down state
     writeReg(SI4431_REG_OP_FUNC_CONTROL_1, SI4431_OFC1_NONE);
