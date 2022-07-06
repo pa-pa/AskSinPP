@@ -442,7 +442,7 @@ protected:
     rss = -1 * ((((int16_t)rsshex-((int16_t)rsshex >= 128 ? 256 : 0))/2)-74);
   }
 
-  uint8_t sndData(uint8_t *buf, uint8_t size, uint8_t burst) {
+  uint8_t sndData(uint8_t *buf, uint8_t size, __attribute__ ((unused)) uint8_t burst) {
 //    DPRINTLN("Radio.h sndData -----------------------------------");
     // TODO: do we need to care about bursts?
 
@@ -466,9 +466,9 @@ protected:
 //    DPRINT("packet wh: ");DHEX(packetBuffer, size+3);DPRINTLN("");
 
 
-    uint8_t preamble[4] = {0xAA, 0xAA, 0xAA, 0xAA};
-    uint8_t syncword[4] = {0xE9, 0xCA, 0xE9, 0xCA};
-    uint8_t replayBuf[] = {0xf3, 0x94, 0xea, 0x08, 0xd8, 0x72, 0x00, 0x06, 0x69, 0xf0, 0xb5, 0x79, 0x1e, 0x1b, 0x0b};
+    //uint8_t preamble[4] = {0xAA, 0xAA, 0xAA, 0xAA};
+    //uint8_t syncword[4] = {0xE9, 0xCA, 0xE9, 0xCA};
+    //uint8_t replayBuf[] = {0xf3, 0x94, 0xea, 0x08, 0xd8, 0x72, 0x00, 0x06, 0x69, 0xf0, 0xb5, 0x79, 0x1e, 0x1b, 0x0b};
 
     // set and clear bit FIFO Clear TX
     writeReg(SI4431_REG_OP_FUNC_CONTROL_2, SI4431_OFC2_FFCLRTX);
