@@ -14,15 +14,15 @@
 
 /*
   TODO
-  - rename GDO0 to IRQ
   - improve IRQ handling: nIRQ does not only show "packet received", depending on configuration
   - implement low power handling (not continuous RX)
   - implement WoR (if possible with Si4431)
-  - merge with CC1101 implementation!
 
   DONE
+  - rename GDO0 to IRQ
   - HM-Sec-SCO uses 1 MHz SPI clock, HB-Sec-SCo uses 110 kHz SPI clock (softSPI?)
   - manually check CRC of received packet
+  - merge with CC1101 implementation!
 
 */
 
@@ -178,7 +178,7 @@ namespace as {
 // SPI protocol definitions
 #define WRITE_REG               0x80              // write access
 
-template <class SPIType, uint8_t PWRPIN, uint8_t GDO0PIN>
+template <class SPIType, uint8_t PWRPIN, uint8_t IRQPIN>
 class Si4431 {
 protected:
   SPIType spi;
@@ -215,7 +215,7 @@ public:
   }
 
   void wakeup (bool flush) {
-    DPRINTLN("Radio.h wakeup");
+    DPRINTLN("Si4431 wakeup");
     if (PWRPIN < 0xff) {
       init();
     }
@@ -227,7 +227,7 @@ public:
   }
   
   uint8_t reset() {
-    DPRINTLN("Radio.h reset");
+    DPRINTLN("Si4431 reset");
     // read & clear any IRQ
     (void)spi.readReg(SI4431_REG_INTERRUPT_STATUS_1);
     (void)spi.readReg(SI4431_REG_INTERRUPT_STATUS_2);
@@ -237,7 +237,7 @@ public:
 
     // wait for IRQ
     DPRINT("wait for Si4431 being reset");
-    while(digitalRead(GDO0PIN))
+    while(digitalRead(IRQPIN))
       DPRINT(".");
     DPRINTLN("");
     // TODO: use correct function and pin definition
@@ -257,7 +257,7 @@ public:
 
 
   bool init () {
-    DPRINTLN("Radio.h init");
+    DPRINTLN("Si4431 init");
     if (PWRPIN < 0xff) {
       pinMode(PWRPIN, OUTPUT);
       digitalWrite(PWRPIN, LOW);
@@ -339,9 +339,9 @@ public:
     }
 
 
-    DPRINT(F("Si4431 Type: ")); DHEXLN(spi.readReg(SI4431_REG_DEVICE_TYPE));
-    DPRINT(F("Si4431 Version: ")); DHEXLN(spi.readReg(SI4431_REG_DEVICE_VERSION));
-    DPRINT(F("Si4431 Status: ")); DHEXLN(spi.readReg(SI4431_REG_DEVICE_STATUS));
+    DPRINT(F("Si4431 Type: ")); DHEX(spi.readReg(SI4431_REG_DEVICE_TYPE));
+    DPRINT(F(", Version: ")); DHEX(spi.readReg(SI4431_REG_DEVICE_VERSION));
+    DPRINT(F(", Status: ")); DHEXLN(spi.readReg(SI4431_REG_DEVICE_STATUS));
 
     DPRINTLN(F(" - ready"));
 
@@ -373,21 +373,21 @@ public:
   }
   
   void flushRx () {
-//    DPRINTLN("Radio.h flushRx");
+//    DPRINTLN("Si4431 flushRx");
     // set and clear bit FIFO Clear RX
     writeReg(SI4431_REG_OP_FUNC_CONTROL_2, SI4431_OFC2_FFCLRRX);
     writeReg(SI4431_REG_OP_FUNC_CONTROL_2, 0);
   }
 
   bool detectBurst () {
-    DPRINTLN("Radio.h detectBurst");
+    DPRINTLN("Si4431 detectBurst");
     // TODO: how to detect a burst?
     // Si4431 datasheet does not mention any "burst"
     return 0;
   }
 
   void pollRSSI() {
-    DPRINTLN("Radio.h pollRSSI");
+    DPRINTLN("Si4431 pollRSSI");
     calculateRSSI(spi.readReg(SI4431_REG_RSSI, 0));         // read RSSI from STATUS register
   }
 
@@ -443,7 +443,7 @@ protected:
   }
 
   uint8_t sndData(uint8_t *buf, uint8_t size, __attribute__ ((unused)) uint8_t burst) {
-//    DPRINTLN("Radio.h sndData -----------------------------------");
+//    DPRINTLN("Si4431 sndData -----------------------------------");
     // TODO: do we need to care about bursts?
 
 //    DPRINT("  buf: ");DHEX(buf, size);DPRINTLN("");
@@ -568,7 +568,7 @@ protected:
   }
 
   uint8_t rcvData(uint8_t *buf, uint8_t size) {
-//    DPRINTLN("Radio.h rcvData -----------------------------------");
+//    DPRINTLN("Si4431 rcvData -----------------------------------");
 
     // disable receiver
     writeReg(SI4431_REG_OP_FUNC_CONTROL_1, SI4431_OFC1_XTALON);
