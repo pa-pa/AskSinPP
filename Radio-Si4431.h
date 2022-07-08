@@ -207,6 +207,7 @@ public:
     (void)spi.readReg(SI4431_REG_INTERRUPT_STATUS_1);
     (void)spi.readReg(SI4431_REG_INTERRUPT_STATUS_2);
     writeReg(SI4431_REG_OP_FUNC_CONTROL_1, SI4431_OFC1_NONE);
+    pinMode(MISO, INPUT);
 #endif
 
     if (PWRPIN < 0xff) {
@@ -217,6 +218,7 @@ public:
 
   void wakeup (bool flush) {
     // DPRINTLN("Si4431 wakeup");
+    pinMode(MISO, INPUT_PULLUP);
     if (PWRPIN < 0xff) {
       init();
     }
