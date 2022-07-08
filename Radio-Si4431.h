@@ -503,20 +503,20 @@ protected:
 
     // wait until packet is almost sent
     for(uint8_t i = 0; i < 200; i++) {
-      _delay_us(100);
       if( spi.readReg(SI4431_REG_INTERRUPT_STATUS_1) & SI4431_IRQ1_TX_FIFO_ALMOST_EMPTY) {
 //        DPRINTLN("  IRQ status: TX FIFO almost empty");
         break;
       }
+      _delay_us(100);
     }
 
     // wait until packet is sent
     for(uint8_t i = 0; i < 200; i++) {
-      _delay_us(100);
       if( spi.readReg(SI4431_REG_INTERRUPT_STATUS_1) & SI4431_IRQ1_PACKET_SENT) {
-//        DPRINTLN("  IRQ status: packet sent");
+        //DPRINTLN("  IRQ status: packet sent");
         break;
       }
+      _delay_us(100);
     }
 
     // TODO: why is 0x40 used? max expected packet size?
