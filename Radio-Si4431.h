@@ -193,6 +193,10 @@ public:
     spi.writeReg(regAddr | WRITE_REG, val);
   }
 
+  inline void writeBurst(uint8_t regAddr, uint8_t* buf, uint8_t len) {
+    spi.writeBurst(regAddr | WRITE_REG, buf, len);
+  }
+
   void setIdle () {
     //DPRINTLN("Si4431 enter powerdown");
 
@@ -523,6 +527,8 @@ protected:
     spi.writeBurst(SI4431_REG_FIFO_ACCESS, packetBuffer, size+3);
 //    DPRINT("  buf: ");DHEX(replayBuf, sizeof(replayBuf));DPRINTLN("");
 #endif
+    //DPRINT("  sending ");DDEC(size+3);DPRINTLN(" bytes");
+    writeBurst(SI4431_REG_FIFO_ACCESS, packetBuffer, size+3);
 
     // TODO: shall we enable the IRQ for "packet sent" and wait for it?
     // TODO: writing to status register makes no sense!
