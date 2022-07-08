@@ -479,38 +479,6 @@ protected:
     (void)spi.readReg(SI4431_REG_INTERRUPT_STATUS_1);
     (void)spi.readReg(SI4431_REG_INTERRUPT_STATUS_2);
 
-//#define REPLAY
-//#define NO_TX_PKT
-
-#if defined REPLAY
-    // TODO: why would HM-Sec-SCo do that?
-    writeReg(SI4431_REG_DATA_ACCESS_CONTROL, 0);
-    writeReg(SI4431_REG_TRANSMIT_PACKET_LENGTH, 0x0D);
-    spi.writeBurst(SI4431_REG_FIFO_ACCESS, preamble, sizeof(preamble));
-    DPRINT("  preamble: ");DHEX(preamble, sizeof(preamble));DPRINTLN("");
-    spi.writeBurst(SI4431_REG_FIFO_ACCESS, syncword, sizeof(syncword));
-    DPRINT("  syncword: ");DHEX(syncword, sizeof(syncword));DPRINTLN("");
-    spi.writeBurst(SI4431_REG_FIFO_ACCESS, replayBuf, sizeof(replayBuf));
-    DPRINT("  buf: ");DHEX(replayBuf, sizeof(replayBuf));DPRINTLN("");
-#elif defined NO_TX_PKT
-    // no packet handling
-    writeReg(SI4431_REG_DATA_ACCESS_CONTROL, 0);
-    // TODO: is the transmit size necessary if packet mode is not used?
-    writeReg(SI4431_REG_TRANSMIT_PACKET_LENGTH, size + 1);
-    //writeReg(SI4431_REG_TRANSMIT_PACKET_LENGTH, sizeof(preamble) + sizeof(syncword) + 1 + size);
-    //DPRINT("  sending ");DDEC(sizeof(preamble) + sizeof(syncword) + 1 + size);DPRINTLN(" bytes");
-    //writeReg(SI4431_REG_TRANSMIT_PACKET_LENGTH, sizeof(preamble) + sizeof(syncword) + 1 + sizeof(replayBuf));
-    //DPRINT("  sending ");DDEC(sizeof(preamble) + sizeof(syncword) + 1 + sizeof(replayBuf));DPRINTLN(" bytes");
-    // size of buffer + length byte
-    DPRINT("  sending ");DDEC(size+1);DPRINTLN(" bytes");
-    // no TX packet handling, therefore preamble & syncwords have to be sent manually
-    spi.writeBurst(SI4431_REG_FIFO_ACCESS, preamble, sizeof(preamble));
-    DPRINT("  preamble: ");DHEX(preamble, sizeof(preamble));DPRINTLN("");
-    spi.writeBurst(SI4431_REG_FIFO_ACCESS, syncword, sizeof(syncword));
-    DPRINT("  syncword: ");DHEX(syncword, sizeof(syncword));DPRINTLN("");
-    spi.writeBurst(SI4431_REG_FIFO_ACCESS, packetBuffer, size+3);
-    DPRINT("  buf: ");DHEX(replayBuf, sizeof(replayBuf));DPRINTLN("");
-#else
     // RX&TX packet handling, no CRC
     writeReg(SI4431_REG_DATA_ACCESS_CONTROL, 0x88);
     // disable data whitening 
@@ -518,15 +486,7 @@ protected:
     // fixed length
     writeReg(SI4431_REG_HEADER_CONTROL_2, 0x0E);
     writeReg(SI4431_REG_TRANSMIT_PACKET_LENGTH, size + 3);
-    //writeReg(SI4431_REG_TRANSMIT_PACKET_LENGTH, sizeof(preamble) + sizeof(syncword) + 1 + size);
-    //DPRINT("  sending ");DDEC(sizeof(preamble) + sizeof(syncword) + 1 + size);DPRINTLN(" bytes");
-    //writeReg(SI4431_REG_TRANSMIT_PACKET_LENGTH, sizeof(preamble) + sizeof(syncword) + 1 + sizeof(replayBuf));
-    //DPRINT("  sending ");DDEC(sizeof(preamble) + sizeof(syncword) + 1 + sizeof(replayBuf));DPRINTLN(" bytes");
     // size of buffer + length byte
-//    DPRINT("  sending ");DDEC(size+3);DPRINTLN(" bytes");
-    spi.writeBurst(SI4431_REG_FIFO_ACCESS, packetBuffer, size+3);
-//    DPRINT("  buf: ");DHEX(replayBuf, sizeof(replayBuf));DPRINTLN("");
-#endif
     //DPRINT("  sending ");DDEC(size+3);DPRINTLN(" bytes");
     writeBurst(SI4431_REG_FIFO_ACCESS, packetBuffer, size+3);
 
