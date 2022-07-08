@@ -249,10 +249,14 @@ public:
     SPI.beginTransaction(SPISettings(CLOCK,BITORDER,MODE));
     select();                                     // select  radio module
     SPI.transfer(regAddr);                        // send register address
+#if defined SPI_MULTIBYTE_TRANSFER
+    SPI.receive(buf, len);                        // receive len bytes at once
+#else
     for(uint8_t i=0 ; i<len ; i++) {
       buf[i] = SPI.transfer(0x00);                // read result byte by byte
       //dbg << i << ":" << buf[i] << '\n';
     }
+#endif
     deselect();                                   // deselect  radio module
     SPI.endTransaction();
   }
@@ -261,8 +265,12 @@ public:
     SPI.beginTransaction(SPISettings(CLOCK,BITORDER,MODE));
     select();                                     // select  radio module
     SPI.transfer(regAddr);                        // send register address
+#if defined SPI_MULTIBYTE_TRANSFER
+    SPI.transmit(buf, len);                       // send the whole buffer
+#else
     for(uint8_t i=0 ; i<len ; i++)
       SPI.transfer(buf[i]);                       // send value
+#endif
     deselect();                                   // deselect  radio module
     SPI.endTransaction();
   }
