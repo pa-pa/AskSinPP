@@ -355,8 +355,9 @@ public:
       LowPower.shutdown(0);
 #endif
 #if defined(ARDUINO_ARCH_EFM32)
-      _delay_ms(5000);
-      EMU_EnterEM4();
+      _delay_ms(2500);
+      EMU_EnterEM3(false);
+      while (1);
 #endif
     }
   }
