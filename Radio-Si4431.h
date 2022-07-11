@@ -246,6 +246,13 @@ public:
     // TODO: use correct function and pin definition
     // TODO: add timeout
 
+    for(uint8_t i = 0; i < 200; i++) {
+      if( spi.readReg(SI4431_REG_INTERRUPT_STATUS_2) & SI4431_IRQ2_CHIP_READY) {
+        break;
+      }
+      _delay_us(100);
+    }
+
     (void)spi.readReg(SI4431_REG_INTERRUPT_STATUS_2);
 
     // enable only XTAL IRQ (chip ready)
