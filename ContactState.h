@@ -69,7 +69,7 @@ public:
   }
 
   uint8_t flags () const {
-    uint8_t flags = sabotage ? 0x07 << 1 : 0x00;
+    uint8_t flags = (sabotage && this->device().getList0().sabotageMsg() == true) ? 0x07 << 1 : 0x00;
     flags |= this->device().battery().low() ? 0x80 : 0x00;
     return flags;
   }
@@ -126,9 +126,11 @@ public:
     }
     if( sabpin != 0 ) {
       bool sabstate = (possens.interval()==0 ? digitalRead(sabpin) : AskSinBase::readPin(sabpin) == SABOTAGE_ACTIVE_STATE);
-      if( sabotage != sabstate && this->device().getList0().sabotageMsg() == true ) {
+      if( sabotage != sabstate) {
         sabotage = sabstate;
-        this->changed(true); // trigger StatusInfoMessage to central
+        if (this->device().getList0().sabotageMsg() == true ) {
+          this->changed(true); // trigger StatusInfoMessage to central
+        }
       }
     }
   }
@@ -210,9 +212,6 @@ class StateDevice : public MultiChannelDevice<HalType,ChannelType,ChannelCount,L
     void trigger (AlarmClock& clock)  {
       set(CycleTime);
       clock.add(*this);
-      for( uint8_t idx=1; idx<=dev.channels(); ++idx) {
-        dev.channel(idx).changed(true); // force StatusInfoMessage to central
-      }
     }
   } cycle;
 public:
@@ -232,6 +231,11 @@ public:
       DPRINTLN(F("Deactivate Cycle Msg"));
       sysclock.cancel(cycle);
     }
+
+    for( uint8_t idx=1; idx<=this->channels(); ++idx) {
+      this->channel(idx).changed(true); // force StatusInfoMessage to central
+    }
+
   }
 };
 
