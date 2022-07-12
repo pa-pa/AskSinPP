@@ -68,8 +68,8 @@ public:
     return sender.state;
   }
 
-  uint8_t flags () const {
-    uint8_t flags = (sabotage && this->device().getList0().sabotageMsg() == true) ? 0x07 << 1 : 0x00;
+  uint8_t flags () {
+    uint8_t flags = (sabotage && (this->device().getList0().sabotageMsg() == true)) ? 0x07 << 1 : 0x00;
     flags |= this->device().battery().low() ? 0x80 : 0x00;
     return flags;
   }
