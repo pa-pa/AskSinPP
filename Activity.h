@@ -287,9 +287,9 @@ public:
       sysclock.disable();
       hal.setIdle();
       sysclock.enable(ticks2millis(ticks));
-      hal.unsetIdle();
       sysclock.correct(ticks == 0 ? 0 : ticks -1);
     } else {
+      hal.unsetIdle();
       sysclock.enable();
     }
   }
