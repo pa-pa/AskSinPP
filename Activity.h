@@ -281,7 +281,10 @@ class Sleep {
 public:
   template <class Hal>
   static void powerSave(Hal& hal) {
+    uint32_t priMask = __get_PRIMASK();
+    __set_PRIMASK(1);
     EMU_EnterEM2(false);
+    __set_PRIMASK(priMask);
     uint32_t ticks = sysclock.next();
     if (sysclock.isready() == false) {
       sysclock.disable();
@@ -355,8 +358,6 @@ public:
       LowPower.shutdown(0);
 #endif
 #if defined(ARDUINO_ARCH_EFM32)
-      _delay_ms(2500);
-      EMU_EnterEM3(false);
       while (1);
 #endif
     }
