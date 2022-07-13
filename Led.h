@@ -164,6 +164,7 @@ public:
   void ledOff () { led1.ledOff(); }
   void invert (bool value) { led1.invert(value); }
   void enable (bool e) {led1.enable(e); }
+  bool enable() const {return led1.enable(); }
 };
 
 template <uint8_t LEDPIN1,uint8_t LEDPIN2, class PINTYPE1=ArduinoPins, class PINTYPE2=ArduinoPins>
@@ -182,6 +183,7 @@ public:
   void ledOff () { led1.ledOff(); led2.ledOff(); }
   void invert (bool value) { led1.invert(value); led2.invert(value); }
   void enable (bool e) {led1.enable(e); led2.enable(e); }
+  bool enable() const {return led1.enable() | led2.enable(); }
 };
 
 class NoLed {
@@ -196,6 +198,7 @@ public:
   void ledOff () {}
   void invert (__attribute__((unused)) bool value) {}
   void enable (__attribute__((unused)) bool e) {}
+  bool enable() const { return false; }
 };
 
 }
