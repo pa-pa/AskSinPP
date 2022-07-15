@@ -10,7 +10,7 @@
 #include "Alarm.h"
 
 #ifdef ARDUINO_ARCH_EFM32
-#include "rtcdriver.h"
+#include "sl_sleeptimer.h"
 #endif
 
 #ifdef ARDUINO_ARCH_RP2040
@@ -102,8 +102,8 @@ public:
 
 
 #ifdef ARDUINO_ARCH_EFM32
-extern void callback(RTCDRV_TimerID_t id , void *user);
-extern void rtccallback(RTCDRV_TimerID_t id , void *user);
+extern void callback(sl_sleeptimer_timer_handle_t *id , void *user);
+extern void rtccallback(sl_sleeptimer_timer_handle_t *id , void *user);
 extern uint32_t getTimeout();
 #else
 extern void callback(void);
@@ -129,7 +129,7 @@ private:
 #endif
 
 #ifdef ARDUINO_ARCH_EFM32
-  RTCDRV_TimerID_t id;
+  sl_sleeptimer_timer_handle_t id;
   uint32_t timerTimeout;
 #endif
 
@@ -191,8 +191,7 @@ public:
     timerAttachInterrupt(Timer, &callback, true);
   #endif
   #ifdef ARDUINO_ARCH_EFM32
-    RTCDRV_Init();
-    RTCDRV_AllocateTimer( &id );
+    sl_sleeptimer_init();
     timerTimeout = 10;
  #endif
     enable();
@@ -216,13 +215,7 @@ public:
     cancel_repeating_timer(&rp2040_timer);
   #endif
   #ifdef ARDUINO_ARCH_EFM32
-    bool timerIsRunning;
-    RTCDRV_IsRunning(id, &timerIsRunning);
-    if (timerIsRunning)
-    {
-      //DPRINTLN("stopTimer");
-      RTCDRV_StopTimer(id);
-    }
+    sl_sleeptimer_stop_timer(&id);
   #endif
   }
 
@@ -234,12 +227,8 @@ public:
   void enable(uint32_t ms) {
     timerTimeout=ms < 10 ? 10 : ms;
     //DPRINT("enable ");DDECLN(ms);
-    bool timerIsRunning;
-    RTCDRV_IsRunning(id, &timerIsRunning);
-    if (!timerIsRunning) {
-      RTCDRV_StopTimer(id);
-    }
-    RTCDRV_StartTimer( id, rtcdrvTimerTypeOneshot, timerTimeout, callback , 0  );
+    //_restart_ stops a running timer, if any exists
+    sl_sleeptimer_restart_timer_ms( &id, timerTimeout, callback , (void *) NULL ,0, 0 );
   }
 #endif
 
@@ -263,13 +252,12 @@ public:
     }
   #endif
   #ifdef ARDUINO_ARCH_EFM32
-    timerTimeout = 10;
-    RTCDRV_StartTimer( id, rtcdrvTimerTypeOneshot, timerTimeout, callback , 0  );
+    enable(10);
   #endif
   }
 
 #ifdef ARDUINO_ARCH_EFM32
-  RTCDRV_TimerID_t getTimerID() {
+  sl_sleeptimer_timer_handle_t getTimerID() {
     return id;
   }
 #endif
@@ -296,7 +284,7 @@ class RealTimeClock : public AlarmClock {
 #endif
 
 #ifdef ARDUINO_ARCH_EFM32
-  RTCDRV_TimerID_t id;
+  sl_sleeptimer_timer_handle_t id;
 #endif
 
 public:
@@ -342,9 +330,8 @@ public:
     alarmT.sec =  1;
     rtc_set_alarm(&alarmT, rtccallback); // https://raspberrypi.github.io/pico-sdk-doxygen/group__hardware__rtc.html
 #elif defined(ARDUINO_ARCH_EFM32)
-    RTCDRV_Init();
-    RTCDRV_AllocateTimer( &id );
-    RTCDRV_StartTimer( id, rtcdrvTimerTypePeriodic, 1000, rtccallback , 0  );
+    sl_sleeptimer_init();
+    sl_sleeptimer_restart_timer_ms( &id, 1000, callback , (void *) NULL ,0, 0 );
 #else
   #warning "RTC not supported"
 #endif
