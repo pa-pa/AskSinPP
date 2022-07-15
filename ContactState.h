@@ -212,6 +212,9 @@ class StateDevice : public MultiChannelDevice<HalType,ChannelType,ChannelCount,L
     void trigger (AlarmClock& clock)  {
       set(CycleTime);
       clock.add(*this);
+      for( uint8_t idx=1; idx<=dev.channels(); ++idx) {
+        dev.channel(idx).changed(true); // force StatusInfoMessage to central
+      }
     }
   } cycle;
 public:
