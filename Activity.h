@@ -281,10 +281,8 @@ class Sleep {
 public:
   template <class Hal>
   static void powerSave(Hal& hal) {
-    uint32_t priMask = __get_PRIMASK();
-    __set_PRIMASK(1);
+    NVIC_ClearPendingIRQ(SysTick_IRQn);NVIC_DisableIRQ(SysTick_IRQn);
     EMU_EnterEM2(false);
-    __set_PRIMASK(priMask);
     uint32_t ticks = sysclock.next();
     if (sysclock.isready() == false) {
       sysclock.disable();
