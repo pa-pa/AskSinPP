@@ -282,7 +282,13 @@ public:
   template <class Hal>
   static void powerSave(Hal& hal) {
     NVIC_ClearPendingIRQ(SysTick_IRQn);NVIC_DisableIRQ(SysTick_IRQn);
-    EMU_EnterEM2(false);
+    uint32_t priMask = __get_PRIMASK();
+    uint32_t sysTickCtrl = SysTick->CTRL;
+    __set_PRIMASK(1);
+    SysTick->CTRL &= 0x03;  // clear TICKINT & ENABLE
+    EMU_EnterEM2(true);
+     SysTick->CTRL = sysTickCtrl;
+    __set_PRIMASK(priMask);
     uint32_t ticks = sysclock.next();
     if (sysclock.isready() == false) {
       sysclock.disable();
