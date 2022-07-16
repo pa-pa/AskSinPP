@@ -285,7 +285,7 @@ public:
     uint32_t priMask = __get_PRIMASK();
     uint32_t sysTickCtrl = SysTick->CTRL;
     __set_PRIMASK(1);
-    SysTick->CTRL &= 0x03;  // clear TICKINT & ENABLE
+    SysTick->CTRL &= ~0x03;  // clear TICKINT & ENABLE
     EMU_EnterEM2(true);
      SysTick->CTRL = sysTickCtrl;
     __set_PRIMASK(priMask);
