@@ -49,7 +49,7 @@ public:
   uint8_t flags () const {
     return 0;
   }
-
+  
   void repeatCount (uint8_t cnt) {
     repeatcnt = cnt;
   }
