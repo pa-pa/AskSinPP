@@ -14,6 +14,13 @@
 
 namespace as {
 
+typedef enum {
+  ENCRES_1x = 0,
+  ENCRES_2x,
+  ENCRES_4x
+} encModes;
+
+
 class DoublePressAlarm : public Alarm {
 private:
   bool isNewPressAllowed;
@@ -171,10 +178,10 @@ public:
 
   void irq () {
     if (dbl.newPressAllowed() == true) {
-      sysclock.cancel(ca);
-      // use alarm to run code outside of interrupt
-      sysclock.add(ca);
-    }
+    sysclock.cancel(ca);
+    // use alarm to run code outside of interrupt
+    sysclock.add(ca);
+  }
   }
 
   void check() {
@@ -343,16 +350,35 @@ public:
 class BaseEncoder {
   int8_t  counter;
   uint8_t datapin;
+  uint8_t clkpin;
+  encModes mode;
+  uint8_t initDelay;
+  uint8_t oldState;
 public:
-  BaseEncoder () : counter(0), datapin(0) {}
+  BaseEncoder () : counter(0), datapin(0), clkpin(0), mode(ENCRES_1x), initDelay(0) {}
   void encirq () {
     uint8_t data = digitalRead(datapin);
-    counter += data == LOW ? 1 : -1;
+    uint8_t clk  = digitalRead(clkpin);
+    uint8_t newState = (data<<1) | clk;
+    switch (mode)
+    {
+      case ENCRES_4x: if ( ((oldState==0b00) && (newState==0b01)) || 
+                           ((oldState==0b01) && (newState==0b11)) || 
+                           ((oldState==0b10) && (newState==0b00)) || 
+                           ((oldState==0b11) && (newState==0b10)) ) counter--; 
+                      else counter++;
+                      oldState = newState; break;
+      case ENCRES_2x: counter += (clk==data) ? 1 : -1; break;
+      default:        counter += (data==LOW) ? 1 : -1;
+    }
   }
-  void init (uint8_t cpin,uint8_t dpin) {
+  void init (uint8_t cpin,uint8_t dpin){
     pinMode(cpin, INPUT_PULLUP);
     pinMode(dpin, INPUT_PULLUP);
     datapin = dpin;
+    clkpin  = cpin;
+    if ((mode > ENCRES_1x) && (initDelay !=0)) delay(initDelay);
+    oldState = (digitalRead(datapin)<<1) | digitalRead(clkpin);
   }
   int8_t read () {
     int8_t result=0;
@@ -363,6 +389,16 @@ public:
     }
     return result;
   }
+  void edgemode(encModes res) {
+    mode = res;
+  }
+  encModes edgemode() {
+    return mode;
+  }
+  void delaytime(uint8_t time) {
+    initDelay = time;
+  }
+
 };
 
 template<class DeviceType>
@@ -375,7 +411,7 @@ public:
   void init (uint8_t sw) {
     InternalButton<DeviceType>::init(sw);
   }
-  void init (uint8_t cpin,uint8_t dpin) {
+  void init (uint8_t cpin,uint8_t dpin){
     BaseEncoder::init(cpin,dpin);
   }
   template<class ChannelType>
@@ -406,11 +442,23 @@ else \
   static void isr () { enc.encirq(); } \
 }; \
 enc.init(clkpin,datapin); \
+uint8_t mode; \
+switch(enc.edgemode()) { \
+   case ENCRES_4x: \
+   case ENCRES_2x: mode = CHANGE; break; \
+   default:        mode = FALLING; \
+} \
 if( digitalPinToInterrupt(clkpin) == NOT_AN_INTERRUPT ) \
-  enableInterrupt(clkpin,enc##ENCISRHandler::isr,FALLING); \
+  enableInterrupt(clkpin,enc##ENCISRHandler::isr,mode);\
 else \
-  attachInterrupt(digitalPinToInterrupt(clkpin),enc##ENCISRHandler::isr,FALLING);
-
+  attachInterrupt(digitalPinToInterrupt(clkpin),enc##ENCISRHandler::isr,mode); \
+if (enc.edgemode()==ENCRES_4x) { \
+  if( digitalPinToInterrupt(datapin) == NOT_AN_INTERRUPT ) \
+    enableInterrupt(datapin,enc##ENCISRHandler::isr,mode);\
+  else \
+    attachInterrupt(digitalPinToInterrupt(datapin),enc##ENCISRHandler::isr,mode); \
+}
+  
 }
 
 #endif
