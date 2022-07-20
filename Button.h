@@ -362,10 +362,10 @@ public:
     uint8_t newState = (data<<1) | clk;
     switch (mode)
     {
-      case ENCRES_4x: if ( ((oldState==0b00) && (newState==0b01)) || 
-                           ((oldState==0b01) && (newState==0b11)) || 
-                           ((oldState==0b10) && (newState==0b00)) || 
-                           ((oldState==0b11) && (newState==0b10)) ) counter--; 
+      case ENCRES_4x: if ( ((oldState==0b00) && (newState==0b01)) ||
+                           ((oldState==0b01) && (newState==0b11)) ||
+                           ((oldState==0b10) && (newState==0b00)) ||
+                           ((oldState==0b11) && (newState==0b10)) ) counter--;
                       else counter++;
                       oldState = newState; break;
       case ENCRES_2x: counter += (clk==data) ? 1 : -1; break;
@@ -458,7 +458,7 @@ if (enc.edgemode()==ENCRES_4x) { \
   else \
     attachInterrupt(digitalPinToInterrupt(datapin),enc##ENCISRHandler::isr,mode); \
 }
-  
+ 
 }
 
 #endif
