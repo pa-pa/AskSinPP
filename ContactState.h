@@ -23,8 +23,9 @@ class StateGenericChannel : public Channel<HALTYPE,List1Type,EmptyList,List4Type
   public:
     StateGenericChannel& channel;
     uint8_t count, state;
+    bool sent;
 
-    EventSender (StateGenericChannel& c) : Alarm(0), channel(c), count(0), state(255) {}
+    EventSender (StateGenericChannel& c) : Alarm(0), channel(c), count(0), state(255), sent(false) {}
     virtual ~EventSender () {}
     virtual void trigger (__attribute__ ((unused)) AlarmClock& clock) {
       SensorEventMsg& msg = (SensorEventMsg&)channel.device().message();
@@ -34,6 +35,7 @@ class StateGenericChannel : public Channel<HALTYPE,List1Type,EmptyList,List4Type
       // msg.append(__gb_BatCount);
 #endif
       channel.device().sendPeerEvent(msg,channel);
+      sent=true;
     }
   };
 
@@ -66,6 +68,14 @@ public:
 
   uint8_t status () const {
     return sender.state;
+  }
+
+  void msgSent(bool s) {
+    sender.sent = s;
+  }
+
+  bool msgSent () const  {
+    return sender.sent;
   }
 
   uint8_t flags () {
@@ -209,6 +219,12 @@ class StateDevice : public MultiChannelDevice<HalType,ChannelType,ChannelCount,L
     CycleInfoAlarm (StateDevice& d) : Alarm (CycleTime), dev(d) {}
     virtual ~CycleInfoAlarm () {}
 
+    void restartTimer() {
+      sysclock.cancel(*this);
+      set(CycleTime);
+      sysclock.add(*this);
+    }
+
     void trigger (AlarmClock& clock)  {
       set(CycleTime);
       clock.add(*this);
@@ -222,13 +238,15 @@ public:
   StateDevice(const DeviceInfo& info,uint16_t addr) : DevType(info,addr), cycle(*this) {}
   virtual ~StateDevice () {}
 
+  void restartCycleTimer() {
+    cycle.restartTimer();
+  }
+
   virtual void configChanged () {
     // activate cycle info message
     if( this->getList0().cycleInfoMsg() == true ) {
       DPRINTLN(F("Activate Cycle Msg"));
-      sysclock.cancel(cycle);
-      cycle.set(CycleTime);
-      sysclock.add(cycle);
+      cycle.restartTimer();
     }
     else {
       DPRINTLN(F("Deactivate Cycle Msg"));
