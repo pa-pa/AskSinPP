@@ -520,9 +520,11 @@ void disable () {
   uint8_t sndData(uint8_t *buf, uint8_t size, uint8_t burst) {
     timeout.waitTimeout();
     this->wakeup();
+    disable();
     setState(SENDING);
     uint8_t result = HWRADIO::sndData(buf,size,burst);
     unsetState(SENDING);
+    enable();
     return result;
   }
 
