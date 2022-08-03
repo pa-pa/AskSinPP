@@ -110,6 +110,9 @@ namespace as {
 #define SI4431_REG_RECEIVED_HEADER_0                  0x4A
 #define SI4431_REG_RECEIVED_PACKET_LENGTH             0x4B
 #define SI4431_REG_ADC8_CONTROL                       0x4F
+#define SI4431_REG_CCTO                               0x58 //Si4432 Revision V2 | ChargepumpCurrentTrimmingOverride
+#define SI4431_REG_DCT                                0x59 //Si4432 Revision V2 | Divider Current Trimming
+#define SI4431_REG_VCT                                0x5A //Si4432 Revision V2 | VCO Current Trimming register
 #define SI4431_REG_CHANNEL_FILTER_COEFF               0x60
 #define SI4431_REG_XOSC_CONTROL_TEST                  0x62
 #define SI4431_REG_AGC_OVERRIDE_1                     0x69
@@ -316,7 +319,9 @@ public:
       SI4431_REG_TX_DATA_RATE_0,                0xEC,   //  0x3D
       // stock HM-Sec-SCo 
       SI4431_REG_MODULATION_MODE_CONTROL_1,     0x2C,   //  0x0C    low data rate
-      /* address 0x58 does not exist            0x80 */
+      SI4431_REG_VCT,                           0x7F,
+      SI4431_REG_CCTO,                          0x80,
+      SI4431_REG_DCT,                           0x40,
       SI4431_REG_FREQUENCY_DEVIATION,           0x1E,   //  0x20
       SI4431_REG_MODULATION_MODE_CONTROL_2,     0x22,   //  0x00    FIFO mode, FSK
       SI4431_REG_IF_FILTER_BANDWIDTH,           0x1E,   //  0x01    620.7 kHz
