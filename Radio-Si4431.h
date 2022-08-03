@@ -175,6 +175,7 @@ namespace as {
 #define SI4431_OFC2_ENLDM                         0b00000100  //  2     2     LOW_DUTY_CYCLE_ON
 #define SI4431_OFC2_FFCLRRX                       0b00000010  //  1     1     RX_FIFO_RESET    
 #define SI4431_OFC2_FFCLRTX                       0b00000001  //  0     0     TX_FIFO_RESET    
+#define SI4431_OFC2_NONE                          0           //              no bit set
 
 
 
@@ -195,9 +196,14 @@ public:
   inline void writeReg(uint8_t regAddr, uint8_t val) {
     spi.writeReg(regAddr | WRITE_REG, val);
   }
-
-  inline void writeBurst(uint8_t regAddr, uint8_t* buf, uint8_t len) {
+  inline void writeBurst(uint8_t regAddr, const uint8_t* buf, uint8_t len) {
     spi.writeBurst(regAddr | WRITE_REG, buf, len);
+  }
+  inline uint8_t readReg(uint8_t regAddr) {
+    return spi.readReg(regAddr);
+  }
+  inline void readBurst(uint8_t * buf, uint8_t regAddr, uint8_t len) {
+    spi.readBurst(buf, regAddr, len);
   }
 
   void setIdle () {
@@ -207,8 +213,8 @@ public:
     //#error WOR is not implemented
 #else
     // enter power down state
-    (void)spi.readReg(SI4431_REG_INTERRUPT_STATUS_1);
-    (void)spi.readReg(SI4431_REG_INTERRUPT_STATUS_2);
+    (void)readReg(SI4431_REG_INTERRUPT_STATUS_1);
+    (void)readReg(SI4431_REG_INTERRUPT_STATUS_2);
     writeReg(SI4431_REG_OP_FUNC_CONTROL_1, SI4431_OFC1_NONE);
     pinMode(MISO, INPUT);
 #endif
@@ -235,8 +241,8 @@ public:
   uint8_t reset() {
     // DPRINTLN("Si4431 reset");
     // read & clear any IRQ
-    (void)spi.readReg(SI4431_REG_INTERRUPT_STATUS_1);
-    (void)spi.readReg(SI4431_REG_INTERRUPT_STATUS_2);
+    (void)readReg(SI4431_REG_INTERRUPT_STATUS_1);
+    (void)readReg(SI4431_REG_INTERRUPT_STATUS_2);
 
     // write SWRES | XTON
     writeReg(SI4431_REG_OP_FUNC_CONTROL_1, SI4431_OFC1_SWRES | SI4431_OFC1_XTALON);
@@ -250,13 +256,13 @@ public:
     // TODO: add timeout
 
     for(uint8_t i = 0; i < 200; i++) {
-      if( spi.readReg(SI4431_REG_INTERRUPT_STATUS_2) & SI4431_IRQ2_CHIP_READY) {
+      if( readReg(SI4431_REG_INTERRUPT_STATUS_2) & SI4431_IRQ2_CHIP_READY) {
         break;
       }
       _delay_us(100);
     }
 
-    (void)spi.readReg(SI4431_REG_INTERRUPT_STATUS_2);
+    (void)readReg(SI4431_REG_INTERRUPT_STATUS_2);
 
     // enable only XTAL IRQ (chip ready)
     //writeReg(SI4431_REG_INTERRUPT_ENABLE_2, SI4431_IRQ2_CHIP_READY);
@@ -276,7 +282,7 @@ public:
       digitalWrite(PWRPIN, LOW);
       _delay_ms(2);
     }
-    spi.init();                 // init the hardware to get access to the RF modul
+    init();                 // init the hardware to get access to the RF modul
 
     reset();
 
@@ -354,9 +360,9 @@ public:
     }
 
 
-    DPRINT(F("Si4431 Type: ")); DHEX(spi.readReg(SI4431_REG_DEVICE_TYPE));
-    DPRINT(F(", Version: ")); DHEX(spi.readReg(SI4431_REG_DEVICE_VERSION));
-    DPRINT(F(", Status: ")); DHEXLN(spi.readReg(SI4431_REG_DEVICE_STATUS));
+    DPRINT(F("Si4431 Type: ")); DHEX(readReg(SI4431_REG_DEVICE_TYPE));
+    DPRINT(F(", Version: ")); DHEX(readReg(SI4431_REG_DEVICE_VERSION));
+    DPRINT(F(", Status: ")); DHEXLN(readReg(SI4431_REG_DEVICE_STATUS));
 
     DPRINTLN(F(" - ready"));
 
@@ -367,7 +373,7 @@ public:
 
   bool initReg (uint8_t regAddr, uint8_t val, uint8_t retries=3) {
     writeReg(regAddr, val);
-    uint8_t val_read = spi.readReg(regAddr);
+    uint8_t val_read = readReg(regAddr);
     bool initResult = true;
     if( val_read != val ) {
       if( retries > 0 ) {
@@ -403,7 +409,7 @@ public:
 
   void pollRSSI() {
    // DPRINTLN("Si4431 pollRSSI");
-    calculateRSSI(spi.readReg(SI4431_REG_RSSI, 0));         // read RSSI from STATUS register
+    calculateRSSI(readReg(SI4431_REG_RSSI, 0));         // read RSSI from STATUS register
   }
 
 protected:
@@ -584,7 +590,7 @@ protected:
           DPRINTLN("  CRC failed!");
           //DHEXLN((uint16_t)(buf[packetBytes] << 8 | buf[packetBytes+1]));
         }
-        calculateRSSI(spi.readReg(SI4431_REG_RSSI));
+        calculateRSSI(readReg(SI4431_REG_RSSI));
       }
       else {
         DPRINT(F("Packet too big: "));DDECLN(packetBytes);
@@ -592,8 +598,8 @@ protected:
     }
 
     // clear interrupts
-    (void)spi.readReg(SI4431_REG_INTERRUPT_STATUS_1);
-    (void)spi.readReg(SI4431_REG_INTERRUPT_STATUS_2);
+    (void)readReg(SI4431_REG_INTERRUPT_STATUS_1);
+    (void)readReg(SI4431_REG_INTERRUPT_STATUS_2);
 
 
 //    DPRINT("-> ");
