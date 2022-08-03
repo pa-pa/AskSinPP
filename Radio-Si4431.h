@@ -464,15 +464,24 @@ protected:
   }
 
   uint8_t sndData(uint8_t *buf, uint8_t size, __attribute__ ((unused)) uint8_t burst) {
-//    DPRINTLN("Si4431 sndData -----------------------------------");
-    // TODO: do we need to care about bursts?
+    //DPRINTLN("Si4431 sndData -----------------------------------");
 
-//    DPRINT("  buf: ");DHEX(buf, size);DPRINTLN("");
+    //DPRINT("  buf: ");DHEX(buf, size);DPRINTLN("");
     uint16_t crc;
     uint8_t packetBuffer[40];
 
+    static const uint8_t preambleShort[4] = {0xAA, 0xAA, 0xAA, 0xAA};
+    static const uint8_t preambleLong[32] = {0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
+                                             0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
+                                             0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
+                                             0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA};
+    static const uint8_t syncword[4] =      {0xE9, 0xCA, 0xE9, 0xCA};
+
+    // TODO: disable the IRQ so that nIRQ can be used for polling
+    //HWRADIO::disable();
+
     crc = calculateCrc(buf, size);
-//    DPRINT("  calculated CRC: ");DHEX(crc);DPRINTLN("");
+    //DPRINT("  calculated CRC: ");DHEX(crc);DPRINTLN("");
 
     // build packet: first byte is the length
     packetBuffer[0] = size;
@@ -481,74 +490,72 @@ protected:
     // then 2 bytes of CRC
     packetBuffer[size+1] = crc >> 8;
     packetBuffer[size+2] = crc & 0xFF;
-//    DPRINT("packet:   ");DHEX(packetBuffer, size+3);DPRINTLN("");
+    //DPRINT("packet:   ");DHEX(packetBuffer, size+3);DPRINTLN("");
 
     whitenBuffer(packetBuffer, size+3);
-//    DPRINT("packet wh: ");DHEX(packetBuffer, size+3);DPRINTLN("");
-
-
-    //uint8_t preamble[4] = {0xAA, 0xAA, 0xAA, 0xAA};
-    //uint8_t syncword[4] = {0xE9, 0xCA, 0xE9, 0xCA};
-    //uint8_t replayBuf[] = {0xf3, 0x94, 0xea, 0x08, 0xd8, 0x72, 0x00, 0x06, 0x69, 0xf0, 0xb5, 0x79, 0x1e, 0x1b, 0x0b};
+    //DPRINT("packet wh: ");DHEX(packetBuffer, size+3);DPRINTLN("");
 
     // set and clear bit FIFO Clear TX
     writeReg(SI4431_REG_OP_FUNC_CONTROL_2, SI4431_OFC2_FFCLRTX);
-    writeReg(SI4431_REG_OP_FUNC_CONTROL_2, 0);
+    writeReg(SI4431_REG_OP_FUNC_CONTROL_2, SI4431_OFC2_NONE);
 
     // clear interrupts
-    (void)spi.readReg(SI4431_REG_INTERRUPT_STATUS_1);
-    (void)spi.readReg(SI4431_REG_INTERRUPT_STATUS_2);
+    (void)readReg(SI4431_REG_INTERRUPT_STATUS_1);
+    (void)readReg(SI4431_REG_INTERRUPT_STATUS_2);
 
-    // RX&TX packet handling, no CRC
-    writeReg(SI4431_REG_DATA_ACCESS_CONTROL, 0x88);
-    // disable data whitening 
-     writeReg(SI4431_REG_MODULATION_MODE_CONTROL_1, 0x2C);
-    // fixed length
-    writeReg(SI4431_REG_HEADER_CONTROL_2, 0x0E);
-    writeReg(SI4431_REG_TRANSMIT_PACKET_LENGTH, size + 3);
-    // size of buffer + length byte
-    //DPRINT("  sending ");DDEC(size+3);DPRINTLN(" bytes");
+    // only RX packet handling
+    writeReg(SI4431_REG_DATA_ACCESS_CONTROL, 0x80);
+    // TODO: is the transmit size necessary if packet mode is not used?
+    writeReg(SI4431_REG_TRANSMIT_PACKET_LENGTH, size + 1);
+
+    // no TX packet handling, therefore preamble & syncwords have to be sent manually
+
+    if (burst) {
+      //DPRINTLN("Send Burst");
+
+      //use nIRQ pin for FIFO_ALMOST_EMPTY state
+      writeReg(SI4431_REG_INTERRUPT_ENABLE_1, SI4431_IRQ1_TX_FIFO_ALMOST_EMPTY);
+
+      //fill the FIFO with 64bytes of burstPacket
+      writeBurst(SI4431_REG_FIFO_ACCESS, preambleLong, 32);
+      writeBurst(SI4431_REG_FIFO_ACCESS, preambleLong, 32);
+
+      //set TX on
+      writeReg(SI4431_REG_OP_FUNC_CONTROL_1, SI4431_OFC1_XTALON | SI4431_OFC1_TXON);
+
+      //now check the nIRQ pin until the FIFO is almost empty - or timeout after max. 55ms
+      for(uint16_t i = 0; i < 5500; i++) { if( digitalRead(IRQPIN) == LOW ) {  break;  } _delay_us(10); }
+
+      for (uint8_t t = 0; t < 12; t++) {
+        (void)readReg(SI4431_REG_INTERRUPT_STATUS_1);
+        (void)readReg(SI4431_REG_INTERRUPT_STATUS_2);
+        writeBurst(SI4431_REG_FIFO_ACCESS, preambleLong, 32);
+        for(uint16_t i = 0; i < 3000; i++) { if( digitalRead(IRQPIN) == LOW ) {  break;  } _delay_us(10); }
+      }
+    }
+
+    writeBurst(SI4431_REG_FIFO_ACCESS, preambleShort, sizeof(preambleShort));
+    writeBurst(SI4431_REG_FIFO_ACCESS, syncword, sizeof(syncword));
     writeBurst(SI4431_REG_FIFO_ACCESS, packetBuffer, size+3);
 
-    // TODO: shall we enable the IRQ for "packet sent" and wait for it?
-    // TODO: writing to status register makes no sense!
-    //writeReg(SI4431_REG_INTERRUPT_STATUS_1, SI4431_IRQ1_PACKET_SENT);
-    //writeReg(SI4431_REG_INTERRUPT_STATUS_2, 0);
-
     // set mode to transmit
-    // TODO: set RXON so that Si4431 returns to Rx once the packet is sent?
     writeReg(SI4431_REG_OP_FUNC_CONTROL_1, SI4431_OFC1_TXON | SI4431_OFC1_XTALON);
 
-    // wait until packet is almost sent
-    for(uint8_t i = 0; i < 200; i++) {
-      if( spi.readReg(SI4431_REG_INTERRUPT_STATUS_1) & SI4431_IRQ1_TX_FIFO_ALMOST_EMPTY) {
-//        DPRINTLN("  IRQ status: TX FIFO almost empty");
-        break;
-      }
-      _delay_us(100);
-    }
-
-    // wait until packet is sent
-    for(uint8_t i = 0; i < 200; i++) {
-      if( spi.readReg(SI4431_REG_INTERRUPT_STATUS_1) & SI4431_IRQ1_PACKET_SENT) {
-        //DPRINTLN("  IRQ status: packet sent");
-        break;
-      }
-      _delay_us(100);
-    }
+    //wait until packet is sent
+    writeReg(SI4431_REG_INTERRUPT_ENABLE_1, SI4431_IRQ1_PACKET_SENT);
+    for(uint16_t i = 0; i < 2000; i++) { if( digitalRead(IRQPIN) == LOW ) { break; } _delay_us(10); }
 
     // TODO: why is 0x40 used? max expected packet size?
     writeReg(SI4431_REG_TRANSMIT_PACKET_LENGTH, 0x40);
-    
-    // enable data whitening 
-    //writeReg(SI4431_REG_MODULATION_MODE_CONTROL_1, 0x2C);
-    // dynamic length
-    //writeReg(SI4431_REG_HEADER_CONTROL_2, 0x06);
 
     // enable Rx
     writeReg(SI4431_REG_OP_FUNC_CONTROL_1, SI4431_OFC1_RXON | SI4431_OFC1_XTALON);
+    //set nIRQ to trigger RX received
+    writeReg(SI4431_REG_INTERRUPT_ENABLE_1, SI4431_IRQ1_VALID_PACKET_RECEIVED);
+    (void)readReg(SI4431_REG_DEVICE_STATUS);
     return true;
   }
+
 
   uint8_t rcvData(uint8_t *buf, uint8_t size) {
 //    DPRINTLN("Si4431 rcvData -----------------------------------");
@@ -556,28 +563,28 @@ protected:
     // disable receiver
     writeReg(SI4431_REG_OP_FUNC_CONTROL_1, SI4431_OFC1_XTALON);
     // clear interrupts
-    (void)spi.readReg(SI4431_REG_INTERRUPT_STATUS_1);
-    (void)spi.readReg(SI4431_REG_INTERRUPT_STATUS_2);
+    (void)readReg(SI4431_REG_INTERRUPT_STATUS_1);
+    (void)readReg(SI4431_REG_INTERRUPT_STATUS_2);
 
     uint8_t packetBytes = 0;
     uint8_t rxBytes = 0;
     uint8_t fifoBytes = 0;
-    if (spi.readReg(SI4431_REG_HEADER_CONTROL_2) & 0x08) {
-      fifoBytes = spi.readReg(SI4431_REG_TRANSMIT_PACKET_LENGTH);
+    if (readReg(SI4431_REG_HEADER_CONTROL_2) & 0x08) {
+      fifoBytes = readReg(SI4431_REG_TRANSMIT_PACKET_LENGTH);
     } else {
-      fifoBytes = spi.readReg(SI4431_REG_RECEIVED_PACKET_LENGTH);
+      fifoBytes = readReg(SI4431_REG_RECEIVED_PACKET_LENGTH);
     }
 //    DPRINT("  RX FIFO: ");DHEXLN(fifoBytes);
     // overflow detected - flush the FIFO
     // TODO: overflow is signaled by IRQ
     if( fifoBytes > 0 ) {
       // read packet length and whiten it
-      packetBytes = spi.readReg(SI4431_REG_FIFO_ACCESS) ^ 0xFF;
+      packetBytes = readReg(SI4431_REG_FIFO_ACCESS) ^ 0xFF;
 //      DPRINT("  FIFO len: ");DHEX(fifoBytes);DPRINT(" packetBytes: ");DHEX(packetBytes);DPRINT(" (");DHEX((uint8_t)(packetBytes^0xFF));DPRINTLN(")");
       // check that packet fits into the buffer
       if (packetBytes <= size) {
         // read packetSize bytes + 2 for CRC
-        spi.readBurst(buf, SI4431_REG_FIFO_ACCESS, packetBytes + 2);
+        readBurst(buf, SI4431_REG_FIFO_ACCESS, packetBytes + 2);
 //        DPRINT("  buffer: ");DHEX(buf, packetBytes);DPRINT("  CRC: ");DHEX(&buf[packetBytes], 2);DPRINTLN("");
         // len is already whitened, so use offset of 1
         whitenBuffer(buf, packetBytes + 2, 1);
