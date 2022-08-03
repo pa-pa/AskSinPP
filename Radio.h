@@ -261,7 +261,7 @@ public:
     SPI.endTransaction();
   }
 
-  void writeBurst(uint8_t regAddr, uint8_t* buf, uint8_t len) {
+  void writeBurst(uint8_t regAddr, const uint8_t* buf, uint8_t len) {
     SPI.beginTransaction(SPISettings(CLOCK,BITORDER,MODE));
     select();                                     // select  radio module
     SPI.transfer(regAddr);                        // send register address
