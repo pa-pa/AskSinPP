@@ -195,18 +195,18 @@ public:
   ~TwoStateChannel () {}
 
   void init (uint8_t pin, uint8_t en, uint8_t sab) {
-    BaseChannel::init(sab);
     BaseChannel::possens.init(pin, en);
+    BaseChannel::init(sab);
   }
 
   void init (uint8_t pin, uint8_t sab) {
-    BaseChannel::init(sab);
     BaseChannel::possens.init(pin, 0);
+    BaseChannel::init(sab);
   }
 
   void init (uint8_t pin) {
-    BaseChannel::init();
     BaseChannel::possens.init(pin, 0);
+    BaseChannel::init();
   }
 };
 
