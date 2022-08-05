@@ -626,7 +626,7 @@ public:
     if( sendtopeer == false ) {
       send(msg,getMasterID());
     }
-    // signal that we have send to peer
+    // signal that we have sent to peer
     hal->sendPeer();
   }
 
