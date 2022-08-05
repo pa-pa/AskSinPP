@@ -591,7 +591,7 @@ public:
   }
 
   template <class ChannelType>
-  void sendPeerEvent (Message& msg,const ChannelType& ch) {
+  void sendPeerEvent (Message& msg,const ChannelType& ch,bool forceMessageToMaster=false) {
     bool sendtopeer=false;
     for( int i=0; i<ch.peers(); ++i ){
       Peer p = ch.peerat(i);
@@ -623,7 +623,7 @@ public:
       }
     }
     // if we have no peer - send to master/broadcast
-    if( sendtopeer == false ) {
+    if( sendtopeer == false || forceMessageToMaster == true ) {
       send(msg,getMasterID());
     }
     // signal that we have sent to peer
