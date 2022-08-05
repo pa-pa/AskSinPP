@@ -282,7 +282,7 @@ public:
       digitalWrite(PWRPIN, LOW);
       _delay_ms(2);
     }
-    init();                 // init the hardware to get access to the RF modul
+    spi.init();                 // init the hardware to get access to the RF modul
 
     reset();
 
