@@ -34,7 +34,7 @@ class StateGenericChannel : public Channel<HALTYPE,List1Type,EmptyList,List4Type
       msg.append(channel.device().battery().current());
       // msg.append(__gb_BatCount);
 #endif
-      channel.device().sendPeerEvent(msg,channel);
+      channel.device().sendPeerEvent(msg,channel, true);
       sent=true;
     }
   };
