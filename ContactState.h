@@ -114,11 +114,7 @@ public:
     // lets the position sensor remap the new state
     newstate = possens.remap(newstate);
 
-    if( sender.state == 255 ) {
-      // we are in the init stage - store state only
-      sender.state = newstate;
-    }
-    else if( newstate != sender.state ) {
+    if( newstate != sender.state ) {
       uint8_t delay = this->getList1().eventDelaytime();
       sender.state = newstate;
       sysclock.cancel(sender);
