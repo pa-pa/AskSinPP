@@ -19,6 +19,11 @@
   #include "pico/util/datetime.h"
 #endif
 
+#ifdef ARDUINO_ARCH_EFM32
+  // minimum timeout for a timer
+  #define TIMER_MIN_TIMEOUT_MS 10
+#endif
+
 namespace as {
 
 #ifndef TICKS_PER_SECOND
@@ -192,7 +197,7 @@ public:
   #endif
   #ifdef ARDUINO_ARCH_EFM32
     sl_sleeptimer_init();
-    timerTimeout = 10;
+    timerTimeout = TIMER_MIN_TIMEOUT_MS;
  #endif
     enable();
   }
@@ -225,7 +230,7 @@ public:
   }
 
   void enable(uint32_t ms) {
-    timerTimeout=ms < 10 ? 10 : ms;
+    timerTimeout=ms < TIMER_MIN_TIMEOUT_MS ? TIMER_MIN_TIMEOUT_MS : ms;
     //DPRINT("enable ");DDECLN(ms);
     //_restart_ stops a running timer, if any exists
     sl_sleeptimer_restart_timer_ms( &id, timerTimeout, callback , (void *) NULL ,0, 0 );
@@ -252,7 +257,7 @@ public:
     }
   #endif
   #ifdef ARDUINO_ARCH_EFM32
-    enable(10);
+    enable(TIMER_MIN_TIMEOUT_MS);
   #endif
   }
 
