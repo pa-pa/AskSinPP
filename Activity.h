@@ -281,13 +281,15 @@ class Sleep {
 public:
   template <class Hal>
   static void powerSave(Hal& hal) {
-    NVIC_ClearPendingIRQ(SysTick_IRQn);NVIC_DisableIRQ(SysTick_IRQn);
     uint32_t priMask = __get_PRIMASK();
     uint32_t sysTickCtrl = SysTick->CTRL;
+    /* mask all IRQs, disable SysTick IRQ at the source, clear&disable SysTick IRQ in NVIC*/
     __set_PRIMASK(1);
     SysTick->CTRL &= ~0x03;  // clear TICKINT & ENABLE
+    NVIC_ClearPendingIRQ(SysTick_IRQn);
+    NVIC_DisableIRQ(SysTick_IRQn);
     EMU_EnterEM2(true);
-     SysTick->CTRL = sysTickCtrl;
+    SysTick->CTRL = sysTickCtrl;
     __set_PRIMASK(priMask);
     uint32_t ticks = sysclock.next();
     if (sysclock.isready() == false) {
