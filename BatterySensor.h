@@ -161,7 +161,7 @@ public:
     init.timebase = ADC_TimebaseCalc(0);
     init.prescale = ADC_PrescaleCalc(7000000, 0);
     ADC_Init(ADC0, &init);
- }
+  }
 
   void start () {
     ADC_InitSingle_TypeDef sInit = ADC_INITSINGLE_DEFAULT;

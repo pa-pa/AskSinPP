@@ -14,15 +14,7 @@
 
 /*
   TODO
-  - improve IRQ handling: nIRQ does not only show "packet received", depending on configuration
-  - implement low power handling (not continuous RX)
   - implement WoR (if possible with Si4431)
-
-  DONE
-  - rename GDO0 to IRQ
-  - HM-Sec-SCO uses 1 MHz SPI clock, HB-Sec-SCo uses 110 kHz SPI clock (softSPI?)
-  - manually check CRC of received packet
-  - merge with CC1101 implementation!
 
 */
 
@@ -110,9 +102,6 @@ namespace as {
 #define SI4431_REG_RECEIVED_HEADER_0                  0x4A
 #define SI4431_REG_RECEIVED_PACKET_LENGTH             0x4B
 #define SI4431_REG_ADC8_CONTROL                       0x4F
-#define SI4431_REG_CCTO                               0x58 //Si4432 Revision V2 | ChargepumpCurrentTrimmingOverride
-#define SI4431_REG_DCT                                0x59 //Si4432 Revision V2 | Divider Current Trimming
-#define SI4431_REG_VCT                                0x5A //Si4432 Revision V2 | VCO Current Trimming register
 #define SI4431_REG_CHANNEL_FILTER_COEFF               0x60
 #define SI4431_REG_XOSC_CONTROL_TEST                  0x62
 #define SI4431_REG_AGC_OVERRIDE_1                     0x69
@@ -166,15 +155,15 @@ namespace as {
 #define SI4431_OFC1_TXON                          0b00001000  //  3     3     TX_ON                     Tx on in manual transmit mode
 #define SI4431_OFC1_RXON                          0b00000100  //  2     2     RX_ON                     Rx on in manual receive mode
 #define SI4431_OFC1_PLLON                         0b00000010  //  1     1     PLL_ON                    PLL on (tune mode)
-#define SI4431_OFC1_XTALON                        0b00000001  //  0     0     XTAL_ON                                       on (ready mode)
-#define SI4431_OFC1_NONE                          0           //              NO_BIT_SET                                       on (ready mode)
+#define SI4431_OFC1_XTALON                        0b00000001  //  0     0     XTAL_ON                   on (ready mode)
+#define SI4431_OFC1_NONE                          0           //              no bit set
 
 // SI4431_REG_OP_FUNC_CONTROL_2
 #define SI4431_OFC2_RXMPK                         0b00010000  //  4     4     RX_MULTIPACKET_ON
 #define SI4431_OFC2_AUTOTX                        0b00001000  //  3     3     AUTO_TX_ON
 #define SI4431_OFC2_ENLDM                         0b00000100  //  2     2     LOW_DUTY_CYCLE_ON
-#define SI4431_OFC2_FFCLRRX                       0b00000010  //  1     1     RX_FIFO_RESET    
-#define SI4431_OFC2_FFCLRTX                       0b00000001  //  0     0     TX_FIFO_RESET    
+#define SI4431_OFC2_FFCLRRX                       0b00000010  //  1     1     RX_FIFO_RESET
+#define SI4431_OFC2_FFCLRTX                       0b00000001  //  0     0     TX_FIFO_RESET
 #define SI4431_OFC2_NONE                          0           //              no bit set
 
 
@@ -210,7 +199,7 @@ public:
     //DPRINTLN("Si4431 enter powerdown");
 
 #ifdef USE_WOR
-    //#error WOR is not implemented
+    DPRINTLN("ERROR: WOR is not implemented for Si4431!");
 #else
     // enter power down state
     (void)readReg(SI4431_REG_INTERRUPT_STATUS_1);
@@ -256,7 +245,7 @@ public:
     // TODO: add timeout
 
     for(uint8_t i = 0; i < 200; i++) {
-      if( readReg(SI4431_REG_INTERRUPT_STATUS_2) & SI4431_IRQ2_CHIP_READY) {
+      if (readReg(SI4431_REG_INTERRUPT_STATUS_2) & SI4431_IRQ2_CHIP_READY) {
         break;
       }
       _delay_us(100);
@@ -282,7 +271,7 @@ public:
       digitalWrite(PWRPIN, LOW);
       _delay_ms(2);
     }
-    spi.init();                 // init the hardware to get access to the RF modul
+    spi.init();
 
     reset();
 
@@ -294,7 +283,7 @@ public:
       SI4431_REG_XOSC_LOAD_CAPACITANCE,         0x6B,   //  0x7F
       // stock HM-Sec-SCo 
     //SI4431_REG_GPIO0_CONFIG,                  0x1F,   //  0x00    GPIO tied to GND
-      // stan23
+      // stan23 debugging
     //SI4431_REG_GPIO0_CONFIG,                  0x40,   //  0x00    GPIO0 = POR
     //SI4431_REG_GPIO0_CONFIG,                  0x0A,   //  0x00    GPIO0 = IO
     //SI4431_REG_GPIO0_CONFIG,                  0x12,   //  0x00    GPIO0 = TX state
@@ -308,7 +297,6 @@ public:
       SI4431_REG_FREQUENCY_BAND_SELECT,         0x73,   //  0x75    900..920 MHz band
       SI4431_REG_NOM_CARRIER_FREQUENCY_1,       0x67,   //  0xBB
       SI4431_REG_NOM_CARRIER_FREQUENCY_0,       0xC0,   //  0x80
-      // stock HM-Sec-SCo 
       SI4431_REG_HEADER_CONTROL_2,              0x0E,   //  0x22    no header, sync word 3+2+1+0
       SI4431_REG_SYNC_WORD_3,                   0xE9,   //  0x2D
       SI4431_REG_SYNC_WORD_2,                   0xCA,   //  0xD2
@@ -316,18 +304,10 @@ public:
       SI4431_REG_SYNC_WORD_0,                   0xCA,   //  0x00
       SI4431_REG_TX_POWER,                      0x1F,   //  0x18    max output power
       SI4431_REG_RX_FIFO_CONTROL,               0x03,   //  0x37    IRQ at >3 byte in RX FIFO
-      // stock HM-Sec-SCo 
-    //SI4431_REG_TX_FIFO_CONTROL_2,             0x1F,   //  0x40    IRQ at <32 byte in TX FIFO
-      // stan23
       SI4431_REG_TX_FIFO_CONTROL_2,             0x07,   //  0x40    IRQ at <8 byte in TX FIFO
-      /* address 0x59 does not exist            0x40 */
       SI4431_REG_TX_DATA_RATE_1,                0x51,   //  0x0A    10 kbps
       SI4431_REG_TX_DATA_RATE_0,                0xEC,   //  0x3D
-      // stock HM-Sec-SCo 
       SI4431_REG_MODULATION_MODE_CONTROL_1,     0x2C,   //  0x0C    low data rate
-      SI4431_REG_VCT,                           0x7F,
-      SI4431_REG_CCTO,                          0x80,
-      SI4431_REG_DCT,                           0x40,
       SI4431_REG_FREQUENCY_DEVIATION,           0x1E,   //  0x20
       SI4431_REG_MODULATION_MODE_CONTROL_2,     0x22,   //  0x00    FIFO mode, FSK
       SI4431_REG_IF_FILTER_BANDWIDTH,           0x1E,   //  0x01    620.7 kHz
@@ -343,13 +323,9 @@ public:
       SI4431_REG_CLOCK_REC_GEARSHIFT_OVERRIDE,  0x03,   //  0x03
       SI4431_REG_AGC_OVERRIDE_1,                0x60,   //  0x20
 
-
-      // manually added by stan23
-      //SI4431_REG_DATA_ACCESS_CONTROL,           0x8A,   //  0x8D    no CRC as it does not fit to CC1101
-      SI4431_REG_DATA_ACCESS_CONTROL,           0x0A,   //  0x8D    no RxPkt, no CRC as it does not fit to CC1101
+      // manually added
+      SI4431_REG_DATA_ACCESS_CONTROL,           0x80,   //  0x8D    no TxPkt, no CRC as it does not fit to CC1101
       SI4431_REG_HEADER_CONTROL_1,              0x00,   //  0x0C    no header check
-
-      SI4431_REG_OP_FUNC_CONTROL_1,             0x01, /* why again? -> keep XTAL running */
     };
 
     bool initOK = true;
@@ -394,10 +370,10 @@ public:
   }
   
   void flushRx () {
-//    DPRINTLN("Si4431 flushRx");
+    //DPRINTLN("Si4431 flushRx");
     // set and clear bit FIFO Clear RX
     writeReg(SI4431_REG_OP_FUNC_CONTROL_2, SI4431_OFC2_FFCLRRX);
-    writeReg(SI4431_REG_OP_FUNC_CONTROL_2, 0);
+    writeReg(SI4431_REG_OP_FUNC_CONTROL_2, SI4431_OFC2_NONE);
   }
 
   bool detectBurst () {
@@ -420,7 +396,6 @@ protected:
   #define CRC16_POLY 0x8005
 
   uint16_t calcCrcWorker(uint8_t crcData, uint16_t crcReg) {
-//    DPRINT("    crcWorker in:");DHEX(crcData);DPRINT(" crc:");DHEX(crcReg);DPRINTLN("");
     for (uint8_t i = 0; i < 8; i++) {
       if (((crcReg & 0x8000) >> 8) ^ (crcData & 0x80))
         crcReg = (crcReg << 1) ^ CRC16_POLY;
@@ -443,7 +418,7 @@ protected:
 
 
   void whitenBuffer(uint8_t *buf, uint8_t len, uint8_t offset=0) {
-    uint8_t pn9[] = {
+    const uint8_t pn9[] = {
       0xFF, 0xE1, 0x1D, 0x9A, 0xED, 0x85, 0x33, 0x24, 0xEA, 0x7A, 
       0xD2, 0x39, 0x70, 0x97, 0x57, 0x0A, 0x54, 0x7D, 0x2D, 0xD8, 
       0x6D, 0x0D, 0xBA, 0x8F, 0x67, 0x59, 0xC7, 0xA2, 0xBF, 0x34,
@@ -464,6 +439,7 @@ protected:
   }
 
   uint8_t sndData(uint8_t *buf, uint8_t size, __attribute__ ((unused)) uint8_t burst) {
+    // sndData() is called while nIRQ is disabled in Radio.h, so the GPIO can be safely polled for status changes
     //DPRINTLN("Si4431 sndData -----------------------------------");
 
     //DPRINT("  buf: ");DHEX(buf, size);DPRINTLN("");
@@ -477,8 +453,6 @@ protected:
                                              0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA};
     static const uint8_t syncword[4] =      {0xE9, 0xCA, 0xE9, 0xCA};
 
-    // TODO: disable the IRQ so that nIRQ can be used for polling
-    //HWRADIO::disable();
 
     crc = calculateCrc(buf, size);
     //DPRINT("  calculated CRC: ");DHEX(crc);DPRINTLN("");
@@ -503,8 +477,6 @@ protected:
     (void)readReg(SI4431_REG_INTERRUPT_STATUS_1);
     (void)readReg(SI4431_REG_INTERRUPT_STATUS_2);
 
-    // only RX packet handling
-    writeReg(SI4431_REG_DATA_ACCESS_CONTROL, 0x80);
     // TODO: is the transmit size necessary if packet mode is not used?
     writeReg(SI4431_REG_TRANSMIT_PACKET_LENGTH, size + 1);
 
@@ -517,8 +489,8 @@ protected:
       writeReg(SI4431_REG_INTERRUPT_ENABLE_1, SI4431_IRQ1_TX_FIFO_ALMOST_EMPTY);
 
       //fill the FIFO with 64bytes of burstPacket
-      writeBurst(SI4431_REG_FIFO_ACCESS, preambleLong, 32);
-      writeBurst(SI4431_REG_FIFO_ACCESS, preambleLong, 32);
+      writeBurst(SI4431_REG_FIFO_ACCESS, preambleLong, sizeof(preambleLong));
+      writeBurst(SI4431_REG_FIFO_ACCESS, preambleLong, sizeof(preambleLong));
 
       //set TX on
       writeReg(SI4431_REG_OP_FUNC_CONTROL_1, SI4431_OFC1_XTALON | SI4431_OFC1_TXON);
@@ -529,7 +501,7 @@ protected:
       for (uint8_t t = 0; t < 12; t++) {
         (void)readReg(SI4431_REG_INTERRUPT_STATUS_1);
         (void)readReg(SI4431_REG_INTERRUPT_STATUS_2);
-        writeBurst(SI4431_REG_FIFO_ACCESS, preambleLong, 32);
+        writeBurst(SI4431_REG_FIFO_ACCESS, preambleLong, sizeof(preambleLong));
         for(uint16_t i = 0; i < 3000; i++) { if( digitalRead(IRQPIN) == LOW ) {  break;  } _delay_us(10); }
       }
     }
@@ -552,13 +524,12 @@ protected:
     writeReg(SI4431_REG_OP_FUNC_CONTROL_1, SI4431_OFC1_RXON | SI4431_OFC1_XTALON);
     //set nIRQ to trigger RX received
     writeReg(SI4431_REG_INTERRUPT_ENABLE_1, SI4431_IRQ1_VALID_PACKET_RECEIVED);
-    (void)readReg(SI4431_REG_DEVICE_STATUS);
     return true;
   }
 
 
   uint8_t rcvData(uint8_t *buf, uint8_t size) {
-//    DPRINTLN("Si4431 rcvData -----------------------------------");
+    //DPRINTLN("Si4431 rcvData -----------------------------------");
 
     // disable receiver
     writeReg(SI4431_REG_OP_FUNC_CONTROL_1, SI4431_OFC1_XTALON);
@@ -568,49 +539,34 @@ protected:
 
     uint8_t packetBytes = 0;
     uint8_t rxBytes = 0;
-    uint8_t fifoBytes = 0;
-    if (readReg(SI4431_REG_HEADER_CONTROL_2) & 0x08) {
-      fifoBytes = readReg(SI4431_REG_TRANSMIT_PACKET_LENGTH);
-    } else {
-      fifoBytes = readReg(SI4431_REG_RECEIVED_PACKET_LENGTH);
+
+    // TODO: handle RX FIFO overflow, signaled by IRQ registers
+    // read packet length and whiten it
+    packetBytes = readReg(SI4431_REG_FIFO_ACCESS) ^ 0xFF;
+    // check that packet fits into the buffer
+    if (packetBytes <= size) {
+      // read packetSize bytes + 2 for CRC
+      readBurst(buf, SI4431_REG_FIFO_ACCESS, packetBytes + 2);
+      // len is already whitened, so use offset of 1
+      whitenBuffer(buf, packetBytes + 2, 1);
+      uint16_t crcCalc = calculateCrc(buf, packetBytes);
+      if (crcCalc == (buf[packetBytes] << 8 | buf[packetBytes+1])) {
+        rxBytes = packetBytes;
+      } else {
+        DPRINTLN("  CRC failed!");
+      }
+      calculateRSSI(readReg(SI4431_REG_RSSI));
     }
-//    DPRINT("  RX FIFO: ");DHEXLN(fifoBytes);
-    // overflow detected - flush the FIFO
-    // TODO: overflow is signaled by IRQ
-    if( fifoBytes > 0 ) {
-      // read packet length and whiten it
-      packetBytes = readReg(SI4431_REG_FIFO_ACCESS) ^ 0xFF;
-//      DPRINT("  FIFO len: ");DHEX(fifoBytes);DPRINT(" packetBytes: ");DHEX(packetBytes);DPRINT(" (");DHEX((uint8_t)(packetBytes^0xFF));DPRINTLN(")");
-      // check that packet fits into the buffer
-      if (packetBytes <= size) {
-        // read packetSize bytes + 2 for CRC
-        readBurst(buf, SI4431_REG_FIFO_ACCESS, packetBytes + 2);
-//        DPRINT("  buffer: ");DHEX(buf, packetBytes);DPRINT("  CRC: ");DHEX(&buf[packetBytes], 2);DPRINTLN("");
-        // len is already whitened, so use offset of 1
-        whitenBuffer(buf, packetBytes + 2, 1);
-//        DPRINT("  bufWhi: ");DHEX(buf, packetBytes);DPRINT("  CRC: ");DHEX(&buf[packetBytes], 2);DPRINTLN("");
-        uint16_t crcCalc = calculateCrc(buf, packetBytes);
-//        DPRINT("  calculated CRC: ");DHEXLN(crcCalc);
-        if (crcCalc == (buf[packetBytes] << 8 | buf[packetBytes+1])) {
-          rxBytes = packetBytes;
-        } else {
-          DPRINTLN("  CRC failed!");
-          //DHEXLN((uint16_t)(buf[packetBytes] << 8 | buf[packetBytes+1]));
-        }
-        calculateRSSI(readReg(SI4431_REG_RSSI));
-      }
-      else {
-        DPRINT(F("Packet too big: "));DDECLN(packetBytes);
-      }
+    else {
+      DPRINT(F("Packet too big: "));DDECLN(packetBytes);
     }
 
     // clear interrupts
     (void)readReg(SI4431_REG_INTERRUPT_STATUS_1);
     (void)readReg(SI4431_REG_INTERRUPT_STATUS_2);
 
-
-//    DPRINT("-> ");
-//    DHEXLN(buf+1,rxBytes);
+    //DPRINT("-> ");
+    //DHEXLN(buf+1,rxBytes);
     flushRx();
 
     // enable Rx
