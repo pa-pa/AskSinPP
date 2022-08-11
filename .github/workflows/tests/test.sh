@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-set -x
 source _functions.sh
 uname -a
 
