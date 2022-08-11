@@ -434,6 +434,12 @@ public:
   }
 #endif
 
+  void tuneFreq(uint8_t freq2, uint8_t freq1, uint8_t freq0) {
+    initReg(CC1101_FREQ2, freq2);
+    initReg(CC1101_FREQ1, freq1);
+    initReg(CC1101_FREQ0, freq0);
+  }
+
   uint8_t rssi () const {
     return rss;
   }

@@ -365,6 +365,11 @@ public:
     return initResult;
   }
 
+  void tuneFreq(__attribute__((unused)) uint8_t freq2, __attribute__((unused)) uint8_t freq1, __attribute__((unused)) uint8_t freq0) {
+    // Si4431 does not have problems with wrong oscillator capacitors on cheap modules
+  }
+
+
   uint8_t rssi () const {
     return rss;
   }
