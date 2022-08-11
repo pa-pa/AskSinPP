@@ -25,6 +25,7 @@ jobs:
           - board: maplemini
           - board: esp32
           - board: rp2040
+          - board: efm32
 
     steps:
       # GIT Checkout
