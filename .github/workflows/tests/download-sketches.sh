@@ -48,6 +48,7 @@ GIT_REPOS=(
   "https://github.com/jp112sdl/HB-UNI-Sen-POOL.git"
   "https://github.com/jp112sdl/HB-LC-SwX-TP.git"
   "https://github.com/jp112sdl/HB-OU-RGBW-LED-FX.git"
+  "https://github.com/jp112sdl/HM-Sec-SCo-EFM32.git"
   
   # TomMajor
   "https://github.com/TomMajor/SmartHome.git"
