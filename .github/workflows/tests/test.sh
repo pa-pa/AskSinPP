@@ -63,7 +63,7 @@ case "$BOARD" in
     ;;
   efm32)
     CORE=jp112sdl:EFM32
-    FQBN=jp112sdl:EFM32:EFM32G200:cpu=efm32G200f64,clock_source=hfrc28
+    FQBN=jp112sdl:EFM32:EFM32G200:cpu=64,clock_source=hfrc28
     ;;
   *)
     >&2 echo "ERROR: Unknown board \"${BOARD}\""
