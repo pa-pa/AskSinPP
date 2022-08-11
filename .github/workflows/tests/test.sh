@@ -62,8 +62,8 @@ case "$BOARD" in
     FQBN=rp2040:rp2040:rpipico:flash=2097152_65536,freq=100,opt=Small,rtti=Disabled,dbgport=Serial,dbglvl=None,usbstack=picosdk
     ;;
   efm32)
-    CORE=jp112sdl:efm32
-    FQBN=jp112sdl:efm32:efm32g200f:cpu=efm32G200f64,clock_source=hfrc28
+    CORE=jp112sdl:EFM32
+    FQBN=jp112sdl:EFM32:efm32g200f:cpu=efm32G200f64,clock_source=hfrc28
     ;;
   *)
     >&2 echo "ERROR: Unknown board \"${BOARD}\""
