@@ -12,10 +12,6 @@
   typedef uint8_t WiringPinMode;
 #endif
 
-#if defined ARDUINO_ARCH_EFM32
-  typedef unsigned long WiringPinMode;
-#endif
-
 namespace as {
 
 class DoublePressAlarm : public Alarm {
