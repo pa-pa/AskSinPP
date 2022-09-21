@@ -276,6 +276,34 @@ public:
 };
 #endif
 
+#if defined ARDUINO_ARCH_EFM32
+class Sleep {
+public:
+  template <class Hal>
+  static void powerSave(Hal& hal) {
+    uint32_t priMask = __get_PRIMASK();
+    uint32_t sysTickCtrl = SysTick->CTRL;
+    /* mask all IRQs, disable SysTick IRQ at the source, clear&disable SysTick IRQ in NVIC*/
+    __set_PRIMASK(1);
+    SysTick->CTRL &= ~0x03;  // clear TICKINT & ENABLE
+    NVIC_ClearPendingIRQ(SysTick_IRQn);
+    NVIC_DisableIRQ(SysTick_IRQn);
+    EMU_EnterEM2(true);
+    SysTick->CTRL = sysTickCtrl;
+    __set_PRIMASK(priMask);
+    uint32_t ticks = sysclock.next();
+    if (sysclock.isready() == false) {
+      sysclock.disable();
+      hal.setIdle();
+      sysclock.enable(ticks2millis(ticks));
+      sysclock.correct(ticks == 0 ? 0 : ticks -1);
+    } else {
+      hal.unsetIdle();
+      sysclock.enable();
+    }
+  }
+};
+#endif
 class Activity : public Alarm {
 
   volatile bool  awake;
@@ -310,9 +338,6 @@ public:
   template <class Saver,class Hal>
   void savePower (Hal& hal) {
     if( awake == false ) {
-#ifndef NDEBUG
-      Saver::waitSerial();
-#endif
       Saver::powerSave(hal);
     }
     else {
@@ -338,7 +363,11 @@ public:
       //DPRINTLN("shutdown");
       LowPower.shutdown(0);
 #endif
-
+#if defined(ARDUINO_ARCH_EFM32)
+      while (1) {
+        EMU_EnterEM2(false);
+      }
+#endif
     }
   }
 

@@ -14,7 +14,9 @@
   + ASKSIN_PLUS_PLUS_MINOR * 100 + ASKSIN_PLUS_PLUS_SERVICE)
 
 #define STRINGIZE2(s) #s
+#ifndef STRINGIZE
 #define STRINGIZE(s) STRINGIZE2(s)
+#endif
 #define ASKSIN_PLUS_PLUS_VERSION_STR STRINGIZE(ASKSIN_PLUS_PLUS_MAJOR) \
   "." STRINGIZE(ASKSIN_PLUS_PLUS_MINOR) "." STRINGIZE(ASKSIN_PLUS_PLUS_SERVICE)
 
@@ -28,7 +30,11 @@
 #include "Debug.h"
 #include <stdint.h>
 
-#ifdef ARDUINO_ARCH_STM32F1
+#ifdef ARDUINO_ARCH_EFM32
+  #define NOT_AN_INTERRUPT 0
+  #define enableInterrupt(pin,handler,mode) attachInterrupt(pin,handler,mode)
+  typedef unsigned long WiringPinMode;
+#elif ARDUINO_ARCH_STM32F1
   #define _delay_us(us) delayMicroseconds(us)
   inline void _delay_ms(uint32_t ms) { do { delayMicroseconds(1000); } while( (--ms) > 0); }
 
@@ -260,9 +266,7 @@ public:
       // check if CONFIG_FREQ1 is in range 0x60...0x6A -> 868,3MHz -550kHz/+567kHz
       if( f1 >= 0x60 && f1 <= 0x6A ) {
         DPRINT(F("Config Freq: 0x21"));DHEX(f1);DHEXLN(f2);
-        radio.initReg(CC1101_FREQ2, 0x21);
-        radio.initReg(CC1101_FREQ1, f1);
-        radio.initReg(CC1101_FREQ0, f2);
+        radio.tuneFreq(0x21, f1, f2);
       }
     }
   }

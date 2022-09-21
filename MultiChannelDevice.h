@@ -160,6 +160,9 @@ public:
       NVIC_SystemReset();
   #elif ARDUINO_ARCH_ESP32
       ESP.restart();
+  #elif ARDUINO_ARCH_EFM32
+      delay(250);
+      NVIC_SystemReset();
   #endif
     }
   }
@@ -187,7 +190,10 @@ public:
     for( uint8_t i=1; i<=this->channels(); ++i ) {
       ChannelType& ch = channel(i);
       if( ch.changed() == true ) {
+        bool ledEnableState = DeviceType::led().enable(); //save current enable state
+        DeviceType::led().enable(false); //deactivate LED when sending info message (cyclic, sabotage, ...)
         this->sendInfoActuatorStatus(this->getMasterID(),this->nextcount(),ch);
+        DeviceType::led().enable(ledEnableState); //restore enable state
         worked = true;
       }
     }

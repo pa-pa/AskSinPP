@@ -88,6 +88,9 @@ public:
     regs->CR2 |= ADC_CR2_TSVREFE;    // enable VREFINT and temp sensor
     regs->SMPR1 =  ADC_SMPR1_SMP17;  // sample rate for VREFINT ADC channel
 #endif
+#ifdef ARDUINO_ARCH_EFM32
+    CMU_ClockEnable(cmuClock_ADC0, true);
+#endif
   }
 
   void start () {}
@@ -109,11 +112,75 @@ public:
 #elif defined ARDUINO_ARCH_STM32 && defined STM32L1xx
     analogReadResolution(12);
     vcc = 1216 * 4096 / analogRead(AVREF);
+#elif defined ARDUINO_ARCH_EFM32
+    ADC_Init_TypeDef       init       = ADC_INIT_DEFAULT;
+    ADC_InitSingle_TypeDef singleInit = ADC_INITSINGLE_DEFAULT;
+    init.timebase = ADC_TimebaseCalc(0);
+    init.prescale = ADC_PrescaleCalc(ADC_CLOCK, 0);
+
+    /* Set oversampling rate */
+    init.ovsRateSel = adcOvsRateSel256;
+
+    ADC_Init(ADC0, &init);
+    /* Init for single conversion, measure VDD/3 with 1.25V reference. */
+    singleInit.input = adcSingleInpVDDDiv3;
+    /* The datasheet specifies a minimum aquisition time when sampling VDD/3 */
+    /* 32 cycles should be safe for all ADC clock frequencies */
+    singleInit.acqTime = adcAcqTime32;
+    /* Enable oversampling rate */
+    singleInit.resolution = adcResOVS;
+    ADC_InitSingle(ADC0, &singleInit);
+
+    ADC_Start(ADC0, adcStartSingle);
+
+    /* Wait while conversion is active */
+    while (ADC0->STATUS & ADC_STATUS_SINGLEACT)
+      ;
+    /* Get ADC result */
+    volatile uint16_t sampleValue = ADC_DataSingleGet(ADC0);
+
+    /* Calculate supply voltage relative to 1.25V reference */
+    vcc = (sampleValue * 1250 * 3) / ADC_16BIT_MAX;
+
+    ADC_Reset(ADC0);
 #endif
     DPRINT(F("iVcc: ")); DDECLN(vcc);
     return vcc;
   }
 };
+
+#ifdef ARDUINO_ARCH_EFM32
+template<ADC_SingleInput_TypeDef SENS_CHANNEL>
+class ExternalVCCEFM32 : public InternalVCC {
+public:
+  static const int DefaultDelay = 250;
+
+  void init () {
+    CMU_ClockEnable(cmuClock_ADC0, true);
+    ADC_Init_TypeDef init = ADC_INIT_DEFAULT;
+    init.timebase = ADC_TimebaseCalc(0);
+    init.prescale = ADC_PrescaleCalc(7000000, 0);
+    ADC_Init(ADC0, &init);
+  }
+
+  void start () {
+    ADC_InitSingle_TypeDef sInit = ADC_INITSINGLE_DEFAULT;
+    sInit.input = SENS_CHANNEL;
+    sInit.reference = adcRef2V5; //adcRefVDD;
+    sInit.acqTime = adcAcqTime32;
+    ADC_InitSingle(ADC0, &sInit);
+    ADC_Start(ADC0, adcStartSingle);
+  }
+
+  uint16_t finish () {
+    while ( ADC0->STATUS & ADC_STATUS_SINGLEACT);
+    uint32_t value = ADC_DataSingleGet(ADC0);
+    uint16_t vin = (value * 2500UL) / 4096UL;
+    DPRINT(F("eVcc: ")); DDECLN(vin);
+    return vin;
+  }
+};
+#endif
 
 template<uint8_t SENSPIN, uint8_t ACTIVATIONPIN, uint8_t ACTIVATIONSTATE=LOW, uint16_t VCC=3300, uint8_t FACTOR=57>
 class ExternalVCC : public InternalVCC {
@@ -149,7 +216,6 @@ public:
     return vin;
   }
 };
-
 
 template <class SENSOR,int DELAY=SENSOR::DefaultDelay>
 class SyncMeter {

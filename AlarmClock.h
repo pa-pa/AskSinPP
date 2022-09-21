@@ -9,10 +9,19 @@
 #include "Debug.h"
 #include "Alarm.h"
 
+#ifdef ARDUINO_ARCH_EFM32
+#include "sl_sleeptimer.h"
+#endif
+
 #ifdef ARDUINO_ARCH_RP2040
   #include "hardware/rtc.h"
   #include "pico/stdlib.h"
   #include "pico/util/datetime.h"
+#endif
+
+#ifdef ARDUINO_ARCH_EFM32
+  // minimum timeout for a timer
+  #define TIMER_MIN_TIMEOUT_MS 10
 #endif
 
 namespace as {
@@ -97,8 +106,14 @@ public:
 };
 
 
+#ifdef ARDUINO_ARCH_EFM32
+extern void callback(sl_sleeptimer_timer_handle_t *id , void *user);
+extern void rtccallback(sl_sleeptimer_timer_handle_t *id , void *user);
+extern uint32_t getTimeout();
+#else
 extern void callback(void);
 extern void rtccallback(void);
+#endif
 
 
 class SysClock : public AlarmClock {
@@ -117,6 +132,12 @@ private:
   struct repeating_timer  rp2040_timer;
   static bool TimerHandler(__attribute__((unused)) struct repeating_timer *t) { callback(); return true; }
 #endif
+
+#ifdef ARDUINO_ARCH_EFM32
+  sl_sleeptimer_timer_handle_t id;
+  uint32_t timerTimeout;
+#endif
+
 public:
   static SysClock& instance();
 
@@ -174,6 +195,10 @@ public:
     timerAlarmWrite(Timer, 1000000 / TICKS_PER_SECOND, true);
     timerAttachInterrupt(Timer, &callback, true);
   #endif
+  #ifdef ARDUINO_ARCH_EFM32
+    sl_sleeptimer_init();
+    timerTimeout = TIMER_MIN_TIMEOUT_MS;
+ #endif
     enable();
   }
 
@@ -194,7 +219,23 @@ public:
   #ifdef ARDUINO_ARCH_RP2040
     cancel_repeating_timer(&rp2040_timer);
   #endif
+  #ifdef ARDUINO_ARCH_EFM32
+    sl_sleeptimer_stop_timer(&id);
+  #endif
   }
+
+#ifdef ARDUINO_ARCH_EFM32
+  uint32_t getTimeout() {
+    return timerTimeout;
+  }
+
+  void enable(uint32_t ms) {
+    timerTimeout=ms < TIMER_MIN_TIMEOUT_MS ? TIMER_MIN_TIMEOUT_MS : ms;
+    //DPRINT("enable ");DDECLN(ms);
+    //_restart_ stops a running timer, if any exists
+    sl_sleeptimer_restart_timer_ms( &id, timerTimeout, callback , (void *) NULL ,0, 0 );
+  }
+#endif
 
   void enable () {
   #if defined ARDUINO_AVR_ATmega32|| defined(__AVR_ATmega128__)
@@ -215,7 +256,16 @@ public:
       add_repeating_timer_us(10000UL, TimerHandler, NULL, &rp2040_timer);
     }
   #endif
+  #ifdef ARDUINO_ARCH_EFM32
+    enable(TIMER_MIN_TIMEOUT_MS);
+  #endif
   }
+
+#ifdef ARDUINO_ARCH_EFM32
+  sl_sleeptimer_timer_handle_t getTimerID() {
+    return id;
+  }
+#endif
 
   void add(Alarm& item) {
     AlarmClock::add(item);
@@ -237,6 +287,11 @@ class RealTimeClock : public AlarmClock {
 #if defined(ARDUINO_ARCH_STM32F1) && defined(_RTCLOCK_H_)
   RTClock rt;
 #endif
+
+#ifdef ARDUINO_ARCH_EFM32
+  sl_sleeptimer_timer_handle_t id;
+#endif
+
 public:
 
   RealTimeClock() : ovrfl(0) {}
@@ -279,6 +334,9 @@ public:
     alarmT.min = alarmT.hour = alarmT.day = alarmT.dotw = alarmT.month = alarmT.year = -1;
     alarmT.sec =  1;
     rtc_set_alarm(&alarmT, rtccallback); // https://raspberrypi.github.io/pico-sdk-doxygen/group__hardware__rtc.html
+#elif defined(ARDUINO_ARCH_EFM32)
+    sl_sleeptimer_init();
+    sl_sleeptimer_restart_timer_ms( &id, 1000, callback , (void *) NULL ,0, 0 );
 #else
   #warning "RTC not supported"
 #endif
@@ -338,7 +396,7 @@ public:
 };
 
 // backward compatibility
-#ifndef ARDUINO_ARCH_STM32 
+#if not defined(ARDUINO_ARCH_STM32) && not defined(ARDUINO_ARCH_EFM32)
 typedef RealTimeClock RTC;
 #endif
 extern RealTimeClock rtc;

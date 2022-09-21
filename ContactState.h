@@ -23,8 +23,9 @@ class StateGenericChannel : public Channel<HALTYPE,List1Type,EmptyList,List4Type
   public:
     StateGenericChannel& channel;
     uint8_t count, state;
+    bool sent;
 
-    EventSender (StateGenericChannel& c) : Alarm(0), channel(c), count(0), state(255) {}
+    EventSender (StateGenericChannel& c) : Alarm(0), channel(c), count(0), state(255), sent(false) {}
     virtual ~EventSender () {}
     virtual void trigger (__attribute__ ((unused)) AlarmClock& clock) {
       SensorEventMsg& msg = (SensorEventMsg&)channel.device().message();
@@ -33,7 +34,8 @@ class StateGenericChannel : public Channel<HALTYPE,List1Type,EmptyList,List4Type
       msg.append(channel.device().battery().current());
       // msg.append(__gb_BatCount);
 #endif
-      channel.device().sendPeerEvent(msg,channel);
+      channel.device().sendPeerEvent(msg,channel, true);
+      sent=true;
     }
   };
 
@@ -68,8 +70,16 @@ public:
     return sender.state;
   }
 
-  uint8_t flags () const {
-    uint8_t flags = sabotage ? 0x07 << 1 : 0x00;
+  void msgSent(bool s) {
+    sender.sent = s;
+  }
+
+  bool msgSent () const  {
+    return sender.sent;
+  }
+
+  uint8_t flags () {
+    uint8_t flags = (sabotage && (this->device().getList0().sabotageMsg() == true)) ? 0x07 << 1 : 0x00;
     flags |= this->device().battery().low() ? 0x80 : 0x00;
     return flags;
   }
@@ -104,11 +114,7 @@ public:
     // lets the position sensor remap the new state
     newstate = possens.remap(newstate);
 
-    if( sender.state == 255 ) {
-      // we are in the init stage - store state only
-      sender.state = newstate;
-    }
-    else if( newstate != sender.state ) {
+    if( newstate != sender.state ) {
       uint8_t delay = this->getList1().eventDelaytime();
       sender.state = newstate;
       sysclock.cancel(sender);
@@ -126,9 +132,11 @@ public:
     }
     if( sabpin != 0 ) {
       bool sabstate = (possens.interval()==0 ? digitalRead(sabpin) : AskSinBase::readPin(sabpin) == SABOTAGE_ACTIVE_STATE);
-      if( sabotage != sabstate && this->device().getList0().sabotageMsg() == true ) {
+      if( sabotage != sabstate) {
         sabotage = sabstate;
-        this->changed(true); // trigger StatusInfoMessage to central
+        if (this->device().getList0().sabotageMsg() == true ) {
+          this->changed(true); // trigger StatusInfoMessage to central
+        }
       }
     }
   }
@@ -183,18 +191,18 @@ public:
   ~TwoStateChannel () {}
 
   void init (uint8_t pin, uint8_t en, uint8_t sab) {
-    BaseChannel::init(sab);
     BaseChannel::possens.init(pin, en);
+    BaseChannel::init(sab);
   }
 
   void init (uint8_t pin, uint8_t sab) {
-    BaseChannel::init(sab);
     BaseChannel::possens.init(pin, 0);
+    BaseChannel::init(sab);
   }
 
   void init (uint8_t pin) {
-    BaseChannel::init();
     BaseChannel::possens.init(pin, 0);
+    BaseChannel::init();
   }
 };
 
@@ -206,6 +214,12 @@ class StateDevice : public MultiChannelDevice<HalType,ChannelType,ChannelCount,L
   public:
     CycleInfoAlarm (StateDevice& d) : Alarm (CycleTime), dev(d) {}
     virtual ~CycleInfoAlarm () {}
+
+    void restartTimer() {
+      sysclock.cancel(*this);
+      set(CycleTime);
+      sysclock.add(*this);
+    }
 
     void trigger (AlarmClock& clock)  {
       set(CycleTime);
@@ -220,18 +234,25 @@ public:
   StateDevice(const DeviceInfo& info,uint16_t addr) : DevType(info,addr), cycle(*this) {}
   virtual ~StateDevice () {}
 
+  void restartCycleTimer() {
+    cycle.restartTimer();
+  }
+
   virtual void configChanged () {
     // activate cycle info message
     if( this->getList0().cycleInfoMsg() == true ) {
       DPRINTLN(F("Activate Cycle Msg"));
-      sysclock.cancel(cycle);
-      cycle.set(CycleTime);
-      sysclock.add(cycle);
+      cycle.restartTimer();
     }
     else {
       DPRINTLN(F("Deactivate Cycle Msg"));
       sysclock.cancel(cycle);
     }
+
+    for( uint8_t idx=1; idx<=this->channels(); ++idx) {
+      this->channel(idx).changed(true); // force StatusInfoMessage to central
+    }
+
   }
 };
 
