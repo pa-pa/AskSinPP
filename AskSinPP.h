@@ -30,7 +30,10 @@
 #include "Debug.h"
 #include <stdint.h>
 
-#ifdef ARDUINO_ARCH_STM32F1
+#ifdef ARDUINO_ARCH_EFM32
+  #define NOT_AN_INTERRUPT 0
+  #define enableInterrupt(pin,handler,mode) attachInterrupt(pin,handler,mode)
+#elif ARDUINO_ARCH_STM32F1
   #define _delay_us(us) delayMicroseconds(us)
   inline void _delay_ms(uint32_t ms) { do { delayMicroseconds(1000); } while( (--ms) > 0); }
 
