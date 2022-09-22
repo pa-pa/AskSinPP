@@ -76,47 +76,55 @@ public:
   void odd() {
     defaults();
     PeerRegisterListType ssl = this->sh();
-    ssl.jtOn(AS_CM_JT_OFFDELAY);
-    ssl.jtOff(AS_CM_JT_OFF);
-    ssl.jtDlyOn(AS_CM_JT_OFF);
-    ssl.jtDlyOff(AS_CM_JT_OFF);
+//    ssl.jtOn(AS_CM_JT_OFFDELAY);
+//    ssl.jtOff(AS_CM_JT_OFF);
+    ssl.writeRegister(PREG_JTONOFF, (AS_CM_JT_OFF<<4) | AS_CM_JT_OFFDELAY);
+//    ssl.jtDlyOn(AS_CM_JT_OFF);
+//    ssl.jtDlyOff(AS_CM_JT_OFF);
+    ssl.writeRegister(PREG_JTDELAYONOFF, (AS_CM_JT_OFF<<4) | AS_CM_JT_OFF);
     ssl = this->lg();
-    ssl.jtOn(AS_CM_JT_OFFDELAY);
-    ssl.jtOff(AS_CM_JT_OFF);
-    ssl.jtDlyOn(AS_CM_JT_OFF);
-    ssl.jtDlyOff(AS_CM_JT_OFF);
+//    ssl.jtOn(AS_CM_JT_OFFDELAY);
+//    ssl.jtOff(AS_CM_JT_OFF);
+    ssl.writeRegister(PREG_JTONOFF, (AS_CM_JT_OFF<<4) | AS_CM_JT_OFFDELAY);
+//    ssl.jtDlyOn(AS_CM_JT_OFF);
+//    ssl.jtDlyOff(AS_CM_JT_OFF);
+    ssl.writeRegister(PREG_JTDELAYONOFF, (AS_CM_JT_OFF<<4) | AS_CM_JT_OFF);
   }
 
   void even() {
     defaults();
     PeerRegisterListType ssl = this->sh();
-    ssl.jtOn(AS_CM_JT_ON);
-    ssl.jtOff(AS_CM_JT_ONDELAY);
-    ssl.jtDlyOn(AS_CM_JT_ON);
-    ssl.jtDlyOff(AS_CM_JT_ON);
+//    ssl.jtOn(AS_CM_JT_ON);
+//    ssl.jtOff(AS_CM_JT_ONDELAY);
+    ssl.writeRegister(PREG_JTONOFF, (AS_CM_JT_ONDELAY<<4) | AS_CM_JT_ON);
+//    ssl.jtDlyOn(AS_CM_JT_ON);
+//    ssl.jtDlyOff(AS_CM_JT_ON);
+    ssl.writeRegister(PREG_JTDELAYONOFF, (AS_CM_JT_ON<<4) | AS_CM_JT_ON);
     ssl = this->lg();
-    ssl.jtOn(AS_CM_JT_ON);
-    ssl.jtOff(AS_CM_JT_ONDELAY);
-    ssl.jtDlyOn(AS_CM_JT_ON);
-    ssl.jtDlyOff(AS_CM_JT_ON);
+//    ssl.jtOn(AS_CM_JT_ON);
+//    ssl.jtOff(AS_CM_JT_ONDELAY);
+    ssl.writeRegister(PREG_JTONOFF, (AS_CM_JT_ONDELAY<<4) | AS_CM_JT_ON);
+//    ssl.jtDlyOn(AS_CM_JT_ON);
+//    ssl.jtDlyOff(AS_CM_JT_ON);
+    ssl.writeRegister(PREG_JTDELAYONOFF, (AS_CM_JT_ON<<4) | AS_CM_JT_ON);
   }
 
   void single() {
     defaults();
     PeerRegisterListType ssl = this->sh();
-    ssl.jtOn(AS_CM_JT_OFFDELAY);
-    ssl.jtOff(AS_CM_JT_ONDELAY);
-//    ssl.writeRegister(PREG_JTONOFF, (AS_CM_JT_ONDELAY<<4) | AS_CM_JT_OFFDELAY);
-    ssl.jtDlyOn(AS_CM_JT_ON);
-    ssl.jtDlyOff(AS_CM_JT_OFF);
-//    ssl.writeRegister(PREG_JTDELAYONOFF, (AS_CM_JT_OFF<<4) | AS_CM_JT_ON);
+//    ssl.jtOn(AS_CM_JT_OFFDELAY);
+//    ssl.jtOff(AS_CM_JT_ONDELAY);
+    ssl.writeRegister(PREG_JTONOFF, (AS_CM_JT_ONDELAY<<4) | AS_CM_JT_OFFDELAY);
+//    ssl.jtDlyOn(AS_CM_JT_ON);
+//    ssl.jtDlyOff(AS_CM_JT_OFF);
+    ssl.writeRegister(PREG_JTDELAYONOFF, (AS_CM_JT_OFF<<4) | AS_CM_JT_ON);
     ssl = this->lg();
-    ssl.jtOn(AS_CM_JT_OFFDELAY);
-    ssl.jtOff(AS_CM_JT_ONDELAY);
-//    ssl.writeRegister(PREG_JTONOFF, (AS_CM_JT_ONDELAY<<4) | AS_CM_JT_OFFDELAY);
-    ssl.jtDlyOn(AS_CM_JT_ON);
-    ssl.jtDlyOff(AS_CM_JT_OFF);
-//    ssl.writeRegister(PREG_JTDELAYONOFF, (AS_CM_JT_OFF<<4) | AS_CM_JT_ON);
+//    ssl.jtOn(AS_CM_JT_OFFDELAY);
+//    ssl.jtOff(AS_CM_JT_ONDELAY);
+    ssl.writeRegister(PREG_JTONOFF, (AS_CM_JT_ONDELAY<<4) | AS_CM_JT_OFFDELAY);
+//    ssl.jtDlyOn(AS_CM_JT_ON);
+//    ssl.jtDlyOff(AS_CM_JT_OFF);
+    ssl.writeRegister(PREG_JTDELAYONOFF, (AS_CM_JT_OFF<<4) | AS_CM_JT_ON);
     ssl.multiExec(false);
   }
 };
