@@ -15,7 +15,7 @@
 #include <MultiChannelDevice.h>
 #include <Switch.h>
 #include <Motion.h>
-#include <sensors/Bme280.h>
+#include <sensors/Sht21.h>
 
 // we use a Pro Mini
 // Arduino pin for the LED
@@ -84,7 +84,7 @@ public:
 };
 
 class ValuesChannel : public Channel<Hal,ValuesList1,EmptyList,EmptyList,0,List0>, Alarm {
-  Bme280    bme280;
+  Sht21<>    sht21;
 public:
   typedef Channel<Hal,ValuesList1,EmptyList,EmptyList,0,List0> BaseChannel;
 
@@ -92,17 +92,17 @@ public:
   virtual ~ValuesChannel () {}
 
   virtual void trigger (AlarmClock& clock) {
-    bme280.measure();
+    sht21.measure();
 
-    DPRINT("T: ");DDEC(bme280.temperature());
-    DPRINT("   P: ");DDEC(bme280.pressure());
-    DPRINT("   H: ");DDECLN(bme280.humidity());
+    DPRINT("T: ");DDEC(sht21.temperature());
+    //DPRINT("   P: ");DDEC(sht21.pressure());
+    DPRINT("   H: ");DDECLN(sht21.humidity());
 
     ValuesMsg& msg = (ValuesMsg&)device().message();
     msg.init(device().nextcount(),number());
-    msg.add(bme280.temperature());
-    msg.add(bme280.humidity());
-    msg.add(bme280.pressure());
+    msg.add(sht21.temperature());
+    msg.add(sht21.humidity());
+    //msg.add(bme280.pressure());
     device().broadcastEvent(msg);
 //    device().send(msg,device().getMasterID());
 
@@ -113,7 +113,7 @@ public:
 
   void setup(Device<Hal,List0>* dev,uint8_t number,uint16_t addr) {
     BaseChannel::setup(dev, number, addr);
-    bme280.init();
+    sht21.init();
     set(seconds2ticks(5));
     sysclock.add(*this);
   }
