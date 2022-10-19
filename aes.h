@@ -1,43 +1,50 @@
-/* aes.h */
-/*
-    This file is part of the AVR-Crypto-Lib.
-    Copyright (C) 2008  Daniel Otte (daniel.otte@rub.de)
+//- -----------------------------------------------------------------------------------------------------------------------
+// AskSin++
+// 2016-10-31 papa Creative Commons - http://creativecommons.org/licenses/by-nc-sa/3.0/de/
+// adoption of Daniel Otte's cool AVR-Crypto-Lib, Copyright (C) 2008, GPLv3 or later
+// cleaned and tidied to fit the purpose for AskSin++ by trilu
+//- -----------------------------------------------------------------------------------------------------------------------
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
-/**
- * \file     aes.h
- * \email    daniel.otte@rub.de
- * \author   Daniel Otte
- * \date     2008-12-30
- * \license  GPLv3 or later
- *
- */
 #ifndef AES_H_
 #define AES_H_
 
 #include <stdint.h>
 
-#include "aes_types.h"
-#include "aes128_enc.h"
-//#include "aes192_enc.h"
-//#include "aes256_enc.h"
-#include "aes128_dec.h"
-//#include "aes192_dec.h"
-//#include "aes256_dec.h"
-#include "aes_enc.h"
-#include "aes_dec.h"
-#include "aes_keyschedule.h"
+typedef struct {
+	uint8_t ks[16];
+} aes_roundkey_t;
+
+typedef struct {
+	aes_roundkey_t key[10 + 1];
+} aes128_ctx_t;
+
+typedef struct {
+	aes_roundkey_t key[1]; /* just to avoid the warning */
+} aes_genctx_t;
+
+typedef struct {
+	uint8_t s[16];
+} aes_cipher_state_t;
+
+void aes128_init(const void* key, aes128_ctx_t* ctx);
+void aes128_enc(void* buffer, aes128_ctx_t* ctx);
+void aes128_dec(void* buffer, aes128_ctx_t* ctx);
+
+//-init
+void aes_rotword(void* a);
+void aes_init(const void* key, uint16_t keysize_b, aes_genctx_t* ctx);
+//-encrypt
+void aes_shiftcol(void* data, uint8_t shift);
+void aes_enc_round(aes_cipher_state_t* state, const aes_roundkey_t* k);
+void aes_enc_lastround(aes_cipher_state_t* state, const aes_roundkey_t* k);
+void aes_encrypt_core(aes_cipher_state_t* state, const aes_genctx_t* ks, uint8_t rounds);
+//-decrypt
+void aes_invshiftrow(void* data, uint8_t shift);
+void aes_invshiftcol(void* data, uint8_t shift);
+void aes_dec_round(aes_cipher_state_t* state, const aes_roundkey_t* k);
+void aes_dec_firstround(aes_cipher_state_t* state, const aes_roundkey_t* k);
+void aes_decrypt_core(aes_cipher_state_t* state, const aes_genctx_t* ks, uint8_t rounds);
+
 
 #endif
