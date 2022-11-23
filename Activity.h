@@ -338,6 +338,9 @@ public:
   template <class Saver,class Hal>
   void savePower (Hal& hal) {
     if( awake == false ) {
+#ifndef NDEBUG
+      Saver::waitSerial();
+#endif
       Saver::powerSave(hal);
     }
     else {
