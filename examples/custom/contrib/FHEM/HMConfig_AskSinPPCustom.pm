@@ -373,7 +373,8 @@ $customMsg{"HB-Sec-RHS-x4"} = sub {
   my @evtEt = $msg->processThreeState($target,(0=>'closed',100=>'tilted',200=>'open')) if $msg->channel >= 1;
   if( $msg->isStatus ) {
     # set sabotage status
-    push @evtEt,[$device,1,"sabotageError:".(($batflags & 0x0E) ? "on" : "off")];
+    my $flags = $msg->payloadByte(3);
+    push @evtEt,[$device,1,"sabotageError:".(($flags & 0x0E) ? "on" : "off")];
   }
   return @evtEt;
 };
