@@ -18,6 +18,7 @@
   - mit USE_WOR Modul wacht gelegentlich zu oft auf.
   - USE_OTA_BOOTLOADER_FREQUENCY
   - write / readBurst um mehrere Daten auf einmal zu schreiben / lesen
+  - Reset über einen GPIO
 
 */
 
@@ -189,9 +190,9 @@ namespace as
         }
       }
       uint16_t crc = calcCRC16hm(p_rawData, p_size + 1); // size +1 crc über payload + längenbyte
-      DPRINTLN("CCR");
-      DHEX(crc);
-      DPRINTLN("");
+      // DPRINTLN("CCR");
+      // DHEX(crc);
+      // DPRINTLN("");
       p_rawData[p_size + 1] = (crc >> 8) & 0xff;
       p_rawData[p_size + 2] = crc & 0xff;
       xOr_PN9(p_rawData, size);
@@ -228,7 +229,7 @@ namespace as
 
     void setIdle()
     {
-      DPRINTLN(__func__);
+      // DPRINTLN(__func__);
       DPRINTLN("RFM69 enter powerdown");
       writeReg(RFM69_REG_OPMODE, 0b00000100, 4, 2); // standby
 #ifdef USE_WOR
@@ -260,7 +261,7 @@ namespace as
     /// @param p_flush Wenn true wird flushrx() aufgerufen.
     void wakeup(bool p_flush)
     {
-      DPRINTLN(__func__);
+      // DPRINTLN(__func__);
       DPRINTLN("RFM69 wakeup");
       if (PWRPIN < 0xff)
       {
@@ -283,12 +284,12 @@ namespace as
       writeReg(RFM69_REG_OPMODE, RFM69_OPMODE_RECEIVER, 4, 2);
     }
 
-    /// @brief Das RFM69 kann nur über den Reset Pin oder durch aus und einschalten der Spannungsversorgung resettet werden. Dies könnte hier implementiert werden.
+    /// @brief Das RFM69 kann nur über den Reset Pin oder durch aus- und einschalten der Spannungsversorgung resettet werden. Dies könnte hier implementiert werden.
     /// Wenn WOR aktiv ist wird der "Listen Mode" deaktiviert.
     /// @returns immer 1
     uint8_t reset()
     {
-      DPRINTLN(__func__);
+      // DPRINTLN(__func__);
       DPRINTLN("RFM69 reset");
       uint8_t ret = 1;
 #ifdef USE_WOR
@@ -454,7 +455,7 @@ namespace as
 
     bool initReg(uint8_t p_regAddr, uint8_t p_val, uint8_t p_retries = 3)
     {
-      DPRINTLN(__func__);
+      // DPRINTLN(__func__);
       DPRINTLN("RFM69 initReg");
       bool initResult = writeReg(p_regAddr, p_val, 7, 0, p_retries);
       return initResult;
@@ -472,8 +473,8 @@ namespace as
 
     void flushrx()
     {
-      DPRINTLN(__func__);
-      // clearIRQFlags
+      // DPRINTLN(__func__);
+      //  clearIRQFlags
       writeCmd(RFM69_REG_IRQFLAGS2, RFM69_IRQFLAGS2_FIFOOVERRUN);
     }
 
@@ -505,15 +506,15 @@ namespace as
   protected:
     void calculateRSSI(uint8_t p_rsshex)
     {
-      DPRINTLN(__func__);
-      DPRINT("RFM69 calculateRSSI: ");
+      // DPRINTLN(__func__);
+      // DPRINT("RFM69 calculateRSSI: ");
       rss = p_rsshex / 2;
-      DPRINTLN(rss);
+      // DPRINTLN(rss);
     }
 
     uint8_t sndData(uint8_t *p_buf, uint8_t p_size, uint8_t p_burst)
     {
-      DPRINTLN(__func__);
+      // DPRINTLN(__func__);
       writeReg(RFM69_REG_OPMODE, RFM69_OPMODE_STANDBY, 4, 2);
       writeCmd(RFM69_REG_IRQFLAGS2, RFM69_IRQFLAGS2_FIFOOVERRUN); // flush fifo
 
@@ -568,7 +569,7 @@ namespace as
 
     uint8_t rcvData(uint8_t *p_buf, uint8_t p_size)
     {
-      DPRINTLN(__func__);
+      // DPRINTLN(__func__);
 
 #ifdef USE_WOR
       uint8_t opmode = readReg(RFM69_REG_OPMODE);
