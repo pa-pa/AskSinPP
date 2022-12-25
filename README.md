@@ -59,7 +59,7 @@ All defines has to set in the sketch before any header file is included.
 - **HIDE_IGNORE_MSG** - do not show `ignore`-packet dumps of received messages _(that are not for our device)_
 
 
-## Defnies to reduce code size
+## Defines to reduce code size
 
 The following defines can be used to reduce the size of the code.
 All defines has to set in the sketch before any header file is included.

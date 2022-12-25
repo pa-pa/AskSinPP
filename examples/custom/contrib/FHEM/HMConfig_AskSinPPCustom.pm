@@ -355,6 +355,30 @@ $customMsg{"HB-Sec-RHS-3"} = sub {
   return @evtEt;
 };
 
+# window contact RHS_x4
+$HMConfig::culHmModel{"F20E"} = {name=>"HB-Sec-RHS-x4",st=>'custom',cyc=>'28:00',rxt=>'',lst=>'1,4:1p.2p.3p.4p',chn=>"Sens:1:4"};
+$HMConfig::culHmChanSets{"HB-Sec-RHS-x400"}{fwUpdate} = "<filename>";
+$HMConfig::culHmChanSets{"HB-Sec-RHS-x401"} = $HMConfig::culHmSubTypeSets{"THSensor"};
+$HMConfig::culHmChanSets{"HB-Sec-RHS-x402"} = $HMConfig::culHmSubTypeSets{"THSensor"};
+$HMConfig::culHmChanSets{"HB-Sec-RHS-x403"} = $HMConfig::culHmSubTypeSets{"THSensor"};
+$HMConfig::culHmChanSets{"HB-Sec-RHS-x404"} = $HMConfig::culHmSubTypeSets{"THSensor"};
+$HMConfig::culHmRegModel{"HB-Sec-RHS-x4"}   = { sabotageMsg=>1, transmDevTryMax=>1, cyclicInfoMsg=>1 };
+$HMConfig::culHmRegChan {"HB-Sec-RHS-x401"} = { msgRhsPosA=>1, msgRhsPosB=>1, msgRhsPosC=>1, ledOnTime=>1, eventDlyTime=>1 };
+$HMConfig::culHmRegChan {"HB-Sec-RHS-x402"} = { msgRhsPosA=>1, msgRhsPosB=>1, msgRhsPosC=>1, ledOnTime=>1, eventDlyTime=>1 };
+$HMConfig::culHmRegChan {"HB-Sec-RHS-x403"} = { msgRhsPosA=>1, msgRhsPosB=>1, msgRhsPosC=>1, ledOnTime=>1, eventDlyTime=>1 };
+$HMConfig::culHmRegChan {"HB-Sec-RHS-x404"} = { msgRhsPosA=>1, msgRhsPosB=>1, msgRhsPosC=>1, ledOnTime=>1, eventDlyTime=>1 };
+$customMsg{"HB-Sec-RHS-x4"} = sub {
+  my ($msg,$target) = @_;
+  my $device = main::CUL_HM_id2Hash($msg->from);
+  my @evtEt = $msg->processThreeState($target,(0=>'closed',100=>'tilted',200=>'open')) if $msg->channel >= 1;
+  if( $msg->isStatus ) {
+    # set sabotage status
+    my $flags = $msg->payloadByte(3);
+    push @evtEt,[$device,1,"sabotageError:".(($flags & 0x0E) ? "on" : "off")];
+  }
+  return @evtEt;
+};
+
 # water contact WDS3
 $HMConfig::culHmModel{"F121"} = {name=>"HB-Sec-WDS-3",st=>'custom',cyc=>'28:00',rxt=>'c:w:l',lst=>'1,4:1p',chn=>""};
 $HMConfig::culHmChanSets{"HB-Sec-WDS-3"} = $HMConfig::culHmSubTypeSets{"THSensor"};

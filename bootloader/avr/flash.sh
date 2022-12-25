@@ -20,5 +20,7 @@ fi
 
 # Int. RC 8MHz, Brown-out detection disabled
 avrdude -p m328p -P usb -c usbasp -B 10 -U lfuse:w:0xE2:m -U hfuse:w:0xD0:m -U efuse:w:0xFF:m -U lock:w:0xFF:m
+# Int. RC 8MHz, Brown-out 1.8V
+# avrdude -p m328p -P usb -c usbasp -B 10 -U lfuse:w:0xE2:m -U hfuse:w:0xD0:m -U efuse:w:0xFE:m -U lock:w:0xFF:m
 avrdude -p m328p -P usb -c usbasp -V -U flash:w:$BOOTLOADER
 

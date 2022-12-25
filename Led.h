@@ -35,6 +35,7 @@ private:
   uint8_t repeat; // current repeat of the pattern
   uint8_t pin;
   uint8_t inv;
+  bool enabled;
 
   void copyPattern (Mode stat,const BlinkPattern* patt) {
     memcpy_P(&current,patt+stat,sizeof(BlinkPattern));
@@ -47,7 +48,7 @@ private:
   }
 
 public:
-  Led () : Alarm(0), step(0), repeat(0), pin(0), inv(false) {
+  Led () : Alarm(0), step(0), repeat(0), pin(0), inv(false), enabled(true) {
     async(true);
   }
   virtual ~Led() {}
@@ -64,6 +65,17 @@ public:
 
   bool invert () const {
     return inv;
+  }
+
+  void enable(bool e) {
+    enabled = e;
+    if (enabled == false) {
+      ledOff();
+    }
+  }
+
+  bool enable() const {
+    return enabled;
   }
 
   void set(Mode stat,const BlinkPattern* patt) {
@@ -88,11 +100,13 @@ public:
   }
 
   void ledOn () {
-    if( invert() == true ) {
-      PINTYPE::setLow(pin);
-    }
-    else {
-      PINTYPE::setHigh(pin);
+    if (enabled == true) {
+      if( invert() == true ) {
+        PINTYPE::setLow(pin);
+      }
+      else {
+        PINTYPE::setHigh(pin);
+      }
     }
   }
 
@@ -149,6 +163,8 @@ public:
   void ledOn () { led1.ledOn(); }
   void ledOff () { led1.ledOff(); }
   void invert (bool value) { led1.invert(value); }
+  void enable (bool e) {led1.enable(e); }
+  bool enable() const {return led1.enable(); }
 };
 
 template <uint8_t LEDPIN1,uint8_t LEDPIN2, class PINTYPE1=ArduinoPins, class PINTYPE2=ArduinoPins>
@@ -166,6 +182,8 @@ public:
   void ledOn () { led1.ledOn(); led2.ledOn(); }
   void ledOff () { led1.ledOff(); led2.ledOff(); }
   void invert (bool value) { led1.invert(value); led2.invert(value); }
+  void enable (bool e) {led1.enable(e); led2.enable(e); }
+  bool enable() const {return led1.enable() | led2.enable(); }
 };
 
 class NoLed {
@@ -179,6 +197,8 @@ public:
   void ledOn () {}
   void ledOff () {}
   void invert (__attribute__((unused)) bool value) {}
+  void enable (__attribute__((unused)) bool e) {}
+  bool enable() const { return false; }
 };
 
 }

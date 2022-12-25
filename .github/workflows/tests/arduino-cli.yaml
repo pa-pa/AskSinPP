@@ -5,6 +5,7 @@ board_manager:
     - https://mcudude.github.io/MegaCore/package_MCUdude_MegaCore_index.json
     - https://dl.espressif.com/dl/package_esp32_index.json
     - https://github.com/earlephilhower/arduino-pico/releases/download/global/package_rp2040_index.json
+    - https://raw.githubusercontent.com/jp112sdl/ARDUINO_EFM32/master/package/package_ARDUINO_EFM32_index.json
 directories:
   data: .arduino15
   downloads: .arduino15/staging

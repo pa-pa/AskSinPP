@@ -17,6 +17,11 @@
   #include <EEPROM.h>
 #endif
 
+#ifdef ARDUINO_ARCH_EFM32
+  #include "AlarmClock.h"
+  #include "eeprom_emulation.h"
+#endif
+
 namespace as {
 
 class InternalEprom {
@@ -132,6 +137,63 @@ class InternalEprom {
     }
     EEPROM.commit();
     sysclock.enable();
+  }
+#elif defined ARDUINO_ARCH_EFM32
+  #define EEPROM_PAGES  3  // allocate at least 3 pages
+  #define E2END         1024
+  #define VECTOR_SIZE (16+30)
+  EE_Variable_TypeDef eeprom_var[(E2END >> 1)];
+  uint32_t vectorTable[VECTOR_SIZE] __attribute__ ((aligned(256)));
+  __attribute__ ((section(".ram")))
+  inline void moveInterruptVectorToRam(void) {
+    memcpy(vectorTable, (uint32_t*)SCB->VTOR, sizeof(uint32_t) * VECTOR_SIZE);
+    SCB->VTOR = (uint32_t)vectorTable;
+  }
+
+  void  initEEPROM() {
+    static bool initDone = false;
+    if (initDone == false) {
+      initDone = true;
+      DPRINT(F("Init EEPROM - Pages:")); DDEC(EEPROM_PAGES);
+      moveInterruptVectorToRam();
+      MSC_Init();
+      EE_Init(EEPROM_PAGES);
+      for (uint16_t i = 0; i< (E2END >> 1);i++) EE_DeclareVariable(&eeprom_var[i]);
+      DPRINTLN(F(" DONE"));
+    }
+  }
+
+  void eeprom_write_byte(uint16_t addr, byte dat) {
+    uint16_t readValue;
+    EE_Read(&eeprom_var[addr >> 1], &readValue);
+    //DPRINT("eeprom_write_byte ");DHEX(addr); DPRINT(" : ");DHEXLN(dat);
+    noInterrupts();
+    EE_Write(&eeprom_var[addr >> 1], (addr % 2 == 0) ? ((readValue >> 8) << 8) + dat :  (dat << 8 ) + (readValue & 0xFF));
+    interrupts();
+  }
+
+  byte eeprom_read_byte(unsigned char * pos)  {
+    uint16_t readValue;
+    EE_Read(&eeprom_var[(int)pos >> 1], &readValue);
+    byte val = ((int)pos % 2 == 0) ? readValue & 0xFF : readValue >> 8;
+    //DPRINT("eeprom_read_byte ");DHEX((uint8_t)pos); DPRINT(" : ");DHEXLN(val);
+    return val;
+  }
+
+  void  eeprom_read_block(void * __dst, const void * __src, size_t __n) {
+    initEEPROM();
+    for (size_t i = 0; i < __n; i++) {
+      *((char *)__dst + i) = eeprom_read_byte((uint8_t *)__src + i);
+    }
+  }
+
+  void  eeprom_write_block( const void * src, const void * dst,  size_t __n) {
+    initEEPROM();
+    int pos = int(dst);
+    for (size_t i = 0; i < __n; i++) {
+      byte data = *((unsigned  char*)src + i);
+      eeprom_write_byte(pos + i, data);
+    }
   }
 #endif
 
@@ -249,8 +311,8 @@ public:
 
   bool present () {
     Wire.beginTransmission(ID);
-    Wire.write(0);  //high addr byte
-    Wire.write(0);  //low addr byte
+    Wire.write((uint8_t)0);  //high addr byte
+    Wire.write((uint8_t)0);  //low addr byte
     return Wire.endTransmission() == 0;
   }
 
@@ -357,7 +419,7 @@ public:
       uint8_t done = 0;
       while( done < towrite ) {
         done++;
-        Wire.write(0);
+        Wire.write((uint8_t)0);
       }
       success = Wire.endTransmission() == 0;
       // wait for write operation finished
@@ -387,6 +449,104 @@ public:
   }
 
 };
+
+
+#if defined ARDUINO_ARCH_EFM32
+template <uint8 ID,uint16_t EEPROM_NUM_PAGES,uint16_t EEPROM_PAGESIZE>
+class m24mXX {
+public:
+  m24mXX () {}
+
+  bool present () {
+    Wire.beginTransmission(ID);
+    Wire.write((uint8_t)0);  //high addr byte
+    Wire.write((uint8_t)0);  //low addr byte
+    return Wire.endTransmission() == 0;
+  }
+
+  size_t size () {
+    return EEPROM_NUM_PAGES * EEPROM_PAGESIZE;
+  }
+
+  void store () {}
+
+  uint8_t getBusyStatus(void) {
+    uint8_t retVal = 0;
+    Wire.beginTransmission((uint8_t)((ID << 3) ));
+    retVal = Wire.endTransmission();
+    return retVal;
+  }
+
+  uint8 getByte (uint16_t addr) {
+    uint8_t b = 0;
+
+    Wire.beginTransmission((uint8_t)((ID << 3) | ((addr >> 16) & 0x01)));
+    Wire.write((uint8_t)((addr >> 8) & 0xFF));
+    Wire.write((uint8_t)(addr & 0xFF));
+
+    if ( Wire.endTransmission() == 0 ) {
+      Wire.requestFrom(((ID << 3)  | ((addr >> 16) & 0x01)), 1);
+      if (Wire.available()) {
+        b = Wire.read();
+      }
+    }
+    return b;
+  }
+
+  bool setByte (uint16_t addr, uint8 d) {
+    bool success = false;
+    Wire.beginTransmission((uint8_t)((ID << 3)  | ((addr >> 16) & 0x01)));
+    Wire.write((uint8_t)((addr >> 8) & 0xFF));
+    Wire.write((uint8_t)(addr & 0xFF));
+    Wire.write(d);
+    success = Wire.endTransmission();
+    while (getBusyStatus() != 0) {
+      _delay_ms(2);
+    }
+    return success;
+  }
+
+  bool setData (uint16_t addr,uint8* buf,size_t size) {
+    Wire.beginTransmission((uint8_t)((ID << 3)  | ((addr >> 16) & 0x01)));
+    Wire.write((uint8_t)((addr >> 8) & 0xFF));
+    Wire.write((uint8_t)(addr & 0xFF));
+    size_t bytesWritten = Wire.write(buf, size);
+    Wire.endTransmission();
+    while (getBusyStatus() != 0) {
+      _delay_ms(2);
+    }
+    return bytesWritten == size;
+  }
+
+  bool getData (uint16_t addr,uint8* buf,uint16_t size) {
+    Wire.beginTransmission((uint8_t)((ID << 3) | ((addr >> 16) & 0x01)));
+    Wire.write((uint8_t)((addr >> 8) & 0xFF));
+    Wire.write((uint8_t)(addr & 0xFF));
+
+    Wire.endTransmission(0);
+    Wire.requestFrom(((ID << 3)  | ((addr >> 16) & 0x01)), size);
+
+    uint32_t index;
+    for (index = 0; index < size; index++ ) {
+      if (Wire.available()) {
+        buf[index] = Wire.read();
+      }
+    }
+
+    return index + 1 == size;
+  }
+
+  bool clearData (uint16_t addr, size_t size) {
+    DPRINT("clearData");//DPRINT(": ");DHEX(addr);DPRINT(" ");DDEC(size);DPRINT("...");
+    bool success = true;
+    for (uint16_t i = 0; i < size; i++) {
+      setData(addr+i,0,1);
+    }
+    DPRINTLN(" - done");
+    return success;
+  }
+};
+#endif
 
 template <uint8_t ID,uint16_t PAGES,uint8_t EEPROM_PAGESIZE>
 class CachedAt24cX : public at24cX<ID,PAGES, EEPROM_PAGESIZE> {
@@ -481,6 +641,12 @@ public:
       DPRINT(F("Init Storage: "));
       DHEXLN(magic);
       // init eeprom
+      _delay_ms(200);
+#ifdef ARDUINO_ARCH_EFM32
+      if ( !EE_Init(EEPROM_PAGES) ) {
+        EE_Format(EEPROM_PAGES);
+      }
+#endif
       DRIVER::setData(0x0,(uint8_t*)&magic,4);
       firststart = true;
     }

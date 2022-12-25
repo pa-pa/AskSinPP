@@ -9,14 +9,27 @@ namespace as {
 
 SysClock sysclock;
 
+#ifdef ARDUINO_ARCH_EFM32
+void callback(sl_sleeptimer_timer_handle_t *id , __attribute__((unused)) void *user) {
+  --sysclock;
+    //DPRINT(".");
+  sl_sleeptimer_restart_timer_ms( id, SysClock::instance().getTimeout(), callback , (void *)NULL, 0, 0);
+}
+#else
 void callback(void) {
   --sysclock;
     //DPRINT(".");
 }
+#endif
+
 
 #ifndef NORTC
 RealTimeClock rtc;
+#ifdef ARDUINO_ARCH_EFM32
+void rtccallback(__attribute__((unused)) sl_sleeptimer_timer_handle_t * id , __attribute__((unused)) void *user) {
+#else
 void rtccallback () {
+#endif
   //  DPRINT(".");
     rtc.overflow();
   //  rtc.debug();
