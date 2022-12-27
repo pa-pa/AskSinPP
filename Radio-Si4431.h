@@ -197,7 +197,7 @@ public:
   
   uint8_t interruptMode()
     {
-      return FALLING;
+      return 0; // FALLING 
     };
 
   void setIdle () {

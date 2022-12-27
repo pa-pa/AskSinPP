@@ -221,10 +221,10 @@ namespace as
     }
 
     /// @brief Gibt zurück, ob bei einem Interupt auf die steigende oder fallende Flanke getriggert werden soll.
-    /// @param return RISING, es muss auf die steigende Flanke getriggert werden, da der Interrupt Pin bis zum auslesen des FIFO auf high bleibt.
+    /// @param return 1 = RISING, es muss auf die steigende Flanke getriggert werden, da der Interrupt Pin bis zum auslesen des FIFO auf high bleibt.
     uint8_t interruptMode()
     {
-      return RISING;
+      return 1; // RISING
     };
 
     void setIdle()
