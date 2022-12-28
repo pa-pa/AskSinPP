@@ -194,6 +194,11 @@ public:
   inline void readBurst(uint8_t * buf, uint8_t regAddr, uint8_t len) {
     spi.readBurst(buf, regAddr, len);
   }
+  
+  uint8_t interruptMode()
+    {
+      return 0; // FALLING 
+    };
 
   void setIdle () {
     //DPRINTLN("Si4431 enter powerdown");

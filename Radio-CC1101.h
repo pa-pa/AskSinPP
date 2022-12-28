@@ -160,6 +160,11 @@ public:
     , f1(0x65), f0(0x6A) // set to defaults
 #endif
     {}
+	
+  uint8_t interruptMode()
+    {
+      return 0; // FALLING 
+    };
 
   void setIdle () {
     //DPRINTLN("CC enter powerdown");
