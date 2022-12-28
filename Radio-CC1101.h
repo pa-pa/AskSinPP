@@ -161,10 +161,9 @@ public:
 #endif
     {}
 	
-  uint8_t interruptMode()
-    {
-      return 0; // FALLING 
-    };
+  uint8_t interruptMode() {
+    return 0; // FALLING
+  };
 
   void setIdle () {
     //DPRINTLN("CC enter powerdown");
