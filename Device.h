@@ -283,7 +283,7 @@ public:
   #elif defined (ARDUINO_ARCH_EFM32)
       uint64_t chipId = SYSTEM_GetUnique();
       uint8_t *chipIdArray = *reinterpret_cast<uint8_t(*)[sizeof(uint64_t)]>(&chipId);
-      uint32_t crc = AskSinBase::crc24(chipIdArray, 12);
+      uint32_t crc = AskSinBase::crc24(chipIdArray, 8);
       device_id[0] = (uint8_t)(crc & 0x000000ff);
       device_id[1] = (uint8_t)(crc >> 8 & 0x000000ff);
       device_id[2] = (uint8_t)(crc >> 16 & 0x000000ff);
