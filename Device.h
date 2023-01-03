@@ -30,41 +30,6 @@
   #endif
 #endif
 
-#ifdef ARDUINO_ARCH_EFM32
-uint8_t boot_signature_byte_get(byte addr) {
-  uint64_t chipId = SYSTEM_GetUnique();
-  uint8_t *chipIdArray = *reinterpret_cast<uint8_t(*)[sizeof(uint64_t)]>(&chipId);
-
-  byte idx = 0;
-    switch (addr) {
-      case 14:
-      case 20:
-        idx = 7;
-      break;
-      case 15:
-      case 21:
-        idx = 6;
-      break;
-      case 16:
-      case 22:
-        idx = 5;
-      break;
-      case 17:
-      case 23:
-        idx = 4;
-      break;
-      case 18:
-        idx = 3;
-      break;
-      case 19:
-        idx = 2;
-      break;
-
-    }
-    return chipIdArray[idx];
- }
-#endif
-
 #ifdef ARDUINO_ARCH_ESP32
 uint8_t boot_signature_byte_get(byte addr) {
   uint8_t idByteLen = 6;
@@ -315,6 +280,13 @@ public:
       device_id[0] = (uint8_t)(crc & 0x000000ff);
       device_id[1] = (uint8_t)(crc >> 8 & 0x000000ff);
       device_id[2] = (uint8_t)(crc >> 16 & 0x000000ff);
+  #elif defined (ARDUINO_ARCH_EFM32)
+      uint64_t chipId = SYSTEM_GetUnique();
+      uint8_t *chipIdArray = *reinterpret_cast<uint8_t(*)[sizeof(uint64_t)]>(&chipId);
+      uint32_t crc = AskSinBase::crc24(chipIdArray, 12);
+      device_id[0] = (uint8_t)(crc & 0x000000ff);
+      device_id[1] = (uint8_t)(crc >> 8 & 0x000000ff);
+      device_id[2] = (uint8_t)(crc >> 16 & 0x000000ff);
   #else
       device_id[0] = boot_signature_byte_get(21);
       device_id[1] = boot_signature_byte_get(22);
@@ -333,7 +305,7 @@ public:
 #ifdef USE_OTA_BOOTLOADER
     HalType::pgm_read((uint8_t*)serial,OTA_SERIAL_START,10);
 #elif defined (USE_HW_SERIAL)
-  #if defined (ARDUINO_ARCH_STM32F1) || (defined (ARDUINO_ARCH_STM32) && (defined STM32L1xx))
+  #if defined (ARDUINO_ARCH_STM32F1) || defined (ARDUINO_ARCH_EFM32) || (defined (ARDUINO_ARCH_STM32) && (defined STM32L1xx))
     memcpy_P(serial,info.Serial,4);
     uint8_t* s = serial+4;
     for( int i=0; i<3; ++i ) {
