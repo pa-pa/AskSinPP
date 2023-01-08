@@ -17,6 +17,10 @@
 #include "Buzzer.h"
 #include "Activity.h"
 
+#ifdef ARDUINO_ARCH_RP2040
+  #include "pico/unique_id.h"
+#endif
+
 #ifdef USE_HW_SERIAL
   #if defined(__AVR_ATmega644__) || defined(__AVR_ATmega644P__) || defined(__AVR_ATmega644PA__) || defined(__AVR_ATmega1284__) || defined(__AVR_ATmega1284P__) || defined(__AVR_ATmega328PB__)
     #include <avr/boot.h>
@@ -28,83 +32,6 @@
 #else
     #error Using Hardware serial is not supported on MCU type currently used
   #endif
-#endif
-
-#ifdef ARDUINO_ARCH_ESP32
-uint8_t boot_signature_byte_get(byte addr) {
-  uint8_t idByteLen = 6;
-  uint64_t chipId = ESP.getEfuseMac();
-  uint8_t *chipIdArray = *reinterpret_cast<uint8_t(*)[sizeof(uint64_t)]>(&chipId);
-  std::reverse(&chipIdArray[0], &chipIdArray[idByteLen]);
-  //DPRINT("ESP32 ChipID is ");for (uint8_t i = 0; i < idByteLen; i++) DHEX(chipIdArray[i]);DPRINTLN("");
-
-  //we have only 6 bytes for unique identification
-  //so let's reuse 4 bytes for the missing
-  byte idx = 0;
-  switch (addr) {
-    case 14:
-    case 20:
-      idx = 0;
-    break;
-    case 15:
-    case 21:
-      idx = 1;
-    break;
-    case 16:
-    case 22:
-      idx = 2;
-    break;
-    case 17:
-    case 23:
-      idx = 3;
-    break;
-    case 18:
-      idx = 4;
-    break;
-    case 19:
-      idx = 5;
-    break;
-
-  }
-
-  return chipIdArray[idx];
-}
-#endif
-
-#ifdef ARDUINO_ARCH_RP2040
-#include "pico/unique_id.h"
-uint8_t boot_signature_byte_get(byte addr) {
-  pico_unique_board_id_t id_out;
-  pico_get_unique_board_id(&id_out);
-
-  byte idx = 0;
-  switch (addr) {
-    case 14:
-    case 20:
-      idx = 0;
-    break;
-    case 15:
-    case 21:
-      idx = 1;
-    break;
-    case 16:
-    case 22:
-      idx = 2;
-    break;
-    case 17:
-    case 23:
-      idx = 3;
-    break;
-    case 18:
-      idx = 4;
-    break;
-    case 19:
-      idx = 5;
-    break;
-  }
-
-  return id_out.id[idx];
-}
 #endif
 
 #if defined(__AVR_ATmega644__) || defined(__AVR_ATmega644P__) || defined(__AVR_ATmega644PA__) || defined(__AVR_ATmega1284__) || defined(__AVR_ATmega1284P__)
@@ -280,8 +207,15 @@ public:
       device_id[0] = (uint8_t)(crc & 0x000000ff);
       device_id[1] = (uint8_t)(crc >> 8 & 0x000000ff);
       device_id[2] = (uint8_t)(crc >> 16 & 0x000000ff);
-  #elif defined (ARDUINO_ARCH_EFM32)
-      uint64_t chipId = SYSTEM_GetUnique();
+  #elif defined (ARDUINO_ARCH_EFM32) || defined (ARDUINO_ARCH_ESP32) || defined (ARDUINO_ARCH_RP2040)
+      #if defined (ARDUINO_ARCH_EFM32)
+        uint64_t chipId = SYSTEM_GetUnique();
+      #elif defined (ARDUINO_ARCH_ESP32)
+        uint64_t chipId = ESP.getEfuseMac();
+      #elif defined (ARDUINO_ARCH_RP2040)
+        pico_unique_board_id_t chipId;
+        pico_get_unique_board_id(&chipId);
+      #endif
       uint8_t *chipIdArray = *reinterpret_cast<uint8_t(*)[sizeof(uint64_t)]>(&chipId);
       uint32_t crc = AskSinBase::crc24(chipIdArray, 8);
       device_id[0] = (uint8_t)(crc & 0x000000ff);
@@ -305,7 +239,7 @@ public:
 #ifdef USE_OTA_BOOTLOADER
     HalType::pgm_read((uint8_t*)serial,OTA_SERIAL_START,10);
 #elif defined (USE_HW_SERIAL)
-  #if defined (ARDUINO_ARCH_STM32F1) || defined (ARDUINO_ARCH_EFM32) || (defined (ARDUINO_ARCH_STM32) && (defined STM32L1xx))
+  #if defined (ARDUINO_ARCH_STM32F1) || defined (ARDUINO_ARCH_EFM32) || defined (ARDUINO_ARCH_ESP32) || defined (ARDUINO_ARCH_RP2040) || (defined (ARDUINO_ARCH_STM32) && (defined STM32L1xx))
     memcpy_P(serial,info.Serial,4);
     uint8_t* s = serial+4;
     for( int i=0; i<3; ++i ) {
