@@ -27,6 +27,16 @@
 
 #endif
 
+#ifdef ARDUINO_ARCH_EFM32
+#ifndef ADC_CLOCK
+#define ADC_CLOCK               400000        /* ADC conversion clock */
+#endif
+
+#ifndef ADC_16BIT_MAX
+#define ADC_16BIT_MAX           65536         /* 2^16 */
+#endif
+
+#endif
 
 namespace as {
 
