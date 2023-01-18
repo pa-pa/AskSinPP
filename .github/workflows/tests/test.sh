@@ -34,15 +34,15 @@ case "$BOARD" in
     FQBN=MegaCore:avr:128:BOD=disabled,LTO=Os_flto,clock=16MHz_external
     ;;
   644p)
-    CORE=MightyCore:avr
+    CORE=MightyCore:avr@2.1.3
     FQBN=MightyCore:avr:644:pinout=bobuino,variant=modelP,LTO=Os_flto,clock=8MHz_internal
     ;;
   1284pBOB)
-    CORE=MightyCore:avr
+    CORE=MightyCore:avr@2.1.3
     FQBN=MightyCore:avr:1284:pinout=bobuino,variant=modelP,LTO=Os_flto,clock=8MHz_internal
     ;;
   1284pSTD)
-    CORE=MightyCore:avr
+    CORE=MightyCore:avr@2.1.3
     FQBN=MightyCore:avr:1284:pinout=standard,variant=modelP,LTO=Os_flto,clock=8MHz_internal
     ;;
   bluepill)
