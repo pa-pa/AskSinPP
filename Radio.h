@@ -486,8 +486,8 @@ void disable () {
 
   // read the message form the internal buffer, if any
   uint8_t read (Message& msg) {
-    //if( isState(READ) == false )
-    if (getGDO0falling() == false)
+    if( isState(READ) == false )
+    //if (getGDO0falling() == false)
       return 0;
     
     //if (isState(READ) == false) then DPRINTLN(F("interrupt overseen"));
