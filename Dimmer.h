@@ -322,34 +322,38 @@ class DimmerStateMachine {
   class BlinkAlarm : public Alarm {
   public:
     DimmerStateMachine& sm;
-    uint8_t             origlevel;
-    uint8_t             tack;
-    uint8_t             diff;
+    uint8_t level;
+    uint8_t tack;
 
-    BlinkAlarm(DimmerStateMachine& m) : Alarm(0), sm(m), tack(millis2ticks(500)), diff(0) {}
+    BlinkAlarm(DimmerStateMachine& m) : Alarm(0), sm(m), tack(millis2ticks(500)) {} 
+    virtual ~BlinkAlarm() {}
+
     void init(DimmerPeerList l) {
-      origlevel = sm.status();
+      updateLevel();
+      //DPRINT("init: "); DPRINT(l.offDelayBlink()); DPRINT(", level: "); DDEC(level);  DPRINT(" - "); DDECLN(millis());
       if (!l.offDelayBlink()) return;
-      //if (origlevel < diff + 20) return;
-      diff = origlevel / 4;
       set(tack);
       sysclock.add(*this);
-      //DPRINT("blink: "); DPRINT(l.offDelayBlink()); DPRINT(", level: "); DDEC(origlevel);  DPRINT(" - "); DDECLN(millis());
+    }
+    void updateLevel() {
+      level = sm.status();
     }
     void end() {
       sysclock.cancel(*this);
-      sm.updateLevel(origlevel);
+      sm.updateLevel(level);
+      //DPRINT("end: "); DPRINTLN(level);
     }
     virtual void trigger(AlarmClock& clock) {
-      uint8_t destlevel = (sm.status() == origlevel) ? origlevel - diff : origlevel;
-      sm.updateLevel(destlevel);
+      uint8_t temp = (sm.status() == level) ? level - (level/4) : level;
+      sm.updateLevel(temp);
+      //DPRINT("trigger: "); DPRINTLN(temp);
       set(tack);
       clock.add(*this);
     }
   };
 
   void updateLevel (uint8_t newlevel) {
-    // DPRINT("UpdLevel: ");DDECLN(newlevel);
+    //DPRINT("UpdLevel: ");DDECLN(newlevel);
     level = newlevel;
   }
 
@@ -368,15 +372,18 @@ class DimmerStateMachine {
   }
 
   void setState (uint8_t next,uint32_t delay,const DimmerPeerList& lst=DimmerPeerList(0),uint8_t deep=0) {
+    //DPRINT("state: "); DHEX(state); DPRINT(","); DHEX(next); DPRINT('\n');
+
     // check deep to prevent infinite recursion
     if( next != AS_CM_JT_NONE && deep < 4) {
       // first cancel possible running alarm
       sysclock.cancel(alarm);
+      sysclock.cancel(blink);
       // if state is different
       if (state != next) {
         if (next == AS_CM_JT_OFFDELAY) blink.init(lst);
         if (state == AS_CM_JT_OFFDELAY) blink.end();
-        updateState(next,delay);
+        updateState(next, delay);
       }
       if ( state == AS_CM_JT_RAMPON || state == AS_CM_JT_RAMPOFF ) {
         alarm.init(state,lst);
@@ -552,6 +559,7 @@ public:
     }
     updateState(AS_CM_JT_RAMPON,getDelayForState(AS_CM_JT_RAMPON, lst));
     updateLevel(newlevel);
+    blink.updateLevel();
     updateState(AS_CM_JT_ON,getDelayForState(AS_CM_JT_ON, lst));
   }
 
@@ -564,6 +572,7 @@ public:
     uint8_t newstate = newlevel > lst.onMinLevel() ? AS_CM_JT_RAMPON : AS_CM_JT_RAMPOFF;
     updateState(newstate,getDelayForState(newstate, lst));
     updateLevel(newlevel);
+    blink.updateLevel();
     newstate = newlevel > lst.onMinLevel() ? AS_CM_JT_ON : AS_CM_JT_OFF;
     updateState(newstate,getDelayForState(newstate, lst));
   }

@@ -411,6 +411,7 @@ public:   //--------------------------------------------------------------------
     return initOK;
   }
 
+
   void setIdle () {
     if( isState(IDLE) == false ) {
       HWRADIO::setIdle();
@@ -451,6 +452,12 @@ public:   //--------------------------------------------------------------------
     return HWRADIO::detectBurst();
   }
 
+  bool getGDO0falling() {
+    static uint8_t gdo0 = 1;
+    gdo0 = ((gdo0 << 1) + getGDO0()) & 0b11;
+    return (gdo0 == 0b10)?true:false;
+  }
+
   uint8_t getGDO0 () {
     return digitalRead(GDO0);
   }
@@ -474,8 +481,11 @@ void disable () {
 
   // read the message form the internal buffer, if any
   uint8_t read (Message& msg) {
-    if( isState(READ) == false )
+    //if( isState(READ) == false )
+    if (getGDO0falling() == false)
       return 0;
+    
+    //if (isState(READ) == false) then DPRINTLN(F("interrupt overseen"));
 
     unsetState(READ);
     uint8_t len = this->rcvData(buffer.buffer(),buffer.buffersize());
