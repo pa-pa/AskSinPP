@@ -66,6 +66,7 @@
 
 #include "Radio-CC1101.h"
 #include "Radio-Si4431.h"
+#include "Radio-RFM69.h"
 
 namespace as {
 
@@ -303,6 +304,9 @@ class NoRadio {
 public:
   NoRadio () {}
 
+  /// @brief Gibt zurück, ob bei einem Interupt auf die steigende oder fallende Flanke getriggert werden soll. Muss in der jeweiligen Radioklasse implementiert werden.
+  /// @return 0 = FALLING, 1 = RISING
+  uint8_t interruptMode() { return 0; };
   bool detectBurst () { return false; }
   void disable () {};
   void enable () {}
@@ -465,10 +469,11 @@ public:   //--------------------------------------------------------------------
 void enable () {
 #ifdef EnableInterrupt_h
   if( digitalPinToInterrupt(GDO0) == NOT_AN_INTERRUPT )
-    enableInterrupt(GDO0,isr,FALLING);
-  else
+	// interruptMode() muss in der jeweiligen Radioklasse implementiert werden und 0 = FALLING oder 1 = RISING zurückgeben.
+    enableInterrupt(GDO0, isr, HWRADIO::interruptMode() == 0 ? FALLING : RISING);
+      else
 #endif
-    attachInterrupt(digitalPinToInterrupt(GDO0),isr,FALLING);
+        attachInterrupt(digitalPinToInterrupt(GDO0), isr, HWRADIO::interruptMode() == 0 ? FALLING : RISING);
 }
 void disable () {
 #ifdef EnableInterrupt_h
@@ -545,6 +550,9 @@ class CC1101Radio : public Radio<SPIType,GDO0, PWRPIN,SENDDELAY,CC1101<SPIType,P
 
 template <class SPIType ,uint8_t GDO0, uint8_t PWRPIN=0xff, int SENDDELAY=100>
 class Si4431Radio : public Radio<SPIType,GDO0, PWRPIN,SENDDELAY,Si4431<SPIType,PWRPIN,GDO0>> {};
+
+template <class SPIType, uint8_t GDO0, uint8_t PWRPIN = 0xff, int SENDDELAY = 100>
+class RFM69Radio : public Radio<SPIType, GDO0, PWRPIN, SENDDELAY, RFM69<SPIType, PWRPIN, GDO0>> {};
 
 }
 

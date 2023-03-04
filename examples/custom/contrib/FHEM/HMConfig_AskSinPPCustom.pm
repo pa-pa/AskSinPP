@@ -356,7 +356,7 @@ $customMsg{"HB-Sec-RHS-3"} = sub {
 };
 
 # window contact RHS_x4
-HMConfig::culHmModel{"F20E"} = {name=>"HB-Sec-RHS-x4",st=>'custom',cyc=>'28:00',rxt=>'',lst=>'1,4:1p.2p.3p.4p',chn=>"Sens:1:4"};
+$HMConfig::culHmModel{"F20E"} = {name=>"HB-Sec-RHS-x4",st=>'custom',cyc=>'28:00',rxt=>'',lst=>'1,4:1p.2p.3p.4p',chn=>"Sens:1:4"};
 $HMConfig::culHmChanSets{"HB-Sec-RHS-x400"}{fwUpdate} = "<filename>";
 $HMConfig::culHmChanSets{"HB-Sec-RHS-x401"} = $HMConfig::culHmSubTypeSets{"THSensor"};
 $HMConfig::culHmChanSets{"HB-Sec-RHS-x402"} = $HMConfig::culHmSubTypeSets{"THSensor"};
@@ -373,7 +373,8 @@ $customMsg{"HB-Sec-RHS-x4"} = sub {
   my @evtEt = $msg->processThreeState($target,(0=>'closed',100=>'tilted',200=>'open')) if $msg->channel >= 1;
   if( $msg->isStatus ) {
     # set sabotage status
-    push @evtEt,[$device,1,"sabotageError:".(($batflags & 0x0E) ? "on" : "off")];
+    my $flags = $msg->payloadByte(3);
+    push @evtEt,[$device,1,"sabotageError:".(($flags & 0x0E) ? "on" : "off")];
   }
   return @evtEt;
 };

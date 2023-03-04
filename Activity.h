@@ -279,6 +279,11 @@ public:
 #if defined ARDUINO_ARCH_EFM32
 class Sleep {
 public:
+  static void waitSerial() {
+    //TODO: Serial.flush leads crashes when entering EM2
+    //Serial.flush();
+  }
+
   template <class Hal>
   static void powerSave(Hal& hal) {
     uint32_t priMask = __get_PRIMASK();
@@ -338,6 +343,9 @@ public:
   template <class Saver,class Hal>
   void savePower (Hal& hal) {
     if( awake == false ) {
+#ifndef NDEBUG
+      Saver::waitSerial();
+#endif
       Saver::powerSave(hal);
     }
     else {
