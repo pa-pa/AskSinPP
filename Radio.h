@@ -331,6 +331,31 @@ class Radio : public HWRADIO {
   static void isr () {
     instance().handleInt();
   }
+  
+#ifdef RADIOWATCHDOG
+  class RadioWd : public Alarm {
+    Radio& rd;
+    uint8_t tack;
+    uint8_t prev;
+
+  public:
+    RadioWd(Radio& r) : Alarm(0, false), rd(r), tack(millis2ticks(500)) {}
+    virtual ~RadioWd() {}
+
+    virtual void trigger(AlarmClock& clock) {
+
+      uint8_t temp = rd.getRXBYTES();
+      if ((temp) && (prev != temp)) {
+        DPRINT(F("RX")); DHEXLN(temp);
+        rd.setState(READ);
+        prev = temp;
+      }
+      set(millis2ticks(500));
+      clock.add(*this);
+    }
+
+  } radiowd;
+#endif
 
   class MinSendTimeout : public Alarm {
     volatile bool wait;
@@ -387,7 +412,7 @@ public:
     return *((Radio<SPIType,GDO0,PWRPIN,SENDDELAY,HWRADIO>*)__gb_radio);
   }
 
-private:
+public:
   enum States { IDLE=0x1, SENDING=0x2, READ=0x4, ALIVE=0x8, READ_ALIVE=0xc };
   volatile uint8_t state;
   Message buffer;
@@ -397,7 +422,11 @@ private:
   void unsetState(States s) { state &= ~s; }
 
 public:   //---------------------------------------------------------------------------------------------------------
-  Radio () : state(ALIVE) {}
+  Radio () : state(ALIVE)
+#ifdef RADIOWATCHDOG
+    , radiowd(*this) 
+#endif
+    {}
 
   bool init () {
     // ensure ISR if off before we start to init CC1101
@@ -412,6 +441,9 @@ public:   //--------------------------------------------------------------------
     bool initOK = HWRADIO::init();
     if (initOK) HWRADIO::wakeup(true);
     //DPRINT(F("CC init "));DPRINTLN(initOK ? F("OK"):F("FAIL"));
+#ifdef RADIOWATCHDOG
+    sysclock.add(radiowd);
+#endif
     return initOK;
   }
 
@@ -486,6 +518,7 @@ void disable () {
 
   // read the message form the internal buffer, if any
   uint8_t read (Message& msg) {
+    
     if( isState(READ) == false )
     //if (getGDO0falling() == false)
       return 0;

@@ -159,7 +159,14 @@ public:
   }
 
   void length (uint8_t l) {
-    len = l;
+    //len = l;
+    if ((l > 0) && (l < 9)) {
+      DPRINT(F("Packet too short: ")); DDECLN(l);
+      len = 0;
+    }
+    else {
+      len = l;
+    }
   }
 
   uint8_t length () const {
