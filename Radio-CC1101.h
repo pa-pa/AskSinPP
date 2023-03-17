@@ -331,7 +331,7 @@ public:
       CC1101_FIFOTHR,   0x0D,   //  0x07    TX FIFO = 9, RX FIFO = 56 byte
       CC1101_SYNC1,     0xE9,   //  0xD3    Sync word MSB
       CC1101_SYNC0,     0xCA,   //  0x91    Sync word LSB
-      CC1101_PKTLEN,    0x17,   //  0xFF
+      CC1101_PKTLEN,    0x1E,   //  0xFF
       CC1101_PKTCTRL1,  0x0C,   //  0x04    CRC auto flush = 1, append status = 1,
     //CC1101_PKTCTRL0,  0x45,   //  0x45
     //CC1101_ADDR,      0x00,   //  0x00

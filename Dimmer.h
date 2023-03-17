@@ -365,19 +365,19 @@ class DimmerStateMachine {
   }
 
   void setState (uint8_t next,uint32_t delay,const DimmerPeerList& lst=DimmerPeerList(0),uint8_t deep=0) {
-    const char* dbgJT[] = {
+    /*const char* dbgJT[] = {
       PSTR("NONE"), 
       PSTR("ONDELAY"), 
-      PSTR("RAMPON")/*REFON*/, 
+      PSTR("RAMPON"), //REFON 
       PSTR("ON"), 
       PSTR("OFFDELAY"),
-      PSTR("RAMPOFF")/*REFOFF*/, 
+      PSTR("RAMPOFF"), //REFOFF 
       PSTR("OFF"), 
       PSTR("na"), 
       PSTR("RAMPON"), 
       PSTR("RAMPOFF"),
     };
-    DPRINT(F("setState: ")); DPRINT(dbgJT[state]); DPRINT("->"); DPRINT(dbgJT[next]); DPRINT('\n');
+    DPRINT(F("setState: ")); DPRINT(dbgJT[state]); DPRINT("->"); DPRINT(dbgJT[next]); DPRINT('\n');*/
 
 
     // check deep to prevent infinite recursion
