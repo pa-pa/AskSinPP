@@ -10,7 +10,7 @@
   #include "Arduino.h"
 #endif
 
-// #define NDEBUG
+//#define NDEBUG
 
 #ifdef NDEBUG
 

@@ -192,7 +192,7 @@ public:
       ret = ((uint32_t)value * (uint32_t)value * 734) / 448;
     }
 
-    DDEC(pin); DPRINT(F(":c")); DPRINT(curve); DPRINT(F("\t(")); DDEC(value); DPRINT(F(")\t")); DDECLN(ret);
+    //DDEC(pin); DPRINT(F(":c")); DPRINT(curve); DPRINT(F("\t(")); DDEC(value); DPRINT(F(")\t")); DDECLN(ret);
     PINTYPE::setPWM(pin, ret);
   }
 

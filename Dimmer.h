@@ -327,19 +327,19 @@ class DimmerStateMachine {
     BlinkAlarm(DimmerStateMachine& m) : Alarm(0), sm(m), tack(millis2ticks(500)) {} 
     virtual ~BlinkAlarm() {}
 
-    void init(DimmerPeerList l) {
-      if (!l.offDelayBlink()) return;
+    void init() {
       updateLevel();
-      set(tack);
-      //DPRINT("init: "); DPRINT(l.offDelayBlink()); DPRINT(", level: "); DDEC(level);  DPRINT(" - "); DDECLN(millis());
+      //DPRINT(F("blink:")); DPRINT(e); DPRINT(F(" l:")); DDEC(level);  DPRINT(F(" - ")); DDECLN(millis());
+      DPRINT(F("l:")); DDEC(level);  DPRINT(F(" - ")); DDECLN(millis());
     }
     void updateLevel() {
       level = sm.status();
+      DPRINT(F("u:")); DPRINTLN(level);
     }
-    virtual void trigger(AlarmClock& clock) {
+    virtual void trigger(__attribute__((unused)) AlarmClock& clock) {
       uint8_t temp = (sm.status() == level) ? level - (level/4) : level;
       sm.updateLevel(temp);
-      //DPRINT("trigger: "); DPRINTLN(temp);
+      DPRINT(F("t:")); DPRINTLN(temp);
       set(tack);
       clock.add(*this);
     }
@@ -365,7 +365,7 @@ class DimmerStateMachine {
   }
 
   void setState (uint8_t next,uint32_t delay,const DimmerPeerList& lst=DimmerPeerList(0),uint8_t deep=0) {
-    /*const char* dbgJT[] = {
+    const char* dbgJT[] = {
       PSTR("NONE"), 
       PSTR("ONDELAY"), 
       PSTR("RAMPON"), //REFON 
@@ -377,7 +377,7 @@ class DimmerStateMachine {
       PSTR("RAMPON"), 
       PSTR("RAMPOFF"),
     };
-    DPRINT(F("setState: ")); DPRINT(dbgJT[state]); DPRINT("->"); DPRINT(dbgJT[next]); DPRINT('\n');*/
+    DPRINT(F("setState: ")); DPRINT(dbgJT[state]); DPRINT("->"); DPRINT(dbgJT[next]); DPRINT(", d:"); DPRINTLN(delay);
 
 
     // check deep to prevent infinite recursion
@@ -390,10 +390,11 @@ class DimmerStateMachine {
         updateState(next, delay);
       }
       if (state == AS_CM_JT_OFFDELAY) {
-        blink.init(lst);
-        sysclock.add(blink);
+        if (lst.offDelayBlink()) {
+          blink.init();
+          sysclock.add(blink);
+        }
       }
-      //if (state == AS_CM_JT_OFFDELAY) blink.end();
       if ( state == AS_CM_JT_RAMPON || state == AS_CM_JT_RAMPOFF ) {
         alarm.init(state,lst);
         sysclock.add(alarm);

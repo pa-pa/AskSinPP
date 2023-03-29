@@ -335,22 +335,33 @@ class Radio : public HWRADIO {
 #ifdef RADIOWATCHDOG
   class RadioWd : public Alarm {
     Radio& rd;
-    uint8_t tack;
-    uint8_t prev;
+    uint8_t armed;
 
   public:
-    RadioWd(Radio& r) : Alarm(0, false), rd(r), tack(millis2ticks(500)) {}
+    RadioWd(Radio& r) : Alarm(0, false), rd(r) {}
     virtual ~RadioWd() {}
 
     virtual void trigger(AlarmClock& clock) {
 
       uint8_t temp = rd.getRXBYTES();
-      if ((temp) && (prev != temp)) {
-        DPRINT(F("RX")); DHEXLN(temp);
-        rd.setState(READ);
-        prev = temp;
+      if (!temp) {
+        armed = 0;
       }
-      set(millis2ticks(500));
+      else {                        // some bytes detected
+        if (armed) {                // bytes in the queue already for some time
+          rd.setState(READ);        // set read flag
+          armed = 0;
+          DPRINT(F("RX")); DHEXLN(temp);
+        }
+        else {                      // bytes are new in the queue
+          armed = 1;                // wait 50ms to finish the receive and GDO0 can signalize
+          DPRINT(':');
+          set(millis2ticks(50));
+          clock.add(*this);
+          return;
+        }
+      }
+      set(millis2ticks(500));       // 500ms polling
       clock.add(*this);
     }
 
