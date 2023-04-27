@@ -13,11 +13,12 @@
 #include <LowPower.h>
 #endif
 #if defined ARDUINO_ARCH_STM32 && defined STM32L1xx
-#include "low_power.h"
-#include "rtc.h"
-#include <time.h>
+#include "STM32LowPower.h"
+//#include "low_power.h"
+//#include "rtc.h"
+//#include <time.h>
 
-typedef void (*voidFuncPtrVoid)(void);
+/*typedef void (*voidFuncPtrVoid)(void);
 
 static void rtcmatch(void*) {
   //DPRINT('.');
@@ -25,62 +26,68 @@ static void rtcmatch(void*) {
 
 static class STM32L1xx_LowPower {
 public:
-  STM32L1xx_LowPower() {};
-
+  STM32L1xx_LowPower() { LowPower_init(); };
+  // LowPower.attachInterruptWakeup()
+  
   void begin(void) {
-    RTC_SetClockSource(LSI_CLOCK);
-    RTC_setPrediv(36, 0);
-    RTC_init(HOUR_FORMAT_24, LSI_CLOCK, true);
+    //RTC_SetClockSource(LSI_CLOCK);
+    //RTC_setPrediv(36, 0);
+    //RTC_init(HOUR_FORMAT_24, LSI_CLOCK, true);
     LowPower_init();
   }
 
   void idle(uint32_t millis = 0) {
-    if (millis > 0) programRtcWakeUp(millis);
-    LowPower_sleep(PWR_MAINREGULATOR_ON);
+    //if (millis > 0) programRtcWakeUp(millis);
+    //LowPower_sleep(PWR_MAINREGULATOR_ON);
+    LowPower_idle(millis);
   }
 
   void sleep(uint32_t millis = 0) {
-    if (millis > 0) programRtcWakeUp(millis);
-    LowPower_sleep(PWR_LOWPOWERREGULATOR_ON);
+    //if (millis > 0) programRtcWakeUp(millis);
+    //LowPower_sleep(PWR_LOWPOWERREGULATOR_ON);
   }
 
   void deepSleep(uint32_t millis = 0) {
-    if (millis > 0) programRtcWakeUp(millis);
-    LowPower_stop(_serial);
-    detachAlarmCallback();
+    //if (millis > 0) programRtcWakeUp(millis);
+    //LowPower_stop(_serial);
+    //detachAlarmCallback();
   }
 
   void shutdown(uint32_t millis = 0) {
-    if (millis > 0) programRtcWakeUp(millis);
-    LowPower_shutdown();
-  }
-
-  void programRtcWakeUp(uint32_t millis) {
-    uint32_t _subSeconds; hourAM_PM_t p;
-    uint8_t _day, _hour, _min, _sec, _dmy;
-    RTC_GetTime(&_hour, &_min, &_sec, &_subSeconds, &p);
-    RTC_GetDate(&_dmy, &_dmy, &_day, &_dmy);
-    // tm_sec, tm_min, tm_hour, tm_mday, tm_mon, tm_year, tm_wday, tm_yday, tm_isdst
-    struct tm tm = { _sec, _min, _hour, _day, 0, 100, 0, 0, -1 };
-    time_t tmp = mktime(&tm);
-    tmp += millis;
-
-    struct tm* ptm = gmtime(&tmp);
-    //DPRINT(millis); DPRINT(", "); DPRINTLN((uint32_t)tmp);
-    //DPRINT(tm.tm_mday); DPRINT(':'); DPRINT(tm.tm_hour); DPRINT(':'); DPRINT(tm.tm_min); DPRINT(':'); DPRINTLN(tm.tm_sec);
-    //DPRINT(ptm->tm_mday); DPRINT(':'); DPRINT(ptm->tm_hour); DPRINT(':'); DPRINT(ptm->tm_min); DPRINT(':'); DPRINTLN(ptm->tm_sec);
-    RTC_StartAlarm(ptm->tm_mday, ptm->tm_hour, ptm->tm_min, ptm->tm_sec, _subSeconds, p, 15);
-    attachAlarmCallback(rtcmatch, NULL);
+    //if (millis > 0) programRtcWakeUp(millis);
+    //LowPower_shutdown();
   }
 
   void attachInterruptWakeup(uint32_t pin, voidFuncPtrVoid callback, uint32_t mode) {
-    attachInterrupt(pin, callback, mode);
-    LowPower_EnableWakeUpPin(pin, mode);
+    //    attachInterrupt(pin, callback, mode);
+    //    LowPower_EnableWakeUpPin(pin, mode);
   }
+  
+  // void programRtcWakeUp(uint32_t millis) {
+ //   uint32_t _subSeconds; hourAM_PM_t p;
+ //   uint8_t _day, _hour, _min, _sec, _dmy;
+ //   RTC_GetTime(&_hour, &_min, &_sec, &_subSeconds, &p);
+ //   RTC_GetDate(&_dmy, &_dmy, &_day, &_dmy);
+    // tm_sec, tm_min, tm_hour, tm_mday, tm_mon, tm_year, tm_wday, tm_yday, tm_isdst
+ //   struct tm tm = { _sec, _min, _hour, _day, 0, 100, 0, 0, -1 };
+ //   time_t tmp = mktime(&tm);
+ //   tmp += millis;
+
+ //   struct tm* ptm = gmtime(&tmp);
+    //DPRINT(millis); DPRINT(", "); DPRINTLN((uint32_t)tmp);
+    //DPRINT(tm.tm_mday); DPRINT(':'); DPRINT(tm.tm_hour); DPRINT(':'); DPRINT(tm.tm_min); DPRINT(':'); DPRINTLN(tm.tm_sec);
+    //DPRINT(ptm->tm_mday); DPRINT(':'); DPRINT(ptm->tm_hour); DPRINT(':'); DPRINT(ptm->tm_min); DPRINT(':'); DPRINTLN(ptm->tm_sec);
+
+    //void RTC_StartAlarm(alarm_t name, uint8_t day, uint8_t hours, uint8_t minutes, uint8_t seconds, uint32_t subSeconds, hourAM_PM_t period, uint8_t mask);
+
+//    RTC_StartAlarm(ptm->tm_mday, ptm->tm_hour, ptm->tm_min, ptm->tm_sec, _subSeconds, p, 15);
+//    attachAlarmCallback(rtcmatch, NULL);
+//  }
+
 
 private:
   serial_t* _serial;    // Serial for wakeup from deep sleep
-} LowPower;
+} LowPower;*/
 #endif
 
 #ifdef ARDUINO_ARCH_ESP32

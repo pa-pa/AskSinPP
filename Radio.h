@@ -338,11 +338,11 @@ class Radio : public HWRADIO {
     uint8_t armed;
 
   public:
-    RadioWd(Radio& r) : Alarm(0, false), rd(r) {}
+    RadioWd(Radio& r) : Alarm(0, false), rd(r) {  }
     virtual ~RadioWd() {}
 
     virtual void trigger(AlarmClock& clock) {
-
+      //DPRINT('.');
       uint8_t temp = rd.getRXBYTES();
       if (!temp) {
         armed = 0;
@@ -351,11 +351,11 @@ class Radio : public HWRADIO {
         if (armed) {                // bytes in the queue already for some time
           rd.setState(READ);        // set read flag
           armed = 0;
-          DPRINT(F("RX")); DHEXLN(temp);
+          DPRINT(F("RX:")); DHEXLN(temp);
         }
         else {                      // bytes are new in the queue
           armed = 1;                // wait 50ms to finish the receive and GDO0 can signalize
-          DPRINT(':');
+          //DPRINTLN(':');
           set(millis2ticks(50));
           clock.add(*this);
           return;
@@ -454,6 +454,7 @@ public:   //--------------------------------------------------------------------
     //DPRINT(F("CC init "));DPRINTLN(initOK ? F("OK"):F("FAIL"));
 #ifdef RADIOWATCHDOG
     sysclock.add(radiowd);
+    DPRINTLN(F("RWD enabled"));
 #endif
     return initOK;
   }

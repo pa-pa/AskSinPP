@@ -329,17 +329,16 @@ class DimmerStateMachine {
 
     void init() {
       updateLevel();
-      //DPRINT(F("blink:")); DPRINT(e); DPRINT(F(" l:")); DDEC(level);  DPRINT(F(" - ")); DDECLN(millis());
-      DPRINT(F("l:")); DDEC(level);  DPRINT(F(" - ")); DDECLN(millis());
+      //DPRINT(F("BA:init l:")); DDEC(level);  DPRINT(F(" - ")); DDECLN(millis());
     }
     void updateLevel() {
       level = sm.status();
-      DPRINT(F("u:")); DPRINTLN(level);
+      //DPRINT(F("BA:updt l:")); DPRINTLN(level);
     }
     virtual void trigger(__attribute__((unused)) AlarmClock& clock) {
       uint8_t temp = (sm.status() == level) ? level - (level/4) : level;
       sm.updateLevel(temp);
-      DPRINT(F("t:")); DPRINTLN(temp);
+      //DPRINT(F("BA:trgr l:")); DPRINTLN(temp);
       set(tack);
       clock.add(*this);
     }
@@ -365,6 +364,7 @@ class DimmerStateMachine {
   }
 
   void setState (uint8_t next,uint32_t delay,const DimmerPeerList& lst=DimmerPeerList(0),uint8_t deep=0) {
+#ifdef DIMMER_EXTRA_DEBUG
     const char* dbgJT[] = {
       PSTR("NONE"), 
       PSTR("ONDELAY"), 
@@ -377,8 +377,8 @@ class DimmerStateMachine {
       PSTR("RAMPON"), 
       PSTR("RAMPOFF"),
     };
-    DPRINT(F("setState: ")); DPRINT(dbgJT[state]); DPRINT("->"); DPRINT(dbgJT[next]); DPRINT(", d:"); DPRINTLN(delay);
-
+    DPRINT(F("setState: ")); DPRINT(dbgJT[state]); DPRINT("->"); DPRINT(dbgJT[next]); DPRINT(", d:0x"); DHEXLN(delay);
+#endif
 
     // check deep to prevent infinite recursion
     if( next != AS_CM_JT_NONE && deep < 4) {
