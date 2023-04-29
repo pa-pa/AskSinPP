@@ -143,7 +143,7 @@ namespace as {
 #define PA_Normal                0x50             // PATABLE values
 #define PA_MaxPower              0xC0
 
-#define BYTES_IN_RXFIFO          0x7F
+
 
 template <class SPIType, uint8_t PWRPIN>
 class CC1101 {
@@ -262,7 +262,7 @@ public:
     /* CC1101_FIFOTHR,*/ 0x0D,   //  0x07    TX FIFO = 9, RX FIFO = 56 byte
     /* CC1101_SYNC1, */  0xE9,   //  0xD3    Sync word MSB
     /* CC1101_SYNC0, */  0xCA,   //  0x91    Sync word LSB
-    /* CC1101_PKTLEN,*/  0x3D,   //  0xFF
+    /* CC1101_PKTLEN,*/  0xFF,   //  0xFF
     /* CC1101_PKTCTRL1,*/0x0C,   //  0x04    CRC auto flush = 1, append status = 1,
     /* CC1101_PKTCTRL0,*/0x45,   //  0x45
     /* CC1101_ADDR, */   0x00,   //  0x00
@@ -331,7 +331,7 @@ public:
       CC1101_FIFOTHR,   0x0D,   //  0x07    TX FIFO = 9, RX FIFO = 56 byte
       CC1101_SYNC1,     0xE9,   //  0xD3    Sync word MSB
       CC1101_SYNC0,     0xCA,   //  0x91    Sync word LSB
-      CC1101_PKTLEN,    0x1E,   //  0xFF
+    //CC1101_PKTLEN,    0xFF,   //  0xFF
       CC1101_PKTCTRL1,  0x0C,   //  0x04    CRC auto flush = 1, append status = 1,
     //CC1101_PKTCTRL0,  0x45,   //  0x45
     //CC1101_ADDR,      0x00,   //  0x00
@@ -470,23 +470,28 @@ protected:
     rss = -1 * ((((int16_t)rsshex-((int16_t)rsshex >= 128 ? 256 : 0))/2)-74);
   }
 
-  uint8_t sndData(uint8_t* buf, uint8_t size, uint8_t burst) {
+  uint8_t sndData(uint8_t *buf, uint8_t size, uint8_t burst) {
     // Going from RX to TX does not work if there was a reception less than 0.5
     // sec ago. Due to CCA? Using IDLE helps to shorten this period(?)
     spi.strobe(CC1101_SIDLE);  // go to idle mode
     spi.strobe(CC1101_SFTX );  // flush TX buffer
 
-    uint8_t i = 200;
-    spi.strobe(CC1101_STX);    // go to TX mode
-    while ((spi.readReg(CC1101_MARCSTATE, CC1101_STATUS) != MARCSTATE_TX) && (i-- > 0)) {
+    uint8_t i=200;
+    do {
+      spi.strobe(CC1101_STX);
       _delay_us(100);
+      if( --i == 0 ) {
+        // can not enter TX state - reset fifo
+        spi.strobe(CC1101_SIDLE );
+        spi.strobe(CC1101_SFTX  );
+        spi.strobe(CC1101_SNOP );
+        // back to RX mode
+        do { spi.strobe(CC1101_SRX);
+        } while (spi.readReg(CC1101_MARCSTATE, CC1101_STATUS) != MARCSTATE_RX);
+        return false;
+      }
     }
-    if (i == 0) {
-      DPRINTLN(F("switch to TX error"));
-      spi.strobe(CC1101_SIDLE);
-      waitRXmode(1);
-      return false;
-    }
+    while(spi.readReg(CC1101_MARCSTATE, CC1101_STATUS) != MARCSTATE_TX);
 
     _delay_ms(10);
     if (burst) {         // BURST-bit set?
@@ -496,54 +501,51 @@ protected:
     spi.writeReg(CC1101_TXFIFO, size);
     spi.writeBurst(CC1101_TXFIFO | WRITE_BURST, buf, size);           // write in TX FIFO
 
-    // cc1101 move automatically to RX after successful send
-    waitRXmode();
+    for(uint8_t i = 0; i < 200; i++) {  // after sending out all bytes the chip should go automatically in RX mode
+      if( spi.readReg(CC1101_MARCSTATE, CC1101_STATUS) == MARCSTATE_RX)
+        break;                                    //now in RX mode, good
+      _delay_us(100);
+    }
     return true;
   }
- 
-  uint8_t rcvData(uint8_t* buf, uint8_t size) {
-    //DPRINTLN(" rcvData");
 
-    // Rx FIFO overflow?
-    if (spi.readReg(CC1101_MARCSTATE, CC1101_STATUS) == MARCSTATE_RXFIFO_OFLOW) {
-      DPRINTLN(F("RX overflow"));
-      spi.strobe(CC1101_SIDLE);
-      spi.strobe(CC1101_SFRX);
-    }
+  uint8_t rcvData(uint8_t *buf, uint8_t size) {
+  //DPRINTLN(" rcvData");
 
-    uint8_t rxBytes = 0, packetBytes;
-    uint8_t fifoBytes = spi.readReg(CC1101_RXBYTES, CC1101_STATUS);           // how many bytes are in the buffer?
-
-    if (fifoBytes & BYTES_IN_RXFIFO) {
-      packetBytes = spi.readReg(CC1101_RXFIFO, CC1101_CONFIG);                // how many bytes has the packet?
-      //DPRINT(F("RX bytes in status: ")); DHEX(fifoBytes); DPRINT(F(", config: ")); DHEXLN(packetBytes);
-
+    uint8_t packetBytes = 0;
+    uint8_t rxBytes = 0;
+    uint8_t fifoBytes = spi.readReg(CC1101_RXBYTES, CC1101_STATUS);             // how many bytes are in the buffer
+    //DPRINT("  RX FIFO: ");DHEXLN(fifoBytes);
+    // overflow detected - flush the FIFO
+    if( fifoBytes > 0 && (fifoBytes & 0x80) != 0x80 ) {
+      packetBytes = spi.readReg(CC1101_RXFIFO, CC1101_CONFIG); // read packet length
+      //DPRINT("  Start Packet: ");DHEXLN(packetBytes);
+      // check that packet fits into the buffer
       if (packetBytes <= size) {
         spi.readBurst(buf, CC1101_RXFIFO | READ_BURST, packetBytes);          // read data packet
-        calculateRSSI(spi.readReg(CC1101_RXFIFO, CC1101_CONFIG));             // read RSSI from RXFIFO
-        uint8_t val = spi.readReg(CC1101_RXFIFO, CC1101_CONFIG);              // read LQI and CRC_OK
-
-        if ((val & 0x80) == 0x80) { // check crc_ok
+        calculateRSSI(spi.readReg(CC1101_RXFIFO, CC1101_CONFIG)); // read RSSI from RXFIFO
+        uint8_t val = spi.readReg(CC1101_RXFIFO, CC1101_CONFIG); // read LQI and CRC_OK
+        // lqi = val & 0x7F;
+        if( (val & 0x80) == 0x80 ) { // check crc_ok
           // DPRINTLN("CRC OK");
           rxBytes = packetBytes;
         }
         else {
           DPRINTLN(F("CRC Failed"));
-          //spi.strobe(CC1101_SFRX);
         }
       }
       else {
-        DPRINT(F("Packet too big: ")); DDECLN(packetBytes);
-        //spi.strobe(CC1101_SFRX);
+        DPRINT(F("Packet too big: "));DDECLN(packetBytes);
       }
     }
-
+    //DPRINT(F("-> "));
+    //DHEXLN(buf,rxBytes);
     spi.strobe(CC1101_SFRX);
     _delay_us(190);
     flushrx();
     spi.strobe(CC1101_SRX);
+    //DHEXLN(spi.readReg(CC1101_MARCSTATE, CC1101_STATUS));
 
-    //waitRXmode(1);
     return rxBytes; // return number of byte in buffer
   }
 
@@ -559,6 +561,7 @@ protected:
   uint8_t getRXBYTES() {
     return spi.readReg(CC1101_RXBYTES, CC1101_STATUS);
   }
+
 };
 
 }

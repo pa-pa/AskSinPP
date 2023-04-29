@@ -342,7 +342,7 @@ class Radio : public HWRADIO {
     virtual ~RadioWd() {}
 
     virtual void trigger(AlarmClock& clock) {
-      //DPRINT('.');
+      DPRINT('.');
       uint8_t temp = rd.getRXBYTES();
       if (!temp) {
         armed = 0;
@@ -454,7 +454,7 @@ public:   //--------------------------------------------------------------------
     //DPRINT(F("CC init "));DPRINTLN(initOK ? F("OK"):F("FAIL"));
 #ifdef RADIOWATCHDOG
     sysclock.add(radiowd);
-    DPRINTLN(F("RWD enabled"));
+    DPRINTLN(F("RadioWD enabled"));
 #endif
     return initOK;
   }
