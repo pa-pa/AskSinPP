@@ -32,6 +32,10 @@ class ChannelDevice : public Device<HalType,List0Type> {
   uint8_t      cfgChannel;
   GenericList  cfgList;
 
+  HMID         lastdev;         // store last fromID to evaluate a repeated message or a repeated broadcast message 
+  uint8_t      lastcnt;
+
+
 public:
 
   typedef Device<HalType,List0Type> DeviceType;
@@ -240,10 +244,15 @@ public:
        this->radio().setSendTimeout(); // use default value from radio
        DPRINT(F("-> "));
        msg.dump();
-       // ignore repeated messages
-       if( this->isRepeat(msg) == true ) {
+
+       // ignore repeated messages and store info if the last message came from same device
+       uint8_t samefromID = (lastdev == msg.from());
+       if (msg.isRepeated() && samefromID && lastcnt == msg.count()) {
          return false;
        }
+       lastdev = msg.from();
+       lastcnt = msg.count();
+
        // start processing the message
        uint8_t mtype = msg.type();
        uint8_t mcomm = msg.command();
@@ -439,6 +448,9 @@ public:
          answer = REPLAY_ACK;
        }
        else if (mtype == AS_MESSAGE_REMOTE_EVENT || mtype == AS_MESSAGE_SENSOR_EVENT) {
+         static uint8_t lastcntr;
+         uint8_t cntr;
+
          answer = REPLAY_NACK;
          const RemoteEventMsg& pm = msg.remoteEvent();
          uint8_t processed = 0;
@@ -450,7 +462,15 @@ public:
                ch = c;
                switch( mtype ) {
                case AS_MESSAGE_REMOTE_EVENT:
-                 ch->process(pm);
+                 // check if it is a repeated broadcast message addressed now to us
+                 cntr = msg.remoteEvent().counter();
+                 if (samefromID && cntr == lastcntr && !msg.remoteEvent().isLong()) {
+                   //DPRINTLN(F("repeat broadcast"));
+                 }
+                 else {
+                   ch->process(pm);
+                 }
+                 lastcntr = cntr;
                  break;
                case AS_MESSAGE_SENSOR_EVENT:
                  ch->process(msg.sensorEvent());

@@ -342,7 +342,7 @@ class Radio : public HWRADIO {
     virtual ~RadioWd() {}
 
     virtual void trigger(AlarmClock& clock) {
-      DPRINT('.');
+      //DPRINT('.');
       uint8_t temp = rd.getRXBYTES();
       if (!temp) {
         armed = 0;
