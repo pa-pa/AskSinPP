@@ -35,7 +35,6 @@ class ChannelDevice : public Device<HalType,List0Type> {
   HMID         lastdev;         // store last fromID to evaluate a repeated message or a repeated broadcast message 
   uint8_t      lastcnt;
 
-
 public:
 
   typedef Device<HalType,List0Type> DeviceType;
@@ -448,7 +447,7 @@ public:
          answer = REPLAY_ACK;
        }
        else if (mtype == AS_MESSAGE_REMOTE_EVENT || mtype == AS_MESSAGE_SENSOR_EVENT) {
-         static uint8_t lastcntr;
+         static uint8_t lastcntr, lastbcst;
          uint8_t cntr;
 
          answer = REPLAY_NACK;
@@ -464,13 +463,14 @@ public:
                case AS_MESSAGE_REMOTE_EVENT:
                  // check if it is a repeated broadcast message addressed now to us
                  cntr = msg.remoteEvent().counter();
-                 if (samefromID && cntr == lastcntr && !msg.remoteEvent().isLong()) {
+                 if (lastbcst && samefromID && cntr == lastcntr && !msg.remoteEvent().isLong()) {
                    //DPRINTLN(F("repeat broadcast"));
                  }
                  else {
                    ch->process(pm);
                  }
                  lastcntr = cntr;
+                 lastbcst = msg.isBroadcast();
                  break;
                case AS_MESSAGE_SENSOR_EVENT:
                  ch->process(msg.sensorEvent());
