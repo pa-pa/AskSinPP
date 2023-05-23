@@ -341,26 +341,30 @@ class Radio : public HWRADIO {
     RadioWd(Radio& r) : Alarm(0, false), rd(r) {  }
     virtual ~RadioWd() {}
 
-    virtual void trigger(AlarmClock& clock) {
-      //DPRINT('.');
-      uint8_t temp = rd.getRXBYTES();
-      if (!temp) {
-        armed = 0;
-      }
-      else {                        // some bytes detected
-        if (armed) {                // bytes in the queue already for some time
-          rd.setState(READ);        // set read flag
-          armed = 0;
-          DPRINT(F("RX:")); DHEXLN(temp);
-        }
-        else {                      // bytes are new in the queue
-          armed = 1;                // wait 50ms to finish the receive and GDO0 can signalize
+    virtual void trigger(__attribute__((unused)) AlarmClock& clock) {
+      // check if RX buffer gets filled but READ flag is not set
+      uint8_t rxbytes = rd.getRXbytes();
+      if (rxbytes) {                // some bytes detected
+        if (!armed) {               // bytes are new in the queue
+          armed = 1;                
           //DPRINTLN(':');
           set(millis2ticks(50));
-          clock.add(*this);
+          clock.add(*this);         // wait 50ms to finish the receive and GDO0 can signalize
           return;
         }
+        else {                      // bytes in the queue already for some time
+          rd.setState(READ);        // set read flag
+          DPRINT(F("RX:")); DHEXLN(rxbytes);
+        }
       }
+      armed = 0;
+      // if CC1101 stops receiving, VCO_VC_DAC goes to 0xFF
+      uint8_t vcoval = rd.getVCOvalue();
+      if (vcoval == 0xFF) {
+        rd.forceCal();
+        DPRINT(F("\n\ncalibration forced... - ")); DPRINTLN(millis()); DPRINT('\n');
+      }
+      // start the next timer cycle
       set(millis2ticks(500));       // 500ms polling
       clock.add(*this);
     }

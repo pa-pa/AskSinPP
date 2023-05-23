@@ -558,8 +558,18 @@ protected:
     if (i == 0) DPRINTLN(F("switch to RX error"));
   }
 
-  uint8_t getRXBYTES() {
+  uint8_t getRXbytes() {
     return spi.readReg(CC1101_RXBYTES, CC1101_STATUS);
+  }
+
+  uint8_t getVCOvalue() {
+    return spi.readReg(CC1101_VCO_VC_DAC, CC1101_STATUS);
+  }
+
+  void forceCal() {
+    spi.strobe(CC1101_SIDLE);
+    spi.strobe(CC1101_SCAL);
+    spi.strobe(CC1101_SRX);
   }
 
 };
