@@ -118,7 +118,7 @@ public:
     waitMiso();
     deselect();
   }
-  
+
   uint8_t strobe(uint8_t cmd) {
     select();                                     // select  radio module
     waitMiso();                                   // wait until MISO goes low
@@ -219,7 +219,7 @@ public:
     deselect();
     SPI.endTransaction();
   }
-  
+
   void waitMiso () {
 #ifdef ARDUINO_ARCH_STM32F1
     while(digitalRead(SPI.misoPin()));
@@ -331,7 +331,7 @@ class Radio : public HWRADIO {
   static void isr () {
     instance().handleInt();
   }
-  
+
 #ifdef RADIOWATCHDOG
   class RadioWd : public Alarm {
     Radio& rd;
@@ -346,7 +346,7 @@ class Radio : public HWRADIO {
       uint8_t rxbytes = rd.getRXbytes();
       if (rxbytes) {                // some bytes detected
         if (!armed) {               // bytes are new in the queue
-          armed = 1;                
+          armed = 1;
           //DPRINTLN(':');
           set(millis2ticks(50));
           clock.add(*this);         // wait 50ms to finish the receive and GDO0 can signalize
@@ -361,8 +361,12 @@ class Radio : public HWRADIO {
       // if CC1101 stops receiving, VCO_VC_DAC goes to 0xFF
       uint8_t vcoval = rd.getVCOvalue();
       if (vcoval == 0xFF) {
+        uint8_t fscal1val = rd.getFSCAL1value();
+        DPRINT(F("FSCAL1 before forced calib: ")); DHEXLN(fscal1val);
         rd.forceCal();
-        DPRINT(F("\n\ncalibration forced... - ")); DPRINTLN(millis()); DPRINT('\n');
+        DPRINT(F("\n\ncalibration forced... - ")); DPRINTLN(millis());
+        fscal1val = rd.getFSCAL1value();
+        DPRINT(F("FSCAL1 after forced calib:  ")); DHEXLN(fscal1val);
       }
       // start the next timer cycle
       set(millis2ticks(500));       // 500ms polling
@@ -439,7 +443,7 @@ public:
 public:   //---------------------------------------------------------------------------------------------------------
   Radio () : state(ALIVE)
 #ifdef RADIOWATCHDOG
-    , radiowd(*this) 
+    , radiowd(*this)
 #endif
     {}
 
@@ -534,11 +538,11 @@ void disable () {
 
   // read the message form the internal buffer, if any
   uint8_t read (Message& msg) {
-    
+
     if( isState(READ) == false )
     //if (getGDO0falling() == false)
       return 0;
-    
+
     //if (isState(READ) == false) then DPRINTLN(F("interrupt overseen"));
 
     unsetState(READ);
