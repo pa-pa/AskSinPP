@@ -160,7 +160,7 @@ public:
     , f1(0x65), f0(0x6A) // set to defaults
 #endif
     {}
-
+	
   uint8_t interruptMode() {
     return 0; // FALLING
   };
@@ -206,7 +206,7 @@ public:
 #endif
     spi.strobe(CC1101_SRX);
   }
-
+  
   uint8_t reset() {
 
     // Strobe CSn low / high
@@ -447,7 +447,7 @@ public:
   uint8_t rssi () const {
     return rss;
   }
-
+  
   void flushrx () {
     spi.strobe(CC1101_SIDLE);
     spi.strobe(CC1101_SNOP);
@@ -564,10 +564,6 @@ protected:
 
   uint8_t getVCOvalue() {
     return spi.readReg(CC1101_VCO_VC_DAC, CC1101_STATUS);
-  }
-
-  uint8_t getFSCAL1value() {
-    return spi.readReg(CC1101_FSCAL1, CC1101_CONFIG);
   }
 
   void forceCal() {
