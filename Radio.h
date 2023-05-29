@@ -298,6 +298,7 @@ public:
 };
 #endif
 
+
 extern void* __gb_radio;
 
 class NoRadio {
@@ -325,56 +326,13 @@ public:
   bool write (__attribute__ ((unused)) const Message& msg, __attribute__ ((unused)) uint8_t burst) { return false; }
 };
 
-template <class SPIType ,uint8_t GDO0, uint8_t PWRPIN=0xff, int SENDDELAY=100,class HWRADIO=CC1101<SPIType,PWRPIN> >
+
+template <class SPIType, uint8_t GDO0, uint8_t PWRPIN = 0xff, int SENDDELAY = 100, class HWRADIO = CC1101<SPIType, PWRPIN> >
 class Radio : public HWRADIO {
 
   static void isr () {
     instance().handleInt();
   }
-
-#ifdef RADIOWATCHDOG
-  class RadioWd : public Alarm {
-    Radio& rd;
-    uint8_t armed;
-
-  public:
-    RadioWd(Radio& r) : Alarm(0, false), rd(r) {  }
-    virtual ~RadioWd() {}
-
-    virtual void trigger(__attribute__((unused)) AlarmClock& clock) {
-      // check if RX buffer gets filled but READ flag is not set
-      uint8_t rxbytes = rd.getRXbytes();
-      if (rxbytes) {                // some bytes detected
-        if (!armed) {               // bytes are new in the queue
-          armed = 1;
-          //DPRINTLN(':');
-          set(millis2ticks(50));
-          clock.add(*this);         // wait 50ms to finish the receive and GDO0 can signalize
-          return;
-        }
-        else {                      // bytes in the queue already for some time
-          rd.setState(READ);        // set read flag
-          DPRINT(F("RX:")); DHEXLN(rxbytes);
-        }
-      }
-      armed = 0;
-      // if CC1101 stops receiving, VCO_VC_DAC goes to 0xFF
-      uint8_t vcoval = rd.getVCOvalue();
-      if (vcoval == 0xFF) {
-        uint8_t fscal1val = rd.getFSCAL1value();
-        DPRINT(F("FSCAL1 before forced calib: ")); DHEXLN(fscal1val);
-        rd.forceCal();
-        DPRINT(F("\n\ncalibration forced... - ")); DPRINTLN(millis());
-        fscal1val = rd.getFSCAL1value();
-        DPRINT(F("FSCAL1 after forced calib:  ")); DHEXLN(fscal1val);
-      }
-      // start the next timer cycle
-      set(millis2ticks(500));       // 500ms polling
-      clock.add(*this);
-    }
-
-  } radiowd;
-#endif
 
   class MinSendTimeout : public Alarm {
     volatile bool wait;
@@ -441,10 +399,8 @@ public:
   void unsetState(States s) { state &= ~s; }
 
 public:   //---------------------------------------------------------------------------------------------------------
-  Radio () : state(ALIVE)
-#ifdef RADIOWATCHDOG
-    , radiowd(*this)
-#endif
+  Radio () : state(ALIVE) 
+
     {}
 
   bool init () {
@@ -460,10 +416,7 @@ public:   //--------------------------------------------------------------------
     bool initOK = HWRADIO::init();
     if (initOK) HWRADIO::wakeup(true);
     //DPRINT(F("CC init "));DPRINTLN(initOK ? F("OK"):F("FAIL"));
-#ifdef RADIOWATCHDOG
-    sysclock.add(radiowd);
-    DPRINTLN(F("RadioWD enabled"));
-#endif
+
     return initOK;
   }
 
@@ -598,14 +551,45 @@ void disable () {
 
 };
 
-template <class SPIType ,uint8_t GDO0, uint8_t PWRPIN=0xff, int SENDDELAY=100>
-class CC1101Radio : public Radio<SPIType,GDO0, PWRPIN,SENDDELAY,CC1101<SPIType,PWRPIN>> {};
 
-template <class SPIType ,uint8_t GDO0, uint8_t PWRPIN=0xff, int SENDDELAY=100>
-class Si4431Radio : public Radio<SPIType,GDO0, PWRPIN,SENDDELAY,Si4431<SPIType,PWRPIN,GDO0>> {};
+template <class SPIType, uint8_t GDO0, uint8_t PWRPIN = 0xff, int SENDDELAY = 100, class HWRADIO = CC1101<SPIType, PWRPIN> >
+class CalibratedRadio : public Radio<SPIType, GDO0, PWRPIN, SENDDELAY, HWRADIO >, public Alarm {
+public:
+  typedef Radio<SPIType, GDO0, PWRPIN, SENDDELAY, HWRADIO > CRadioType;
+
+  CalibratedRadio() : CRadioType(), Alarm(0, false) { }
+  virtual ~CalibratedRadio() {}
+
+  virtual void trigger(AlarmClock& clock) {
+    this->recalibrate();
+    // start the next timer cycle
+    set(millis2ticks(500));       // 500ms polling
+    clock.add(*this);
+  }
+
+  bool init() {
+    DPRINTLN(F("CalibratedRadio"));
+    bool result = CRadioType::init();
+    // start watchdog
+    trigger(sysclock);
+    return result;
+  }
+};
+
+
+
+
+template <class SPIType, uint8_t GDO0, uint8_t PWRPIN = 0xff, int SENDDELAY = 100>
+class CC1101Radio : public Radio<SPIType, GDO0, PWRPIN, SENDDELAY, CC1101<SPIType, PWRPIN>> {};
+
+template <class SPIType, uint8_t GDO0, uint8_t PWRPIN = 0xff, int SENDDELAY = 100>
+class Si4431Radio : public Radio<SPIType, GDO0, PWRPIN, SENDDELAY, Si4431<SPIType, PWRPIN, GDO0>> {};
 
 template <class SPIType, uint8_t GDO0, uint8_t PWRPIN = 0xff, int SENDDELAY = 100>
 class RFM69Radio : public Radio<SPIType, GDO0, PWRPIN, SENDDELAY, RFM69<SPIType, PWRPIN, GDO0>> {};
+
+
+
 
 }
 

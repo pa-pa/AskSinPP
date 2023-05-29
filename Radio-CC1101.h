@@ -146,7 +146,7 @@ namespace as {
 
 
 template <class SPIType, uint8_t PWRPIN>
-class CC1101 {
+class CC1101  {
 protected:
   SPIType spi;
   uint8_t rss;   // signal strength
@@ -155,11 +155,11 @@ protected:
 #endif
 
 public:
-  CC1101 () : rss(0)
+  CC1101() : rss(0)
 #ifdef USE_OTA_BOOTLOADER_FREQUENCY
-    , f1(0x65), f0(0x6A) // set to defaults
+  , f1(0x65), f0(0x6A) // set to defaults
 #endif
-    {}
+  {}
 
   uint8_t interruptMode() {
     return 0; // FALLING
@@ -392,7 +392,6 @@ public:
     }
 #endif
 
-
 #ifdef USE_OTA_BOOTLOADER_FREQUENCY
     // set frequency from bootloader again
     initReg(CC1101_FREQ2, 0x21);
@@ -407,7 +406,7 @@ public:
 
     _delay_ms(23);
 
-    initReg(CC1101_PATABLE, PA_MaxPower);                        // configure PATABLE
+    initReg(CC1101_PATABLE, PA_MaxPower);                   // configure PATABLE
 
     DPRINTLN(F(" - ready"));
     return initOK;
@@ -491,42 +490,46 @@ protected:
         return false;
       }
     }
+    // do we need an error handler? 
     while(spi.readReg(CC1101_MARCSTATE, CC1101_STATUS) != MARCSTATE_TX);
 
+    // send burst signal for sleeping devices if necessary
     _delay_ms(10);
-    if (burst) {         // BURST-bit set?
-      _delay_ms(350);    // according to ELV, devices get activated every 300ms, so send burst for 360ms
+    if (burst) {               // BURST-bit set?
+      _delay_ms(350);          // according to ELV, devices get activated every 300ms, so send burst for 360ms
     }
 
+    // write bytes into cc1101 TX queue
     spi.writeReg(CC1101_TXFIFO, size);
-    spi.writeBurst(CC1101_TXFIFO | WRITE_BURST, buf, size);           // write in TX FIFO
+    spi.writeBurst(CC1101_TXFIFO | WRITE_BURST, buf, size);     // write in TX FIFO
 
-    for(uint8_t i = 0; i < 200; i++) {  // after sending out all bytes the chip should go automatically in RX mode
-      if( spi.readReg(CC1101_MARCSTATE, CC1101_STATUS) == MARCSTATE_RX)
-        break;                                    //now in RX mode, good
+    // after sending out all bytes the chip should go automatically in RX mode, we wait for RX mode to ensure a proper handling
+    i = 200;
+    while ( (spi.readReg(CC1101_MARCSTATE, CC1101_STATUS) != MARCSTATE_RX) || (--i == 0) ) {
       _delay_us(100);
     }
     return true;
   }
 
   uint8_t rcvData(uint8_t *buf, uint8_t size) {
-  //DPRINTLN(" rcvData");
+    //DPRINTLN(" rcvData");
 
-    uint8_t packetBytes = 0;
     uint8_t rxBytes = 0;
-    uint8_t fifoBytes = spi.readReg(CC1101_RXBYTES, CC1101_STATUS);             // how many bytes are in the buffer
+    uint8_t fifoBytes = spi.readReg(CC1101_RXBYTES, CC1101_STATUS);         // how many bytes are in the buffer
     //DPRINT("  RX FIFO: ");DHEXLN(fifoBytes);
+    
     // overflow detected - flush the FIFO
     if( fifoBytes > 0 && (fifoBytes & 0x80) != 0x80 ) {
-      packetBytes = spi.readReg(CC1101_RXFIFO, CC1101_CONFIG); // read packet length
+      uint8_t packetBytes = spi.readReg(CC1101_RXFIFO, CC1101_CONFIG);      // read packet length
       //DPRINT("  Start Packet: ");DHEXLN(packetBytes);
+      
       // check that packet fits into the buffer
       if (packetBytes <= size) {
-        spi.readBurst(buf, CC1101_RXFIFO | READ_BURST, packetBytes);          // read data packet
-        calculateRSSI(spi.readReg(CC1101_RXFIFO, CC1101_CONFIG)); // read RSSI from RXFIFO
-        uint8_t val = spi.readReg(CC1101_RXFIFO, CC1101_CONFIG); // read LQI and CRC_OK
+        spi.readBurst(buf, CC1101_RXFIFO | READ_BURST, packetBytes);        // read data packet
+        calculateRSSI(spi.readReg(CC1101_RXFIFO, CC1101_CONFIG));           // read RSSI from RXFIFO
+        uint8_t val = spi.readReg(CC1101_RXFIFO, CC1101_CONFIG);            // read LQI and CRC_OK
         // lqi = val & 0x7F;
-        if( (val & 0x80) == 0x80 ) { // check crc_ok
+        if( (val & 0x80) == 0x80 ) {                                        // check crc_ok
           // DPRINTLN("CRC OK");
           rxBytes = packetBytes;
         }
@@ -535,45 +538,28 @@ protected:
         }
       }
       else {
-        DPRINT(F("Packet too big: "));DDECLN(packetBytes);
+        DPRINT(F("Packet too big: ")); DDECLN(packetBytes);
       }
     }
-    //DPRINT(F("-> "));
-    //DHEXLN(buf,rxBytes);
-    spi.strobe(CC1101_SFRX);
-    _delay_us(190);
+    //DPRINT(F("-> ")); DHEXLN(buf,rxBytes);
+
+    // clear CC1101 buffer and go back in receive mode
+    //spi.strobe(CC1101_SFRX); not needed as it is part of the flushrx() function
+    //_delay_us(190);
     flushrx();
     spi.strobe(CC1101_SRX);
     //DHEXLN(spi.readReg(CC1101_MARCSTATE, CC1101_STATUS));
-
-    return rxBytes; // return number of byte in buffer
+    return rxBytes;                                                         // return number of byte in buffer
   }
 
-  void waitRXmode(uint8_t strobeSRX = 0) {
-    uint8_t i = 200;
-    if (strobeSRX) spi.strobe(CC1101_SRX);
-    while ((spi.readReg(CC1101_MARCSTATE, CC1101_STATUS) != MARCSTATE_RX) && (i-- > 0)) {
-      _delay_us(100);
+  void recalibrate() {
+    uint8_t fscal1val = spi.readReg(CC1101_FSCAL1, CC1101_CONFIG);
+    if (fscal1val == 0x3F) {
+      DPRINT(F("\nforce calibration - ")); DPRINTLN(millis()); DPRINT('\n');
+      spi.strobe(CC1101_SIDLE);
+      spi.strobe(CC1101_SCAL);
+      spi.strobe(CC1101_SRX);
     }
-    if (i == 0) DPRINTLN(F("switch to RX error"));
-  }
-
-  uint8_t getRXbytes() {
-    return spi.readReg(CC1101_RXBYTES, CC1101_STATUS);
-  }
-
-  uint8_t getVCOvalue() {
-    return spi.readReg(CC1101_VCO_VC_DAC, CC1101_STATUS);
-  }
-
-  uint8_t getFSCAL1value() {
-    return spi.readReg(CC1101_FSCAL1, CC1101_CONFIG);
-  }
-
-  void forceCal() {
-    spi.strobe(CC1101_SIDLE);
-    spi.strobe(CC1101_SCAL);
-    spi.strobe(CC1101_SRX);
   }
 
 };
