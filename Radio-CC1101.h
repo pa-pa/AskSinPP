@@ -474,24 +474,23 @@ protected:
     // sec ago. Due to CCA? Using IDLE helps to shorten this period(?)
     spi.strobe(CC1101_SIDLE);  // go to idle mode
     spi.strobe(CC1101_SFTX );  // flush TX buffer
-
-    uint8_t i=200;
-    do {
-      spi.strobe(CC1101_STX);
+    
+    // switch to TX and wait till status has changed, will take approx 100ms
+    spi.strobe(CC1101_STX);
+    uint8_t i = 200;
+    while ((spi.readReg(CC1101_MARCSTATE, CC1101_STATUS) != MARCSTATE_TX) || (--i == 0)) {
       _delay_us(100);
-      if( --i == 0 ) {
-        // can not enter TX state - reset fifo
-        spi.strobe(CC1101_SIDLE );
-        spi.strobe(CC1101_SFTX  );
-        spi.strobe(CC1101_SNOP );
-        // back to RX mode
-        do { spi.strobe(CC1101_SRX);
-        } while (spi.readReg(CC1101_MARCSTATE, CC1101_STATUS) != MARCSTATE_RX);
-        return false;
-      }
     }
-    // do we need an error handler? 
-    while(spi.readReg(CC1101_MARCSTATE, CC1101_STATUS) != MARCSTATE_TX);
+
+    if (i == 0) {
+      // switch to TX mode timed out - reset fifo and back to RX mode
+      spi.strobe(CC1101_SIDLE);                                             
+      spi.strobe(CC1101_SFTX);
+      spi.strobe(CC1101_SNOP);
+      spi.strobe(CC1101_SRX);
+      waitRX();
+      return false;
+    }
 
     // send burst signal for sleeping devices if necessary
     _delay_ms(10);
@@ -501,35 +500,40 @@ protected:
 
     // write bytes into cc1101 TX queue
     spi.writeReg(CC1101_TXFIFO, size);
-    spi.writeBurst(CC1101_TXFIFO | WRITE_BURST, buf, size);     // write in TX FIFO
+    spi.writeBurst(CC1101_TXFIFO | WRITE_BURST, buf, size);             // write in TX FIFO
 
     // after sending out all bytes the chip should go automatically in RX mode, we wait for RX mode to ensure a proper handling
-    i = 200;
-    while ( (spi.readReg(CC1101_MARCSTATE, CC1101_STATUS) != MARCSTATE_RX) || (--i == 0) ) {
+    return waitRX();
+  }
+
+  uint8_t waitRX() {
+    uint8_t i = 200;
+    while ((spi.readReg(CC1101_MARCSTATE, CC1101_STATUS) != MARCSTATE_RX) || (--i == 0)) {
       _delay_us(100);
     }
-    return true;
+    return i ? true : false;
   }
+
 
   uint8_t rcvData(uint8_t *buf, uint8_t size) {
     //DPRINTLN(" rcvData");
 
     uint8_t rxBytes = 0;
-    uint8_t fifoBytes = spi.readReg(CC1101_RXBYTES, CC1101_STATUS);         // how many bytes are in the buffer
+    uint8_t fifoBytes = spi.readReg(CC1101_RXBYTES, CC1101_STATUS);     // how many bytes are in the buffer
     //DPRINT("  RX FIFO: ");DHEXLN(fifoBytes);
     
     // overflow detected - flush the FIFO
     if( fifoBytes > 0 && (fifoBytes & 0x80) != 0x80 ) {
-      uint8_t packetBytes = spi.readReg(CC1101_RXFIFO, CC1101_CONFIG);      // read packet length
+      uint8_t packetBytes = spi.readReg(CC1101_RXFIFO, CC1101_CONFIG);  // read packet length
       //DPRINT("  Start Packet: ");DHEXLN(packetBytes);
       
       // check that packet fits into the buffer
       if (packetBytes <= size) {
-        spi.readBurst(buf, CC1101_RXFIFO | READ_BURST, packetBytes);        // read data packet
-        calculateRSSI(spi.readReg(CC1101_RXFIFO, CC1101_CONFIG));           // read RSSI from RXFIFO
-        uint8_t val = spi.readReg(CC1101_RXFIFO, CC1101_CONFIG);            // read LQI and CRC_OK
+        spi.readBurst(buf, CC1101_RXFIFO | READ_BURST, packetBytes);    // read data packet
+        calculateRSSI(spi.readReg(CC1101_RXFIFO, CC1101_CONFIG));       // read RSSI from RXFIFO
+        uint8_t val = spi.readReg(CC1101_RXFIFO, CC1101_CONFIG);        // read LQI and CRC_OK
         // lqi = val & 0x7F;
-        if( (val & 0x80) == 0x80 ) {                                        // check crc_ok
+        if( (val & 0x80) == 0x80 ) {                                    // check crc_ok
           // DPRINTLN("CRC OK");
           rxBytes = packetBytes;
         }
@@ -544,12 +548,10 @@ protected:
     //DPRINT(F("-> ")); DHEXLN(buf,rxBytes);
 
     // clear CC1101 buffer and go back in receive mode
-    //spi.strobe(CC1101_SFRX); not needed as it is part of the flushrx() function
-    //_delay_us(190);
     flushrx();
-    spi.strobe(CC1101_SRX);
+    spi.strobe(CC1101_SRX);                                             // will take ~100ms, but we do not need to wait
     //DHEXLN(spi.readReg(CC1101_MARCSTATE, CC1101_STATUS));
-    return rxBytes;                                                         // return number of byte in buffer
+    return rxBytes;                                                     // return number of byte in buffer
   }
 
   void recalibrate() {
