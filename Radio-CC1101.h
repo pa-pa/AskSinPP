@@ -475,15 +475,15 @@ protected:
     spi.strobe(CC1101_SIDLE);  // go to idle mode
     spi.strobe(CC1101_SFTX );  // flush TX buffer
     
-    // switch to TX and wait till status has changed, will take approx 100ms
+    // switch to TX and wait till status has changed, will take approx 1ms
     spi.strobe(CC1101_STX);
     uint8_t i = 200;
     while ((spi.readReg(CC1101_MARCSTATE, CC1101_STATUS) != MARCSTATE_TX) || (--i == 0)) {
       _delay_us(100);
     }
 
+    // if switch to TX mode timed out - reset fifo and back to RX mode
     if (i == 0) {
-      // switch to TX mode timed out - reset fifo and back to RX mode
       spi.strobe(CC1101_SIDLE);                                             
       spi.strobe(CC1101_SFTX);
       spi.strobe(CC1101_SNOP);
@@ -509,7 +509,7 @@ protected:
   uint8_t waitRX() {
     uint8_t i = 200;
     while ((spi.readReg(CC1101_MARCSTATE, CC1101_STATUS) != MARCSTATE_RX) || (--i == 0)) {
-      _delay_us(100);
+      _delay_us(200);
     }
     return i ? true : false;
   }
