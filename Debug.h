@@ -281,10 +281,10 @@
     InputParser& operator >> (char& v) { return get(&v, 1); }
     InputParser& operator >> (int8_t& v) { return get(&v, 1); }
     InputParser& operator >> (uint8_t& v) { return get(&v, 1); }
-    InputParser& operator >> (int& v) { return get(&v, 2); }
-    InputParser& operator >> (word& v) { return get(&v, 2); }
-    InputParser& operator >> (int16_t& v) { return get(&v, 2); }
-    InputParser& operator >> (uint16_t& v) { return get(&v, 2); }
+    // InputParser& operator >> (int& v) { return get(&v, 2); }
+    // InputParser& operator >> (word& v) { return get(&v, 2); }
+    // InputParser& operator >> (int16_t& v) { return get(&v, 2); }
+    // InputParser& operator >> (uint16_t& v) { return get(&v, 2); }
     InputParser& operator >> (int32_t& v) { return get(&v, 4); }
     InputParser& operator >> (uint32_t& v) { return get(&v, 4); }
 
