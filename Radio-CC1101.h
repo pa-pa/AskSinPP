@@ -547,9 +547,9 @@ protected:
     }
     //DPRINT(F("-> ")); DHEXLN(buf,rxBytes);
 
-    // clear CC1101 buffer and go back in receive mode
+    // cc1101 is configured to enter idle mode after receiving a message; go back in receive mode
     flushrx();
-    spi.strobe(CC1101_SRX);                                             // will take ~100ms, but we do not need to wait
+    spi.strobe(CC1101_SRX);
     //DHEXLN(spi.readReg(CC1101_MARCSTATE, CC1101_STATUS));
     return rxBytes;                                                     // return number of byte in buffer
   }
