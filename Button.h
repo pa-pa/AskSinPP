@@ -170,16 +170,20 @@ public:
   }
 
   void irq () {
-      sysclock.cancel(ca);
+    //if (dbl.newPressAllowed() == true) {
+    //  sysclock.cancel(ca);
       // use alarm to run code outside of interrupt
-      sysclock.add(ca);
-    }
+    //  sysclock.add(ca);
+    //}
+    sysclock.cancel(ca); 
+    sysclock.add(ca);
   }
 
   void check() {
     uint8_t ps = digitalRead(pin);
     if( pinstate != ps ) {
       pinstate = ps;
+      if ((pinstate == ONSTATE) && (dbl.newPressAllowed() == false) && (state() != none)) return;
       uint16_t nexttick = 0;
       uint8_t  nextstate = state();
       switch ( state() ) {
