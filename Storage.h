@@ -12,6 +12,10 @@
   #include "flash_stm32.h"
 #endif
 
+#if defined ARDUINO_ARCH_STM32 && defined STM32WL
+  #include <EEPROM.h>
+#endif
+
 #if defined ARDUINO_ARCH_ESP32 || defined ARDUINO_ARCH_RP2040
   #include "AlarmClock.h"
   #include <EEPROM.h>
@@ -89,6 +93,35 @@ class InternalEprom {
     }
     HAL_FLASHEx_DATAEEPROM_Lock();
 }
+
+#elif defined ARDUINO_ARCH_STM32 && defined STM32WL
+  // standard lib provides 4096 byte emulated eeprom in flash
+  // check if eeprom lib also works for stm32l1xx so that we can allign sections
+
+  #define EEINFO_EEPROM_SIZE   EEPROM.length()
+  #define E2END EEINFO_EEPROM_SIZE
+
+  void eeprom_read_block(void* buf, const void* addr, size_t size) {
+    uint8_t* ptr = (uint8_t*)buf;
+    uint32_t offset = (uintptr_t)addr;
+
+    for (uint16_t i = 0; i < size; i++) {
+      uint16_t address = offset + i;
+      ptr[i] = EEPROM.read(address);
+    }
+  }
+  
+  void eeprom_write_block(const void* buf, void* addr, size_t size) {
+    // we use update instead of write because it is much faster if bytes are already correct in the eeprom
+    uint8_t* ptr = (uint8_t*)buf;
+    uint32_t offset = (uintptr_t)addr;
+
+    for (uint16_t i = 0; i < size; i++) {
+      uint16_t address = offset + i;
+      EEPROM.update(address, ptr[i]);
+    }
+    DPRINT('-');
+  }
 
 #elif defined ARDUINO_ARCH_ESP32 || defined ARDUINO_ARCH_RP2040
   //ESP32 Arduino libraries emulate EEPROM using a sector (4 kilobytes) of flash memory.

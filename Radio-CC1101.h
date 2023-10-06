@@ -147,7 +147,8 @@ namespace as {
 
 template <class SPIType, uint8_t PWRPIN>
 class CC1101  {
-protected:
+//protected:
+public:
   SPIType spi;
   uint8_t rss;   // signal strength
 #ifdef USE_OTA_BOOTLOADER_FREQUENCY
@@ -235,7 +236,6 @@ public:
 
     return ret;
   }
-
 
   bool init () {
     if (PWRPIN < 0xff) {
@@ -333,7 +333,7 @@ public:
       CC1101_SYNC0,     0xCA,   //  0x91    Sync word LSB
     //CC1101_PKTLEN,    0xFF,   //  0xFF
       CC1101_PKTCTRL1,  0x0C,   //  0x04    CRC auto flush = 1, append status = 1,
-    //CC1101_PKTCTRL0,  0x45,   //  0x45
+      CC1101_PKTCTRL0,  0x45,   //  0x45   
     //CC1101_ADDR,      0x00,   //  0x00
     //CC1101_CHANNR,    0x00,   //  0x00
       CC1101_FSCTRL1,   0x06,   //  0x0F    frequency synthesizer control
@@ -513,7 +513,6 @@ protected:
     }
     return i ? true : false;
   }
-
 
   uint8_t rcvData(uint8_t *buf, uint8_t size) {
     //DPRINTLN(" rcvData");

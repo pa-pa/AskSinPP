@@ -123,8 +123,9 @@ class SysClock : public AlarmClock {
   portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
 #endif
 
-#if defined ARDUINO_ARCH_STM32 && defined STM32L1xx
-  HardwareTimer* Timer = new HardwareTimer(TIM6);
+#if defined ARDUINO_ARCH_STM32 //&& defined STM32L1xx
+  //HardwareTimer* Timer = new HardwareTimer(TIM6);
+  HardwareTimer* Timer = new HardwareTimer(TIMER_TONE);
 #endif
 
 #ifdef ARDUINO_ARCH_RP2040
@@ -185,7 +186,7 @@ public:
     Timer2.setPeriod(1000000 / TICKS_PER_SECOND); // in microseconds
     Timer2.setCompare(TIMER_CH2, 1); // overflow might be small
   #endif
-  #if defined (ARDUINO_ARCH_STM32) && defined (STM32L1xx)
+  #if defined (ARDUINO_ARCH_STM32) //&& defined (STM32L1xx)
     Timer->setOverflow(1000000 / TICKS_PER_SECOND, MICROSEC_FORMAT);
     Timer->attachInterrupt(callback);
   #endif
@@ -209,7 +210,7 @@ public:
     TIMSK1 &= ~_BV(TOIE1);
   #elif defined(ARDUINO_ARCH_STM32F1)
     Timer2.detachInterrupt(TIMER_CH2);
-  #elif defined ARDUINO_ARCH_STM32 && defined STM32L1xx
+  #elif defined ARDUINO_ARCH_STM32 //&& defined STM32L1xx
     Timer->pause();
   #endif
   #ifdef ARDUINO_ARCH_ESP32
@@ -244,7 +245,7 @@ public:
     TIMSK1 |= _BV(TOIE1);
   #elif defined(ARDUINO_ARCH_STM32F1)
     Timer2.attachInterrupt(TIMER_CH2,callback);
-  #elif defined ARDUINO_ARCH_STM32 && defined STM32L1xx
+  #elif defined ARDUINO_ARCH_STM32 //&& defined STM32L1xx
     Timer->resume();
   #endif
   #ifdef ARDUINO_ARCH_ESP32

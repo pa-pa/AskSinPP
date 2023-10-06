@@ -67,6 +67,7 @@
 #include "Radio-CC1101.h"
 #include "Radio-Si4431.h"
 #include "Radio-RFM69.h"
+#include "Radio-STM32WLx.h"
 
 namespace as {
 
@@ -168,7 +169,7 @@ public:
 
 #endif
 
-#ifdef SPI_MODE0
+#ifdef SPI_MODE0 
 template <uint8_t CS,uint32_t CLOCK=2000000, BitOrder BITORDER=SPI_BITORDER_MSBFIRST, uint8_t MODE=SPI_MODE0>
 class LibSPI {
 public:
@@ -299,6 +300,7 @@ public:
 #endif
 
 
+
 extern void* __gb_radio;
 
 class NoRadio {
@@ -308,8 +310,10 @@ public:
   /// @brief Gibt zurück, ob bei einem Interupt auf die steigende oder fallende Flanke getriggert werden soll. Muss in der jeweiligen Radioklasse implementiert werden.
   /// @return 0 = FALLING, 1 = RISING
   uint8_t interruptMode() { return 0; };
+
+  void tuneFreq(__attribute__((unused)) uint8_t freq2, __attribute__((unused)) uint8_t freq1, __attribute__((unused)) uint8_t freq0) {}
   bool detectBurst () { return false; }
-  void disable () {};
+  void disable () {}
   void enable () {}
   void flushrx() {}
   uint8_t getGDO0 () { return 0; }
@@ -326,14 +330,9 @@ public:
   bool write (__attribute__ ((unused)) const Message& msg, __attribute__ ((unused)) uint8_t burst) { return false; }
 };
 
-
 template <class SPIType, uint8_t GDO0, uint8_t PWRPIN = 0xff, int SENDDELAY = 100, class HWRADIO = CC1101<SPIType, PWRPIN> >
 class Radio : public HWRADIO {
-
-  static void isr () {
-    instance().handleInt();
-  }
-
+  
   class MinSendTimeout : public Alarm {
     volatile bool wait;
   public:
@@ -374,6 +373,12 @@ class Radio : public HWRADIO {
     }
   } timeout;
 
+protected:
+  static void isr() {
+    //DPRINT('*');
+    instance().handleInt();
+  }
+
 public:
   //  this will delay next send by given millis
   void setSendTimeout(uint16_t millis=SENDDELAY) {
@@ -399,9 +404,7 @@ public:
   void unsetState(States s) { state &= ~s; }
 
 public:   //---------------------------------------------------------------------------------------------------------
-  Radio () : state(ALIVE) 
-
-    {}
+  Radio () : state(ALIVE) {}
 
   bool init () {
     // ensure ISR if off before we start to init CC1101
@@ -419,7 +422,6 @@ public:   //--------------------------------------------------------------------
 
     return initOK;
   }
-
 
   void setIdle () {
     if( isState(IDLE) == false ) {
@@ -441,7 +443,7 @@ public:   //--------------------------------------------------------------------
 
   void handleInt () {
     if( isState(SENDING) == false ) {
-//      DPRINT(" * "); DPRINTLN(millis());
+      //DPRINT(" * "); DPRINTLN(millis());
       setState(READ_ALIVE);
     }
   }
@@ -462,32 +464,35 @@ public:   //--------------------------------------------------------------------
   }
 
   bool getGDO0falling() {
+    DPRINTLN("getGDO0falling");
     static uint8_t gdo0 = 1;
     gdo0 = ((gdo0 << 1) + getGDO0()) & 0b11;
     return (gdo0 == 0b10)?true:false;
   }
 
   uint8_t getGDO0 () {
+    DPRINTLN("getGDO0");
     return digitalRead(GDO0);
   }
 
-void enable () {
+  // virtual, to overwrite by master class
+  virtual void enable () {
 #ifdef EnableInterrupt_h
-  if( digitalPinToInterrupt(GDO0) == NOT_AN_INTERRUPT )
-	// interruptMode() muss in der jeweiligen Radioklasse implementiert werden und 0 = FALLING oder 1 = RISING zurückgeben.
-    enableInterrupt(GDO0, isr, HWRADIO::interruptMode() == 0 ? FALLING : RISING);
-      else
+    if( digitalPinToInterrupt(GDO0) == NOT_AN_INTERRUPT )
+	  // interruptMode() muss in der jeweiligen Radioklasse implementiert werden und 0 = FALLING oder 1 = RISING zurückgeben.
+      enableInterrupt(GDO0, isr, HWRADIO::interruptMode() == 0 ? FALLING : RISING);
+    else
 #endif
-        attachInterrupt(digitalPinToInterrupt(GDO0), isr, HWRADIO::interruptMode() == 0 ? FALLING : RISING);
-}
-void disable () {
+    attachInterrupt(digitalPinToInterrupt(GDO0), isr, HWRADIO::interruptMode() == 0 ? FALLING : RISING);
+  }
+  virtual void disable () {
 #ifdef EnableInterrupt_h
-  if( digitalPinToInterrupt(GDO0) == NOT_AN_INTERRUPT )
-    disableInterrupt(GDO0);
-  else
+    if( digitalPinToInterrupt(GDO0) == NOT_AN_INTERRUPT )
+      disableInterrupt(GDO0);
+    else
 #endif
     detachInterrupt(digitalPinToInterrupt(GDO0));
-}
+  }
 
   // read the message form the internal buffer, if any
   uint8_t read (Message& msg) {
@@ -500,7 +505,7 @@ void disable () {
 
     unsetState(READ);
     uint8_t len = this->rcvData(buffer.buffer(),buffer.buffersize());
-    if( len > 0 ) {
+    if (len > 0) {
       buffer.length(len);
       // decode the message
       buffer.decode();
@@ -551,7 +556,7 @@ void disable () {
 
 };
 
-
+// overlay for a keep alive rx function
 template <class SPIType, uint8_t GDO0, uint8_t PWRPIN = 0xff, int SENDDELAY = 100, class HWRADIO = CC1101<SPIType, PWRPIN> >
 class CalibratedRadio : public Radio<SPIType, GDO0, PWRPIN, SENDDELAY, HWRADIO >, public Alarm {
 public:
@@ -577,8 +582,6 @@ public:
 };
 
 
-
-
 template <class SPIType, uint8_t GDO0, uint8_t PWRPIN = 0xff, int SENDDELAY = 100>
 class CC1101Radio : public Radio<SPIType, GDO0, PWRPIN, SENDDELAY, CC1101<SPIType, PWRPIN>> {};
 
@@ -588,9 +591,46 @@ class Si4431Radio : public Radio<SPIType, GDO0, PWRPIN, SENDDELAY, Si4431<SPITyp
 template <class SPIType, uint8_t GDO0, uint8_t PWRPIN = 0xff, int SENDDELAY = 100>
 class RFM69Radio : public Radio<SPIType, GDO0, PWRPIN, SENDDELAY, RFM69<SPIType, PWRPIN, GDO0>> {};
 
+#if defined STM32WL
+template <class SPIType, int SENDDELAY = 100, class HWRADIO = STM32WLx<SPIType>>
+class STM32WLxRadio : public Radio<SPIType, 0xff, 0xff, SENDDELAY, HWRADIO> {
+public:
+  STM32WLxRadio() {} 
+  //virtual ~STM32WLxRadio() {}
 
+  static STM32WLxRadio<SPIType, SENDDELAY, HWRADIO>& instance() {
+    return *((STM32WLxRadio<SPIType, SENDDELAY, HWRADIO>*)__gb_radio);
+  }
 
+  // overwrite interrupt function in Radio class, as we need to stop the interrupt 
+  static void isr() {
+    // disable interrupt till we have read the rx buffer
+    instance().disable();
+    instance().handleInt();
+  }
 
+  // overwrite Radio.init(), as we do not need GDO0 pin initialized
+  // and HWRADIO::init(isr) need a callback handle
+  bool init() {
+    DPRINT(F("STM32WLxRadio init "));
+    disable();
+    __gb_radio = this;
+
+    bool initOK = HWRADIO::init(isr);
+    if (initOK) HWRADIO::wakeup(true);
+
+    return initOK;
+  }
+
+  // overwrite interrupt functions as the handling for STM32WLx is different
+  void enable() {
+    HWRADIO::enableInterrupt();
+  }
+  void disable() {
+    HWRADIO::disableInterrupt();
+  }
+};
+#endif
 }
 
 #endif

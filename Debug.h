@@ -11,6 +11,7 @@
 #endif
 
 //#define NDEBUG
+//#undef NDEBUG
 
 #ifdef NDEBUG
 
@@ -20,6 +21,7 @@
   #define DPRINTLN(str)
   #define DHEX(b...)
   #define DHEXLN(b)
+  #define DHEXLN(b,x)
   #define DDEC(b)
   #define DDECLN(b)
 

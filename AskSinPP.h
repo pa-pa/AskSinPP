@@ -44,15 +44,19 @@
   #define enableInterrupt(pin,handler,mode) attachInterrupt(pin,handler,mode)
   #define disableInterrupt(pin) detachInterrupt(pin)
   #define memcmp_P(src,dst,count) memcmp((src),(dst),(count))
-#elif (defined (ARDUINO_ARCH_STM32) && defined (STM32L1xx)) || (defined ARDUINO_ARCH_ESP32) || (defined ARDUINO_ARCH_RP2040)
+#elif (defined ARDUINO_ARCH_STM32) || (defined ARDUINO_ARCH_ESP32) || (defined ARDUINO_ARCH_RP2040)
   #define _delay_us(us) delayMicroseconds(us)
+  // check if we can use delay() instead delayMicroseconds()
   inline void _delay_ms(uint32_t ms) { do { delayMicroseconds(1000); } while ((--ms) > 0); }
 
   typedef uint32_t WiringPinMode;
   typedef uint8_t uint8;
 
-  #define enableInterrupt(pin,handler,mode) attachInterrupt(pin,handler,mode)
-  #define disableInterrupt(pin) detachInterrupt(pin)
+  // macro will replace everywhere also in a class member which conflicts with SubGhzSPI
+  //#define enableInterrupt(pin,handler,mode) attachInterrupt(pin,handler,mode)
+  inline void enableInterrupt(uint32_t pin, callback_function_t handler, uint32_t mode) { attachInterrupt(pin, handler, mode); }
+  //#define disableInterrupt(pin) detachInterrupt(pin)
+  inline void disableInterrupt(uint32_t pin) { detachInterrupt(pin); }
 #else
   typedef uint8_t uint8;
   typedef uint16_t uint16;

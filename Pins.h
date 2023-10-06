@@ -25,7 +25,7 @@ public:
 #ifdef ARDUINO_ARCH_STM32F1
   inline static void setPWM      (uint8_t pin) { pinMode(pin,PWM); }
   inline static void setPWM      (uint8_t pin,uint16_t value) { pwmWrite(pin,value); }
-#elif defined (ARDUINO_ARCH_STM32) && defined (STM32L1xx)
+#elif defined (ARDUINO_ARCH_STM32) //&& defined (STM32L1xx)
   inline static void setPWM      (uint8_t pin) { pinMode(pin, OUTPUT); }
   inline static void setPWM      (uint8_t pin, uint16_t value) { analogWrite(pin, value); }
   inline static void setPWMFreq  (uint16_t freq) { analogWriteFrequency(freq); }

@@ -150,7 +150,7 @@ public:
 
 #endif
 
-#if defined ARDUINO_ARCH_STM32 && defined STM32L1xx
+#if defined ARDUINO_ARCH_STM32 //&& defined STM32L1xx
 template<uint8_t STEPS = 200, class PINTYPE = ArduinoPins>
 class PWM16 {
   uint8_t pin, curve;
