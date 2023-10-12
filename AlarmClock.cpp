@@ -18,22 +18,22 @@ void callback(sl_sleeptimer_timer_handle_t *id , __attribute__((unused)) void *u
 #else
 void callback(void) {
   --sysclock;
-    //DPRINT(".");
+  //DPRINT(".");
 }
 #endif
 
 
 #ifndef NORTC
 RealTimeClock rtc;
-#ifdef ARDUINO_ARCH_EFM32
+#if defined(ARDUINO_ARCH_EFM32)
 void rtccallback(__attribute__((unused)) sl_sleeptimer_timer_handle_t * id , __attribute__((unused)) void *user) {
 #else
 void rtccallback () {
 #endif
-  //  DPRINT(".");
-    rtc.overflow();
-  //  rtc.debug();
-    --rtc;
+  rtc.overflow();
+  //rtc.debug();
+  --rtc;
+  //DPRINT('.');
 }
 #endif
 

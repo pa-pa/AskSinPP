@@ -13,7 +13,7 @@
 #include <LowPower.h>
 #endif
 
-#if defined ARDUINO_ARCH_STM32 && defined STM32L1xx
+#if defined ARDUINO_ARCH_STM32 
 #include "STM32LowPower.h"
 #endif
 
@@ -226,15 +226,15 @@ public:
 
 #endif
 
-#if defined ARDUINO_ARCH_STM32 && defined STM32L1xx
+#if defined ARDUINO_ARCH_STM32 
 // more time to spend here
 template <bool ENABLETIMER2 = false, bool ENABLEADC = false>
 class Idle {
 public:
 
   static void waitSerial() {
-    // DPRINT(F("Go sleep - ")); DHEXLN((uint16_t)sysclock.next());
-    Serial.flush(); // waits for the transmission of outgoing serial data to complete
+    //DPRINT(F("Go sleep - ")); DHEXLN((uint16_t)sysclock.next());
+    DSERIAL.flush(); // waits for the transmission of outgoing serial data to complete
    }
 
   template <class Hal>
@@ -371,7 +371,7 @@ public:
   #endif
       LowPower.powerDown(SLEEP_FOREVER,ADC_OFF,BOD_OFF);
 #endif
-#if defined ARDUINO_ARCH_STM32 && defined STM32L1xx
+#if defined ARDUINO_ARCH_STM32
   #ifndef NDEBUG
     Idle<>::waitSerial();
   #endif

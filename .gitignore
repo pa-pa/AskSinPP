@@ -8,3 +8,12 @@
 **/.vscode
 .idea
 .DS_Store
+.vs
+__vm
+/src/
+/bin/
+/obj/
+.private.h
+*.filters
+*.sln
+*.vcxproj

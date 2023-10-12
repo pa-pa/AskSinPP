@@ -24,6 +24,8 @@
   #define TIMER_MIN_TIMEOUT_MS 10
 #endif
 
+
+
 namespace as {
 
 #ifndef TICKS_PER_SECOND
@@ -106,7 +108,7 @@ public:
 };
 
 
-#ifdef ARDUINO_ARCH_EFM32
+#if defined ARDUINO_ARCH_EFM32
 extern void callback(sl_sleeptimer_timer_handle_t *id , void *user);
 extern void rtccallback(sl_sleeptimer_timer_handle_t *id , void *user);
 extern uint32_t getTimeout();
@@ -123,8 +125,8 @@ class SysClock : public AlarmClock {
   portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
 #endif
 
-#if defined ARDUINO_ARCH_STM32 && defined STM32L1xx
-  HardwareTimer* Timer = new HardwareTimer(TIM6);
+#if defined ARDUINO_ARCH_STM32 
+  HardwareTimer* Timer = new HardwareTimer(TIMER_TONE);
 #endif
 
 #ifdef ARDUINO_ARCH_RP2040
@@ -185,7 +187,7 @@ public:
     Timer2.setPeriod(1000000 / TICKS_PER_SECOND); // in microseconds
     Timer2.setCompare(TIMER_CH2, 1); // overflow might be small
   #endif
-  #if defined (ARDUINO_ARCH_STM32) && defined (STM32L1xx)
+  #if defined ARDUINO_ARCH_STM32 
     Timer->setOverflow(1000000 / TICKS_PER_SECOND, MICROSEC_FORMAT);
     Timer->attachInterrupt(callback);
   #endif
@@ -209,7 +211,7 @@ public:
     TIMSK1 &= ~_BV(TOIE1);
   #elif defined(ARDUINO_ARCH_STM32F1)
     Timer2.detachInterrupt(TIMER_CH2);
-  #elif defined ARDUINO_ARCH_STM32 && defined STM32L1xx
+  #elif defined ARDUINO_ARCH_STM32 
     Timer->pause();
   #endif
   #ifdef ARDUINO_ARCH_ESP32
@@ -238,13 +240,13 @@ public:
 #endif
 
   void enable () {
-  #if defined ARDUINO_AVR_ATmega32|| defined(__AVR_ATmega128__)
+  #if defined ARDUINO_AVR_ATmega32 || defined(__AVR_ATmega128__)
     TIMSK |= _BV(TOIE1);
   #elif defined(ARDUINO_ARCH_AVR)
     TIMSK1 |= _BV(TOIE1);
   #elif defined(ARDUINO_ARCH_STM32F1)
     Timer2.attachInterrupt(TIMER_CH2,callback);
-  #elif defined ARDUINO_ARCH_STM32 && defined STM32L1xx
+  #elif defined ARDUINO_ARCH_STM32 
     Timer->resume();
   #endif
   #ifdef ARDUINO_ARCH_ESP32
@@ -338,7 +340,7 @@ public:
     sl_sleeptimer_init();
     sl_sleeptimer_restart_timer_ms( &id, 1000, callback , (void *) NULL ,0, 0 );
 #else
-  #warning "RTC not supported"
+    #warning "RTC not supported"
 #endif
   }
 
