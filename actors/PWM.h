@@ -150,12 +150,13 @@ public:
 
 #endif
 
-#if defined ARDUINO_ARCH_STM32 && defined STM32L1xx
+#if defined ARDUINO_ARCH_STM32
 template<uint8_t STEPS = 200, class PINTYPE = ArduinoPins>
 class PWM16 {
   uint8_t pin, curve;
+  uint16_t cur_value;
 public:
-  PWM16() : pin(0) {}
+  PWM16() : pin(0), cur_value(0) {}
   ~PWM16() {}
 
   void init(uint8_t p) {
@@ -172,11 +173,11 @@ public:
   }
 
   void set(uint8_t value) {
-    uint16_t ret = 0;
+    uint16_t set_value = 0;
 
     if (curve == linear) {
       //ret = map(value, 0, STEPS, 0, 65535);
-      ret = ((uint32_t)value * (uint32_t)13107) / 40;  // same as above but 60 byte less
+      set_value = ((uint32_t)value * (uint32_t)13107) / 40;  // same as above but 60 byte less
     }
     else {
       // https://diarmuid.ie/blog/pwm-exponential-led-fading-on-arduino-or-other-platforms/
@@ -189,11 +190,18 @@ public:
       
       // 734 seems the best factor to calculate from quadratic step 200 to 0xFF, 0xFFF or 0xFFFF
       // divisor 16 bit: 448, 12 bit: 7168, 8 bit: 114688
-      ret = ((uint32_t)value * (uint32_t)value * 734) / 448;
+      set_value = ((uint32_t)value * (uint32_t)value * 734) / 448;
     }
 
-    //DDEC(pin); DPRINT(F(":c")); DPRINT(curve); DPRINT(F("\t(")); DDEC(value); DPRINT(F(")\t")); DDECLN(ret);
-    PINTYPE::setPWM(pin, ret);
+    // loop for a smooth tranistion till the set_value is on PWM
+    while (cur_value > set_value) {
+      PINTYPE::setPWM(pin, --cur_value);
+    }
+    while (cur_value < set_value) {
+      PINTYPE::setPWM(pin, ++cur_value);
+    }
+    //DDEC(pin); DPRINT(F(":c")); DPRINT(curve); DPRINT(F("\t(")); DDEC(value); DPRINT(F(")\tcur: ")); DDEC(cur_value); DPRINT(F("\tset: ")); DDECLN(set_value);
+
   }
 
 };

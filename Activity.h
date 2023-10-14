@@ -324,6 +324,9 @@ public:
 
   Activity () : Alarm(0), awake(false) {
     async(true);
+#if defined ARDUINO_ARCH_STM32 
+    LowPower.begin();
+#endif
   }
 
   virtual ~Activity () {}
