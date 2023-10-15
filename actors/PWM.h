@@ -193,15 +193,21 @@ public:
       set_value = ((uint32_t)value * (uint32_t)value * 734) / 448;
     }
 
-    // loop for a smooth tranistion till the set_value is on PWM
+    // loop for a smooth tranistion and set every 10th value, 0 to 100% take approx 350ms
     while (cur_value > set_value) {
-      PINTYPE::setPWM(pin, --cur_value);
+      if ((cur_value > 32) && (cur_value - 32 >= set_value)) cur_value -= 32;
+      else cur_value = set_value;
+      PINTYPE::setPWM(pin, cur_value);
+      //DPRINT(cur_value); DPRINT(", ");
     }
     while (cur_value < set_value) {
-      PINTYPE::setPWM(pin, ++cur_value);
+      if ((cur_value < 65503) && (cur_value + 32 <= set_value)) cur_value += 32;
+      else cur_value = set_value;
+      PINTYPE::setPWM(pin, cur_value);
+      //DPRINT(cur_value); DPRINT(", ");
     }
     //DDEC(pin); DPRINT(F(":c")); DPRINT(curve); DPRINT(F("\t(")); DDEC(value); DPRINT(F(")\tcur: ")); DDEC(cur_value); DPRINT(F("\tset: ")); DDECLN(set_value);
-
+    //PINTYPE::setPWM(pin, set_value);
   }
 
 };
