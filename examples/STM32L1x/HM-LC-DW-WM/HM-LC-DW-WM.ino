@@ -144,7 +144,7 @@ void loop() {
   bool poll = sdev.pollRadio();
   if( worked == false && poll == false ) {
     // needs power off cycle after upload
-    hal.activity.savePower<Idle<true> >(hal); 
+    //hal.activity.savePower<Idle<true> >(hal); 
   }
 
 }

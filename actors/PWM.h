@@ -193,7 +193,7 @@ public:
       set_value = ((uint32_t)value * (uint32_t)value * 734) / 448;
     }
 
-    // loop for a smooth tranistion and set every 10th value, 0 to 100% take approx 350ms
+    // loop for a smooth tranistion and set every 32th value, 0 to 100% take approx 350ms
     while (cur_value > set_value) {
       if ((cur_value > 32) && (cur_value - 32 >= set_value)) cur_value -= 32;
       else cur_value = set_value;
