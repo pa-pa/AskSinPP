@@ -241,7 +241,7 @@ public:
     if (PWRPIN < 0xff) {
       pinMode(PWRPIN, OUTPUT);
       digitalWrite(PWRPIN, LOW);
-      _delay_ms(2);
+      _delay_ms(5);
     }
     spi.init();                 // init the hardware to get access to the RF modul
 
