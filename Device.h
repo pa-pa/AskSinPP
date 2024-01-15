@@ -99,9 +99,6 @@ private:
   List0Type&   list0;
   uint8_t  msgcount;
 
-  HMID    lastdev;
-  uint8_t lastmsg;
-
 #ifdef USE_HW_SERIAL
    uint8_t device_id[3];
 #endif
@@ -115,7 +112,7 @@ protected:
   uint8_t      numChannels; // :7;
 
 public:
-  Device (const DeviceInfo& i,uint16_t addr,List0Type& l,uint8_t ch) : hal(0), list0(l), msgcount(0), lastmsg(0), kstore(addr), info(i), cfgChanged(false), numChannels(ch) {
+  Device(const DeviceInfo& i, uint16_t addr, List0Type& l, uint8_t ch) : hal(0), list0(l), msgcount(0), kstore(addr), info(i), cfgChanged(false), numChannels(ch) {
 #ifdef USE_HW_SERIAL
     device_id[0]=0x00;
 #endif
@@ -152,17 +149,6 @@ public:
 
   bool hasChannel (uint8_t number) const {
     return number != 0 && number <= channels();
-  }
-
-
-  bool isRepeat(const Message& m) {
-    if( m.isRepeated() && lastdev == m.from() && lastmsg == m.count() ) {
-      return true;
-    }
-    // store last message data
-    lastdev = m.from();
-    lastmsg = m.count();
-    return false;
   }
 
   void setHal (HalType& h) {

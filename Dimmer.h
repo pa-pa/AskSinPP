@@ -240,7 +240,6 @@ class DimmerStateMachine {
     void changed (bool c) { setflag(c,CHANGED); }
   };
 
-
   class RampAlarm : public Alarm {
   public:
     DimmerStateMachine& sm;
@@ -322,31 +321,24 @@ class DimmerStateMachine {
   class BlinkAlarm : public Alarm {
   public:
     DimmerStateMachine& sm;
-    uint8_t level;
+    volatile uint8_t level;
     uint8_t tack;
 
     BlinkAlarm(DimmerStateMachine& m) : Alarm(0), sm(m), tack(millis2ticks(500)) {} 
     virtual ~BlinkAlarm() {}
 
-    void init(DimmerPeerList l) {
+    void init() {
       updateLevel();
-      //DPRINT("init: "); DPRINT(l.offDelayBlink()); DPRINT(", level: "); DDEC(level);  DPRINT(" - "); DDECLN(millis());
-      if (!l.offDelayBlink()) return;
-      set(tack);
-      sysclock.add(*this);
+      //DPRINT(F("BA:init l:")); DDEC(level);  DPRINT(F(" - ")); DDECLN(millis());
     }
     void updateLevel() {
       level = sm.status();
+      //DPRINT(F("BA:updt l:")); DPRINTLN(level);
     }
-    void end() {
-      sysclock.cancel(*this);
-      sm.updateLevel(level);
-      //DPRINT("end: "); DPRINTLN(level);
-    }
-    virtual void trigger(AlarmClock& clock) {
+    virtual void trigger(__attribute__((unused)) AlarmClock& clock) {
       uint8_t temp = (sm.status() == level) ? level - (level/4) : level;
       sm.updateLevel(temp);
-      //DPRINT("trigger: "); DPRINTLN(temp);
+      //DPRINT(F("BA:trgr l:")); DPRINTLN(temp);
       set(tack);
       clock.add(*this);
     }
@@ -372,18 +364,36 @@ class DimmerStateMachine {
   }
 
   void setState (uint8_t next,uint32_t delay,const DimmerPeerList& lst=DimmerPeerList(0),uint8_t deep=0) {
-    //DPRINT("state: "); DHEX(state); DPRINT(","); DHEX(next); DPRINT('\n');
+#ifdef DIMMER_EXTRA_DEBUG
+    const char* dbgJT[] = {
+      PSTR("NONE"), 
+      PSTR("ONDELAY"), 
+      PSTR("RAMPON"), //REFON 
+      PSTR("ON"), 
+      PSTR("OFFDELAY"),
+      PSTR("RAMPOFF"), //REFOFF 
+      PSTR("OFF"), 
+      PSTR("na"), 
+      PSTR("RAMPON"), 
+      PSTR("RAMPOFF"),
+    };
+    DPRINT(F("setState: ")); DPRINT(dbgJT[state]); DPRINT("->"); DPRINT(dbgJT[next]); DPRINT(", d:0x"); DHEXLN(delay);
+#endif
 
     // check deep to prevent infinite recursion
     if( next != AS_CM_JT_NONE && deep < 4) {
       // first cancel possible running alarm
-      sysclock.cancel(alarm);
       sysclock.cancel(blink);
+      sysclock.cancel(alarm);
       // if state is different
       if (state != next) {
-        if (next == AS_CM_JT_OFFDELAY) blink.init(lst);
-        if (state == AS_CM_JT_OFFDELAY) blink.end();
         updateState(next, delay);
+      }
+      if (state == AS_CM_JT_OFFDELAY) {
+        if (lst.offDelayBlink()) {
+          blink.init();
+          sysclock.add(blink);
+        }
       }
       if ( state == AS_CM_JT_RAMPON || state == AS_CM_JT_RAMPOFF ) {
         alarm.init(state,lst);

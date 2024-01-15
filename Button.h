@@ -50,7 +50,7 @@ class NoDoublePressAlarm {
 public:
   NoDoublePressAlarm () {}
   ~NoDoublePressAlarm () {}
-  bool newPressAllowed() { return true;  }
+  bool newPressAllowed() { return false;  }
   void newPressAllowed(__attribute__((unused)) bool b) { }
   void setDoublePressTime(__attribute__((unused)) uint16_t t) {}
   bool canDoublePress () const { return false; }
@@ -170,17 +170,20 @@ public:
   }
 
   void irq () {
-    if (dbl.newPressAllowed() == true) {
-      sysclock.cancel(ca);
+    //if (dbl.newPressAllowed() == true) {
+    //  sysclock.cancel(ca);
       // use alarm to run code outside of interrupt
-      sysclock.add(ca);
-    }
+    //  sysclock.add(ca);
+    //}
+    sysclock.cancel(ca); 
+    sysclock.add(ca);
   }
 
   void check() {
     uint8_t ps = digitalRead(pin);
     if( pinstate != ps ) {
       pinstate = ps;
+      if ((pinstate == ONSTATE) && (dbl.newPressAllowed() == false) && (state() != none)) return;
       uint16_t nexttick = 0;
       uint8_t  nextstate = state();
       switch ( state() ) {
@@ -188,7 +191,6 @@ public:
         nextstate = debounce;
         nexttick = DEBOUNCETIME;
         break;
-
       case pressed:
       case longpressed:
         if (pinstate == OFFSTATE) {

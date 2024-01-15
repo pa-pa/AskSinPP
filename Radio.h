@@ -118,7 +118,7 @@ public:
     waitMiso();
     deselect();
   }
-  
+
   uint8_t strobe(uint8_t cmd) {
     select();                                     // select  radio module
     waitMiso();                                   // wait until MISO goes low
@@ -219,7 +219,7 @@ public:
     deselect();
     SPI.endTransaction();
   }
-  
+
   void waitMiso () {
 #ifdef ARDUINO_ARCH_STM32F1
     while(digitalRead(SPI.misoPin()));
@@ -298,6 +298,7 @@ public:
 };
 #endif
 
+
 extern void* __gb_radio;
 
 class NoRadio {
@@ -325,7 +326,8 @@ public:
   bool write (__attribute__ ((unused)) const Message& msg, __attribute__ ((unused)) uint8_t burst) { return false; }
 };
 
-template <class SPIType ,uint8_t GDO0, uint8_t PWRPIN=0xff, int SENDDELAY=100,class HWRADIO=CC1101<SPIType,PWRPIN> >
+
+template <class SPIType, uint8_t GDO0, uint8_t PWRPIN = 0xff, int SENDDELAY = 100, class HWRADIO = CC1101<SPIType, PWRPIN> >
 class Radio : public HWRADIO {
 
   static void isr () {
@@ -387,7 +389,7 @@ public:
     return *((Radio<SPIType,GDO0,PWRPIN,SENDDELAY,HWRADIO>*)__gb_radio);
   }
 
-private:
+public:
   enum States { IDLE=0x1, SENDING=0x2, READ=0x4, ALIVE=0x8, READ_ALIVE=0xc };
   volatile uint8_t state;
   Message buffer;
@@ -397,7 +399,9 @@ private:
   void unsetState(States s) { state &= ~s; }
 
 public:   //---------------------------------------------------------------------------------------------------------
-  Radio () : state(ALIVE) {}
+  Radio () : state(ALIVE) 
+
+    {}
 
   bool init () {
     // ensure ISR if off before we start to init CC1101
@@ -412,6 +416,7 @@ public:   //--------------------------------------------------------------------
     bool initOK = HWRADIO::init();
     if (initOK) HWRADIO::wakeup(true);
     //DPRINT(F("CC init "));DPRINTLN(initOK ? F("OK"):F("FAIL"));
+
     return initOK;
   }
 
@@ -486,10 +491,11 @@ void disable () {
 
   // read the message form the internal buffer, if any
   uint8_t read (Message& msg) {
+
     if( isState(READ) == false )
     //if (getGDO0falling() == false)
       return 0;
-    
+
     //if (isState(READ) == false) then DPRINTLN(F("interrupt overseen"));
 
     unsetState(READ);
@@ -545,14 +551,45 @@ void disable () {
 
 };
 
-template <class SPIType ,uint8_t GDO0, uint8_t PWRPIN=0xff, int SENDDELAY=100>
-class CC1101Radio : public Radio<SPIType,GDO0, PWRPIN,SENDDELAY,CC1101<SPIType,PWRPIN>> {};
 
-template <class SPIType ,uint8_t GDO0, uint8_t PWRPIN=0xff, int SENDDELAY=100>
-class Si4431Radio : public Radio<SPIType,GDO0, PWRPIN,SENDDELAY,Si4431<SPIType,PWRPIN,GDO0>> {};
+template <class SPIType, uint8_t GDO0, uint8_t PWRPIN = 0xff, int SENDDELAY = 100, class HWRADIO = CC1101<SPIType, PWRPIN> >
+class CalibratedRadio : public Radio<SPIType, GDO0, PWRPIN, SENDDELAY, HWRADIO >, public Alarm {
+public:
+  typedef Radio<SPIType, GDO0, PWRPIN, SENDDELAY, HWRADIO > CRadioType;
+
+  CalibratedRadio() : CRadioType(), Alarm(0, false) { }
+  virtual ~CalibratedRadio() {}
+
+  virtual void trigger(AlarmClock& clock) {
+    this->recalibrate();
+    // start the next timer cycle
+    set(millis2ticks(500));       // 500ms polling
+    clock.add(*this);
+  }
+
+  bool init() {
+    DPRINTLN(F("CalibratedRadio"));
+    bool result = CRadioType::init();
+    // start watchdog
+    trigger(sysclock);
+    return result;
+  }
+};
+
+
+
+
+template <class SPIType, uint8_t GDO0, uint8_t PWRPIN = 0xff, int SENDDELAY = 100>
+class CC1101Radio : public Radio<SPIType, GDO0, PWRPIN, SENDDELAY, CC1101<SPIType, PWRPIN>> {};
+
+template <class SPIType, uint8_t GDO0, uint8_t PWRPIN = 0xff, int SENDDELAY = 100>
+class Si4431Radio : public Radio<SPIType, GDO0, PWRPIN, SENDDELAY, Si4431<SPIType, PWRPIN, GDO0>> {};
 
 template <class SPIType, uint8_t GDO0, uint8_t PWRPIN = 0xff, int SENDDELAY = 100>
 class RFM69Radio : public Radio<SPIType, GDO0, PWRPIN, SENDDELAY, RFM69<SPIType, PWRPIN, GDO0>> {};
+
+
+
 
 }
 

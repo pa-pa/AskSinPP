@@ -12,7 +12,12 @@
 #if defined(ARDUINO_ARCH_AVR) && ! ( defined(ARDUINO_AVR_ATmega32) || defined(__AVR_ATmega644__) || defined(__AVR_ATmega128__))
 #include <LowPower.h>
 #endif
-#if defined ARDUINO_ARCH_STM32 && defined STM32L1xx
+
+#if defined ARDUINO_ARCH_STM32 
+#include "STM32LowPower.h"
+#endif
+
+/*#if defined ARDUINO_ARCH_STM32 && defined STM32L1xx
 #include "low_power.h"
 #include "rtc.h"
 #include <time.h>
@@ -24,6 +29,7 @@ static void rtcmatch(void*) {
 }
 
 static class STM32L1xx_LowPower {
+  alarm_t myalarm;
 public:
   STM32L1xx_LowPower() {};
 
@@ -47,7 +53,7 @@ public:
   void deepSleep(uint32_t millis = 0) {
     if (millis > 0) programRtcWakeUp(millis);
     LowPower_stop(_serial);
-    detachAlarmCallback();
+    detachAlarmCallback(myalarm);
   }
 
   void shutdown(uint32_t millis = 0) {
@@ -69,8 +75,8 @@ public:
     //DPRINT(millis); DPRINT(", "); DPRINTLN((uint32_t)tmp);
     //DPRINT(tm.tm_mday); DPRINT(':'); DPRINT(tm.tm_hour); DPRINT(':'); DPRINT(tm.tm_min); DPRINT(':'); DPRINTLN(tm.tm_sec);
     //DPRINT(ptm->tm_mday); DPRINT(':'); DPRINT(ptm->tm_hour); DPRINT(':'); DPRINT(ptm->tm_min); DPRINT(':'); DPRINTLN(ptm->tm_sec);
-    RTC_StartAlarm(ptm->tm_mday, ptm->tm_hour, ptm->tm_min, ptm->tm_sec, _subSeconds, p, 15);
-    attachAlarmCallback(rtcmatch, NULL);
+    RTC_StartAlarm(myalarm, ptm->tm_mday, ptm->tm_hour, ptm->tm_min, ptm->tm_sec, _subSeconds, p, 15);
+    attachAlarmCallback(rtcmatch, NULL, myalarm);
   }
 
   void attachInterruptWakeup(uint32_t pin, voidFuncPtrVoid callback, uint32_t mode) {
@@ -81,7 +87,8 @@ public:
 private:
   serial_t* _serial;    // Serial for wakeup from deep sleep
 } LowPower;
-#endif
+#endif*/
+
 
 #ifdef ARDUINO_ARCH_ESP32
 #include "esp_sleep.h"
@@ -219,15 +226,15 @@ public:
 
 #endif
 
-#if defined ARDUINO_ARCH_STM32 && defined STM32L1xx
+#if defined ARDUINO_ARCH_STM32 
 // more time to spend here
 template <bool ENABLETIMER2 = false, bool ENABLEADC = false>
 class Idle {
 public:
 
   static void waitSerial() {
-    // DPRINT(F("Go sleep - ")); DHEXLN((uint16_t)sysclock.next());
-    Serial.flush(); // waits for the transmission of outgoing serial data to complete
+    //DPRINT(F("Go sleep - ")); DHEXLN((uint16_t)sysclock.next());
+    DSERIAL.flush(); // waits for the transmission of outgoing serial data to complete
    }
 
   template <class Hal>
@@ -317,6 +324,9 @@ public:
 
   Activity () : Alarm(0), awake(false) {
     async(true);
+#if defined ARDUINO_ARCH_STM32 
+    LowPower.begin();
+#endif
   }
 
   virtual ~Activity () {}
@@ -364,7 +374,7 @@ public:
   #endif
       LowPower.powerDown(SLEEP_FOREVER,ADC_OFF,BOD_OFF);
 #endif
-#if defined ARDUINO_ARCH_STM32 && defined STM32L1xx
+#if defined ARDUINO_ARCH_STM32
   #ifndef NDEBUG
     Idle<>::waitSerial();
   #endif
