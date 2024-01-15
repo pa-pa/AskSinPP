@@ -96,12 +96,12 @@ public:
   }
 };
 
-template<class DeviceType,int DownChannel,int UpChannel>
+template<class DeviceType,int DownChannel,int UpChannel,encModes EncMode=ENCRES_1x,uint8_t delay=0>
 class RemoteEncoder : public BaseEncoder, public Alarm {
   int8_t last;
   DeviceType& sdev;
 public:
-  RemoteEncoder(DeviceType& d) : BaseEncoder(), Alarm(0), last(0), sdev(d) {}
+  RemoteEncoder(DeviceType& d) : BaseEncoder(), Alarm(0), last(0), sdev(d) {edgemode(EncMode); delaytime(delay);}
   virtual ~RemoteEncoder() {}
 
   void process () {
