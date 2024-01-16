@@ -246,7 +246,7 @@ public:
 
        // ignore repeated messages and store info if the last message came from same device
        uint8_t samefromID = (lastdev == msg.from());
-       if (msg.isRepeated() && samefromID && lastcnt == msg.count()) {
+       if (samefromID && lastcnt == msg.count()) {
          return false;
        }
        lastdev = msg.from();
