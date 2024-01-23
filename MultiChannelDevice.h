@@ -252,11 +252,21 @@ public:
        lastdev = msg.from();
        lastcnt = msg.count();
 
+       //is Device already paired to a master / CCU ?
+       bool isPaired        = HMID::broadcast != this->getMasterID();
+       //received message is from our paired master / CCU ?
+       bool msgIsFromMaster = msg.from() == this->getMasterID();
+
        // start processing the message
        uint8_t mtype = msg.type();
        uint8_t mcomm = msg.command();
        uint8_t msubc = msg.subcommand();
        if( mtype == AS_MESSAGE_CONFIG ) {
+         //we are already paired, but the CONFIG message does not come from master / CCU
+         if( isPaired == true && msgIsFromMaster == false ) {
+           //DPRINTLN(F("-> message for us, but from wrong master address."));
+           return false;
+         }
          // PAIR_SERIAL
          if( msubc == AS_CONFIG_PAIR_SERIAL && this->isDeviceSerial(msg.data())==true ) {
            this->led().set(LedStates::pairing);
@@ -383,6 +393,11 @@ public:
          }
        }
        else if( mtype == AS_MESSAGE_ACTION ) {
+         //we are paired to a master / CCU, but the ACTION message does not come from master / CCU
+         if( isPaired==true && msgIsFromMaster==false ) {
+           //DPRINTLN(F("-> message for us, but from wrong master address."));
+           return false;
+         }
          if ( mcomm == AS_ACTION_RESET || mcomm == AS_ACTION_ENTER_BOOTLOADER ) {
            if( validSignature(msg) == true ) {
              this->sendAck(msg);
