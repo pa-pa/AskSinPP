@@ -504,6 +504,10 @@ public:
 #endif
 #ifdef USE_AES
        else if (mtype == AS_MESSAGE_KEY_EXCHANGE ) {
+         if( isPaired==true && msgIsFromMaster==false ) {
+           //DPRINTLN(F("-> message for us, but from wrong master address."));
+           return false;
+         }
          if( validSignature(msg) == true ) {
            if( this->keystore().exchange(msg.aesExchange())==true ) answer = REPLAY_ACK;
            else answer = REPLAY_NACK;
