@@ -478,7 +478,7 @@ protected:
     // switch to TX and wait till status has changed, will take approx 1ms
     spi.strobe(CC1101_STX);
     uint8_t i = 200;
-    while ((spi.readReg(CC1101_MARCSTATE, CC1101_STATUS) != MARCSTATE_TX) || (--i == 0)) {
+    while ((spi.readReg(CC1101_MARCSTATE, CC1101_STATUS) != MARCSTATE_TX) && (--i != 0)) {
       _delay_us(100);
     }
 
@@ -508,7 +508,7 @@ protected:
 
   uint8_t waitRX() {
     uint8_t i = 200;
-    while ((spi.readReg(CC1101_MARCSTATE, CC1101_STATUS) != MARCSTATE_RX) || (--i == 0)) {
+    while ((spi.readReg(CC1101_MARCSTATE, CC1101_STATUS) != MARCSTATE_RX) && (--i != 0)) {
       _delay_us(200);
     }
     return i ? true : false;
