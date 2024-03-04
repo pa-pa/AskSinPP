@@ -246,17 +246,27 @@ public:
 
        // ignore repeated messages and store info if the last message came from same device
        uint8_t samefromID = (lastdev == msg.from());
-       if (msg.isRepeated() && samefromID && lastcnt == msg.count()) {
+       if (samefromID && lastcnt == msg.count()) {
          return false;
        }
        lastdev = msg.from();
        lastcnt = msg.count();
+
+       //is Device already paired to a master / CCU ?
+       bool isPaired        = HMID::broadcast != this->getMasterID();
+       //received message is from our paired master / CCU ?
+       bool msgIsFromMaster = msg.from() == this->getMasterID();
 
        // start processing the message
        uint8_t mtype = msg.type();
        uint8_t mcomm = msg.command();
        uint8_t msubc = msg.subcommand();
        if( mtype == AS_MESSAGE_CONFIG ) {
+         //we are already paired, but the CONFIG message does not come from master / CCU
+         if( isPaired == true && msgIsFromMaster == false ) {
+           //DPRINTLN(F("-> message for us, but from wrong master address."));
+           return false;
+         }
          // PAIR_SERIAL
          if( msubc == AS_CONFIG_PAIR_SERIAL && this->isDeviceSerial(msg.data())==true ) {
            this->led().set(LedStates::pairing);
@@ -383,6 +393,11 @@ public:
          }
        }
        else if( mtype == AS_MESSAGE_ACTION ) {
+         //we are paired to a master / CCU, but the ACTION message does not come from master / CCU
+         if( isPaired==true && msgIsFromMaster==false ) {
+           //DPRINTLN(F("-> message for us, but from wrong master address."));
+           return false;
+         }
          if ( mcomm == AS_ACTION_RESET || mcomm == AS_ACTION_ENTER_BOOTLOADER ) {
            if( validSignature(msg) == true ) {
              this->sendAck(msg);
@@ -489,6 +504,7 @@ public:
 #endif
 #ifdef USE_AES
        else if (mtype == AS_MESSAGE_KEY_EXCHANGE ) {
+         if( isPaired==false || msgIsFromMaster==false ) { return false; }
          if( validSignature(msg) == true ) {
            if( this->keystore().exchange(msg.aesExchange())==true ) answer = REPLAY_ACK;
            else answer = REPLAY_NACK;
