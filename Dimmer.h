@@ -865,16 +865,19 @@ public:
         dimmer.dimmerChannel(j).setLevel(0, 0, 0xffff);
 
         uint8_t powerup = dimmer.dimmerChannel(j).getList1().powerUpAction();
-        //DPRINT(F("init_cnl:")); DPRINT(j); DPRINT(F(", pwrup:")); DPRINTLN(powerup);
         Peer ownID(1);
         dimmer.getDeviceID(ownID);
-        DimmerList3 l3 = dimmer.dimmerChannel(j).getList3(ownID);
         //ownID.dump(); DPRINT('\n');
+        DimmerList3 l3 = dimmer.dimmerChannel(j).getList3(ownID);
+        uint8_t l3valid = l3.valid();
 
-        if (powerup == true && l3.valid() == true) {
-          typename DimmerList3::PeerList pl = l3.sh();
-          dimmer.dimmerChannel(j).remote(pl, 1);
-        } 
+#ifdef DIMMER_EXTRA_DEBUG
+        delay(200);
+        DPRINT(F("initChannels - channel:")); DPRINT(j); DPRINT(F(", powerUpAction:")); DPRINT(powerup); DPRINT(F(", l3.valid:")); DPRINTLN(l3valid);
+#endif
+        if ((powerup == false) or (l3valid == false)) continue;
+        //l3.dump();
+        dimmer.dimmerChannel(j).remote(l3.sh(), 1);
       }
     }
   }
