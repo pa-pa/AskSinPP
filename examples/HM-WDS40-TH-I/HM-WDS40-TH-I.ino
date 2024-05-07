@@ -25,6 +25,7 @@
 //#define SENSOR_SHT10
 //#define SENSOR_SHT21
 //#define SENSOR_SHT31
+//#define SENSOR_SHT4x
 //#define SENSOR_SI7021
 //#define SENSOR_AM2301
 // === Choose DataPin for DHT22 or AM2301
@@ -86,6 +87,10 @@ typedef Sht21<> SensorType; // I2C
 #ifdef SENSOR_SHT31
 #include <sensors/Sht31.h>
 typedef Sht31<> SensorType; // I2C
+#endif
+#ifdef SENSOR_SHT4x
+#include <sensors/Sht4x.h>
+typedef Sht4x<> SensorType; // I2C
 #endif
 #ifdef SENSOR_SI7021
 #include <sensors/Si7021.h>
