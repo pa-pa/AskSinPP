@@ -16,7 +16,6 @@ namespace as {
 template <uint8_t ADDRESS=0x44>
 class Sht4x : public Temperature, public Humidity {
   SensirionI2cSht4x _sht4x;
-  char     errorMessage[256];
 public:
   Sht4x () {}
 
@@ -30,6 +29,7 @@ public:
     error = _sht4x.serialNumber(serialNumber);
     DPRINTLN(F("SHT4x: Getting serial number finished .."));
     if (error) {
+      char     errorMessage[256];
       DPRINTLN(F("SHT4x sensor NOT found"));
       DPRINTLN(F("SHT4x: Error trying to execute serialNumber(): "));
       errorToString(error, errorMessage, 256);
@@ -52,6 +52,7 @@ public:
      // check for errors
       if (error) {
         DPRINTLN(F("SHT4x: Error trying to execute measureHighPrecision(): "));
+        char     errorMessage[256];
         errorToString(error, errorMessage, 256);
         DPRINTLN(errorMessage);
       } else {
