@@ -54,7 +54,7 @@ case "$BOARD" in
     FQBN=stm32duino:STM32F1:mapleMini
     ;;
   esp32)
-    CORE=esp32:esp32
+    CORE=esp32:esp32@1.0.6
     FQBN=esp32:esp32:esp32
     ;;
   rp2040)
