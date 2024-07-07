@@ -13,7 +13,7 @@ C++ implementation of the AskSin protocol
   - [ATMega644](https://github.com/MCUdude/MightyCore) (Bobuino Pinout is highly suggested)
   - [ATMega1284](https://github.com/MCUdude/MightyCore) (No OTA Bootloader support, yet)
   - [STM32F1](http://dan.drown.org/stm32duino/package_STM32duino_index.json)
-  - [ESP32](https://github.com/espressif/arduino-esp32) (not fully implemented)
+  - [ESP32](https://github.com/espressif/arduino-esp32) (not fully implemented - version 1.0.6 needed)
   - [RP2040](https://github.com/earlephilhower/arduino-pico) (not fully implemented)
 
 ## Required additional Arduino libraries:
